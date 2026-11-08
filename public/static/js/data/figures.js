@@ -239,6 +239,79 @@ export const FIGURES = {
     </svg>`,
   },
 
+  'av-block-grading': {
+    caption: '房室阻滞四型示意：一度 PR 固定延长；二度 I 型 PR 渐长后脱落；二度 II 型 PR 固定但突然脱落；三度 P 与 QRS 完全分离。',
+    legend: [
+      { label: 'P 波', color: 'var(--brand)' },
+      { label: 'QRS', color: 'var(--ink)' },
+      { label: '脱落 P 波', color: 'var(--danger)' },
+    ],
+    svg: `<svg viewBox="0 0 720 330" role="img" aria-label="一度、二度 I 型、二度 II 型与三度房室阻滞示意">
+      <g font-family="ui-monospace, monospace">
+        <g>
+          <text x="12" y="40" font-size="11" font-weight="700" fill="var(--ink)">一度</text>
+          <text x="12" y="54" font-size="8" fill="var(--muted)">PR 固定延长</text>
+          <line x1="120" y1="40" x2="704" y2="40" stroke="var(--line)"/>
+          <path d="M130 40 q6 -11 12 0" fill="none" stroke="var(--brand)" stroke-width="2"/>
+          <path d="M160 40 l4 0 l3 -20 l4 28 l4 -8 l5 0" fill="none" stroke="var(--ink)" stroke-width="2"/>
+          <path d="M180 40 q9 -13 20 0" fill="none" stroke="var(--muted)" stroke-width="1.6"/>
+          <path d="M280 40 q6 -11 12 0" fill="none" stroke="var(--brand)" stroke-width="2"/>
+          <path d="M310 40 l4 0 l3 -20 l4 28 l4 -8 l5 0" fill="none" stroke="var(--ink)" stroke-width="2"/>
+          <path d="M330 40 q9 -13 20 0" fill="none" stroke="var(--muted)" stroke-width="1.6"/>
+          <path d="M430 40 q6 -11 12 0" fill="none" stroke="var(--brand)" stroke-width="2"/>
+          <path d="M460 40 l4 0 l3 -20 l4 28 l4 -8 l5 0" fill="none" stroke="var(--ink)" stroke-width="2"/>
+          <path d="M480 40 q9 -13 20 0" fill="none" stroke="var(--muted)" stroke-width="1.6"/>
+        </g>
+        <g>
+          <text x="12" y="100" font-size="11" font-weight="700" fill="var(--ink)">二度 I</text>
+          <text x="12" y="114" font-size="8" fill="var(--muted)">PR 渐长→脱落</text>
+          <line x1="120" y1="100" x2="704" y2="100" stroke="var(--line)"/>
+          <path d="M130 100 q6 -11 12 0" fill="none" stroke="var(--brand)" stroke-width="2"/>
+          <path d="M150 100 l4 0 l3 -20 l4 28 l4 -8 l5 0" fill="none" stroke="var(--ink)" stroke-width="2"/>
+          <path d="M250 100 q6 -11 12 0" fill="none" stroke="var(--brand)" stroke-width="2"/>
+          <path d="M280 100 l4 0 l3 -20 l4 28 l4 -8 l5 0" fill="none" stroke="var(--ink)" stroke-width="2"/>
+          <path d="M370 100 q6 -11 12 0" fill="none" stroke="var(--danger)" stroke-width="2"/>
+          <path d="M394 90 l8 14 l8 -14" fill="none" stroke="var(--danger)" stroke-width="1.8"/>
+          <path d="M490 100 q6 -11 12 0" fill="none" stroke="var(--brand)" stroke-width="2"/>
+          <path d="M510 100 l4 0 l3 -20 l4 28 l4 -8 l5 0" fill="none" stroke="var(--ink)" stroke-width="2"/>
+        </g>
+        <g>
+          <text x="12" y="160" font-size="11" font-weight="700" fill="var(--ink)">二度 II</text>
+          <text x="12" y="174" font-size="8" fill="var(--muted)">PR 固定→突然脱落</text>
+          <line x1="120" y1="160" x2="704" y2="160" stroke="var(--line)"/>
+          <path d="M130 160 q6 -11 12 0" fill="none" stroke="var(--brand)" stroke-width="2"/>
+          <path d="M150 160 l4 0 l3 -20 l4 28 l4 -8 l5 0" fill="none" stroke="var(--ink)" stroke-width="2"/>
+          <path d="M250 160 q6 -11 12 0" fill="none" stroke="var(--brand)" stroke-width="2"/>
+          <path d="M270 160 l4 0 l3 -20 l4 28 l4 -8 l5 0" fill="none" stroke="var(--ink)" stroke-width="2"/>
+          <path d="M370 160 q6 -11 12 0" fill="none" stroke="var(--danger)" stroke-width="2"/>
+          <path d="M394 150 l8 14 l8 -14" fill="none" stroke="var(--danger)" stroke-width="1.8"/>
+          <path d="M490 160 q6 -11 12 0" fill="none" stroke="var(--brand)" stroke-width="2"/>
+          <path d="M510 160 l4 0 l3 -20 l4 28 l4 -8 l5 0" fill="none" stroke="var(--ink)" stroke-width="2"/>
+        </g>
+        <g>
+          <text x="12" y="220" font-size="11" font-weight="700" fill="var(--ink)">三度</text>
+          <text x="12" y="234" font-size="8" fill="var(--muted)">P 与 QRS 分离</text>
+          <line x1="120" y1="220" x2="704" y2="220" stroke="var(--line)"/>
+          <path d="M130 220 q6 -11 12 0" fill="none" stroke="var(--brand)" stroke-width="2"/>
+          <path d="M210 220 q6 -11 12 0" fill="none" stroke="var(--brand)" stroke-width="2"/>
+          <path d="M290 220 q6 -11 12 0" fill="none" stroke="var(--brand)" stroke-width="2"/>
+          <path d="M370 220 q6 -11 12 0" fill="none" stroke="var(--brand)" stroke-width="2"/>
+          <path d="M450 220 q6 -11 12 0" fill="none" stroke="var(--brand)" stroke-width="2"/>
+          <path d="M530 220 q6 -11 12 0" fill="none" stroke="var(--brand)" stroke-width="2"/>
+          <path d="M610 220 q6 -11 12 0" fill="none" stroke="var(--brand)" stroke-width="2"/>
+          <path d="M170 220 l4 0 l3 -20 l4 28 l4 -8 l5 0" fill="none" stroke="var(--ink)" stroke-width="2"/>
+          <path d="M330 220 l4 0 l3 -20 l4 28 l4 -8 l5 0" fill="none" stroke="var(--ink)" stroke-width="2"/>
+          <path d="M490 220 l4 0 l3 -20 l4 28 l4 -8 l5 0" fill="none" stroke="var(--ink)" stroke-width="2"/>
+          <path d="M650 220 l4 0 l3 -20 l4 28 l4 -8 l5 0" fill="none" stroke="var(--ink)" stroke-width="2"/>
+        </g>
+        <g font-size="8" fill="var(--faint)">
+          <text x="12" y="278">二度 II 型与三度伴宽 QRS 多位于希氏束以下，进展风险更高。</text>
+          <text x="12" y="294">2:1 阻滞不能仅凭 PR 分型，需结合 QRS 宽度、症状与电生理评估。</text>
+          <text x="12" y="310">示意图用于教学，不替代真实心电图测量与临床判断。</text>
+        </g>
+      </g>
+    </svg>`,
+  },
   'bundle-block-patterns': {
     caption: 'RBBB：V1 rsR′、V6 宽钝 S；LBBB：V1 QS/rS、V6 宽 R 无 q；两者 QRS 均 ≥120 ms。',
     legend: [
