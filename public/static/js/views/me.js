@@ -7,7 +7,7 @@ const { openAuth, logout } = await import(`../auth.js${__asset}`);
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 const { reviewSummary } = await import(`../study-store.js${__asset}`);
 const { isLowBandwidth, setLowBandwidth, installPrompt, clearInstallPrompt } = await import(`../bandwidth.js${__asset}`);
-const { getLocale, setLocale, LOCALES, localeLabel } = await import(`../i18n.js${__asset}`);
+const { getLocale, setLocale, LOCALES } = await import(`../i18n.js${__asset}`);
 const { createPasskey } = await import(`../webauthn.js${__asset}`);
 const { levelInfo, ADVANCED_UNLOCK, CHALLENGE_UNLOCK } = await import(`../levels.js${__asset}`);
 

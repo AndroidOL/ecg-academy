@@ -1,9 +1,11 @@
 const KEY = 'ecg-locale';
 
 export const LOCALES = [
-  { id: 'zh', label: '中文' },
-  { id: 'en', label: 'English' },
+  { id: 'zh', label: '中文', short: '中' },
+  { id: 'en', label: 'English', short: 'EN' },
 ];
+
+const HTML_LANG = { zh: 'zh-CN', en: 'en' };
 
 const DICT = {
   zh: {
@@ -90,22 +92,29 @@ const EN_TEXT = {
   'AI 分析薄弱项': 'AI weakness analysis', '按薄弱诊断组卷': 'Quiz by weak diagnoses', '今日复习已清空': 'Today’s review is clear',
 };
 
+const TEXT = { en: EN_TEXT };
+
 const SKIP = 'article, .article-main, .article-body, .ai-bubble, .ai-stream-text, .ai-answer, .quiz-question, .option-list, .quiz-stem, .feedback-text, .explain-block, .diagnosis-line, .glossary-item, .ai-quiz-panel, canvas, svg, script, style, [data-no-i18n]';
 
 export function getLocale() {
-  try { return localStorage.getItem(KEY) === 'en' ? 'en' : 'zh'; } catch { return 'zh'; }
+  try {
+    const stored = localStorage.getItem(KEY);
+    if (LOCALES.some((locale) => locale.id === stored)) return stored;
+  } catch { /* private mode */ }
+  return 'zh';
 }
 
 export function setLocale(locale) {
-  const normalized = locale === 'en' ? 'en' : 'zh';
+  const normalized = LOCALES.some((item) => item.id === locale) ? locale : 'zh';
   try { localStorage.setItem(KEY, normalized); } catch { /* private mode */ }
-  if (typeof document !== 'undefined') document.documentElement.lang = normalized === 'en' ? 'en' : 'zh-CN';
+  if (typeof document !== 'undefined') document.documentElement.lang = HTML_LANG[normalized] || normalized;
   if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('ecg-locale-change', { detail: { locale: normalized } }));
   return normalized;
 }
 
 export function t(key, fallback = '') {
-  return DICT[getLocale()]?.[key] || DICT.zh[key] || fallback || key;
+  const locale = getLocale();
+  return DICT[locale]?.[key] || DICT.en?.[key] || DICT.zh[key] || fallback || key;
 }
 
 export function localeLabel(id) {
@@ -119,7 +128,9 @@ export function navKey(path) {
 let applying = false;
 
 export function applyLocale(root) {
-  if (typeof document === 'undefined' || getLocale() !== 'en') return;
+  if (typeof document === 'undefined') return;
+  const text = TEXT[getLocale()];
+  if (!text) return;
   const host = root || document.body;
   if (!host) return;
   applying = true;
@@ -136,7 +147,7 @@ export function applyLocale(root) {
     nodes.forEach((node) => {
       const raw = node.nodeValue;
       const trimmed = raw.trim();
-      const translated = EN_TEXT[trimmed];
+      const translated = text[trimmed];
       if (translated) node.nodeValue = raw.replace(trimmed, translated);
     });
     host.querySelectorAll('[placeholder],[title],[aria-label]').forEach((el) => {
@@ -145,7 +156,7 @@ export function applyLocale(root) {
         const value = el.getAttribute(attr);
         if (!value) return;
         const trimmed = value.trim();
-        if (EN_TEXT[trimmed]) el.setAttribute(attr, value.replace(trimmed, EN_TEXT[trimmed]));
+        if (text[trimmed]) el.setAttribute(attr, value.replace(trimmed, text[trimmed]));
       });
     });
   } finally {
@@ -154,7 +165,7 @@ export function applyLocale(root) {
 }
 
 export function startLocaleObserver() {
-  if (typeof window === 'undefined' || getLocale() !== 'en') return;
+  if (typeof window === 'undefined' || !TEXT[getLocale()]) return;
   if (window.__ECG_I18N_OBSERVER__) return;
   let timer = null;
   const schedule = () => {

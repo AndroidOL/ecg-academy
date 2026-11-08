@@ -28,7 +28,7 @@ const { introView } = await import(`./views/intro.js${__asset}`);
 const { packsView } = await import(`./views/packs.js${__asset}`);
 const { aiTutorView } = await import(`./views/ai-tutor.js${__asset}`);
 const { applyLowBandwidth } = await import(`./bandwidth.js${__asset}`);
-const { t, navKey, getLocale, setLocale, applyLocale, startLocaleObserver } = await import(`./i18n.js${__asset}`);
+const { t, navKey, getLocale, setLocale, applyLocale, startLocaleObserver, LOCALES } = await import(`./i18n.js${__asset}`);
 const { pullStudy, scheduleStudyPush } = await import(`./study-sync.js${__asset}`);
 
 const routes = [
@@ -132,7 +132,7 @@ function shell(activePath = '/') {
           <a class="brand" href="#/" aria-label="首页">${logo()}</a>
           <nav class="topbar-links" aria-label="顶部导航">${topbarLinks(activePath)}</nav>
           <div class="topbar-actions">
-            <button class="icon-btn" type="button" data-locale-toggle aria-label="Language" title="Language">${getLocale() === 'en' ? '中' : 'EN'}</button>
+            <button class="icon-btn" type="button" data-locale-toggle aria-label="Language" title="Language">${nextLocale().short}</button>
             <button class="icon-btn" type="button" data-theme-toggle aria-label="切换深浅主题" title="切换主题">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon', 19)}</button>
             <a class="avatar" href="#/me" aria-label="我的账号" data-avatar>${initials(user.displayName)}</a>
           </div>
@@ -151,6 +151,11 @@ function shell(activePath = '/') {
       <nav class="bottom-nav" aria-label="底部导航">${bottomNav(activePath)}</nav>
     </div>
   </div>`;
+}
+
+function nextLocale() {
+  const index = LOCALES.findIndex((locale) => locale.id === getLocale());
+  return LOCALES[(index + 1) % LOCALES.length] || LOCALES[0];
 }
 
 function navLabel(path) {
@@ -176,7 +181,7 @@ function navLabel(path) {
 function bindShell() {
   document.querySelectorAll('[data-locale-toggle]').forEach((button) => {
     button.addEventListener('click', () => {
-      setLocale(getLocale() === 'en' ? 'zh' : 'en');
+      setLocale(nextLocale().id);
       window.location.reload();
     });
   });

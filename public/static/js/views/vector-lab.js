@@ -88,10 +88,10 @@ function chestLeadProjection(id, v) {
 
 // 激活顺序：四个教学步骤，关键帧 u 取自 chestQrsVector 的三个高斯锚点附近。
 const ACTIVATION_STEPS = [
-  { u: 0.13, region: 'septum', label: '室间隔', dir: '向右前', detail: '室间隔自左向右除极，向量朝向 V1，形成小 r；V5/V6 背离向量，形成小 q。', leads: 'V1 小 r · V5/V6 小 q' },
-  { u: 0.30, region: 'apex', label: '心尖/前壁', dir: '向右前下', detail: '激动经浦肯野纤维快速扩布到心尖与前壁，向量仍偏向右前，V1 的 r 到达峰值后开始回落。', leads: 'V1 r 达峰后转折' },
-  { u: 0.47, region: 'freewall', label: '左室游离壁', dir: '向左后', detail: '左室游离壁自心内膜向心外膜除极，主向量指向左后，背离 V1、朝向 V5，形成深 S 与高 R。', leads: 'V5 高 R · V1 深 S' },
-  { u: 0.70, region: 'base', label: '基底部/流出道', dir: '向左后上', detail: '最后除极的是左室基底部与流出道，向量继续向左后上，V5/V6 的 R 波逐渐回到基线。', leads: 'V5/V6 R 回基线' },
+  { u: 0.13, region: 'septum', label: '室间隔', dir: '向右前', detail: '室间隔自左向右除极，向量朝向 V1，形成小 r；V5/V6 背离向量，形成小 q。', leads: 'V1 小 r · V5/V6 小 q', article: 'heart-conduction-anatomy', articleLabel: '心脏传导系统解剖' },
+  { u: 0.30, region: 'apex', label: '心尖/前壁', dir: '向右前下', detail: '激动经浦肯野纤维快速扩布到心尖与前壁，向量仍偏向右前，V1 的 r 到达峰值后开始回落。', leads: 'V1 r 达峰后转折', article: 'depolarization-repolarization-ecg', articleLabel: '除极、复极与心电图' },
+  { u: 0.47, region: 'freewall', label: '左室游离壁', dir: '向左后', detail: '左室游离壁自心内膜向心外膜除极，主向量指向左后，背离 V1、朝向 V5，形成深 S 与高 R。', leads: 'V5 高 R · V1 深 S', article: 'horizontal-plane-chest-leads', articleLabel: '横面与胸导联投影' },
+  { u: 0.70, region: 'base', label: '基底部/流出道', dir: '向左后上', detail: '最后除极的是左室基底部与流出道，向量继续向左后上，V5/V6 的 R 波逐渐回到基线。', leads: 'V5/V6 R 回基线', article: 'ecg-vector-waveform-theory', articleLabel: '心电向量与波形形成' },
 ];
 
 function activationStepFor(u) {
@@ -859,6 +859,7 @@ function activationPanel() {
       <b data-activation-title>室间隔</b>
       <p data-activation-desc>室间隔自左向右除极，向量朝向 V1，形成小 r；V5/V6 背离向量，形成小 q。</p>
       <span class="activation-detail-leads" data-activation-leads>V1 小 r · V5/V6 小 q</span>
+      <a class="btn btn-xs btn-secondary" style="margin-top:8px;width:fit-content" data-activation-link href="#/learn/heart-conduction-anatomy">相关章节：心脏传导系统解剖</a>
     </div>
   </section>`;
 }
@@ -878,6 +879,11 @@ function updateActivationUi(host, state) {
   if (title) title.textContent = step.label;
   const desc = host.querySelector('[data-activation-desc]');
   if (desc) desc.textContent = step.detail;
+  const link = host.querySelector('[data-activation-link]');
+  if (link && step.article) {
+    link.setAttribute('href', `#/learn/${step.article}`);
+    link.textContent = `相关章节：${step.articleLabel || '阅读'}`;
+  }
   const leads = host.querySelector('[data-activation-leads]');
   if (leads) leads.textContent = step.leads;
   const label = host.querySelector('[data-activation-phase-label]');
