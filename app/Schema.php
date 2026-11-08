@@ -108,6 +108,24 @@ final class Schema
                 CONSTRAINT fk_ai_usage_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
+            "CREATE TABLE IF NOT EXISTS ai_usage_log (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                user_id BIGINT UNSIGNED NULL,
+                provider VARCHAR(80) NOT NULL DEFAULT '',
+                model VARCHAR(100) NOT NULL DEFAULT '',
+                mode VARCHAR(20) NOT NULL DEFAULT '',
+                prompt_tokens INT UNSIGNED NOT NULL DEFAULT 0,
+                completion_tokens INT UNSIGNED NOT NULL DEFAULT 0,
+                total_tokens INT UNSIGNED NOT NULL DEFAULT 0,
+                cost_micro BIGINT NOT NULL DEFAULT 0,
+                discount_label VARCHAR(40) NULL,
+                discount_ratio DECIMAL(5,4) NOT NULL DEFAULT 1.0000,
+                source VARCHAR(8) NOT NULL DEFAULT 'ai',
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                KEY idx_ai_log_time (created_at),
+                KEY idx_ai_log_model (model)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
             "CREATE TABLE IF NOT EXISTS app_settings (
                 setting_key VARCHAR(64) NOT NULL PRIMARY KEY,
                 setting_value LONGTEXT NOT NULL,
@@ -256,6 +274,10 @@ final class Schema
             'ai.default_provider' => '',
             'ai.system_prompt_append' => '',
             'ai.byok_enabled' => false,
+            'ai.max_tokens' => 1200,
+            'ai.pricing' => [],
+            'ai.discounts' => [],
+            'ai.currency' => '¥',
         ];
         $stmt = $pdo->prepare('INSERT IGNORE INTO app_settings (setting_key, setting_value) VALUES (?, ?)');
         foreach ($defaults as $key => $value) {

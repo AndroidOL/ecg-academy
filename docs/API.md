@@ -116,6 +116,7 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 |---|---|---|
 | GET | `/api/ai/status` | `configured/allowed/byokEnabled/model/dailyLimit/used/remaining/mode` |
 | POST | `/api/ai/chat` | `{message, diagnosisId?, byok?}`；`byok={baseUrl,model,apiKey}` 仅在管理员开启 BYOK 时接受 |
+| POST | `/api/ai/stream` | SSE：`{mode:"chat"|"explain", ...}`；事件 `meta / delta / done`，`done` 含 usage 与 cost |
 | POST | `/api/ai/explain` | `{attemptId, question?, byok?}` |
 | POST | `/api/ai/study-plan` | `{byok?}` 生成薄弱诊断专项计划 |
 | POST | `/api/ai/sim-review` | `{runId, byok?}` 急救复盘 |
@@ -146,6 +147,8 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 |---|---|---|
 | GET | `/api/admin/traffic?days=14` | PV/UV 汇总、14 天序列、热门页面、来源站点、来源 IP、最近访问 |
 | POST | `/api/admin/guests/clean` | `{days}`；删除闲置游客（0 = 全部），返回删除数并清理 90 天前访客事件 |
+| GET | `/api/admin/ai/cost?days=30` | 费用汇总、30 天序列、模型花费、最近调用；含价格/折扣设置 |
+| POST | `/api/admin/ai/cost` | `{pricing:{model:{input,output}}, discounts:[{label,from,to,ratio}], currency, maxTokens}` |
 
 ## 个人资料与 Passkey（需正式账号会话）
 

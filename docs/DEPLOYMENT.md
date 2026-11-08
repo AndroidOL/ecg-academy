@@ -69,6 +69,8 @@ nginx -t && nginx -s reload
 > **必须保留 `fastcgi_intercept_errors off;`**（server 级）：宝塔默认在 http 层开启错误拦截并配置 `error_page 404 /404.html`。当 `/404.html` 不存在时，API 的合法 404 会被内部重定向再次执行入口脚本，且丢失查询串，导致响应体被改写（例如 Passkey 接口返回 `missing_credentials` 而不是 `passkey_not_found`）。
 >
 > **缓存策略**：带 `?v=` 的 JS/CSS 可长缓存（12 小时）；无版本号请求必须 `no-cache` 重新验证。前端共享模块已全部改为带版本号的动态导入，两者配合避免“新视图 + 旧 api.js”的错配。
+>
+> **SSE 流式 AI**：`/api/ai/stream` 返回 `X-Accel-Buffering: no`；若前置代理仍缓冲，请为该 location 关闭 `fastcgi_buffering` / `proxy_buffering`，否则用户会看到回答一次性出现。
 
 ## 目录权限
 

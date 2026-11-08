@@ -1,9 +1,11 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108aw';
+const __asset = __isNode ? '' : '?v=20261108ax';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, escapeHtml, toast, openModal } = await import(`../ui.js${__asset}`);
 const { getByok, setByok, clearByok, byokPayload } = await import(`../byok.js${__asset}`);
+const { streamAi } = await import(`../ai-stream.js${__asset}`);
+const { renderMarkdown } = await import(`../markdown.js${__asset}`);
 
 export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '', placeholder = '问一个关于这张心电图的问题…' } = {}) {
   const el = document.createElement('div');
@@ -38,6 +40,7 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
     messages.scrollTop = messages.scrollHeight;
     return bubble;
   };
+  const contextLine = (context) => (context || []).map((item) => `<span>${escapeHtml(item)}</span>`).join('');
 
   const refreshByokLabel = () => {
     const badge = el.querySelector('.ai-panel-head .badge');
@@ -76,16 +79,39 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
     if (!message || busy) return;
     input.value = '';
     addBubble(message, 'user');
-    const loading = addBubble('正在整理知识库…', 'assistant');
-    loading.classList.add('muted');
+    const bubble = addBubble('', 'assistant', 'streaming');
+    let contextHtml = contextLine(['已附带本页上下文']);
+    bubble.innerHTML = `<div class="ai-context">${contextHtml}</div><p class="ai-stream-text ai-thinking">正在生成…</p>`;
     busy = true;
     send.disabled = true;
     try {
-      const result = await api.aiChat(message, diagnosisId, byokPayload());
-      loading.remove();
-      addBubble(result.text, 'assistant', result.fallback ? 'local' : result.source === 'byok' ? 'byok' : '');
+      await streamAi({ mode: 'chat', message, diagnosisId, byok: byokPayload() }, {
+        onMeta: (meta) => {
+          bubble.classList.toggle('local', Boolean(meta?.fallback));
+          contextHtml = contextLine(meta?.context || []);
+          const host = bubble.querySelector('.ai-context');
+          if (host) host.innerHTML = contextHtml;
+        },
+        onDelta: (chunk, text) => {
+          const host = bubble.querySelector('.ai-stream-text');
+          if (host) { host.classList.remove('ai-thinking'); host.textContent = text; }
+          messages.scrollTop = messages.scrollHeight;
+        },
+        onDone: (done, text) => {
+          bubble.classList.remove('streaming');
+          bubble.classList.toggle('local', Boolean(done?.fallback));
+          bubble.innerHTML = `${contextHtml ? `<div class="ai-context">${contextHtml}</div>` : ''}${renderMarkdown(text)}`;
+          if (done?.cost) {
+            const tail = document.createElement('div');
+            tail.className = 'ai-meta';
+            tail.textContent = `${done.cost.model || ''} · ${done.cost.prompt || 0}→${done.cost.completion || 0} tokens${done.cost.cost ? ` · ${done.cost.currency || ''}${done.cost.cost}` : ''}${done.cost.discount ? ` · ${done.cost.discount}` : ''}`;
+            bubble.appendChild(tail);
+          }
+        },
+      });
+      messages.scrollTop = messages.scrollHeight;
     } catch (error) {
-      loading.remove();
+      bubble.remove();
       addBubble(error.message || 'AI 暂时不可用，请稍后重试。', 'assistant', 'local');
       toast(error.message || 'AI 请求失败', 'error');
     } finally {

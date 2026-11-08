@@ -402,6 +402,8 @@ final class Quiz
             'score' => $score,
             'xp' => $xp,
             'timeMs' => $timeMs,
+            'baseScore' => $base,
+            'timeBonus' => $timeBonus,
             'explanation' => $explanation,
             'localExplanation' => $localText,
             'aiAvailable' => Ai::configured(),
@@ -447,7 +449,8 @@ final class Quiz
         $level = (int) ($payload['level'] ?? 1);
         $base = [1 => 100, 2 => 140, 3 => 180][$level] ?? 100;
         $timeMs = max(0, min(600000, $timeMs));
-        $score = $isCorrect ? $base + max(0, 40 - (int) floor($timeMs / 1000) * 2) : ($partial ? (int) round($base * 0.25) : 0);
+        $timeBonus = $isCorrect ? max(0, 40 - (int) floor($timeMs / 1000) * 2) : 0;
+        $score = $isCorrect ? $base + $timeBonus : ($partial ? (int) round($base * 0.25) : 0);
         $xp = $isCorrect ? 10 + $level * 5 : ($partial ? 3 : 1);
         self::recordAssignmentAttempt($payload, $isCorrect, $score, $timeMs);
         Learning::recordPracticeAnswer($userId, $isCorrect, (string) ($payload['chapter'] ?? ''), (string) (($payload['bankId'] ?? '') ?: ($payload['caseKey'] ?? 'practice')));
@@ -469,6 +472,7 @@ final class Quiz
             'correctIds' => $correctIds,
             'correctNames' => array_map(static fn (string $id): string => $all[$id]['name'] ?? $id, $correctIds),
             'selectedNames' => $selectedNames, 'score' => $score, 'xp' => $xp, 'timeMs' => $timeMs,
+            'baseScore' => $base, 'timeBonus' => $timeBonus,
             'explanation' => $explanation,
             'localExplanation' => self::localExplanation($isCorrect, $partial, $correctIds, $selectedIds, $all),
             'aiAvailable' => false,

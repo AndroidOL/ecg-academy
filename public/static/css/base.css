@@ -91,6 +91,8 @@ small { font-size: 12.5px; }
   display: flex;
   flex-direction: column;
 }
+.app-main > main { flex: 1 0 auto; }
+.site-footer { margin-top: auto; }
 
 .page {
   width: 100%;

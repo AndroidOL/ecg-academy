@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108aw';
+const __asset = __isNode ? '' : '?v=20261108ax';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -7,6 +7,8 @@ const { recordAttempt, reviewSummary, weakDiagnosisIds, deviceId } = await impor
 const { byokPayload, hasByok } = await import(`../byok.js${__asset}`);
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, toast, setButtonLoading, fmtDuration, medicalDisclaimer } = await import(`../ui.js${__asset}`);
+const { streamAi } = await import(`../ai-stream.js${__asset}`);
+const { renderMarkdown } = await import(`../markdown.js${__asset}`);
 
 const LEVELS = [
   { id: 1, name: '基础', note: '单一诊断，常见图形' },
@@ -560,37 +562,60 @@ function renderQuestion(el) {
         setButtonLoading(next, false);
       }
     });
-    const ask = async (questionText) => {
-      if (!aiUiAvailable()) return;
+    const runAi = async (questionText, button, title) => {
+      if (!aiUiAvailable() || !state.result?.attemptId) return;
       const panel = feedback.querySelector('[data-ai-explain-panel]');
+      panel.innerHTML = `<div class="explain-block ai-answer"><h4>${escapeHtml(title)}</h4>${questionText ? `<p class="ai-question">你的追问：${escapeHtml(questionText)}</p>` : ''}<div class="ai-context" data-ai-context></div><p class="ai-stream-text ai-thinking" data-ai-stream>正在生成…</p><div class="ai-meta" data-ai-cost></div></div>`;
+      const streamHost = panel.querySelector('[data-ai-stream]');
+      const contextHost = panel.querySelector('[data-ai-context]');
+      const costHost = panel.querySelector('[data-ai-cost]');
+      setButtonLoading(button, true, '生成中');
       try {
-        const result = await api.aiExplain(state.result.attemptId, questionText, byokPayload());
-        panel.innerHTML = `<div class="explain-block"><h4>${result.source === 'ai' ? 'AI 回答' : '本地解析'}</h4><p data-ai-text></p></div>`;
-        panel.querySelector('[data-ai-text]').textContent = result.text;
+        await streamAi({ mode: 'explain', attemptId: state.result.attemptId, question: questionText, byok: byokPayload() }, {
+          onMeta: (meta) => {
+            contextHost.innerHTML = (meta?.context || []).map((item) => `<span>${escapeHtml(item)}</span>`).join('');
+          },
+          onDelta: (chunk, text) => {
+            streamHost.classList.remove('ai-thinking');
+            streamHost.textContent = text;
+          },
+          onDone: (done, text) => {
+            const block = panel.querySelector('.explain-block');
+            const heading = block.querySelector('h4');
+            if (heading) heading.textContent = done?.fallback ? '本地解析' : title;
+            streamHost.remove();
+            block.insertAdjacentHTML('beforeend', renderMarkdown(text));
+            if (done?.cost) {
+              costHost.textContent = `${done.cost.model || ''} · ${done.cost.prompt || 0}→${done.cost.completion || 0} tokens${done.cost.cost ? ` · ${done.cost.currency || ''}${done.cost.cost}` : ''}${done.cost.discount ? ` · ${done.cost.discount}` : ''}`;
+            }
+          },
+        });
       } catch (error) {
-        panel.innerHTML = `<div class="explain-block"><p style="color:var(--danger)">${escapeHtml(error.message || 'AI 解析失败')}</p></div>`;
+        streamHost.classList.remove('ai-thinking');
+        streamHost.textContent = error.message || 'AI 解析失败';
+      } finally {
+        setButtonLoading(button, false);
       }
     };
     feedback.querySelector('[data-ai-ask]')?.addEventListener('click', async (event) => {
       const button = event.currentTarget;
-      if (!aiUiAvailable()) return;
-      setButtonLoading(button, true, 'AI 分析中');
-      await ask(feedback.querySelector('[data-ai-question]')?.value || '');
-      setButtonLoading(button, false);
+      if (!aiUiAvailable() || button.disabled) return;
+      const input = feedback.querySelector('[data-ai-question]');
+      const question = String(input?.value || '').trim();
+      if (!question) return toast('请先输入一个简短追问', 'warn');
+      if (input) input.value = '';
+      await runAi(question.slice(0, 120), button, 'AI 回答');
     });
-    feedback.querySelector('[data-ai-explain]')?.addEventListener('click', async (event) => { if (!aiUiAvailable()) return;
-      const btn = event.currentTarget;
-      const panel = feedback.querySelector('[data-ai-explain-panel]');
-      setButtonLoading(btn, true, 'AI 分析中');
-      try {
-        const result = await api.aiExplain(state.result.attemptId, '', byokPayload());
-        panel.innerHTML = `<div class="explain-block"><h4>${result.source === 'ai' ? 'AI 错因解析' : '本地错因解析'}</h4><p data-ai-text></p></div>`;
-        panel.querySelector('[data-ai-text]').textContent = result.text;
-      } catch (error) {
-        panel.innerHTML = `<div class="explain-block"><p style="color:var(--danger)">${escapeHtml(error.message || 'AI 解析失败')}</p></div>`;
-      } finally {
-        setButtonLoading(btn, false);
+    feedback.querySelector('[data-ai-question]')?.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        feedback.querySelector('[data-ai-ask]')?.click();
       }
+    });
+    feedback.querySelector('[data-ai-explain]')?.addEventListener('click', async (event) => {
+      const button = event.currentTarget;
+      if (!aiUiAvailable() || button.disabled) return;
+      await runAi('', button, 'AI 错因解析');
     });
   }
 
@@ -602,10 +627,11 @@ function feedbackHtml(result, multiple) {
   const title = result.correct ? '判断正确' : result.partial ? '部分正确，但诊断组合不完整' : '需要再读一遍';
   const answer = result.correctNames?.join('、') || '';
   return `<div class="quiz-feedback">
-    <div class="feedback-head"><span class="feedback-icon ${tone === 'bad' ? 'bad' : ''}">${icon(result.correct ? 'check' : 'x', 16)}</span><div><div class="feedback-title">${title}</div><div class="muted" style="font-size:10px">得分 ${result.score} · 经验 +${result.xp}${answer ? ` · 正确答案：${escapeHtml(answer)}` : ''}</div></div></div>
+    <div class="feedback-head"><span class="feedback-icon ${tone === 'bad' ? 'bad' : ''}">${icon(result.correct ? 'check' : 'x', 16)}</span><div><div class="feedback-title">${title}</div><div class="muted" style="font-size:10px">本题得分 ${result.score ?? '—'}${Number.isFinite(Number(result.baseScore)) ? `（基础 ${result.baseScore} + 时间加成 ${result.timeBonus ?? 0}）` : ''} · 用时 ${Math.round((result.timeMs || 0) / 1000)} 秒 · 经验 +${result.xp}${answer ? ` · 正确答案：${escapeHtml(answer)}` : ''}</div></div></div>
+    <p class="muted" style="font-size:10px;margin:4px 0 0">测试分 +1/-10 与用时无关；本题得分含按答题速度计算的时间加成。</p>
     <p class="feedback-text">${escapeHtml(result.localExplanation || '')}</p>
     ${(result.explanation || []).map((item) => `<div class="explain-block"><h4>${escapeHtml(item.name)}</h4><p>${escapeHtml(item.specificity || item.oneLiner || '')}</p><ul>${(item.criteria || []).map((c) => `<li>${escapeHtml(c)}</li>`).join('')}</ul></div>`).join('')}
-    ${aiUiAvailable() ? `<div class="ai-ask-row"><input class="input" data-ai-question maxlength="300" placeholder="追问 AI：为什么排除某个选项？"><button class="btn btn-secondary btn-sm" type="button" data-ai-ask>${icon('sparkles', 14)} 问 AI</button></div>` : ''}
+    ${aiUiAvailable() ? `<div class="ai-ask-row"><input class="input" data-ai-question maxlength="120" placeholder="简短追问（≤120 字）：为什么排除某个选项？"><button class="btn btn-secondary btn-sm" type="button" data-ai-ask>${icon('sparkles', 14)} 问 AI</button></div><div class="ai-ask-hint">追问限 120 字；复杂或跨主题问题请到文章页的「AI 导师」提问。</div>` : ''}
     <div class="row-wrap" style="margin-top:12px">${aiUiAvailable() ? `<button class="btn btn-secondary btn-sm" type="button" data-ai-explain>${icon('sparkles', 14)} AI 解释错因</button>` : ''}<button class="btn btn-primary btn-sm" type="button" data-next>${icon('arrowRight', 14)} 下一题</button></div>
     <div data-ai-explain-panel></div>
   </div>`;

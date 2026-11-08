@@ -137,6 +137,8 @@ export const api = {
   adminAssignmentDelete: (id) => request('/api/admin/assignment/delete', { method: 'POST', body: { id } }),
   adminTraffic: (days = 14) => request(`/api/admin/traffic${qs({ days })}`),
   adminCleanGuests: (days = 7) => request('/api/admin/guests/clean', { method: 'POST', body: { days } }),
+  adminAiCost: (days = 30) => request(`/api/admin/ai/cost${qs({ days })}`),
+  adminAiSaveCost: (payload) => request('/api/admin/ai/cost', { method: 'POST', body: payload }),
   aiStatus: () => request('/api/ai/status'),
   aiChat: (message, diagnosisId, byok) => request('/api/ai/chat', { method: 'POST', body: { message, diagnosisId, byok } }),
   aiExplain: (attemptId, question = '', byok) => request('/api/ai/explain', { method: 'POST', body: { attemptId, question, byok } }),

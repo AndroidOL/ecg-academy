@@ -362,6 +362,28 @@ final class ApiController
         Http::ok(Ai::chat((int) $user['id'], (string) ($input['message'] ?? ''), $diagnosisId, $byok));
     }
 
+    public static function aiStream(array $params = []): void
+    {
+        $user = self::user();
+        $input = Http::input();
+        $byok = is_array($input['byok'] ?? null) ? $input['byok'] : null;
+        Ai::stream((int) $user['id'], (string) ($input['mode'] ?? 'chat'), $input, $byok);
+    }
+
+    public static function adminAiCost(array $params = []): void
+    {
+        AdminAuth::requireAdmin();
+        Http::ok(Ai::costSummary((int) ($_GET['days'] ?? 30)));
+    }
+
+    public static function adminAiSaveCost(array $params = []): void
+    {
+        $admin = AdminAuth::requireAdmin();
+        $settings = Ai::saveCostSettings(Http::input());
+        AdminAuth::audit((int) $admin['id'], 'admin.ai.cost.save', ['models' => array_keys($settings['pricing']), 'discounts' => count($settings['discounts'])]);
+        Http::ok($settings);
+    }
+
     public static function aiExplain(array $params = []): void
     {
         $user = self::user();

@@ -38,6 +38,8 @@ if (str_starts_with($path, '/api/')) {
         $router->post('/api/admin/ai/provider', [AdminController::class, 'aiProviderSave']);
         $router->post('/api/admin/ai/provider/delete', [AdminController::class, 'aiProviderDelete']);
         $router->post('/api/admin/ai/test', [AdminController::class, 'aiTest']);
+        $router->get('/api/admin/ai/cost', [ApiController::class, 'adminAiCost']);
+        $router->post('/api/admin/ai/cost', [ApiController::class, 'adminAiSaveCost']);
         $router->get('/api/admin/audit', [AdminController::class, 'audit']);
         $router->get('/api/admin/assignments', [AdminController::class, 'assignments']);
         $router->post('/api/admin/assignment', [AdminController::class, 'assignmentSave']);
@@ -84,6 +86,7 @@ if (str_starts_with($path, '/api/')) {
         $router->get('/api/sim/debrief', [ApiController::class, 'simDebrief']);
         $router->get('/api/ai/status', [ApiController::class, 'aiStatus']);
         $router->post('/api/ai/chat', [ApiController::class, 'aiChat']);
+        $router->post('/api/ai/stream', [ApiController::class, 'aiStream']);
         $router->post('/api/ai/explain', [ApiController::class, 'aiExplain']);
         $router->post('/api/ai/study-plan', [ApiController::class, 'aiStudyPlan']);
         $router->post('/api/ai/sim-review', [ApiController::class, 'aiSimReview']);

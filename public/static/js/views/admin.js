@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108aw';
+const __asset = __isNode ? '' : '?v=20261108ax';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, escapeHtml, toast, confirmDialog } = await import(`../ui.js${__asset}`);
@@ -7,6 +7,7 @@ const { icon, escapeHtml, toast, confirmDialog } = await import(`../ui.js${__ass
 const TABS = [
   ['overview', '概览'],
   ['traffic', '流量统计'],
+  ['cost', 'AI 成本'],
   ['users', '用户'],
   ['assignments', '班级作业'],
   ['ai', 'AI 供应商'],
@@ -320,13 +321,15 @@ export async function adminView() {
       el.querySelectorAll('[data-admin-tab]').forEach((b) => b.classList.toggle('active', b.dataset.adminTab === tab));
       content.innerHTML = tab === 'overview' ? overview(session) + settingsCard(session)
         : tab === 'traffic' ? trafficCard()
-          : tab === 'users' ? usersCard()
-            : tab === 'assignments' ? assignmentsCard()
-              : tab === 'ai' ? aiCard(session)
-                : tab === 'security' ? securityCard(session)
-                  : auditCard(session);
+          : tab === 'cost' ? costCard()
+            : tab === 'users' ? usersCard()
+              : tab === 'assignments' ? assignmentsCard()
+                : tab === 'ai' ? aiCard(session)
+                  : tab === 'security' ? securityCard(session)
+                    : auditCard(session);
       if (tab === 'users') await loadUsers();
       if (tab === 'traffic') await loadTraffic();
+      if (tab === 'cost') await loadCost();
       if (tab === 'overview') bindSettings();
       if (tab === 'assignments') {
         content.querySelector('[data-assignment-form]')?.addEventListener('submit', async (event) => {
@@ -488,6 +491,108 @@ export async function adminView() {
         host.innerHTML = `<div class="callout danger">${escapeHtml(error.message || '流量统计加载失败')}</div>`;
       }
     };
+    const loadCost = async () => {
+      const host = content.querySelector('[data-cost-kpis]');
+      if (!host) return;
+      try {
+        const data = await api.adminAiCost(30);
+        const currency = data.currency || '¥';
+        const money = (value) => `${currency}${Number(value || 0).toFixed(4)}`;
+        const kpis = content.querySelectorAll('[data-cost-kpis] .stat-value');
+        [money(data.today.cost), money(data.totals.cost), String(data.today.calls || 0), String((data.totals.prompt || 0) + (data.totals.completion || 0))].forEach((value, index) => {
+          if (kpis[index]) kpis[index].textContent = value;
+        });
+        const range = content.querySelector('[data-cost-range]');
+        if (range) range.textContent = `近 ${data.days} 天 · 今日 ${data.today.calls || 0} 次调用${data.settings.activeDiscount ? ' · 当前折扣：' + data.settings.activeDiscount : ''}`;
+        const bars = content.querySelector('[data-cost-bars]');
+        const maxCost = Math.max(0.000001, ...data.series.map((item) => item.cost));
+        if (bars) bars.innerHTML = data.series.map((item) => `<div class="traffic-bar" title="${escapeHtml(item.day)} · ${money(item.cost)} · ${item.calls} 次"><b>${item.calls || ''}</b><i style="height:${Math.max(2, Math.round((item.cost / maxCost) * 100))}%"></i><span>${escapeHtml(item.day.slice(5))}</span></div>`).join('');
+        const models = content.querySelector('[data-cost-models]');
+        if (models) models.innerHTML = data.models.length
+          ? `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>模型</th><th>花费</th><th>tokens</th><th>调用</th></tr></thead><tbody>${data.models.map((item) => `<tr><td><b>${escapeHtml(item.model || '—')}</b><div class="muted" style="font-size:10px">${escapeHtml(item.provider || '')}</div></td><td>${money(item.cost)}</td><td>${item.prompt} → ${item.completion}</td><td>${item.calls}</td></tr>`).join('')}</tbody></table></div>`
+          : '<div class="muted" style="font-size:12px">暂无调用记录</div>';
+        const recent = content.querySelector('[data-cost-recent]');
+        if (recent) recent.innerHTML = data.recent.length
+          ? `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>时间</th><th>用户</th><th>模型</th><th>模式</th><th>tokens</th><th>花费</th></tr></thead><tbody>${data.recent.map((item) => `<tr><td class="muted" style="font-size:10px">${escapeHtml(item.createdAt)}</td><td>${escapeHtml(item.user)}</td><td>${escapeHtml(item.model || '—')}<div class="muted" style="font-size:9px">${escapeHtml(item.provider || '')}</div></td><td>${escapeHtml(item.mode)}</td><td>${item.prompt} → ${item.completion}</td><td>${money(item.cost)}${item.discount ? `<div class="muted" style="font-size:9px">${escapeHtml(item.discount)}</div>` : ''}</td></tr>`).join('')}</tbody></table></div>`
+          : '<div class="muted" style="font-size:12px">暂无调用记录</div>';
+        const pricingHost = content.querySelector('[data-cost-pricing]');
+        const renderPricing = (pricing) => {
+          const rows = Object.entries(pricing || {});
+          pricingHost.innerHTML = (rows.length ? rows : [['', { input: 0, output: 0 }]]).map(([model, rate]) => `<tr>
+            <td><input class="input" data-price-model value="${escapeHtml(model)}" placeholder="模型名（* 为默认价）"></td>
+            <td><input class="input" type="number" min="0" step="0.0001" data-price-input value="${Number(rate.input || 0)}"></td>
+            <td><input class="input" type="number" min="0" step="0.0001" data-price-output value="${Number(rate.output || 0)}"></td>
+            <td><button class="btn btn-xs btn-ghost" type="button" data-price-remove>删除</button></td>
+          </tr>`).join('');
+        };
+        const discountsHost = content.querySelector('[data-cost-discounts]');
+        const renderDiscounts = (list) => {
+          const rows = Array.isArray(list) ? list : [];
+          discountsHost.innerHTML = (rows.length ? rows : [{ label: '夜间', from: '22:00', to: '08:00', ratio: 0.5 }]).map((item) => `<tr>
+            <td><input class="input" data-disc-label value="${escapeHtml(item.label || '')}" placeholder="名称"></td>
+            <td><input class="input" data-disc-from value="${escapeHtml(item.from || '')}" placeholder="22:00" style="width:90px"></td>
+            <td><input class="input" data-disc-to value="${escapeHtml(item.to || '')}" placeholder="08:00" style="width:90px"></td>
+            <td><input class="input" type="number" min="0" max="1" step="0.05" data-disc-ratio value="${Number(item.ratio ?? 1)}" style="width:90px"></td>
+            <td><button class="btn btn-xs btn-ghost" type="button" data-disc-remove>删除</button></td>
+          </tr>`).join('');
+        };
+        renderPricing(data.settings.pricing || {});
+        renderDiscounts(data.settings.discounts || []);
+        content.querySelector('[data-cost-currency]').value = currency;
+        content.querySelector('[data-cost-maxtokens]').value = String(data.settings.maxTokens || 1200);
+        content.querySelector('[data-cost-add-model]')?.addEventListener('click', () => {
+          pricingHost.insertAdjacentHTML('beforeend', `<tr><td><input class="input" data-price-model placeholder="模型名"></td><td><input class="input" type="number" min="0" step="0.0001" data-price-input value="0"></td><td><input class="input" type="number" min="0" step="0.0001" data-price-output value="0"></td><td><button class="btn btn-xs btn-ghost" type="button" data-price-remove>删除</button></td></tr>`);
+        });
+        content.querySelector('[data-cost-add-discount]')?.addEventListener('click', () => {
+          discountsHost.insertAdjacentHTML('beforeend', `<tr><td><input class="input" data-disc-label placeholder="名称"></td><td><input class="input" data-disc-from placeholder="22:00" style="width:90px"></td><td><input class="input" data-disc-to placeholder="08:00" style="width:90px"></td><td><input class="input" type="number" min="0" max="1" step="0.05" data-disc-ratio value="1" style="width:90px"></td><td><button class="btn btn-xs btn-ghost" type="button" data-disc-remove>删除</button></td></tr>`);
+        });
+        content.addEventListener('click', (event) => {
+          if (event.target.closest('[data-price-remove]')) event.target.closest('tr')?.remove();
+          if (event.target.closest('[data-disc-remove]')) event.target.closest('tr')?.remove();
+        });
+        content.querySelector('[data-cost-save]')?.addEventListener('click', async (event) => {
+          const button = event.currentTarget;
+          const pricing = {};
+          pricingHost.querySelectorAll('tr').forEach((row) => {
+            const model = String(row.querySelector('[data-price-model]')?.value || '').trim();
+            if (!model) return;
+            pricing[model] = {
+              input: Number(row.querySelector('[data-price-input]')?.value || 0),
+              output: Number(row.querySelector('[data-price-output]')?.value || 0),
+            };
+          });
+          const discounts = [];
+          discountsHost.querySelectorAll('tr').forEach((row) => {
+            const from = String(row.querySelector('[data-disc-from]')?.value || '').trim();
+            const to = String(row.querySelector('[data-disc-to]')?.value || '').trim();
+            if (!from || !to) return;
+            discounts.push({
+              label: String(row.querySelector('[data-disc-label]')?.value || '').trim() || '折扣',
+              from,
+              to,
+              ratio: Number(row.querySelector('[data-disc-ratio]')?.value || 1),
+            });
+          });
+          button.disabled = true;
+          try {
+            await api.adminAiSaveCost({
+              pricing,
+              discounts,
+              currency: String(content.querySelector('[data-cost-currency]')?.value || '¥').trim() || '¥',
+              maxTokens: Number(content.querySelector('[data-cost-maxtokens]')?.value || 1200),
+            });
+            toast('价格与折扣已保存', 'success');
+            await loadCost();
+          } catch (error) {
+            toast(error.message || '保存失败', 'error');
+          } finally {
+            button.disabled = false;
+          }
+        });
+      } catch (error) {
+        host.innerHTML = `<div class="callout danger">${escapeHtml(error.message || '成本数据加载失败')}</div>`;
+      }
+    };
     content.addEventListener('submit', async (event) => {
       const form = event.target.closest('[data-admin-create-user]');
       if (!form) return;
@@ -595,5 +700,40 @@ function trafficCard() {
       <label class="field" style="margin:0"><span class="label">闲置天数（0 = 全部游客）</span><input class="input" type="number" min="0" max="365" value="7" data-clean-days style="width:130px"></label>
       <button class="btn btn-danger btn-sm" type="button" data-clean-guests>清理游客</button>
     </div>
+  </section>`;
+}
+
+function costCard() {
+  return `<section class="card card-pad" style="margin-bottom:12px">
+    <div class="section-head"><h3 style="margin:0;font-size:16px">AI 成本</h3><span class="muted" style="font-size:11px" data-cost-range>加载中…</span></div>
+    <div class="stat-grid" data-cost-kpis>
+      <div class="stat"><div class="stat-value">—</div><div class="stat-label">今日花费</div></div>
+      <div class="stat"><div class="stat-value">—</div><div class="stat-label">近 30 天花费</div></div>
+      <div class="stat"><div class="stat-value">—</div><div class="stat-label">今日调用</div></div>
+      <div class="stat"><div class="stat-value">—</div><div class="stat-label">30 天 tokens</div></div>
+    </div>
+    <p class="muted" style="font-size:10.5px;margin-top:6px">价格单位为“每百万 tokens”，由你自行填写，币种符号可配置；折扣按每日时间段自动套用到输入与输出费用。</p>
+  </section>
+  <section class="card card-pad" style="margin-bottom:12px">
+    <h3 style="margin:0 0 6px;font-size:16px">30 天花费</h3>
+    <div class="traffic-bars" data-cost-bars><div class="muted">加载中…</div></div>
+  </section>
+  <div class="admin-two-col">
+    <section class="card card-pad"><h3 style="margin:0 0 8px;font-size:16px">模型花费</h3><div data-cost-models></div></section>
+    <section class="card card-pad"><h3 style="margin:0 0 8px;font-size:16px">最近调用</h3><div data-cost-recent></div></section>
+  </div>
+  <section class="card card-pad" style="margin-top:12px">
+    <div class="section-head"><h3 style="margin:0;font-size:16px">模型价格</h3><button class="btn btn-sm btn-secondary" type="button" data-cost-add-model>添加模型</button></div>
+    <div class="admin-table-wrap" style="margin-top:8px"><table class="admin-table"><thead><tr><th>模型</th><th>输入 / 百万 tokens</th><th>输出 / 百万 tokens</th><th></th></tr></thead><tbody data-cost-pricing></tbody></table></div>
+    <div class="row-wrap" style="margin-top:8px">
+      <label class="field" style="margin:0"><span class="label">币种符号</span><input class="input" data-cost-currency style="width:90px" value="¥"></label>
+      <label class="field" style="margin:0"><span class="label">最大输出 tokens</span><input class="input" type="number" min="128" max="4000" data-cost-maxtokens style="width:140px" value="1200"></label>
+      <button class="btn btn-primary btn-sm" type="button" data-cost-save>保存价格与折扣</button>
+    </div>
+  </section>
+  <section class="card card-pad" style="margin-top:12px">
+    <div class="section-head"><h3 style="margin:0;font-size:16px">折扣时间段</h3><button class="btn btn-sm btn-secondary" type="button" data-cost-add-discount>添加时段</button></div>
+    <div class="admin-table-wrap" style="margin-top:8px"><table class="admin-table"><thead><tr><th>名称</th><th>开始</th><th>结束</th><th>折扣比例</th><th></th></tr></thead><tbody data-cost-discounts></tbody></table></div>
+    <p class="muted" style="font-size:10px;margin-top:6px">比例 1 = 不打折，0.5 = 五折；跨午夜时段可设 22:00–08:00。</p>
   </section>`;
 }
