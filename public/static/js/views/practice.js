@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ba';
+const __asset = __isNode ? '' : '?v=20261108bb';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -190,6 +190,7 @@ export async function practiceView({ query } = {}) {
           <h3>${icon('sparkles', 14)} AI 专项计划</h3>
           <p>根据最近答题与章节正确率，选出 3 个最该巩固的诊断，生成一局专项练习。未配置 AI 时使用本地算法。</p>
           <button class="btn btn-secondary btn-block btn-sm" type="button" data-plan style="margin-top:10px">${icon('sparkles', 14)} 生成专项计划</button>
+          <a class="btn btn-ghost btn-block btn-sm" href="#/ai" style="margin-top:6px">${icon('target', 14)} 去 AI 导师出题</a>
         </div>
       </aside>
     </div>

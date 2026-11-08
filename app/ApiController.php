@@ -375,6 +375,14 @@ final class ApiController
         Http::ok(Ai::chat((int) $user['id'], (string) ($input['message'] ?? ''), $diagnosisId, $byok));
     }
 
+    public static function aiQuiz(array $params = []): void
+    {
+        $user = self::user();
+        $input = Http::input();
+        $byok = is_array($input['byok'] ?? null) ? $input['byok'] : null;
+        Http::ok(Ai::generateQuiz((int) $user['id'], $input, $byok));
+    }
+
     public static function aiStream(array $params = []): void
     {
         $user = self::user();

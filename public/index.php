@@ -96,6 +96,7 @@ if (str_starts_with($path, '/api/')) {
         $router->get('/api/ai/status', [ApiController::class, 'aiStatus']);
         $router->post('/api/ai/chat', [ApiController::class, 'aiChat']);
         $router->post('/api/ai/stream', [ApiController::class, 'aiStream']);
+        $router->post('/api/ai/quiz', [ApiController::class, 'aiQuiz']);
         $router->post('/api/ai/explain', [ApiController::class, 'aiExplain']);
         $router->post('/api/ai/study-plan', [ApiController::class, 'aiStudyPlan']);
         $router->post('/api/ai/sim-review', [ApiController::class, 'aiSimReview']);

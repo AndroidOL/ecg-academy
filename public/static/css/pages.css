@@ -1100,3 +1100,15 @@
 .ai-wrong-chip span { font-size:10px; color:var(--muted); }
 .ai-scope-list { margin:8px 0 0 16px; padding:0; font-size:11.5px; color:var(--muted); line-height:1.8; }
 @media (max-width:900px) { .ai-tutor-layout { grid-template-columns:1fr; } }
+
+/* ---------- AI generated quiz ---------- */
+.ai-quiz-panel { margin-bottom: 12px; }
+.ai-quiz-q { padding: 10px 0; border-top: 1px dashed var(--line); }
+.ai-quiz-q:first-child { border-top: 0; }
+.ai-quiz-stem { font-size: 13px; font-weight: 600; margin: 0 0 8px; line-height: 1.6; }
+.ai-quiz-options { display: grid; gap: 6px; }
+.ai-quiz-option { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); cursor: pointer; font-size: 12px; }
+.ai-quiz-option:hover { border-color: var(--brand); }
+.ai-quiz-option input { accent-color: var(--brand); }
+.ai-quiz-explain { margin-top: 8px; padding: 9px 11px; border-radius: 10px; background: var(--surface-2); font-size: 11.5px; line-height: 1.7; color: var(--ink-2); }
+.ai-quiz-explain p { margin: 4px 0 0; color: var(--muted); }

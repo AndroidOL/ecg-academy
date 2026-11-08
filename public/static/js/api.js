@@ -152,5 +152,6 @@ export const api = {
   aiChat: (message, diagnosisId, byok) => request('/api/ai/chat', { method: 'POST', body: { message, diagnosisId, byok } }),
   aiExplain: (attemptId, question = '', byok) => request('/api/ai/explain', { method: 'POST', body: { attemptId, question, byok } }),
   aiStudyPlan: (byok) => request('/api/ai/study-plan', { method: 'POST', body: { byok } }),
+  aiQuiz: (payload) => request('/api/ai/quiz', { method: 'POST', body: payload }),
   aiSimReview: (runId, byok) => request('/api/ai/sim-review', { method: 'POST', body: { runId, byok } }),
 };

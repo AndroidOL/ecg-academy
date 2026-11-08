@@ -216,6 +216,169 @@ final class Ai
         ];
     }
 
+    public static function generateQuiz(int $userId, array $input, ?array $byok = null): array
+    {
+        $byok = self::byokConfig($byok);
+        $count = max(1, min(5, (int) ($input['count'] ?? 3)));
+        $difficulty = max(1, min(3, (int) ($input['difficulty'] ?? 2)));
+        $topic = mb_substr(trim((string) ($input['topic'] ?? '')), 0, 60, 'UTF-8');
+        if ($topic === '') $topic = '心电图判读基础';
+        $stmt = Db::pdo()->prepare('SELECT is_guest FROM users WHERE id = ? LIMIT 1');
+        $stmt->execute([$userId]);
+        $isGuest = (int) ($stmt->fetchColumn() ?: 0) === 1;
+        $useAi = !$isGuest && self::allowedForUser($userId, $byok !== null) && ($byok !== null || self::configured());
+        if ($useAi && $byok === null && !self::consume($userId)) $useAi = false;
+        if ($useAi) {
+            $system = '你是心电图教学题库引擎，只输出 JSON 数组，不要输出推理过程、Markdown 代码块或任何额外文字。题目仅限心电图与心血管电生理教学，不涉及具体患者的诊疗指令。';
+            $user = "请生成 {$count} 道心电图单选题，难度 {$difficulty}（1 基础、2 进阶、3 挑战），主题：{$topic}。\n"
+                . "每题必须 4 个选项且只有一个正确答案，干扰项要合理。\n"
+                . "输出 JSON 数组，每项字段：question（题干）、options（4 个字符串）、answerIndex（0–3）、explanation（80–200 字，必须指出来自哪个导联/间期/波形线索）、topic（主题）。\n"
+                . "只出心电图与心血管电生理相关题目，不涉及具体患者的诊疗指令。";
+            $result = self::call([
+                ['role' => 'system', 'content' => $system],
+                ['role' => 'user', 'content' => $user],
+            ], 0.3, $byok, 4000, 90);
+            if ($result !== null) {
+                $sourceText = trim((string) ($result['text'] ?? '')) !== '' ? (string) $result['text'] : (string) ($result['reasoning'] ?? '');
+                $questions = self::parseQuizJson($sourceText, $count);
+                if ($questions !== []) {
+                    $cost = self::recordUsage($userId, 'quiz', $result, $byok !== null ? 'byok' : 'ai');
+                    return [
+                        'source' => $byok !== null ? 'byok' : 'ai',
+                        'model' => $result['model'],
+                        'questions' => $questions,
+                        'cost' => $cost,
+                    ];
+                }
+                error_log('[ai] quiz json parse failed: ' . mb_substr($result['text'], 0, 200, 'UTF-8'));
+            }
+        }
+        $fallback = self::localQuiz($count, $difficulty, $topic);
+        return [
+            'source' => 'local',
+            'model' => null,
+            'questions' => $fallback,
+            'cost' => null,
+        ];
+    }
+
+    private static function parseQuizJson(string $text, int $count): array
+    {
+        $text = trim($text);
+        $text = preg_replace('/^```(?:json)?/i', '', $text);
+        $text = preg_replace('/```$/', '', trim((string) $text));
+        $start = strpos($text, '[');
+        $end = strrpos($text, ']');
+        if ($start === false || $end === false || $end <= $start) return [];
+        $raw = substr($text, $start, $end - $start + 1);
+        $data = json_decode($raw, true);
+        $items = is_array($data) ? $data : [];
+        // 截断或多余文本时，逐个提取完整的 {...} 对象补救
+        $length = strlen($raw);
+        $depth = 0; $inString = false; $escape = false; $objectStart = -1;
+        for ($i = 0; $i < $length; $i++) {
+            $char = $raw[$i];
+            if ($inString) {
+                if ($escape) $escape = false;
+                elseif ($char === '\\') $escape = true;
+                elseif ($char === '"') $inString = false;
+                continue;
+            }
+            if ($char === '"') { $inString = true; continue; }
+            if ($char === '{') { if ($depth === 0) $objectStart = $i; $depth++; }
+            elseif ($char === '}') {
+                $depth--;
+                if ($depth === 0 && $objectStart >= 0) {
+                    $candidate = json_decode(substr($raw, $objectStart, $i - $objectStart + 1), true);
+                    if (is_array($candidate) && isset($candidate['question'])) $items[] = $candidate;
+                    $objectStart = -1;
+                }
+            }
+        }
+        $out = [];
+        $seenQuestions = [];
+        foreach ($items as $item) {
+            if (count($out) >= $count) break;
+            if (!is_array($item)) continue;
+            $question = trim((string) ($item['question'] ?? ''));
+            $options = $item['options'] ?? null;
+            $answer = $item['answerIndex'] ?? null;
+            $explanation = trim((string) ($item['explanation'] ?? ''));
+            $topic = mb_substr(trim((string) ($item['topic'] ?? '')), 0, 40, 'UTF-8');
+            if ($question === '' || !is_array($options) || count($options) !== 4) continue;
+            $options = array_values(array_map(static fn ($o): string => mb_substr(trim((string) $o), 0, 120, 'UTF-8'), $options));
+            if (count(array_filter($options, static fn (string $o): bool => $o !== '')) !== 4) continue;
+            if (!is_numeric($answer) || (int) $answer < 0 || (int) $answer > 3) continue;
+            if ($explanation === '') continue;
+            $key = md5($question);
+            if (isset($seenQuestions[$key])) continue;
+            $seenQuestions[$key] = true;
+            $out[] = [
+                'question' => mb_substr($question, 0, 300, 'UTF-8'),
+                'options' => $options,
+                'answerIndex' => (int) $answer,
+                'explanation' => mb_substr($explanation, 0, 500, 'UTF-8'),
+                'topic' => $topic !== '' ? $topic : '心电图判读',
+            ];
+        }
+        return $out;
+    }
+
+    private static function localQuiz(int $count, int $difficulty, string $topic): array
+    {
+        $all = Content::all();
+        $pool = [];
+        foreach (QuestionBank::all() as $entry) {
+            if (!empty($entry['secondary'])) continue;
+            if ((int) ($entry['level'] ?? 1) !== $difficulty) continue;
+            $primary = $all[$entry['primary'] ?? ''] ?? null;
+            if (!$primary || ($primary['chapter'] ?? '') === 'theory') continue;
+            $haystack = ($primary['name'] ?? '') . ' ' . ($primary['en'] ?? '') . ' ' . implode(' ', (array) ($primary['tags'] ?? [])) . ' ' . ($primary['oneLiner'] ?? '');
+            if ($topic !== '' && mb_stripos($haystack, mb_substr($topic, 0, 20, 'UTF-8')) === false && mb_stripos($topic, (string) ($primary['name'] ?? '')) === false) {
+                // 主题不匹配时保留为候选，只有候选不足才使用
+                $pool['fallback'][] = $entry;
+                continue;
+            }
+            $pool['match'][] = $entry;
+        }
+        $entries = array_merge($pool['match'] ?? [], $pool['fallback'] ?? []);
+        if ($entries === []) $entries = QuestionBank::all();
+        shuffle($entries);
+        $questions = [];
+        $seen = [];
+        foreach ($entries as $entry) {
+            if (count($questions) >= $count) break;
+            $primary = $all[$entry['primary'] ?? ''] ?? null;
+            if (!$primary || !empty($entry['secondary'])) continue;
+            if (isset($seen[$primary['id']])) continue;
+            $seen[$primary['id']] = true;
+            $options = Quiz::buildOptions($primary, null, false);
+            if (count($options) > 4) {
+                foreach ($options as $index => $option) {
+                    if (!in_array($option['id'], [$primary['id']], true)) { array_splice($options, $index, 1); break; }
+                }
+                $options = array_values($options);
+            }
+            $correctIds = [$primary['id']];
+            $answerIndex = 0;
+            $names = [];
+            foreach ($options as $index => $option) {
+                $names[] = (string) $option['name'];
+                if (in_array($option['id'], $correctIds, true)) $answerIndex = $index;
+            }
+            $explanation = trim(($primary['specificity'] ?? '') . ' ' . implode('；', array_slice((array) ($primary['criteria'] ?? []), 0, 3)));
+            if ($explanation === '') $explanation = (string) ($primary['oneLiner'] ?? '');
+            $questions[] = [
+                'question' => (string) ($entry['question'] ?? '该心电图最可能的诊断是？'),
+                'options' => $names,
+                'answerIndex' => $answerIndex,
+                'explanation' => mb_substr($explanation, 0, 500, 'UTF-8'),
+                'topic' => (string) ($primary['name'] ?? $topic),
+            ];
+        }
+        return $questions;
+    }
+
     public static function studyPlan(int $userId, ?array $byok = null): array
     {
         $byok = self::byokConfig($byok);
@@ -277,7 +440,7 @@ final class Ai
         ];
     }
 
-    private static function call(array $messages, float $temperature, ?array $byok = null, int $maxTokens = 1200): ?array
+    private static function call(array $messages, float $temperature, ?array $byok = null, int $maxTokens = 0, ?int $timeout = null): ?array
     {
         $provider = self::provider();
         $base = rtrim((string) ($byok['base_url'] ?? $provider['base_url'] ?? Config::get('ai.base_url', '')), '/');
@@ -289,7 +452,9 @@ final class Ai
             'model' => $model,
             'messages' => $messages,
             'temperature' => $temperature,
-            'max_tokens' => max(64, min(4000, (int) Settings::get('ai.max_tokens', $maxTokens))),
+            'max_tokens' => $maxTokens > 0
+                ? max(64, min(8000, $maxTokens))
+                : max(64, min(4000, (int) Settings::get('ai.max_tokens', 1200))),
         ];
         $ch = curl_init($url);
         if ($ch === false) return null;
@@ -297,7 +462,7 @@ final class Ai
             CURLOPT_POST => true,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_CONNECTTIMEOUT => 6,
-            CURLOPT_TIMEOUT => max(5, (int) Config::get('ai.timeout', 45)),
+            CURLOPT_TIMEOUT => max(5, $timeout ?? (int) Config::get('ai.timeout', 45)),
             CURLOPT_FOLLOWLOCATION => false,
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_HTTPHEADER => [
@@ -320,7 +485,16 @@ final class Ai
         if (strlen($response) > 524288) return null;
         $data = json_decode($response, true);
         $text = $data['choices'][0]['message']['content'] ?? null;
-        if (!is_string($text) || trim($text) === '') return null;
+        $reasoning = $data['choices'][0]['message']['reasoning_content'] ?? null;
+        if (!is_string($text) || trim($text) === '') {
+            return [
+                'text' => '',
+                'reasoning' => is_string($reasoning) ? $reasoning : '',
+                'usage' => is_array($data['usage'] ?? null) ? ['prompt' => max(0, (int) ($data['usage']['prompt_tokens'] ?? 0)), 'completion' => max(0, (int) ($data['usage']['completion_tokens'] ?? 0))] : ['prompt' => 0, 'completion' => 0],
+                'model' => $model,
+                'provider' => $byok !== null ? 'BYOK' : (string) ($provider['name'] ?? '兼容接口'),
+            ];
+        }
         $text = trim($text);
         $usage = is_array($data['usage'] ?? null) ? [
             'prompt' => max(0, (int) ($data['usage']['prompt_tokens'] ?? 0)),
@@ -328,6 +502,7 @@ final class Ai
         ] : ['prompt' => 0, 'completion' => 0];
         return [
             'text' => mb_substr($text, 0, 6000, 'UTF-8'),
+            'reasoning' => '',
             'usage' => $usage,
             'model' => $model,
             'provider' => $byok !== null ? 'BYOK' : (string) ($provider['name'] ?? '兼容接口'),
