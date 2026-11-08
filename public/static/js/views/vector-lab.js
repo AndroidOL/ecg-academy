@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108v';
+const __asset = __isNode ? '' : '?v=20261108w';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const LEADS = {
@@ -54,6 +54,8 @@ function palette() {
 }
 
 function cycleDuration(state) { return 6000 / (Number(state.speed) || 1); }
+
+function limbAngleDegrees(state, t) { return state.auto ? (t / 90) % 360 : Number(state.angle) || 0; }
 
 function drawVectorCanvas(canvas, state, t) {
   const { ctx, width, height } = canvas2d(canvas);
@@ -182,8 +184,10 @@ function drawProjectionCanvas(canvas, state, t) {
   ctx.globalAlpha = 1;
   const lead = LEADS[state.lead];
   const dot = (v) => v[0] * lead.vec[0] + v[1] * lead.vec[1] + v[2] * lead.vec[2];
+  const axisDelta = ((state.axis ?? 60) - 60) * Math.PI / 180;
+  const qVec = [0.72 * Math.cos(axisDelta) - 0.32 * Math.sin(axisDelta), 0.72 * Math.sin(axisDelta) + 0.32 * Math.cos(axisDelta), 0.12];
   const ampP = dot([0.28, 0.18, 0.05]) * 0.7;
-  const ampQ = dot([0.72, 0.32, 0.12]) * 1.5;
+  const ampQ = dot(qVec) * 1.5;
   const ampT = dot([0.58, 0.3, 0.1]) * 0.9;
   const phase = state.phase ?? 0;
   const yAt = (x) => {
@@ -282,7 +286,8 @@ function drawLimbCanvas(canvas, state, t) {
   ctx.strokeStyle = c.grid; ctx.globalAlpha = 0.45;
   ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
   ctx.globalAlpha = 1;
-  const angle = (state.auto ? t / 35 : state.angle) * Math.PI / 180;
+  const angleDeg = limbAngleDegrees(state, t);
+  const angle = angleDeg * Math.PI / 180;
   Object.entries(LEADS).forEach(([id, l]) => {
     const a = l.angle * Math.PI / 180;
     const x = cx + Math.cos(a) * r;
@@ -341,7 +346,7 @@ function drawLimbCanvas(canvas, state, t) {
 }
 
 function updateLimbReadout(host, state, t) {
-  const angle = state.auto ? (t / 35) % 360 : state.angle;
+  const angle = limbAngleDegrees(state, t);
   const rad = angle * Math.PI / 180;
   const values = {
     I: Math.cos(rad), II: Math.cos(rad - Math.PI / 3), III: Math.cos(rad - 2 * Math.PI / 3),
@@ -354,6 +359,10 @@ function updateLimbReadout(host, state, t) {
     if (bar) { bar.style.width = `${Math.min(100, Math.abs(value) * 100)}%`; bar.classList.toggle('negative', value < 0); }
   });
   const deg = ((Math.round(angle) % 360) + 360) % 360;
+  const slider = host.querySelector('[data-limb-angle]');
+  if (slider) slider.value = String(deg);
+  const angleLabel = host.querySelector('[data-limb-angle-value]');
+  if (angleLabel) angleLabel.textContent = `${Math.round(angle)}°`;
   const signed = deg > 180 ? deg - 360 : deg;
   let axis = '正常电轴';
   if (signed < -30 && signed >= -90) axis = '电轴左偏';
@@ -370,7 +379,7 @@ function limbPanel() {
       <canvas data-limb-canvas data-height="340" aria-label="肢体导联六轴向量投影动画"></canvas>
       <div class="visual-controls">
         <button class="btn btn-primary btn-sm" type="button" data-limb-auto>${icon('rotate', 13)} 自动旋转</button>
-        <label class="visual-range">角度 <input type="range" min="0" max="359" value="60" data-limb-angle></label>
+        <label class="visual-range">角度 <input type="range" min="0" max="359" value="60" data-limb-angle><span data-limb-angle-value>60°</span></label>
         <select class="select" data-limb-lead>${Object.entries(LEADS).map(([id, l]) => `<option value="${id}" ${id === 'II' ? 'selected' : ''}>${l.name}</option>`).join('')}</select>
       </div>
       <div class="axis-presets"><button type="button" class="chip" data-axis-preset="60">正常 +60°</button><button type="button" class="chip" data-axis-preset="-45">左偏 −45°</button><button type="button" class="chip" data-axis-preset="120">右偏 +120°</button><button type="button" class="chip" data-axis-preset="-120">极度 −120°</button></div>
@@ -568,6 +577,7 @@ export async function vectorLabView() {
   const state = { rotate: 24, pitch: 18, playing: true, loop: 'all', lead: 'II', axis: 60, angle: 60, auto: true, speed: 1, dragMode: 'view', phase: 0 };
   el.innerHTML = `<div class="page-eyebrow">${icon('compass', 14)} VECTOR & ELECTROPHYSIOLOGY</div>
     <div class="vector-head"><div><h1 class="page-title">心脏向量实验室</h1><p class="page-sub">把“背图形”变成“看方向”：P/QRS/T 环、肢体/胸导联投影、动作电位与解剖一次串起来。</p></div><a class="btn btn-secondary btn-sm" href="#/learn/ecg-calibration-paper">回到基础课程 ${icon('arrowRight', 13)}</a></div>
+    <div class="vector-safety-note">${icon('info', 14)} <span>电轴方向与导联投影仅供教学参考，用于理解电轴变化，<b>不代表任何患者实际情况</b>，不用于诊断或治疗。</span></div>
     <div class="visual-tabs">${TABS.map(([id, label], i) => `<button class="chip ${i === 0 ? 'active' : ''}" type="button" data-visual-tab="${id}">${label}</button>`).join('')}</div>
     <div data-visual-content></div>
     <div class="visual-footnote">${icon('info', 13)} 图形为教学示意：向量方向与导联关系用于理解投影，不替代真实患者 12 导联诊断。</div>`;
@@ -652,6 +662,7 @@ export async function vectorLabView() {
       state.axis = Math.max(-180, Math.min(180, Number(value) || 0));
       if (axisSlider) axisSlider.value = String(state.axis);
       if (axisLabel) axisLabel.textContent = `${state.axis >= 0 ? '+' : ''}${Math.round(state.axis)}°`;
+      renderLoopState();
     };
     axisSlider?.addEventListener('input', (e) => setAxis(e.target.value));
     const dragMode = content.querySelector('[data-drag-mode]');
