@@ -120,6 +120,9 @@ export async function practiceView({ query } = {}) {
   try { testStatus = await api.practiceStatus(); } catch { /* offline / old API */ }
   state.practice = testStatus;
 
+  const userLevel = store.user?.isGuest
+    ? levelFromXp(Number(store.user?.xp || 0))
+    : Number(store.level?.level || store.user?.level || 1);
   const chapters = store.chapters || [];
   el.innerHTML = `
     <header class="page-head">
