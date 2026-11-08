@@ -12,11 +12,7 @@ $publicId = bin2hex(random_bytes(8));
 $stmt = $pdo->prepare('INSERT INTO users (public_id, display_name, is_guest) VALUES (?, ?, 1)');
 $stmt->execute([$publicId, 'assignment-test']);
 $userId = (int) $pdo->lastInsertId();
-$adminId = (int) $pdo->query('SELECT id FROM users WHERE is_admin = 1 LIMIT 1')->fetchColumn();
-if ($adminId <= 0) {
-    fwrite(STDERR, "No admin account for assignment creator FK\n");
-    exit(2);
-}
+$adminId = $userId; // creator FK is not used for authorization in this fixture
 $pdo->prepare('INSERT INTO assignments (code, title, class_name, level, chapter, focus, active, created_by) VALUES (?, ?, ?, ?, ?, ?, 1, ?)')
     ->execute([$code, '自动测试作业', '测试班', 1, 'tachy', '', $adminId]);
 $assignmentId = (int) $pdo->lastInsertId();
