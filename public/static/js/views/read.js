@@ -3,10 +3,18 @@ const __asset = __isNode ? '' : '?v=20261108be';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { recordAttempt } = await import(`../study-store.js${__asset}`);
+const { streamAi } = await import(`../ai-stream.js${__asset}`);
+const { renderMarkdown } = await import(`../markdown.js${__asset}`);
+const { byokPayload, hasByok } = await import(`../byok.js${__asset}`);
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, toast, setButtonLoading, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 const { levelFromXp, ADVANCED_UNLOCK, CHALLENGE_UNLOCK } = await import(`../levels.js${__asset}`);
 const { buildReading, isStepCorrect } = await import(`../read-interpret.js${__asset}`);
+
+function aiUiAvailable() {
+  if (!store.user || store.user.isGuest) return false;
+  return store.ai?.allowed !== false || (Boolean(store.ai?.byokEnabled) && hasByok());
+}
 
 const STEPS = [
   { id: 'rate', title: '1 · 频率', hint: '先看心室率：数 10 秒内 QRS 个数 × 6，或看节律条整体。' },
@@ -316,9 +324,39 @@ export async function readView() {
       <p class="feedback-text">你的选择：${escapeHtml(selectedNames || '—')}${answer ? ` · 正确答案：${escapeHtml(answer)}` : ''}</p>
       <p class="feedback-text">${escapeHtml(result.localExplanation || '')}</p>
       ${stepDone < stepIds.length ? '<p class="muted" style="font-size:11px">还有步骤未作答；下一例建议按 1→6 的顺序完整读图。</p>' : ''}
-      <div class="quiz-actions"><button class="btn btn-primary" type="button" data-read-next>${icon('arrowRight', 14)} 下一例</button><a class="btn btn-ghost" href="#/review">${icon('bookOpen', 14)} 查看错题本</a></div>
+      <div class="row-wrap" style="margin-top:4px">${(result.correctIds || []).map((id) => `<a class="btn btn-secondary btn-sm" href="#/learn/${encodeURIComponent(id)}">${icon('book', 13)} 学习「${escapeHtml(quiz.options.find((option) => option.id === id)?.name || id)}」</a>`).join('')}</div>
+      <div class="quiz-actions"><button class="btn btn-primary" type="button" data-read-next>${icon('arrowRight', 14)} 下一例</button>${aiUiAvailable() ? `<button class="btn btn-secondary" type="button" data-read-ai>${icon('sparkles', 14)} AI 解释本例</button>` : ''}<a class="btn btn-ghost" href="#/review">${icon('bookOpen', 14)} 查看错题本</a></div>
+      <div data-read-ai-panel></div>
     </div>`;
     feedbackHost.querySelector('[data-read-next]')?.addEventListener('click', () => loadQuiz(state.level));
+    feedbackHost.querySelector('[data-read-ai]')?.addEventListener('click', async (event) => {
+      const button = event.currentTarget;
+      if (button.disabled || !result.attemptId) return;
+      const panel = feedbackHost.querySelector('[data-read-ai-panel]');
+      panel.innerHTML = '<div class="explain-block ai-answer"><h4>AI 解析本例</h4><div class="ai-context" data-ai-context></div><div class="ai-stream-text ai-thinking" data-ai-stream>正在生成…</div><div class="ai-meta" data-ai-cost></div></div>';
+      const streamHost = panel.querySelector('[data-ai-stream]');
+      const contextHost = panel.querySelector('[data-ai-context]');
+      const costHost = panel.querySelector('[data-ai-cost]');
+      setButtonLoading(button, true, '生成中');
+      try {
+        await streamAi({ mode: 'explain', attemptId: result.attemptId, byok: byokPayload() }, {
+          onMeta: (meta) => { contextHost.innerHTML = (meta?.context || []).map((item) => `<span>${escapeHtml(item)}</span>`).join(''); },
+          onDelta: (chunk, text) => { streamHost.classList.remove('ai-thinking'); streamHost.innerHTML = renderMarkdown(text); },
+          onDone: (done, text) => {
+            const heading = panel.querySelector('h4');
+            if (heading && done?.fallback) heading.textContent = '本地解析';
+            streamHost.remove();
+            panel.querySelector('.explain-block').insertAdjacentHTML('beforeend', renderMarkdown(text));
+            if (done?.cost) costHost.textContent = `${done.cost.model || ''} · ${done.cost.prompt || 0}→${done.cost.completion || 0} tokens${done.cost.cost ? ` · ${done.cost.currency || ''}${done.cost.cost}` : ''}${done.cost.discount ? ` · ${done.cost.discount}` : ''}`;
+          },
+        });
+      } catch (error) {
+        streamHost.classList.remove('ai-thinking');
+        streamHost.textContent = error.message || 'AI 解析失败';
+      } finally {
+        setButtonLoading(button, false);
+      }
+    });
     feedbackHost.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 

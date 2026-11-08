@@ -254,6 +254,7 @@ try {
   await waitFor(() => document.querySelector('.read-feedback .feedback-title'), 15000);
   if (!document.querySelector('[data-read-next]')) throw new Error('next case button missing');
   if (document.querySelectorAll('.read-score').length !== 3) throw new Error('guided reading score summary missing');
+  if (!document.querySelector('.read-feedback a[href^="#/learn/"]')) throw new Error('guided reading article link missing');
   ok('guided reading renders 5 steps, step feedback and final scoring');
 
   await go('#/daily');
