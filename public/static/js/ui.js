@@ -41,6 +41,7 @@ const paths = {
   fingerprint: '<path d="M12 11a4 4 0 0 0-4 4c0 1.6-.3 3.2-1 4.6M16 15a4 4 0 0 0-4-4M12 7a8 8 0 0 1 8 8c0 1.5-.2 3-.7 4.4M4.7 16.7A14 14 0 0 0 6 12a6 6 0 0 1 6-5"/>',
   key: '<circle cx="8" cy="15" r="4"/><path d="m11 12 8-8M15 4h5v5"/>',
   users: '<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 5a3 3 0 0 1 0 6M17 14a5 5 0 0 1 4 4"/>',
+  compass: '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>',
 };
 
 export function icon(name, size = 18, extra = '') {

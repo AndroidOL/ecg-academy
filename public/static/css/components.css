@@ -1007,3 +1007,4 @@
 .charge-meter.ready span { width: 100%; background: var(--ok); }
 @keyframes charge-pulse { from { opacity: .45; } to { opacity: 1; } }
 .sync-switch button:disabled, .shock-controls select:disabled { opacity: .55; cursor: not-allowed; }
+.chip-brand { color: var(--brand); background: var(--brand-soft); border-color: color-mix(in srgb, var(--brand) 30%, transparent); }

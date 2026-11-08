@@ -494,3 +494,76 @@
   .admin-audit-row { grid-template-columns:1fr 1fr; }
   .admin-audit-row code { grid-column:1/-1; white-space:normal; }
 }
+
+/* ---------- vector / electrophysiology lab ---------- */
+.vector-page { max-width: 1180px; }
+.vector-head { display:flex; align-items:flex-end; justify-content:space-between; gap:14px; margin-bottom:16px; }
+.vector-head .page-sub { max-width:760px; }
+.visual-tabs { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+.visual-grid { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:12px; align-items:start; }
+.visual-card { border:1px solid var(--line); border-radius:16px; background:var(--surface); overflow:hidden; min-width:0; }
+.visual-card-dark { background:var(--ecg-bg); border-color:color-mix(in srgb,var(--brand) 30%,var(--line)); }
+.visual-card canvas { display:block; width:100%; height:auto; }
+.visual-controls { display:flex; flex-wrap:wrap; align-items:center; gap:7px; padding:9px 10px; background:var(--surface); border-top:1px solid var(--line); }
+.visual-range { display:flex; align-items:center; gap:5px; color:var(--muted); font-size:10px; }
+.visual-range input { width:90px; accent-color:var(--brand); }
+.visual-explain { border:1px solid var(--line); border-radius:16px; padding:15px; background:var(--surface); color:var(--ink-2); font-size:11.5px; line-height:1.7; }
+.visual-explain h3 { color:var(--ink); font-size:17px; letter-spacing:-.02em; margin-bottom:7px; }
+.visual-explain p { margin-bottom:8px; }
+.visual-legend { display:flex; flex-wrap:wrap; gap:10px; margin:10px 0; color:var(--muted); font-size:10px; }
+.visual-legend span { display:inline-flex; align-items:center; gap:5px; }
+.visual-legend i { width:8px; height:8px; border-radius:50%; display:inline-block; }
+.visual-tip { margin-top:10px; padding:9px 10px; border-radius:9px; background:var(--brand-soft); color:var(--brand-ink); font-size:10.5px; line-height:1.6; }
+.visual-footnote { margin-top:12px; color:var(--faint); font-size:10px; }
+.axis-table { display:flex; flex-direction:column; gap:5px; margin-top:8px; }
+.axis-table > div { display:grid; grid-template-columns:54px 36px minmax(0,1fr); gap:6px; align-items:baseline; padding:5px 0; border-bottom:1px solid var(--line); }
+.axis-table b { color:var(--ink); font-size:10.5px; }
+.axis-table span { color:var(--brand); font-family:var(--font-mono); font-size:10px; }
+.axis-table small { color:var(--muted); font-size:9.5px; line-height:1.45; }
+.chest-svg-wrap, .anatomy-svg-wrap { padding:10px; background:var(--bg-elev); }
+.chest-svg, .anatomy-svg { display:block; width:100%; height:auto; max-height:430px; }
+.chest-lead { cursor:pointer; }
+.chest-lead.active circle, .chest-lead:focus circle { fill:var(--brand); }
+.chest-lead.active text, .chest-lead:focus text { fill:#fff; }
+.chest-lead:focus { outline:none; }
+.chest-list { display:flex; flex-direction:column; gap:4px; margin-top:9px; }
+.chest-list button { display:flex; gap:7px; text-align:left; padding:5px 0; border:0; border-bottom:1px solid var(--line); background:none; color:var(--muted); font:inherit; font-size:10px; line-height:1.45; cursor:pointer; }
+.chest-list button b { color:var(--brand); min-width:22px; }
+.chest-list button:hover { color:var(--ink); }
+.chest-selected, .anatomy-selected { margin-bottom:9px; padding:9px; border-radius:9px; background:var(--brand-soft); color:var(--brand-ink); }
+.chest-selected span { display:block; font-size:9px; letter-spacing:.06em; text-transform:uppercase; }
+.chest-selected b { font-size:18px; }
+.chest-selected p, .anatomy-selected p { margin-top:3px; }
+.anatomy-label { cursor:pointer; }
+.anatomy-label:hover circle { fill:var(--brand); }
+.anatomy-label:hover text { fill:#fff; }
+.conduction-path { animation: conduction-dash 2s linear infinite; }
+@keyframes conduction-dash { to { stroke-dashoffset: -20; } }
+.anatomy-facts { display:flex; flex-direction:column; gap:5px; margin:9px 0; }
+.anatomy-facts > div { display:grid; grid-template-columns:64px minmax(0,1fr); gap:6px; padding:5px 0; border-bottom:1px solid var(--line); font-size:10px; }
+.anatomy-facts b { color:var(--ink); }
+.anatomy-facts span { color:var(--muted); line-height:1.5; }
+.visual-steps, .phase-list { display:flex; flex-direction:column; gap:7px; margin-top:8px; }
+.visual-steps > div, .phase-list > div { display:grid; grid-template-columns:90px minmax(0,1fr); gap:7px; padding:6px 0; border-bottom:1px solid var(--line); font-size:10px; line-height:1.55; }
+.visual-steps b, .phase-list b { color:var(--ink); }
+.visual-steps span, .phase-list span { color:var(--muted); }
+.ion-diagram { padding:15px; }
+.ion-cell { position:relative; padding:18px; border:1px solid color-mix(in srgb,var(--brand) 30%,var(--line)); border-radius:12px; background:color-mix(in srgb,var(--brand) 7%,var(--surface)); text-align:center; }
+.ion-cell b { display:block; position:relative; z-index:1; color:var(--ink); }
+.ion-cell span { position:relative; z-index:1; color:var(--muted); font-size:10px; }
+.ion-membrane { position:absolute; inset:8px; border:1px dashed color-mix(in srgb,var(--brand) 45%,transparent); border-radius:8px; }
+.ion-channel-row { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin-top:10px; }
+.ion-channel { padding:10px; border:1px solid var(--line); border-radius:10px; background:var(--bg-elev); }
+.ion-channel b { display:block; font-family:var(--font-mono); font-size:15px; color:var(--brand); }
+.ion-channel span { display:block; margin-top:2px; color:var(--ink-2); font-size:10px; }
+.ion-channel small { display:block; margin-top:5px; color:var(--muted); font-size:9px; line-height:1.5; }
+.ion-channel.na { border-top:3px solid var(--accent); }
+.ion-channel.ca { border-top:3px solid var(--gold); }
+.ion-channel.k { border-top:3px solid var(--brand); }
+@media (max-width: 1099px) { .visual-grid { grid-template-columns:1fr; } }
+@media (max-width: 719px) {
+  .vector-head { align-items:flex-start; flex-direction:column; }
+  .visual-controls { gap:5px; }
+  .visual-range input { width:76px; }
+  .ion-channel-row { grid-template-columns:1fr; }
+}

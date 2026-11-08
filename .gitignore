@@ -15,3 +15,6 @@ node_modules/
 
 # runtime encryption master key
 storage/master.key
+
+# local site basic-auth password file
+storage/nginx.htpasswd

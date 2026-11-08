@@ -1,6 +1,3 @@
-import { api } from './api.js';
-import { store, initTheme, applyTheme, toggleTheme } from './store.js';
-import { Router } from './router.js';
 import { practiceView } from './views/practice.js';
 import { simListView } from './views/sim-list.js';
 import { meView } from './views/me.js';
@@ -8,7 +5,10 @@ import { meView } from './views/me.js';
 // Cache-busted dynamic imports: keep Node tests query-free while forcing
 // browsers with immutable 7-day static caching to load the current modules.
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108g';
+const __asset = __isNode ? '' : '?v=20261108h';
+const { api } = await import(`./api.js${__asset}`);
+const { store, initTheme, applyTheme, toggleTheme } = await import(`./store.js${__asset}`);
+const { Router } = await import(`./router.js${__asset}`);
 const { NAV_ITEMS, icon, logo, initials, escapeHtml } = await import(`./ui.js${__asset}`);
 const { homeView } = await import(`./views/home.js${__asset}`);
 const { learnView } = await import(`./views/learn.js${__asset}`);
@@ -16,6 +16,7 @@ const { articleView } = await import(`./views/article.js${__asset}`);
 const { simSessionView } = await import(`./views/sim-session.js${__asset}`);
 const { labView } = await import(`./views/lab.js${__asset}`);
 const { adminView } = await import(`./views/admin.js${__asset}`);
+const { vectorLabView } = await import(`./views/vector-lab.js${__asset}`);
 
 const routes = [
   { path: '/', handler: homeView },
@@ -24,6 +25,7 @@ const routes = [
   { path: '/practice', handler: practiceView },
   { path: '/sim/:sessionId', handler: simSessionView },
   { path: '/sim', handler: simListView },
+  { path: '/vectors', handler: vectorLabView },
   { path: '/lab', handler: labView },
   { path: '/me', handler: meView },
   { path: '/admin', handler: adminView },
@@ -110,6 +112,7 @@ function navLabel(path) {
   if (path.startsWith('/lab')) return { label: '电解质实验室', active: '/lab' };
   if (path.startsWith('/me')) return { label: '我的', active: '/me' };
   if (path.startsWith('/admin')) return { label: '管理后台', active: '/admin' };
+  if (path.startsWith('/vectors')) return { label: '心脏向量实验室', active: '/vectors' };
   return { label: '心迹', active: '/' };
 }
 

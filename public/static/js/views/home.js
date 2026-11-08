@@ -1,7 +1,7 @@
 import { api } from '../api.js';
 import { store } from '../store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108g';
+const __asset = __isNode ? '' : '?v=20261108h';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, chapterColor, difficultyDots, escapeHtml, setupMiniECG, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
@@ -119,6 +119,9 @@ export async function homeView() {
     <section class="section">
       <div class="section-head"><div><div class="page-eyebrow">TOOLS</div><h2 class="section-title">四种练习方式，同一套判读逻辑</h2></div></div>
       <div class="feature-grid">
+        <a class="feature-card" href="#/vectors">
+          <div class="feature-icon">${icon('compass', 20)}</div><h3>心脏向量实验室</h3><p>P/QRS/T 环、肢体/胸导联投影、动作电位与四腔瓣膜解剖；拖动旋转，理解心电图为什么长这样。</p><span class="feature-link">进入向量实验室 ${icon('arrowRight', 13)}</span>
+        </a>
         <a class="feature-card" href="#/learn">
           <div class="feature-icon">${icon('bookOpen', 20)}</div><h3>诊断图谱</h3><p>${stats.articles || 200} 章结构化课程：从电生理、导联与向量，到肥厚、起搏、综合征、儿科和临床决策；诊断篇配可播放、可标注的心电图。</p><span class="feature-link">进入图谱 ${icon('arrowRight', 13)}</span>
         </a>
