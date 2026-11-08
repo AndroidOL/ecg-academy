@@ -496,7 +496,7 @@
 }
 
 /* ---------- vector / electrophysiology lab ---------- */
-.vector-page { max-width: 1180px; }
+.vector-page { max-width: var(--content-max); }
 .vector-head { display:flex; align-items:flex-end; justify-content:space-between; gap:14px; margin-bottom:16px; }
 .vector-head .page-sub { max-width:760px; }
 .visual-tabs { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
@@ -913,7 +913,7 @@
 }
 
 /* ---------- daily challenge ---------- */
-.daily-page { max-width: 1040px; }
+.daily-page { max-width: var(--content-max); }
 .daily-hero { display:flex; justify-content:space-between; align-items:center; gap:18px; flex-wrap:wrap; margin-top:16px; background:linear-gradient(120deg,var(--surface),var(--accent-soft)); }
 .daily-hero-main { display:flex; align-items:center; gap:16px; min-width:0; }
 .daily-flame { flex:0 0 auto; width:66px; height:66px; border-radius:20px; display:grid; place-items:center; background:var(--surface); color:var(--accent); box-shadow:var(--shadow-1); }
@@ -993,19 +993,14 @@
 @media (min-width: 1440px) {
   :root { --content-max: 1380px; }
   .learn-hero-copy { max-width: 780px; }
-  .daily-page { max-width: 1280px; }
-  .vector-page { max-width: 1360px; }
 }
 @media (min-width: 1680px) {
   :root { --content-max: 1540px; }
-  .daily-page { max-width: 1400px; }
-  .vector-page { max-width: 1500px; }
   .visual-grid { grid-template-columns: minmax(0, 1fr) 390px; }
   .article-layout { grid-template-columns: minmax(0, 1fr) 330px; }
 }
 @media (min-width: 1920px) {
   :root { --content-max: 1680px; }
-  .vector-page { max-width: 1620px; }
   .article-layout { grid-template-columns: minmax(0, 1fr) 360px; }
 }
 
@@ -1051,5 +1046,3 @@
 .ai-bubble .ai-md-list { margin:4px 0 4px 16px; }
 .ai-bubble.streaming { min-height: 2.6em; }
 .ai-ask-hint { margin-top:4px; font-size:9.5px; color:var(--faint); }
-@media (min-width: 1440px) { .quiz-shell { max-width: 1280px; } }
-@media (min-width: 1680px) { .quiz-shell { max-width: 1420px; } }

@@ -65,7 +65,7 @@ export async function meView() {
       <div class="row"><span class="profile-avatar">${escapeHtml((user.displayName || '心迹').replace(/[·\s]/g, '').slice(0, 2))}</span><div><div class="profile-name">${escapeHtml(user.displayName || '访客')}</div><div class="profile-sub">${user.isGuest ? '访客模式 · 进度保存在当前设备浏览器' : `@${escapeHtml(user.username || '')}`}</div></div></div>
       <div class="me-actions">${user.isGuest
       ? (canRegister || canLogin ? `${canRegister ? `<button class="btn btn-primary btn-sm" type="button" data-register>${icon('lock', 14)} 注册保存进度</button>` : ''}${canLogin ? `<button class="btn btn-secondary btn-sm" type="button" data-login>登录</button>` : ''}` : `<span class="badge badge-ok">${icon('check', 12)} 进度已保存在本设备</span>`)
-      : `<button class="btn btn-ghost btn-sm" type="button" data-logout>${icon('logout', 14)} 退出登录</button>`}</div>
+      : `<div class="row-wrap" style="gap:6px">${user.isAdmin ? `<a class="btn btn-primary btn-sm" href="#/admin">${icon('settings', 14)} 进入后台</a>` : ''}<button class="btn btn-ghost btn-sm" type="button" data-logout>${icon('logout', 14)} 退出登录</button></div>`}</div>
     </div>
     <div class="me-grid">
       <div class="stack-lg">
@@ -126,7 +126,7 @@ export async function meView() {
         </section>
       </aside>
     </div>
-    <footer class="page-footer">${user.isGuest ? '学习进度、主题与本地状态保存在当前设备浏览器；清除浏览器数据会同时清除这些本地记录。' : '数据保存在本项目独立 MySQL 数据库。'}</footer>`;
+    ${user.isGuest ? '<footer class="page-footer">学习进度、主题与本地状态保存在当前设备浏览器；清除浏览器数据会同时清除这些本地记录。</footer>' : ''}`;
 
   el.querySelector('[data-register]')?.addEventListener('click', () => openAuth('register'));
   el.querySelector('[data-login]')?.addEventListener('click', () => openAuth('login'));

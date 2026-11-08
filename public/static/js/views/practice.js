@@ -523,7 +523,8 @@ function renderQuestion(el) {
         if (result.correctIds.includes(id)) option.classList.add('correct');
         else if (result.selectedNames && [...state.selected].includes(id)) option.classList.add('wrong');
       });
-      feedback.innerHTML = feedbackHtml(result, multiple);
+      const isLast = (state.gameMode === 'classic' && state.index + 1 >= state.roundTotal) || state.roundOver;
+      feedback.innerHTML = feedbackHtml(result, multiple, isLast);
       if (state.roundOver) {
         const nextButton = feedback.querySelector('[data-next]');
         if (nextButton) nextButton.innerHTML = `${icon('trophy', 14)} 查看本轮结果`;
@@ -622,7 +623,7 @@ function renderQuestion(el) {
   updateSelection();
 }
 
-function feedbackHtml(result, multiple) {
+function feedbackHtml(result, multiple, isLast = false) {
   const tone = result.correct ? 'good' : 'bad';
   const title = result.correct ? '判断正确' : result.partial ? '部分正确，但诊断组合不完整' : '需要再读一遍';
   const answer = result.correctNames?.join('、') || '';
@@ -632,7 +633,7 @@ function feedbackHtml(result, multiple) {
     <p class="feedback-text">${escapeHtml(result.localExplanation || '')}</p>
     ${(result.explanation || []).map((item) => `<div class="explain-block"><h4>${escapeHtml(item.name)}</h4><p>${escapeHtml(item.specificity || item.oneLiner || '')}</p><ul>${(item.criteria || []).map((c) => `<li>${escapeHtml(c)}</li>`).join('')}</ul></div>`).join('')}
     ${aiUiAvailable() ? `<div class="ai-ask-row"><input class="input" data-ai-question maxlength="120" placeholder="简短追问（≤120 字）：为什么排除某个选项？"><button class="btn btn-secondary btn-sm" type="button" data-ai-ask>${icon('sparkles', 14)} 问 AI</button></div><div class="ai-ask-hint">追问限 120 字；复杂或跨主题问题请到文章页的「AI 导师」提问。</div>` : ''}
-    <div class="row-wrap" style="margin-top:12px">${aiUiAvailable() ? `<button class="btn btn-secondary btn-sm" type="button" data-ai-explain>${icon('sparkles', 14)} AI 解释错因</button>` : ''}<button class="btn btn-primary btn-sm" type="button" data-next>${icon('arrowRight', 14)} 下一题</button></div>
+    <div class="row-wrap" style="margin-top:12px">${aiUiAvailable() ? `<button class="btn btn-secondary btn-sm" type="button" data-ai-explain>${icon('sparkles', 14)} AI 解释错因</button>` : ''}<button class="btn btn-primary btn-sm" type="button" data-next>${icon('arrowRight', 14)} ${isLast ? '查看本轮结果' : '下一题'}</button></div>
     <div data-ai-explain-panel></div>
   </div>`;
 }
