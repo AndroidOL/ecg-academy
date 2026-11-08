@@ -651,3 +651,6 @@
 .vector-timeline span.active { color:var(--brand-ink); background:var(--brand-soft); font-weight:700; }
 .vector-timeline i { position:absolute; top:3px; bottom:3px; width:1px; background:var(--brand); transition:left .1s linear; box-shadow:0 0 0 2px color-mix(in srgb,var(--brand) 20%,transparent); }
 .vector-axis-presets { align-items:center; border-top:1px solid var(--line); }
+.vector-disclaimer { margin-top:10px; padding:9px 10px; border:1px dashed var(--line-strong); border-radius:9px; background:var(--bg-elev); color:var(--muted); font-size:9.5px; line-height:1.6; }
+.vector-disclaimer b { display:block; color:var(--ink-2); margin-bottom:3px; font-size:10px; }
+.vector-disclaimer p { margin:0; }

@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108q';
+const __asset = __isNode ? '' : '?v=20261108r';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const LEADS = {
@@ -364,6 +364,7 @@ function limbPanel() {
       <p>六个肢体导联位于额面，彼此相差固定角度。某个导联的振幅，等于心电向量在该导联轴上的投影：<b>投影 = |向量| × cos(夹角)</b>。</p>
       <div class="axis-table">${Object.entries(LEADS).map(([id, l]) => `<div><b>${l.name}</b><span>${l.angle}°</span><small>${l.note}</small></div>`).join('')}</div>
       <div class="visual-tip">${icon('target', 14)} 电轴不是“猜”的：I 与 aVF 的净极性就能快速定位。拖动角度，观察 II 与 aVR 的投影如何相反。</div>
+      <div class="vector-disclaimer"><b>教学示意，不是真实心电向量</b><p>图中的单一箭头只是为了说明“导联如何投影”的简化合成向量。真实心电向量是所有正在除极/复极的心肌细胞电偶向量在同一瞬间的空间叠加，会随激动部位、时间、胸壁阻抗、呼吸和导联位置持续变化，其方向和大小不能由一根固定箭头完全代表。本页用于建立方向与投影的直觉，不用于逐搏定量或临床诊断。</p></div>
     </aside>
   </div>`;
 }
