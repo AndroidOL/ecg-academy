@@ -30,6 +30,7 @@ const state = {
   quiz: null,
   index: 0,
   correct: 0,
+  slow: 0,
   score: 0,
   streak: 0,
   maxStreak: 0,
@@ -494,10 +495,11 @@ function renderQuestion(el) {
         state.streak = 0;
       }
       state.score += result.score;
+      if (result.slow) state.slow += 1;
       if (store.user?.isGuest) store.addLocalXp(result.xp);
       const names = Object.fromEntries((quiz.options || []).map((option) => [option.id, option.name]));
       const chapterMap = Object.fromEntries((quiz.options || []).map((option) => [option.id, option.chapter]));
-      recordAttempt({ correct: result.correct, correctIds: result.correctIds || [], selectedIds: [...state.selected], names, chapters: chapterMap });
+      recordAttempt({ correct: result.correct, slow: Boolean(result.slow), correctIds: result.correctIds || [], selectedIds: [...state.selected], names, chapters: chapterMap });
       state.answeredCount += 1;
       if (state.gameMode === 'survival' && !result.correct) {
         state.lives = Math.max(0, state.lives - 1);
@@ -625,11 +627,13 @@ function renderQuestion(el) {
 
 function feedbackHtml(result, multiple, isLast = false) {
   const tone = result.correct ? 'good' : 'bad';
-  const title = result.correct ? '判断正确' : result.partial ? '部分正确，但诊断组合不完整' : '需要再读一遍';
+  const title = result.correct
+    ? (result.slow ? '判断正确，但不熟练（用时超过 15 秒）' : '判断正确')
+    : result.partial ? '部分正确，但诊断组合不完整' : '需要再读一遍';
   const answer = result.correctNames?.join('、') || '';
   return `<div class="quiz-feedback">
     <div class="feedback-head"><span class="feedback-icon ${tone === 'bad' ? 'bad' : ''}">${icon(result.correct ? 'check' : 'x', 16)}</span><div><div class="feedback-title">${title}</div><div class="muted" style="font-size:10px">本题得分 ${result.score ?? '—'}${Number.isFinite(Number(result.baseScore)) ? `（基础 ${result.baseScore} + 时间加成 ${result.timeBonus ?? 0}）` : ''} · 用时 ${Math.round((result.timeMs || 0) / 1000)} 秒 · 经验 +${result.xp}${answer ? ` · 正确答案：${escapeHtml(answer)}` : ''}</div></div></div>
-    <p class="muted" style="font-size:10px;margin:4px 0 0">测试分 +1/-10 与用时无关；本题得分含按答题速度计算的时间加成。</p>
+    <p class="muted" style="font-size:10px;margin:4px 0 0">测试分 +1/-10 与用时无关；本题得分含按答题速度计算的时间加成${result.speed === 'wrong' ? '，答错按 5× 基础分扣分' : ''}。用时超过 15 秒的答对题记为“不熟练”。</p>
     <p class="feedback-text">${escapeHtml(result.localExplanation || '')}</p>
     ${(result.explanation || []).map((item) => `<div class="explain-block"><h4>${escapeHtml(item.name)}</h4><p>${escapeHtml(item.specificity || item.oneLiner || '')}</p><ul>${(item.criteria || []).map((c) => `<li>${escapeHtml(c)}</li>`).join('')}</ul></div>`).join('')}
     ${aiUiAvailable() ? `<div class="ai-ask-row"><input class="input" data-ai-question maxlength="120" placeholder="简短追问（≤120 字）：为什么排除某个选项？"><button class="btn btn-secondary btn-sm" type="button" data-ai-ask>${icon('sparkles', 14)} 问 AI</button></div><div class="ai-ask-hint">追问限 120 字；复杂或跨主题问题请到文章页的「AI 导师」提问。</div>` : ''}
@@ -651,7 +655,7 @@ function renderResults(el) {
       <div class="page-eyebrow" style="justify-content:center">${icon('trophy', 14)} ROUND COMPLETE</div>
       <div class="result-score">${state.score}</div>
       <div class="result-label">本局得分</div>
-      <div class="result-stats"><div><b>${state.correct}/${total}</b><span class="muted">答对</span></div><div><b>${accuracy}%</b><span class="muted">正确率</span></div><div><b>${state.maxStreak}</b><span class="muted">最高连续</span></div></div>
+      <div class="result-stats"><div><b>${state.correct}/${total}</b><span class="muted">答对</span></div><div><b>${accuracy}%</b><span class="muted">正确率</span></div><div><b>${state.slow || 0}</b><span class="muted">不熟练（>15s）</span></div><div><b>${state.maxStreak}</b><span class="muted">最高连续</span></div></div>
       <p class="muted" style="font-size:12.5px">${state.gameMode === 'speed' ? '极速 60 秒：先保证节奏，再回头复盘漏掉的关键线索。' : state.gameMode === 'survival' ? '连击生存：3 条命用完即结束；错题已经进入复习队列。' : '判读不是猜答案：把每一道错题还原成“哪一步看错了”，比刷更多题更有效。'}</p>
       <div class="row-wrap" style="justify-content:center;margin-top:18px"><button class="btn btn-primary" type="button" data-restart>${icon('rotate', 15)} 再来一局</button><a class="btn btn-secondary" href="#/review">${icon('target', 15)} 查看错题本</a><a class="btn btn-secondary" href="#/learn">${icon('bookOpen', 15)} 回到图谱</a></div>
     </div>

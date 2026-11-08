@@ -66,7 +66,7 @@ export function toggleFavorite(meta = {}) {
   return Boolean(favorites[id]);
 }
 
-export function recordAttempt({ correct, correctIds = [], selectedIds = [], names = {}, chapters = {} }) {
+export function recordAttempt({ correct, slow = false, correctIds = [], selectedIds = [], names = {}, chapters = {} }) {
   const reviews = readReviews();
   const now = Date.now();
   const correctSet = new Set(correctIds.map(String));
@@ -74,15 +74,21 @@ export function recordAttempt({ correct, correctIds = [], selectedIds = [], name
   touched.forEach((id) => {
     const entry = reviews[id] || {
       id, name: names[id] || id, chapter: chapters[id] || '',
-      wrong: 0, correct: 0, lapses: 0, ease: 2.5, interval: 0, due: now, lastSeen: now,
+      wrong: 0, correct: 0, slow: 0, lapses: 0, ease: 2.5, interval: 0, due: now, lastSeen: now,
     };
     entry.name = names[id] || entry.name;
     entry.chapter = chapters[id] || entry.chapter;
     entry.lastSeen = now;
     if (correct && correctSet.has(id)) {
       entry.correct += 1;
-      entry.interval = entry.interval > 0 ? Math.min(90, Math.max(1, Math.round(entry.interval * (entry.ease || 2.5)))) : 1;
-      entry.due = now + entry.interval * DAY;
+      if (slow) {
+        entry.slow = (entry.slow || 0) + 1;
+        entry.interval = 0;
+        entry.due = now;
+      } else {
+        entry.interval = entry.interval > 0 ? Math.min(90, Math.max(1, Math.round(entry.interval * (entry.ease || 2.5)))) : 1;
+        entry.due = now + entry.interval * DAY;
+      }
     } else {
       entry.wrong += 1;
       entry.lapses += 1;

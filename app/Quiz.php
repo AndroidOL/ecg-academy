@@ -326,7 +326,8 @@ final class Quiz
         $base = [1 => 100, 2 => 140, 3 => 180][$level] ?? 100;
         $timeMs = max(0, min(600000, $timeMs));
         $timeBonus = $isCorrect ? max(0, 40 - (int) floor($timeMs / 1000) * 2) : 0;
-        $score = $isCorrect ? $base + $timeBonus : ($partial ? (int) round($base * 0.25) : 0);
+        $slow = $isCorrect && $timeMs > 15000;
+        $score = $isCorrect ? $base + $timeBonus : ($partial ? (int) round($base * 0.25) : -5 * $base);
         $xp = $isCorrect ? 10 + $level * 5 : ($partial ? 3 : 1);
 
         $pdo->beginTransaction();
@@ -404,6 +405,8 @@ final class Quiz
             'timeMs' => $timeMs,
             'baseScore' => $base,
             'timeBonus' => $timeBonus,
+            'slow' => $slow,
+            'speed' => $isCorrect ? ($slow ? 'slow' : 'fast') : ($partial ? 'partial' : 'wrong'),
             'explanation' => $explanation,
             'localExplanation' => $localText,
             'aiAvailable' => Ai::configured(),
@@ -450,10 +453,11 @@ final class Quiz
         $base = [1 => 100, 2 => 140, 3 => 180][$level] ?? 100;
         $timeMs = max(0, min(600000, $timeMs));
         $timeBonus = $isCorrect ? max(0, 40 - (int) floor($timeMs / 1000) * 2) : 0;
-        $score = $isCorrect ? $base + $timeBonus : ($partial ? (int) round($base * 0.25) : 0);
+        $slow = $isCorrect && $timeMs > 15000;
+        $score = $isCorrect ? $base + $timeBonus : ($partial ? (int) round($base * 0.25) : -5 * $base);
         $xp = $isCorrect ? 10 + $level * 5 : ($partial ? 3 : 1);
         self::recordAssignmentAttempt($payload, $isCorrect, $score, $timeMs);
-        Learning::recordPracticeAnswer($userId, $isCorrect, (string) ($payload['chapter'] ?? ''), (string) (($payload['bankId'] ?? '') ?: ($payload['caseKey'] ?? 'practice')));
+        Learning::recordPracticeAnswer($userId, $isCorrect, (string) ($payload['chapter'] ?? ''), (string) (($payload['bankId'] ?? '') ?: ($payload['caseKey'] ?? 'practice')), $timeMs);
         $all = Content::all();
         $selectedNames = array_map(static fn (string $id): string => $all[$id]['name'] ?? $id, $selectedIds);
         $explanation = [];
@@ -473,6 +477,7 @@ final class Quiz
             'correctNames' => array_map(static fn (string $id): string => $all[$id]['name'] ?? $id, $correctIds),
             'selectedNames' => $selectedNames, 'score' => $score, 'xp' => $xp, 'timeMs' => $timeMs,
             'baseScore' => $base, 'timeBonus' => $timeBonus,
+            'slow' => $slow, 'speed' => $isCorrect ? ($slow ? 'slow' : 'fast') : ($partial ? 'partial' : 'wrong'),
             'explanation' => $explanation,
             'localExplanation' => self::localExplanation($isCorrect, $partial, $correctIds, $selectedIds, $all),
             'aiAvailable' => false,

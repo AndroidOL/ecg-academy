@@ -102,7 +102,7 @@ function resultDetailMarkup(result) {
     const correct = (detail.correctNames || []).join('、');
     const notes = (detail.notes || []).map((note) => `${note.name}：${note.oneLiner}`).join(' ');
     return `<div class="daily-review-item ${tone}">
-      <div class="daily-review-head"><span class="badge ${detail.correct ? 'badge-ok' : detail.partial ? 'badge-warn' : 'badge-danger'}">${detail.correct ? '正确' : detail.partial ? '部分正确' : '错误'}</span><span class="muted">第 ${index + 1} 题 · ${fmtClock(detail.timeMs || 0)}</span></div>
+      <div class="daily-review-head"><span class="badge ${detail.correct ? 'badge-ok' : detail.partial ? 'badge-warn' : 'badge-danger'}">${detail.correct ? '正确' : detail.partial ? '部分正确' : '错误'}</span>${detail.slow ? '<span class="badge badge-warn">不熟练 · &gt;15s</span>' : ''}<span class="muted">第 ${index + 1} 题 · ${fmtClock(detail.timeMs || 0)}</span></div>
       <p class="daily-review-q">${escapeHtml(detail.stem || detail.question || '该心电图最可能的诊断是？')}</p>
       <p class="daily-review-a">你的答案：${escapeHtml(chosen)} · 正确答案：<b>${escapeHtml(correct)}</b></p>
       ${notes ? `<p class="daily-review-note">${escapeHtml(notes)}</p>` : ''}
@@ -340,6 +340,7 @@ function resultMarkup() {
         <div><b>${result.score}</b><span>得分</span></div>
         <div><b>+${result.xp}</b><span>XP${result.isGuest ? '（本地）' : ''}</span></div>
         <div><b>${wrong}</b><span>错题</span></div>
+        <div><b>${result.slow || 0}</b><span>不熟练</span></div>
         <div><b>${fmtClock(result.timeMs || 0)}</b><span>总用时</span></div>
       </div>
       <div class="daily-result-streak">${icon('flame', 17)} 连续打卡 <b>${result.streak}</b> 天 · 最佳 <b>${result.bestStreak}</b> 天</div>

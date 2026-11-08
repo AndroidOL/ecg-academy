@@ -154,6 +154,7 @@ final class Schema
                 mode VARCHAR(16) NOT NULL,
                 round_id VARCHAR(64) NOT NULL DEFAULT '',
                 correct TINYINT(1) NOT NULL DEFAULT 0,
+                time_ms INT NULL,
                 created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 KEY idx_learning_user_chapter (user_id, chapter, id),
                 KEY idx_learning_round (user_id, round_id),
@@ -263,6 +264,7 @@ final class Schema
         self::ensureColumn($pdo, 'users', 'is_admin', 'TINYINT(1) NOT NULL DEFAULT 0 AFTER is_guest');
         self::ensureColumn($pdo, 'users', 'is_active', 'TINYINT(1) NOT NULL DEFAULT 1 AFTER is_admin');
         self::ensureColumn($pdo, 'users', 'ai_daily_limit', 'INT NULL AFTER is_active');
+        self::ensureColumn($pdo, 'learning_events', 'time_ms', 'INT NULL AFTER correct');
 
         $defaults = [
             'auth.registration_enabled' => true,

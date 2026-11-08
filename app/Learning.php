@@ -231,7 +231,7 @@ final class Learning
     private static function chapterWindow(int $userId, string $chapter): array
     {
         $stmt = Db::pdo()->prepare(
-            'SELECT correct, created_at FROM learning_events
+            'SELECT correct, time_ms, created_at FROM learning_events
              WHERE user_id = ? AND chapter = ?
              ORDER BY id DESC LIMIT ' . self::MAX_EVENT_WINDOW
         );
@@ -239,8 +239,16 @@ final class Learning
         $rows = $stmt->fetchAll();
         $sample = count($rows);
         $correct = 0;
-        foreach ($rows as $row) if ((int) $row['correct'] === 1) $correct++;
-        $accuracy = $sample > 0 ? (int) round(($correct / $sample) * 100) : 0;
+        $fastCorrect = 0;
+        $slow = 0;
+        foreach ($rows as $row) {
+            if ((int) $row['correct'] !== 1) continue;
+            $correct++;
+            $timeMs = $row['time_ms'] === null ? null : (int) $row['time_ms'];
+            if ($timeMs === null || $timeMs <= 15000) $fastCorrect++;
+            else $slow++;
+        }
+        $accuracy = $sample > 0 ? (int) round(($fastCorrect / $sample) * 100) : 0;
         $level = '样本不足';
         if ($sample > 10) {
             if ($accuracy >= 85) $level = '精通';
@@ -251,6 +259,8 @@ final class Learning
         return [
             'sample' => $sample,
             'correct' => $correct,
+            'fastCorrect' => $fastCorrect,
+            'slow' => $slow,
             'accuracy' => $accuracy,
             'level' => $level,
             'recentAt' => $rows[0]['created_at'] ?? null,
@@ -309,12 +319,12 @@ final class Learning
         return $sample >= 10 && (int) ($window['accuracy'] ?? 0) < 60;
     }
 
-    private static function recordEvent(int $userId, string $chapter, string $questionId, string $mode, string $roundId, bool $correct): void
+    private static function recordEvent(int $userId, string $chapter, string $questionId, string $mode, string $roundId, bool $correct, ?int $timeMs = null): void
     {
         Db::pdo()->prepare(
-            'INSERT INTO learning_events (user_id, chapter, question_id, mode, round_id, correct)
-             VALUES (?, ?, ?, ?, ?, ?)'
-        )->execute([$userId, $chapter, $questionId, $mode, $roundId, $correct ? 1 : 0]);
+            'INSERT INTO learning_events (user_id, chapter, question_id, mode, round_id, correct, time_ms)
+             VALUES (?, ?, ?, ?, ?, ?, ?)'
+        )->execute([$userId, $chapter, $questionId, $mode, $roundId, $correct ? 1 : 0, $timeMs]);
     }
 
     public static function practiceLockedUntil(int $userId): ?string

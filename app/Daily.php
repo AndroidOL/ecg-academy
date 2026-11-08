@@ -136,7 +136,8 @@ final class Daily
             $base = [1 => 100, 2 => 140, 3 => 180][$built['level']] ?? 100;
             $timeMs = $answer['timeMs'];
             $timeBonus = $isCorrect ? max(0, 40 - intdiv($timeMs, 1000) * 2) : 0;
-            $questionScore = $isCorrect ? $base + $timeBonus : ($partial ? (int) round($base * 0.25) : 0);
+            $slow = $isCorrect && $timeMs > 15000;
+            $questionScore = $isCorrect ? $base + $timeBonus : ($partial ? (int) round($base * 0.25) : -5 * $base);
             $questionXp = $isCorrect ? 10 + $built['level'] * 5 : ($partial ? 3 : 1);
             if ($isCorrect) $correctCount++;
             $score += $questionScore;
@@ -151,6 +152,7 @@ final class Daily
                 'stem' => $built['stem'],
                 'correct' => $isCorrect,
                 'partial' => $partial,
+                'slow' => $slow,
                 'selected' => $selected,
                 'correctIds' => $correctIds,
                 'selectedNames' => array_map(static fn (string $optId): string => $names[$optId] ?? $optId, $selected),
@@ -168,6 +170,7 @@ final class Daily
         $result = [
             'day' => $day,
             'correct' => $correctCount,
+            'slow' => count(array_filter($details, static fn (array $d): bool => !empty($d['slow']))),
             'total' => self::COUNT,
             'score' => $score,
             'xp' => $xp,
