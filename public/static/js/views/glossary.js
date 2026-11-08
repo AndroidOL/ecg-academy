@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ao';
+const __asset = __isNode ? '' : '?v=20261108ap';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const TERMS = [
@@ -74,23 +74,32 @@ export async function glossaryView() {
   el.className = 'page glossary-page';
   let query = '';
   let cat = '全部';
-  const render = () => {
+
+  el.innerHTML = `
+    <header class="page-head">
+      <div><div class="page-eyebrow">${icon('compass', 14)} BILINGUAL GLOSSARY</div><h1 class="page-title">心电图双语术语表</h1><p class="page-sub">中文—English 对照，覆盖基础波形、导联向量、节律、缺血/结构、急救与方法学。英文界面为外壳级 beta，课程正文以中文为主。</p></div>
+      <div class="row-wrap"><a class="btn btn-secondary btn-sm" href="#/guidelines">${icon('compass', 13)} 区域指南差异</a><span class="badge badge-brand">${TERMS.length} 个术语</span></div>
+    </header>
+    <div class="glossary-toolbar">
+      <input class="input" type="search" data-glossary-search placeholder="搜索中文 / English / 定义…" aria-label="搜索术语">
+      <div class="glossary-cats">${CATS.map((item) => `<button class="chip ${item === cat ? 'active' : ''}" type="button" data-glossary-cat="${item}">${item}</button>`).join('')}</div>
+    </div>
+    <div class="glossary-list"></div>
+    <footer class="page-footer">术语表用于学习与跨语言沟通；不同教材/地区对个别术语的用法可能不同。</footer>`;
+
+  const listEl = el.querySelector('.glossary-list');
+  const renderList = () => {
     const q = query.trim().toLowerCase();
     const items = TERMS.filter(([category, en, zh, def]) => (cat === '全部' || category === cat) && (!q || `${en} ${zh} ${def}`.toLowerCase().includes(q)));
-    el.innerHTML = `
-      <header class="page-head">
-        <div><div class="page-eyebrow">${icon('compass', 14)} BILINGUAL GLOSSARY</div><h1 class="page-title">心电图双语术语表</h1><p class="page-sub">中文—English 对照，覆盖基础波形、导联向量、节律、缺血/结构、急救与方法学。英文界面为外壳级 beta，课程正文以中文为主。</p></div>
-        <div class="row-wrap"><a class="btn btn-secondary btn-sm" href="#/guidelines">${icon('compass', 13)} 区域指南差异</a><span class="badge badge-brand">${TERMS.length} 个术语</span></div>
-      </header>
-      <div class="glossary-toolbar">
-        <input class="input" type="search" data-glossary-search placeholder="搜索中文 / English / 定义…" aria-label="搜索术语">
-        <div class="glossary-cats">${CATS.map((item) => `<button class="chip ${item === cat ? 'active' : ''}" type="button" data-glossary-cat="${item}">${item}</button>`).join('')}</div>
-      </div>
-      <div class="glossary-list">${items.map(([category, en, zh, def]) => `<article class="glossary-item"><div class="glossary-term"><b>${escapeHtml(zh)}</b><span>${escapeHtml(en)}</span></div><span class="badge">${escapeHtml(category)}</span><p>${escapeHtml(def)}</p></article>`).join('') || '<div class="learn-empty"><b>没有匹配术语</b><span>换个关键词或分类试试。</span></div>'}</div>
-      <footer class="page-footer">术语表用于学习与跨语言沟通；不同教材/地区对个别术语的用法可能不同。</footer>`;
-    el.querySelector('[data-glossary-search]')?.addEventListener('input', (event) => { query = event.target.value; render(); });
-    el.querySelectorAll('[data-glossary-cat]').forEach((button) => button.addEventListener('click', () => { cat = button.dataset.glossaryCat; render(); }));
+    listEl.innerHTML = items.map(([category, en, zh, def]) => `<article class="glossary-item"><div class="glossary-term"><b>${escapeHtml(zh)}</b><span>${escapeHtml(en)}</span></div><span class="badge">${escapeHtml(category)}</span><p>${escapeHtml(def)}</p></article>`).join('') || '<div class="learn-empty"><b>没有匹配术语</b><span>换个关键词或分类试试。</span></div>';
   };
-  render();
+
+  el.querySelector('[data-glossary-search]').addEventListener('input', (event) => { query = event.target.value; renderList(); });
+  el.querySelectorAll('[data-glossary-cat]').forEach((button) => button.addEventListener('click', () => {
+    cat = button.dataset.glossaryCat;
+    el.querySelectorAll('[data-glossary-cat]').forEach((item) => item.classList.toggle('active', item.dataset.glossaryCat === cat));
+    renderList();
+  }));
+  renderList();
   return { el };
 }

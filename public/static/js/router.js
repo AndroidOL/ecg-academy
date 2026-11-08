@@ -44,7 +44,13 @@ export class Router {
     const params = {};
     for (let i = 0; i < pSeg.length; i += 1) {
       if (pSeg[i].startsWith(':')) {
-        params[pSeg[i].slice(1)] = decodeURIComponent(tSeg[i]);
+        let segment = tSeg[i];
+        try {
+          segment = decodeURIComponent(segment);
+        } catch {
+          // 非法百分号序列（如 #/learn/%）保留原文，交给视图按未找到处理
+        }
+        params[pSeg[i].slice(1)] = segment;
       } else if (pSeg[i] !== tSeg[i]) {
         return null;
       }
