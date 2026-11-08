@@ -185,6 +185,15 @@ try {
   }
   ok(`learn renders ${document.querySelectorAll('.diagnosis-card').length} cards with working pagination`);
 
+  await go('#/intro');
+  await waitFor(() => document.querySelector('[data-intro-grid] .diagnosis-card'));
+  if (![...document.querySelectorAll('.nav-link')].some((a) => a.getAttribute('href') === '#/intro')) throw new Error('intro nav entry missing');
+  if (!document.querySelector('[data-intro-grid] .diagnosis-card .diagnosis-name')) throw new Error('intro cards missing titles');
+  await go('#/learn');
+  await waitFor(() => document.querySelectorAll('.diagnosis-card').length >= 5);
+  if (document.querySelector('[data-chapter="theory"]')) throw new Error('theory chapter should not appear in learn');
+  ok('intro lists theory articles and learn excludes theory');
+
   await go('#/learn/normal-sinus');
   await waitFor(() => document.querySelector('.article-title'));
   if (!document.querySelector('.article-title')?.textContent.includes('正常窦性心律')) throw new Error('article title wrong');

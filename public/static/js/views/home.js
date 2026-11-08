@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108as';
+const __asset = __isNode ? '' : '?v=20261108at';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
@@ -93,7 +93,7 @@ export async function homeView() {
       <div class="chapter-track">
         ${chapters.map((chapter, index) => {
           const pct = chapter.total ? Math.round((chapter.read / chapter.total) * 100) : 0;
-          return `<a class="chapter-card" href="#/learn?chapter=${chapter.id}" style="--chapter-color:${chapterColor(chapter.color)}">
+          return `<a class="chapter-card" href="${chapter.id === 'theory' ? '#/intro' : `#/learn?chapter=${chapter.id}`}" style="--chapter-color:${chapterColor(chapter.color)}">
             <span class="chapter-index">CH ${String(index + 1).padStart(2, '0')} · ${pct}%</span>
             <span class="chapter-name">${escapeHtml(chapter.name)}</span>
             <span class="chapter-desc">${escapeHtml(chapter.description || '')}</span>

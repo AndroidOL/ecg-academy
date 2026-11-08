@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108as';
+const __asset = __isNode ? '' : '?v=20261108at';
 const { store } = await import(`../store.js${__asset}`);
 const { icon, chapterColor, difficultyDots, escapeHtml, setupMiniECG, emptyState, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
@@ -7,14 +7,21 @@ export async function learnView({ query }) {
   const el = document.createElement('div');
   el.className = 'page';
   const data = await store.getDiagnoses(true);
-  const items = data.items || [];
-  const chapters = data.chapters?.length ? data.chapters : store.chapters;
+  const items = (data.items || []).filter((item) => item.chapter !== 'theory');
+  const chapters = (data.chapters?.length ? data.chapters : store.chapters).filter((chapter) => chapter.id !== 'theory');
   const chapterMap = new Map(chapters.map((chapter) => [chapter.id, chapter]));
   const itemMap = new Map(items.map((item) => [item.id, item]));
   let saved = {};
   try { saved = JSON.parse(sessionStorage.getItem('ecg-learn-state-v1') || '{}') || {}; } catch { saved = {}; }
   const savedLevel = Number(localStorage.getItem('ecg-learn-level') || saved.level || 1);
   const initialChapter = query?.get('chapter') || saved.chapter || 'all';
+  if (initialChapter === 'theory') {
+    try {
+      sessionStorage.setItem('ecg-learn-state-v1', JSON.stringify({ ...saved, chapter: 'all' }));
+      localStorage.setItem('ecg-learn-level', String(savedLevel));
+    } catch { /* ignore */ }
+    location.hash = '#/intro';
+  }
   const state = {
     q: String(saved.q || ''),
     chapter: chapterMap.has(initialChapter) ? initialChapter : 'all',
@@ -52,7 +59,7 @@ export async function learnView({ query }) {
       <div class="learn-hero-copy">
         <div class="page-eyebrow">${icon('bookOpen', 14)} DIAGNOSIS ATLAS</div>
         <h1 class="page-title">诊断图谱</h1>
-        <p class="page-sub" style="margin-top:8px">从解剖、离子通道与向量，到起搏、危急值、儿科与复杂心律失常。诊断篇配可逐搏测量的交互心电图；理论篇按“概念 → 判读 → 边界”组织。</p>
+        <p class="page-sub" style="margin-top:8px">从解剖、离子通道与向量，到起搏、危急值、儿科与复杂心律失常。诊断篇配可逐搏测量的交互心电图；基础理论（动作电位、传导、向量与导联）已独立为「导论」。</p>
         <div class="row-wrap" style="margin-top:14px">
           <a class="chip chip-brand" href="#/vectors">${icon('compass', 13)} 打开心脏向量实验室</a>
           <span class="chip chip-soft">${icon('check', 13)} 已读 ${read} / ${items.length}</span>

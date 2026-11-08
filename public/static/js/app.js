@@ -1,7 +1,7 @@
 // Cache-busted dynamic imports: keep Node tests query-free while forcing
 // browsers with immutable 7-day static caching to load the current modules.
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108as';
+const __asset = __isNode ? '' : '?v=20261108at';
 const { api } = await import(`./api.js${__asset}`);
 const { store, initTheme, applyTheme, toggleTheme } = await import(`./store.js${__asset}`);
 const { practiceView } = await import(`./views/practice.js${__asset}`);
@@ -23,11 +23,13 @@ const { leaderboardView } = await import(`./views/leaderboard.js${__asset}`);
 const { glossaryView } = await import(`./views/glossary.js${__asset}`);
 const { guidelinesView } = await import(`./views/guidelines.js${__asset}`);
 const { dailyView } = await import(`./views/daily.js${__asset}`);
+const { introView } = await import(`./views/intro.js${__asset}`);
 const { applyLowBandwidth } = await import(`./bandwidth.js${__asset}`);
 const { t, navKey, getLocale } = await import(`./i18n.js${__asset}`);
 
 const routes = [
   { path: '/', handler: homeView },
+  { path: '/intro', handler: introView },
   { path: '/learn', handler: learnView },
   { path: '/learn/:id', handler: articleView },
   { path: '/practice', handler: practiceView },
@@ -145,6 +147,7 @@ function shell(activePath = '/') {
 
 function navLabel(path) {
   if (path === '/') return { label: '首页', active: '/' };
+  if (path.startsWith('/intro')) return { label: '导论', active: '/intro' };
   if (path.startsWith('/learn')) return { label: '学习', active: '/learn' };
   if (path.startsWith('/practice')) return { label: '练习', active: '/practice' };
   if (path.startsWith('/daily')) return { label: '每日挑战', active: '/daily' };

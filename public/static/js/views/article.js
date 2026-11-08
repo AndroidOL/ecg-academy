@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108as';
+const __asset = __isNode ? '' : '?v=20261108at';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { isFavorite, toggleFavorite } = await import(`../study-store.js${__asset}`);
