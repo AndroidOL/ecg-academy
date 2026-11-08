@@ -1,7 +1,7 @@
 import { api } from '../api.js';
 import { store } from '../store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108j';
+const __asset = __isNode ? '' : '?v=20261108l';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 import { createAiChat } from './ai-chat.js';
 const { icon, chapterColor, difficultyDots, escapeHtml, toast, medicalDisclaimer, setupMiniECG } = await import(`../ui.js${__asset}`);
@@ -41,7 +41,7 @@ export async function articleView({ params }) {
   const isTopic = Boolean(detail.topic);
   const urgency = detail.urgency || 'core';
   const urgencyLabel = { critical: '危急优先', urgent: '急症相关', core: '核心课程', advanced: '进阶拓展' }[urgency] || '核心课程';
-  const status = detail.status;
+  const status = store.user?.isGuest ? (store.localProgress?.[detail.id] || null) : detail.status;
   let viewer = null;
   let textbookViewer = null;
   let readTimer = 0;
@@ -345,8 +345,10 @@ export async function articleView({ params }) {
       toast('已经是掌握状态，继续阅读即可', 'info');
       return;
     }
+    window.clearTimeout(readTimer);
     try {
-      await api.progress(detail.id, 'mastered');
+      if (store.user?.isGuest) store.setLocalProgress(detail.id, 'mastered');
+      else await api.progress(detail.id, 'mastered');
       mastered = true;
       toast('已标记为掌握', 'info');
       masterButton.className = 'btn btn-sm btn-soft';
@@ -362,9 +364,12 @@ export async function articleView({ params }) {
   if (!status) {
     readTimer = window.setTimeout(async () => {
       try {
-        await api.progress(detail.id, 'read');
-        store.progress.read = (store.progress.read || 0) + 1;
-        store.setProgress(detail.id, 'read');
+        if (store.user?.isGuest) store.setLocalProgress(detail.id, 'read');
+        else {
+          await api.progress(detail.id, 'read');
+          store.progress.read = (store.progress.read || 0) + 1;
+          store.setProgress(detail.id, 'read');
+        }
       } catch (error) {
         // silent: progress is a convenience, not a blocker
       }

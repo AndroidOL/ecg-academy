@@ -10,20 +10,37 @@ export async function meView() {
   const stats = await api.stats('week');
   document.title = '我的 · 心迹 ECG Lab';
   const user = store.user || { displayName: '访客', isGuest: true, xp: 0 };
-  const read = stats.progress?.read || 0;
-  const total = stats.progress?.total || 40;
+  const canRegister = store.features?.registrationEnabled !== false;
+  const canLogin = store.features?.userLoginEnabled !== false;
+  if (user.isGuest) await store.getDiagnoses();
+  const localStatus = user.isGuest ? store.localProgress || {} : {};
+  const allItems = store.diagnosesCache?.items || [];
+  const localRead = Object.keys(localStatus).length;
+  const localMastered = Object.values(localStatus).filter((x) => x === 'mastered').length;
+  const read = user.isGuest ? localRead : (stats.progress?.read || 0);
+  const total = user.isGuest ? (store.content?.articles || stats.progress?.total || 40) : (stats.progress?.total || 40);
   const percent = total ? Math.round((read / total) * 100) : 0;
+  const chapterStats = user.isGuest
+    ? (store.chapters || []).map((chapter) => {
+      const items = allItems.filter((item) => item.chapter === chapter.id);
+      const chapterRead = items.filter((item) => Boolean(localStatus[item.id])).length;
+      const chapterMastered = items.filter((item) => localStatus[item.id] === 'mastered').length;
+      return { ...chapter, read: chapterRead, mastered: chapterMastered, total: items.length, percent: items.length ? Math.round((chapterRead / items.length) * 100) : 0 };
+    })
+    : (stats.chapters || []);
   const circumference = 2 * Math.PI * 48;
   const dash = (percent / 100) * circumference;
 
   el.innerHTML = `
     <header class="page-head">
-      <div><div class="page-eyebrow">${icon('user', 14)} MY LAB</div><h1 class="page-title">我的学习</h1><p class="page-sub">进度、错题与急救记录都保存在当前账号；游客账号也可以先学习，再注册保存。</p></div>
+      <div><div class="page-eyebrow">${icon('user', 14)} MY LAB</div><h1 class="page-title">我的学习</h1><p class="page-sub">${user.isGuest ? '当前为游客模式：学习进度保存在本设备浏览器；本站暂不开放注册与普通用户登录。' : '进度、答题与急救记录保存在当前账号。'}</p></div>
       <span class="badge badge-brand">${user.isGuest ? '访客模式' : '已登录'} · ${user.xp || 0} XP</span>
     </header>
     <div class="me-header" style="margin-bottom:14px">
-      <div class="row"><span class="profile-avatar">${escapeHtml((user.displayName || '心迹').replace(/[·\s]/g, '').slice(0, 2))}</span><div><div class="profile-name">${escapeHtml(user.displayName || '访客')}</div><div class="profile-sub">${user.isGuest ? '进度仅保存在当前设备 · 注册可跨设备' : `@${escapeHtml(user.username || '')}`}</div></div></div>
-      <div class="me-actions">${user.isGuest ? `<button class="btn btn-primary btn-sm" type="button" data-register>${icon('lock', 14)} 注册保存进度</button><button class="btn btn-secondary btn-sm" type="button" data-login>登录</button>` : `<button class="btn btn-ghost btn-sm" type="button" data-logout>${icon('logout', 14)} 退出登录</button>`}</div>
+      <div class="row"><span class="profile-avatar">${escapeHtml((user.displayName || '心迹').replace(/[·\s]/g, '').slice(0, 2))}</span><div><div class="profile-name">${escapeHtml(user.displayName || '访客')}</div><div class="profile-sub">${user.isGuest ? '访客模式 · 进度保存在当前设备浏览器' : `@${escapeHtml(user.username || '')}`}</div></div></div>
+      <div class="me-actions">${user.isGuest
+      ? (canRegister || canLogin ? `${canRegister ? `<button class="btn btn-primary btn-sm" type="button" data-register>${icon('lock', 14)} 注册保存进度</button>` : ''}${canLogin ? `<button class="btn btn-secondary btn-sm" type="button" data-login>登录</button>` : ''}` : `<span class="badge badge-ok">${icon('check', 12)} 进度已保存在本设备</span>`)
+      : `<button class="btn btn-ghost btn-sm" type="button" data-logout>${icon('logout', 14)} 退出登录</button>`}</div>
     </div>
     <div class="me-grid">
       <div class="stack-lg">
@@ -32,7 +49,7 @@ export async function meView() {
           <div class="me-chart">
             <div class="ring-wrap"><svg class="progress-ring" viewBox="0 0 118 118" aria-label="阅读进度 ${percent}%"><circle class="track" cx="59" cy="59" r="48"></circle><circle class="value" cx="59" cy="59" r="48" stroke-dasharray="${dash} ${circumference}" stroke-dashoffset="0"></circle></svg><div class="ring-label"><b>${percent}%</b><span>已读</span></div></div>
             <div class="chapter-progress-list">
-              ${(stats.chapters || []).map((chapter) => `<div class="chapter-progress-row"><span class="chapter-progress-name">${escapeHtml(chapter.name)}</span><span class="chapter-progress-meta">${chapter.read}/${chapter.total}</span><div class="progress"><div class="progress-bar" style="width:${chapter.percent}%"></div></div></div>`).join('')}
+              ${chapterStats.map((chapter) => `<div class="chapter-progress-row"><span class="chapter-progress-name">${escapeHtml(chapter.name)}</span><span class="chapter-progress-meta">${chapter.read}/${chapter.total}</span><div class="progress"><div class="progress-bar" style="width:${chapter.percent}%"></div></div></div>`).join('')}
             </div>
           </div>
         </section>
@@ -72,7 +89,7 @@ export async function meView() {
         </section>
       </aside>
     </div>
-    <footer class="page-footer">数据保存在本项目独立 MySQL 数据库；游客账号仅用于持有进度，不要求邮箱。清除浏览器 Cookie 会创建新的访客账号。</footer>`;
+    <footer class="page-footer">${user.isGuest ? '学习进度、主题与本地状态保存在当前设备浏览器；清除浏览器数据会同时清除这些本地记录。' : '数据保存在本项目独立 MySQL 数据库。'}</footer>`;
 
   el.querySelector('[data-register]')?.addEventListener('click', () => openAuth('register'));
   el.querySelector('[data-login]')?.addEventListener('click', () => openAuth('login'));

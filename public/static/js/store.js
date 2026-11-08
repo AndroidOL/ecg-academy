@@ -1,13 +1,17 @@
 import { api, setCsrf } from './api.js';
 
-const listeners = new Set();
+const listeners = (typeof window !== 'undefined' && window.__ECG_STORE_LISTENERS__) || new Set();
+if (typeof window !== 'undefined') window.__ECG_STORE_LISTENERS__ = listeners;
 
-export const store = {
+const baseStore = {
   user: null,
   app: { name: '心迹 ECG Lab', version: '1.1.0', assetVersion: '1' },
   content: { diagnoses: 0, chapters: 0, quizEligible: 0 },
   ai: { configured: false, mode: 'local', used: 0, dailyLimit: 30, remaining: 30 },
   progress: { read: 0, mastered: 0, total: 0 },
+  features: { registrationEnabled: true, userLoginEnabled: true },
+  site: { githubUrl: '', license: '', copyright: '', icp: '' },
+  localProgress: {},
   chapters: [],
   quiz: { attempts: 0, correct: 0, accuracy: 0, avgScore: 0 },
   sim: { runs: 0, best: 0 },
@@ -25,6 +29,9 @@ export const store = {
     this.ai = data.ai || this.ai;
     this.progress = data.progress || this.progress;
     this.chapters = data.chapters || this.chapters;
+    this.features = data.features || this.features;
+    this.site = data.site || this.site;
+    if (data.user?.isGuest) this.syncLocalProgress(data.content?.articles || this.progress.total || 0);
     this.quiz = data.quiz || this.quiz;
     this.sim = data.sim || this.sim;
     this.leaderboard = data.leaderboard || this.leaderboard;
@@ -39,6 +46,38 @@ export const store = {
   },
 
   setProgress(diagnosisId, status) {
+    if (this.user?.isGuest) {
+      this.setLocalProgress(diagnosisId, status);
+      return;
+    }
+    this.emit('progress', { diagnosisId, status });
+  },
+
+  loadLocalProgress() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem('ecg-local-progress') || '{}');
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+      return {};
+    }
+  },
+
+  syncLocalProgress(total = 0) {
+    this.localProgress = this.loadLocalProgress();
+    const read = Object.keys(this.localProgress).length;
+    const mastered = Object.values(this.localProgress).filter((x) => x === 'mastered').length;
+    this.progress = { read, mastered, total: total || this.progress.total || 0 };
+    return this.progress;
+  },
+
+  setLocalProgress(diagnosisId, status) {
+    this.localProgress = { ...this.localProgress, [diagnosisId]: status };
+    try { localStorage.setItem('ecg-local-progress', JSON.stringify(this.localProgress)); } catch { /* storage unavailable */ }
+    if (this.diagnosesCache?.items) {
+      const item = this.diagnosesCache.items.find((x) => x.id === diagnosisId);
+      if (item) item.status = status;
+    }
+    this.syncLocalProgress(this.content?.articles || this.progress.total || 0);
     this.emit('progress', { diagnosisId, status });
   },
 
@@ -56,6 +95,11 @@ export const store = {
   async getDiagnoses(force = false) {
     if (this.diagnosesCache && !force) return this.diagnosesCache;
     const data = await api.diagnoses();
+    if (this.user?.isGuest) {
+      const local = this.loadLocalProgress();
+      data.items = (data.items || []).map((item) => ({ ...item, status: local[item.id] || null }));
+      this.syncLocalProgress(this.content?.articles || data.items.length);
+    }
     this.diagnosesCache = data;
     if (this.chapters.length === 0) this.chapters = data.chapters || [];
     return data;
@@ -84,6 +128,10 @@ export const store = {
     });
   },
 };
+
+const existingStore = typeof window !== 'undefined' ? window.__ECG_STORE__ : null;
+export const store = existingStore && typeof existingStore === 'object' ? existingStore : baseStore;
+if (typeof window !== 'undefined') window.__ECG_STORE__ = store;
 
 export function getThemeMode() {
   return localStorage.getItem('ecg-theme') || document.documentElement.dataset.themeMode || 'auto';

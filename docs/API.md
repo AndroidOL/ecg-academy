@@ -20,7 +20,7 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/bootstrap` | 当前用户、CSRF、内容统计、1200 题库统计、进度、AI 状态、本周排行榜、场景数 |
+| GET | `/api/bootstrap` | 当前用户、CSRF、内容统计、1200 题库统计、进度、AI 状态、本周排行榜、场景数、`features`（注册/登录开关）、`site`（GitHub/许可证/版权/ICP） |
 | GET | `/api/admin/auth-config` | 管理后台登录方式与 Passkey 是否存在（公开只读） |
 | POST | `/api/admin/login` | 管理员密码登录（受 `admin.password_login_enabled` 控制） |
 | GET | `/api/admin/passkey/login/options` | 生成 WebAuthn 登录 challenge |

@@ -8,6 +8,16 @@ export function openAuth(mode = 'register') {
     return;
   }
   const isRegister = mode === 'register';
+  const enabled = isRegister ? store.features?.registrationEnabled !== false : store.features?.userLoginEnabled !== false;
+  if (!enabled) {
+    const modal = openModal({
+      title: '暂不开放账号功能',
+      sub: '当前站点为开放学习模式',
+      content: `<div class="auth-note">当前暂不开放${isRegister ? '注册' : '普通用户登录'}。你仍可使用全部学习、练习、实验室和急救内容；未登录学习进度保存在当前设备浏览器中，无需账号。</div><button class="btn btn-primary btn-block" type="button" data-close-notice>继续学习</button>`,
+    });
+    modal.el.querySelector('[data-close-notice]')?.addEventListener('click', modal.close);
+    return;
+  }
   const content = `
     <div class="form-grid">
       <div class="auth-note">${isRegister ? '当前为访客账号。注册后，已读进度与答题记录会保留，并可用于跨设备登录。' : '登录后会合并当前访客设备的已读进度。'}</div>

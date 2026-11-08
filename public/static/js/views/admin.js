@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108j';
+const __asset = __isNode ? '' : '?v=20261108l';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, escapeHtml, toast, confirmDialog } = await import(`../ui.js${__asset}`);
@@ -96,6 +96,7 @@ function settingsCard(session) {
   const ad = session.settings.admin;
   const ai = session.settings.ai;
   const providers = session.settings.providers;
+  const site = session.settings.site || {};
   return `<div class="card card-pad">
     <h2 class="section-title" style="font-size:17px">站点开关与 AI 默认值</h2>
     <form data-settings-form class="admin-settings-grid">
@@ -107,6 +108,10 @@ function settingsCard(session) {
       <label class="field"><span>普通用户每日 AI 额度</span><input class="input" type="number" min="0" max="10000" name="ai.daily_limit" value="${ai.daily_limit}"></label>
       <label class="field"><span>默认供应商</span><select class="select" name="ai.default_provider"><option value="">自动选择首个启用项</option>${providers.map((p) => `<option value="${escapeHtml(p.id)}" ${p.id === ai.default_provider ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}</select></label>
       <label class="field" style="grid-column:1/-1"><span>补充系统提示词（可选，最多 1000 字）</span><textarea class="input" name="ai.system_prompt_append" rows="3" maxlength="1000">${escapeHtml(ai.system_prompt_append)}</textarea></label>
+      <label class="field"><span>GitHub 链接</span><input class="input" name="site.github_url" maxlength="180" value="${escapeHtml(site.github_url || '')}" placeholder="https://github.com/AndroidOL/ecg-academy"></label>
+      <label class="field"><span>许可证说明</span><input class="input" name="site.license" maxlength="180" value="${escapeHtml(site.license || '')}" placeholder="MIT（代码）· CC BY-SA 4.0（内容）"></label>
+      <label class="field"><span>版权信息</span><input class="input" name="site.copyright" maxlength="180" value="${escapeHtml(site.copyright || '')}" placeholder="© 2026 Tianhao Wu 等"></label>
+      <label class="field"><span>ICP 备案号</span><input class="input" name="site.icp" maxlength="180" value="${escapeHtml(site.icp || '')}" placeholder="例如：京ICP备xxxxxxxx号"></label>
       <div style="grid-column:1/-1"><button class="btn btn-primary" type="submit">保存设置</button><span class="muted" style="font-size:10px;margin-left:8px">关闭两种管理员登录方式会被拒绝。</span></div>
     </form>
   </div>`;
@@ -114,6 +119,7 @@ function settingsCard(session) {
 
 function aiCard(session) {
   const providers = session.settings.providers;
+  const site = session.settings.site || {};
   return `<div class="card card-pad">
     <div class="section-head"><h2 class="section-title" style="font-size:17px">AI 供应商</h2><span class="badge">${providers.length} 个</span></div>
     <p class="muted" style="font-size:11px;line-height:1.7">支持 OpenAI、DeepSeek、通义千问兼容端点、OpenRouter、自建网关等任何 OpenAI-compatible <code>/chat/completions</code> 服务。密钥加密存储，不返回前端。</p>
@@ -311,6 +317,9 @@ export async function adminView() {
         payload['ai.daily_limit'] = Number(form.querySelector('[name="ai.daily_limit"]').value) || 0;
         payload['ai.default_provider'] = form.querySelector('[name="ai.default_provider"]').value;
         payload['ai.system_prompt_append'] = form.querySelector('[name="ai.system_prompt_append"]').value;
+        ['site.github_url','site.license','site.copyright','site.icp'].forEach((key) => {
+          payload[key] = form.querySelector(`[name="${key}"]`)?.value || '';
+        });
         try {
           await api.adminSaveSettings(payload);
           toast('设置已保存');

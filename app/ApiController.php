@@ -32,6 +32,16 @@ final class ApiController
             'leaderboard' => Stats::leaderboard('week'),
             'scenarioCount' => count(SimEngine::scenarios()),
             'bank' => QuestionBank::stats(),
+            'features' => [
+                'registrationEnabled' => Settings::bool('auth.registration_enabled', true),
+                'userLoginEnabled' => Settings::bool('auth.user_login_enabled', true),
+            ],
+            'site' => [
+                'githubUrl' => (string) Settings::get('site.github_url', ''),
+                'license' => (string) Settings::get('site.license', ''),
+                'copyright' => (string) Settings::get('site.copyright', ''),
+                'icp' => (string) Settings::get('site.icp', ''),
+            ],
         ]);
     }
 

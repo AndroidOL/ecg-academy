@@ -120,6 +120,12 @@ final class AdminAuth
                 'default_provider' => (string) $settings['ai.default_provider'],
                 'system_prompt_append' => (string) $settings['ai.system_prompt_append'],
             ],
+            'site' => [
+                'github_url' => (string) $settings['site.github_url'],
+                'license' => (string) $settings['site.license'],
+                'copyright' => (string) $settings['site.copyright'],
+                'icp' => (string) $settings['site.icp'],
+            ],
             'providers' => $providers,
         ];
     }
@@ -131,6 +137,7 @@ final class AdminAuth
             'auth.registration_enabled', 'auth.user_login_enabled',
             'admin.password_login_enabled', 'admin.passkey_login_enabled',
             'ai.enabled', 'ai.daily_limit', 'ai.default_provider', 'ai.system_prompt_append',
+            'site.github_url', 'site.license', 'site.copyright', 'site.icp',
         ];
         $updates = [];
         foreach ($allowed as $key) {
@@ -141,8 +148,8 @@ final class AdminAuth
                 if ($value === null) throw new ApiError(422, 'invalid_setting', $key . ' 需为布尔值');
             } elseif ($key === 'ai.daily_limit') {
                 $value = max(0, min(10000, (int) $value));
-            } elseif ($key === 'ai.system_prompt_append') {
-                $value = mb_substr(trim((string) $value), 0, 1000, 'UTF-8');
+            } elseif (in_array($key, ['ai.system_prompt_append','site.github_url','site.license','site.copyright','site.icp'], true)) {
+                $value = mb_substr(trim((string) $value), 0, $key === 'ai.system_prompt_append' ? 1000 : 180, 'UTF-8');
             } else {
                 $value = mb_substr(trim((string) $value), 0, 120, 'UTF-8');
             }

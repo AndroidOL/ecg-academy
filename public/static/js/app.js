@@ -1,13 +1,12 @@
-import { practiceView } from './views/practice.js';
-import { simListView } from './views/sim-list.js';
-import { meView } from './views/me.js';
-
 // Cache-busted dynamic imports: keep Node tests query-free while forcing
 // browsers with immutable 7-day static caching to load the current modules.
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108j';
+const __asset = __isNode ? '' : '?v=20261108l';
 const { api } = await import(`./api.js${__asset}`);
 const { store, initTheme, applyTheme, toggleTheme } = await import(`./store.js${__asset}`);
+const { practiceView } = await import(`./views/practice.js${__asset}`);
+const { simListView } = await import(`./views/sim-list.js${__asset}`);
+const { meView } = await import(`./views/me.js${__asset}`);
 const { Router } = await import(`./router.js${__asset}`);
 const { NAV_ITEMS, icon, logo, initials, escapeHtml } = await import(`./ui.js${__asset}`);
 const { homeView } = await import(`./views/home.js${__asset}`);
@@ -39,7 +38,7 @@ function sidebarNav(activePath) {
     return `<a class="nav-link ${active ? 'active' : ''}" href="#${item.path}" data-nav="${item.path}">
       ${icon(item.icon, 19)}<span>${item.label}</span>${item.path === '/sim' ? '<span class="nav-badge">ACLS</span>' : ''}
     </a>`;
-  }).join('') + (store.user?.isAdmin ? `<a class="nav-link ${activePath.startsWith('/admin') ? 'active' : ''}" href="#/admin">${icon('shield', 19)}<span>后台</span></a>` : '');
+  }).join('');
 }
 
 function topbarLinks(activePath) {
@@ -99,6 +98,14 @@ function shell(activePath = '/') {
         </div>
       </header>
       <main id="main"><div id="view-root"></div></main>
+      <footer class="site-footer">
+        <div><b>心迹 ECG Lab</b><span>${escapeHtml(store.site?.copyright || '© 2026 Tianhao Wu 等')}</span></div>
+        <div class="site-footer-links">
+          ${store.site?.githubUrl ? `<a href="${escapeHtml(store.site.githubUrl)}" target="_blank" rel="noopener noreferrer">${icon('github', 13)} GitHub</a>` : ''}
+          ${store.site?.license ? (store.site?.githubUrl ? `<a href="${escapeHtml(store.site.githubUrl.replace(/\/$/, ''))}/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">${escapeHtml(store.site.license)}</a>` : `<span>${escapeHtml(store.site.license)}</span>`) : ''}
+          ${store.site?.icp ? `<a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">${escapeHtml(store.site.icp)}</a>` : ''}
+        </div>
+      </footer>
       <nav class="bottom-nav" aria-label="底部导航">${bottomNav(activePath)}</nav>
     </div>
   </div>`;

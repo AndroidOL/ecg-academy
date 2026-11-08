@@ -609,3 +609,12 @@
 .visual-sync-head { display:flex; justify-content:space-between; gap:8px; padding:6px 10px 0; color:var(--muted); font-family:var(--font-mono); font-size:8.5px; }
 .visual-sync-head span:first-child { color:var(--brand); font-weight:700; }
 .visual-sync canvas { display:block; width:100%; height:auto; }
+
+/* global open-source / ICP footer */
+.site-footer { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px 14px; margin:24px 0 8px; padding:12px 2px 0; border-top:1px solid var(--line); color:var(--faint); font-size:10px; line-height:1.6; }
+.site-footer > div { display:flex; flex-wrap:wrap; align-items:center; gap:7px; }
+.site-footer b { color:var(--muted); font-size:10.5px; }
+.site-footer-links { gap:9px; }
+.site-footer a { display:inline-flex; align-items:center; gap:4px; color:var(--muted); }
+.site-footer a:hover { color:var(--brand); }
+@media (max-width:719px) { .site-footer { flex-direction:column; padding-bottom:6px; } }

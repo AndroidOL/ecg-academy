@@ -8,14 +8,15 @@ export class ApiError extends Error {
   }
 }
 
-let csrfToken = '';
+const tokenState = (typeof window !== 'undefined' && window.__ECG_API_TOKEN__) || { value: '' };
+if (typeof window !== 'undefined') window.__ECG_API_TOKEN__ = tokenState;
 
 export function setCsrf(token) {
-  csrfToken = token || '';
+  tokenState.value = token || '';
 }
 
 export function getCsrf() {
-  return csrfToken;
+  return tokenState.value;
 }
 
 async function parseResponse(response) {
@@ -41,7 +42,7 @@ async function request(path, { method = 'GET', body, retry = true } = {}) {
   const init = { method, credentials: 'same-origin', headers };
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json';
-    if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+    if (tokenState.value) headers['X-CSRF-Token'] = tokenState.value;
     init.body = JSON.stringify(body);
   }
   let response;

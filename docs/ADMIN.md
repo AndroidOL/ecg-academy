@@ -38,6 +38,7 @@ ECG_ADMIN_PASSWORD='换成至少12位的强密码' php scripts/create_admin.php 
 | 站点开关 | 允许注册、允许普通用户登录、管理员密码登录、管理员 Passkey 登录 |
 | AI | 总开关、普通用户每日额度、默认供应商、补充系统提示词 |
 | AI 供应商 | OpenAI / DeepSeek / OpenRouter / 通义千问兼容模式 / 硅基流动预设，或任意 OpenAI-compatible Base URL；可保存多个模型 |
+| 站点信息 | GitHub 链接、许可证说明、版权、ICP 备案号 |
 | 用户 | 搜索、启用/停用、设为/移除管理员、每日 AI 额度覆盖、重置密码 |
 | 安全 | 注册/删除管理员 Passkey；查看审计日志 |
 
