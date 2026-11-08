@@ -254,6 +254,25 @@ final class Schema
                 CONSTRAINT fk_attempt_assignment FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
+            "CREATE TABLE IF NOT EXISTS course_packs (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                pack_id VARCHAR(64) NOT NULL,
+                version VARCHAR(32) NOT NULL,
+                name VARCHAR(120) NOT NULL,
+                license VARCHAR(80) NOT NULL,
+                review_status VARCHAR(24) NOT NULL DEFAULT 'editorial',
+                status ENUM('draft','published','archived') NOT NULL DEFAULT 'draft',
+                payload JSON NOT NULL,
+                sha256 CHAR(64) NOT NULL,
+                chapter_count INT NOT NULL DEFAULT 0,
+                article_count INT NOT NULL DEFAULT 0,
+                imported_by BIGINT UNSIGNED NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                UNIQUE KEY uk_pack_version (pack_id, version),
+                KEY idx_pack_status (status)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
             "CREATE TABLE IF NOT EXISTS admin_audit (
                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
                 user_id BIGINT UNSIGNED NULL,

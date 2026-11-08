@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ax';
+const __asset = __isNode ? '' : '?v=20261108ay';
 const { store } = await import(`../store.js${__asset}`);
 const { icon, chapterColor, difficultyDots, escapeHtml, setupMiniECG, emptyState, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
@@ -62,6 +62,7 @@ export async function learnView({ query }) {
         <p class="page-sub" style="margin-top:8px">从解剖、离子通道与向量，到起搏、危急值、儿科与复杂心律失常。诊断篇配可逐搏测量的交互心电图；基础理论（动作电位、传导、向量与导联）已独立为「导论」。</p>
         <div class="row-wrap" style="margin-top:14px">
           <a class="chip chip-brand" href="#/vectors">${icon('compass', 13)} 打开心脏向量实验室</a>
+          <a class="chip" href="#/packs">${icon('book', 13)} 课程包</a>
           <span class="chip chip-soft">${icon('check', 13)} 已读 ${read} / ${items.length}</span>
           <span class="chip">${icon('target', 13)} 已掌握 ${mastered}</span>
           ${continueItem ? `<a class="chip" href="#/learn/${continueItem.id}">继续：${escapeHtml(continueItem.name)} ${icon('arrowRight', 12)}</a>` : ''}

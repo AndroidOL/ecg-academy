@@ -39,6 +39,11 @@ if (str_starts_with($path, '/api/')) {
         $router->post('/api/admin/ai/provider/delete', [AdminController::class, 'aiProviderDelete']);
         $router->post('/api/admin/ai/test', [AdminController::class, 'aiTest']);
         $router->get('/api/admin/ai/cost', [ApiController::class, 'adminAiCost']);
+        $router->get('/api/admin/packs', [ApiController::class, 'adminPacks']);
+        $router->post('/api/admin/coursepack/validate', [ApiController::class, 'adminPackValidate']);
+        $router->post('/api/admin/coursepack/import', [ApiController::class, 'adminPackImport']);
+        $router->post('/api/admin/coursepack/status', [ApiController::class, 'adminPackStatus']);
+        $router->get('/api/admin/coursepack', [ApiController::class, 'adminPackPreview']);
         $router->post('/api/admin/ai/cost', [ApiController::class, 'adminAiSaveCost']);
         $router->get('/api/admin/audit', [AdminController::class, 'audit']);
         $router->get('/api/admin/assignments', [AdminController::class, 'assignments']);
@@ -61,6 +66,8 @@ if (str_starts_with($path, '/api/')) {
         $router->get('/api/exam/start', [ApiController::class, 'examStart']);
         $router->get('/api/practice/status', [ApiController::class, 'practiceStatus']);
         $router->get('/api/practice/leaderboard', [ApiController::class, 'practiceLeaderboard']);
+        $router->get('/api/packs', [ApiController::class, 'packs']);
+        $router->get('/api/packs/{id}', [ApiController::class, 'pack']);
         $router->get('/api/daily/status', [ApiController::class, 'dailyStatus']);
         $router->get('/api/daily/start', [ApiController::class, 'dailyStart']);
         $router->post('/api/daily/complete', [ApiController::class, 'dailyComplete']);

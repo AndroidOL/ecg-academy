@@ -389,6 +389,57 @@ final class ApiController
         Http::ok(Ai::costSummary((int) ($_GET['days'] ?? 30)));
     }
 
+    public static function packs(array $params = []): void
+    {
+        self::user();
+        Http::ok(['items' => CoursePack::listPublished()]);
+    }
+
+    public static function pack(array $params): void
+    {
+        self::user();
+        Http::ok(CoursePack::publishedByPackId((string) ($params['id'] ?? '')));
+    }
+
+    public static function adminPacks(array $params = []): void
+    {
+        AdminAuth::requireAdmin();
+        Http::ok(['items' => CoursePack::listAll()]);
+    }
+
+    public static function adminPackValidate(array $params = []): void
+    {
+        AdminAuth::requireAdmin();
+        $pack = Http::input()['pack'] ?? null;
+        if (!is_array($pack)) throw new ApiError(422, 'pack_invalid', '缺少课程包 JSON 对象');
+        Http::ok(CoursePack::validate($pack));
+    }
+
+    public static function adminPackImport(array $params = []): void
+    {
+        $admin = AdminAuth::requireAdmin();
+        $pack = Http::input()['pack'] ?? null;
+        if (!is_array($pack)) throw new ApiError(422, 'pack_invalid', '缺少课程包 JSON 对象');
+        $result = CoursePack::import($pack, (int) $admin['id']);
+        AdminAuth::audit((int) $admin['id'], 'admin.coursepack.import', ['packId' => $result['summary']['id'], 'version' => $result['summary']['version'], 'id' => $result['id']]);
+        Http::ok($result);
+    }
+
+    public static function adminPackStatus(array $params = []): void
+    {
+        $admin = AdminAuth::requireAdmin();
+        $input = Http::input();
+        $result = CoursePack::setStatus((int) ($input['id'] ?? 0), (string) ($input['status'] ?? ''));
+        AdminAuth::audit((int) $admin['id'], 'admin.coursepack.status', $result);
+        Http::ok($result);
+    }
+
+    public static function adminPackPreview(array $params = []): void
+    {
+        AdminAuth::requireAdmin();
+        Http::ok(CoursePack::payload((int) ($_GET['id'] ?? 0)));
+    }
+
     public static function adminAiSaveCost(array $params = []): void
     {
         $admin = AdminAuth::requireAdmin();
