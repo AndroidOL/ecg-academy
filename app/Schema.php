@@ -167,8 +167,7 @@ final class Schema
                 CONSTRAINT fk_practice_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
-            "CREATE TABLE IF NOT EXISTS daily_results (
-                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            "CREATE TABLE IF NOT EXISTS daily_results (                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
                 user_id BIGINT UNSIGNED NOT NULL,
                 day DATE NOT NULL,
                 correct INT NOT NULL DEFAULT 0,
@@ -181,6 +180,22 @@ final class Schema
                 UNIQUE KEY uk_daily_user_day (user_id, day),
                 KEY idx_daily_day (day),
                 CONSTRAINT fk_daily_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+            "CREATE TABLE IF NOT EXISTS visitor_events (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                day DATE NOT NULL,
+                path VARCHAR(160) NOT NULL,
+                ip VARCHAR(64) NOT NULL,
+                ip_hash CHAR(64) NOT NULL,
+                ua VARCHAR(255) NOT NULL DEFAULT '',
+                referer VARCHAR(255) NOT NULL DEFAULT '',
+                user_id BIGINT UNSIGNED NULL,
+                is_guest TINYINT(1) NOT NULL DEFAULT 1,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                KEY idx_visit_day (day),
+                KEY idx_visit_ip_day (ip_hash, day),
+                KEY idx_visit_path_day (path, day)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
             "CREATE TABLE IF NOT EXISTS assignments (

@@ -10,6 +10,13 @@ if [ ! -f "$TARGET/app/config.local.php" ]; then
   echo "missing $TARGET/app/config.local.php; create local DB config first" >&2
   exit 3
 fi
+# Asset version and service worker cache version must stay in sync.
+ASSET=$(grep -oP "'asset_version' => '\K[^']+" "$ROOT/app/config.php" | head -1)
+CACHE=$(grep -oP "CACHE_VERSION = 'ecg-\K[^']+" "$ROOT/public/sw.js" | head -1)
+if [ -z "$ASSET" ] || [ "$ASSET" != "$CACHE" ]; then
+  echo "asset_version ($ASSET) and SW CACHE_VERSION ($CACHE) differ; bump both before deploying" >&2
+  exit 4
+fi
 # Preserve production-local secrets, sessions, logs, cache, .user.ini and the
 # target's pre-existing panel files. Copy only application code/content.
 tar -C "$ROOT" \

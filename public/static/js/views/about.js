@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108av';
+const __asset = __isNode ? '' : '?v=20261108aw';
 const { store } = await import(`../store.js${__asset}`);
 const { CORRECTIONS } = await import(`../data/corrections.js${__asset}`);
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);

@@ -3,6 +3,16 @@ declare(strict_types=1);
 
 return [
     [
+        'version' => '2.2.0',
+        'date' => '2026-11-08',
+        'title' => '流量统计与游客清理',
+        'items' => [
+            '后台新增流量统计：PV/UV、热门页面、来源站点、来源 IP 与最近访问。',
+            '新增游客清理工具：后台按闲置天数清理，或使用 scripts/clean_guests.php。',
+            '访客统计保留 90 天，仅管理员可见。',
+        ],
+    ],
+    [
         'version' => '2.1.0',
         'date' => '2026-11-08',
         'title' => '账号资料与自助 Passkey',

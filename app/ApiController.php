@@ -276,6 +276,28 @@ final class ApiController
         Http::ok(['deleted' => true]);
     }
 
+    public static function visit(array $params = []): void
+    {
+        Traffic::record(Auth::user(false) ?: null, Http::input());
+        Http::ok(['tracked' => true]);
+    }
+
+    public static function adminTraffic(array $params = []): void
+    {
+        AdminAuth::requireAdmin();
+        Http::ok(Traffic::summary((int) ($_GET['days'] ?? 14)));
+    }
+
+    public static function adminCleanGuests(array $params = []): void
+    {
+        $admin = AdminAuth::requireAdmin();
+        $days = max(0, min(365, (int) (Http::input()['days'] ?? 7)));
+        $deleted = Traffic::cleanGuests($days);
+        $expired = Traffic::cleanVisits(90);
+        AdminAuth::audit((int) $admin['id'], 'admin.guests.clean', ['days' => $days, 'deleted' => $deleted, 'visitsExpired' => $expired]);
+        Http::ok(['deleted' => $deleted, 'visitsExpired' => $expired]);
+    }
+
     public static function logout(array $params = []): void
     {
         Auth::logout();

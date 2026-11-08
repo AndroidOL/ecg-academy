@@ -43,6 +43,8 @@ if (str_starts_with($path, '/api/')) {
         $router->post('/api/admin/assignment', [AdminController::class, 'assignmentSave']);
         $router->post('/api/admin/assignment/toggle', [AdminController::class, 'assignmentToggle']);
         $router->post('/api/admin/assignment/delete', [AdminController::class, 'assignmentDelete']);
+        $router->get('/api/admin/traffic', [ApiController::class, 'adminTraffic']);
+        $router->post('/api/admin/guests/clean', [ApiController::class, 'adminCleanGuests']);
         $router->get('/api/bootstrap', [ApiController::class, 'bootstrap']);
         $router->get('/api/diagnoses', [ApiController::class, 'diagnoses']);
         $router->get('/api/diagnoses/{id}', [ApiController::class, 'diagnosis']);
@@ -74,6 +76,7 @@ if (str_starts_with($path, '/api/')) {
         $router->post('/api/me/passkey/register', [ApiController::class, 'mePasskeyRegister']);
         $router->post('/api/me/passkey/delete', [ApiController::class, 'mePasskeyDelete']);
         $router->post('/api/theme', [ApiController::class, 'theme']);
+        $router->post('/api/visit', [ApiController::class, 'visit']);
         $router->get('/api/sim/scenarios', [ApiController::class, 'simScenarios']);
         $router->post('/api/sim/start', [ApiController::class, 'simStart']);
         $router->get('/api/sim/state', [ApiController::class, 'simState']);

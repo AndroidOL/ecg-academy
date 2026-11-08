@@ -1,11 +1,12 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108av';
+const __asset = __isNode ? '' : '?v=20261108aw';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, escapeHtml, toast, confirmDialog } = await import(`../ui.js${__asset}`);
 
 const TABS = [
   ['overview', '概览'],
+  ['traffic', '流量统计'],
   ['users', '用户'],
   ['assignments', '班级作业'],
   ['ai', 'AI 供应商'],
@@ -318,12 +319,14 @@ export async function adminView() {
     const drawTab = async (tab) => {
       el.querySelectorAll('[data-admin-tab]').forEach((b) => b.classList.toggle('active', b.dataset.adminTab === tab));
       content.innerHTML = tab === 'overview' ? overview(session) + settingsCard(session)
-        : tab === 'users' ? usersCard()
-          : tab === 'assignments' ? assignmentsCard()
-          : tab === 'ai' ? aiCard(session)
-            : tab === 'security' ? securityCard(session)
-              : auditCard(session);
+        : tab === 'traffic' ? trafficCard()
+          : tab === 'users' ? usersCard()
+            : tab === 'assignments' ? assignmentsCard()
+              : tab === 'ai' ? aiCard(session)
+                : tab === 'security' ? securityCard(session)
+                  : auditCard(session);
       if (tab === 'users') await loadUsers();
+      if (tab === 'traffic') await loadTraffic();
       if (tab === 'overview') bindSettings();
       if (tab === 'assignments') {
         content.querySelector('[data-assignment-form]')?.addEventListener('submit', async (event) => {
@@ -432,6 +435,59 @@ export async function adminView() {
         }));
       } catch (err) { host.innerHTML = `<div class="callout danger">${escapeHtml(err.message)}</div>`; }
     };
+    const loadTraffic = async () => {
+      const host = content.querySelector('[data-traffic-kpis]');
+      if (!host) return;
+      try {
+        const data = await api.adminTraffic(14);
+        const kpis = content.querySelectorAll('[data-traffic-kpis] .stat-value');
+        [data.todayPv, data.todayUv, data.totals.pv, data.totals.uv].forEach((value, index) => {
+          if (kpis[index]) kpis[index].textContent = String(value);
+        });
+        const range = content.querySelector('[data-traffic-range]');
+        if (range) range.textContent = `${data.start} ~ ${data.today} · 共 ${data.counts.events} 条记录 · 保留 ${data.retentionDays} 天`;
+        const guestCount = content.querySelector('[data-guest-count]');
+        if (guestCount) guestCount.textContent = String(data.counts.guests);
+        const bars = content.querySelector('[data-traffic-bars]');
+        const maxPv = Math.max(1, ...data.series.map((item) => item.pv));
+        if (bars) bars.innerHTML = data.series.map((item) => `<div class="traffic-bar" title="${escapeHtml(item.day)} · PV ${item.pv} · UV ${item.uv}"><b>${item.pv || ''}</b><i style="height:${Math.max(2, Math.round((item.pv / maxPv) * 100))}%"></i><span>${escapeHtml(item.day.slice(5))}</span></div>`).join('');
+        const paths = content.querySelector('[data-traffic-paths]');
+        if (paths) paths.innerHTML = data.topPaths.length
+          ? data.topPaths.map((item) => `<div class="traffic-row"><b>${escapeHtml(item.path)}</b><span>${item.pv} PV · ${item.uv} UV</span><i style="width:${Math.round((item.pv / Math.max(1, data.topPaths[0].pv)) * 100)}%"></i></div>`).join('')
+          : '<div class="muted" style="font-size:12px">暂无数据</div>';
+        const refs = content.querySelector('[data-traffic-referers]');
+        if (refs) refs.innerHTML = data.referers.length
+          ? data.referers.map((item) => `<div class="traffic-row"><b>${escapeHtml(item.referer)}</b><span>${item.pv} 次</span><i style="width:${Math.round((item.pv / Math.max(1, data.referers[0].pv)) * 100)}%"></i></div>`).join('')
+          : '<div class="muted" style="font-size:12px">暂无外链来源</div>';
+        const ips = content.querySelector('[data-traffic-ips]');
+        if (ips) ips.innerHTML = `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>IP</th><th>PV</th><th>活跃天数</th><th>最近访问</th><th>客户端</th></tr></thead><tbody>${data.topIps.map((item) => `<tr><td><b>${escapeHtml(item.ip)}</b></td><td>${item.pv}</td><td>${item.activeDays}</td><td class="muted" style="font-size:10px">${escapeHtml(item.lastSeen)}</td><td class="muted" style="font-size:10px">${escapeHtml(String(item.ua || '').slice(0, 70))}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">暂无数据</td></tr>'}</tbody></table></div>`;
+        const recent = content.querySelector('[data-traffic-recent]');
+        if (recent) recent.innerHTML = `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>时间</th><th>页面</th><th>IP</th><th>来源</th><th>类型</th></tr></thead><tbody>${data.recent.map((item) => `<tr><td class="muted" style="font-size:10px">${escapeHtml(item.createdAt)}</td><td>${escapeHtml(item.path)}</td><td>${escapeHtml(item.ip)}</td><td class="muted" style="font-size:10px">${escapeHtml(item.referer || '—')}</td><td>${item.isGuest ? escapeHtml('游客') : escapeHtml('账号')}</td></tr>`).join('') || '<tr><td colspan="5" class="muted">暂无数据</td></tr>'}</tbody></table></div>`;
+        content.querySelector('[data-clean-guests]')?.addEventListener('click', async (event) => {
+          const button = event.currentTarget;
+          const days = Math.max(0, Math.min(365, Number(content.querySelector('[data-clean-days]')?.value || 0)));
+          const ok = await confirmDialog({
+            title: '清理游客？',
+            message: days === 0 ? '将删除全部游客账号及其练习、打卡等服务端记录（不影响正式账号）。' : `将删除闲置超过 ${days} 天的游客账号及其服务端记录。`,
+            confirmText: '清理',
+            danger: true,
+          });
+          if (!ok) return;
+          button.disabled = true;
+          try {
+            const result = await api.adminCleanGuests(days);
+            toast(`已清理 ${result.deleted} 个游客`, 'success');
+            await loadTraffic();
+          } catch (error) {
+            toast(error.message || '清理失败', 'error');
+          } finally {
+            button.disabled = false;
+          }
+        });
+      } catch (error) {
+        host.innerHTML = `<div class="callout danger">${escapeHtml(error.message || '流量统计加载失败')}</div>`;
+      }
+    };
     content.addEventListener('submit', async (event) => {
       const form = event.target.closest('[data-admin-create-user]');
       if (!form) return;
@@ -510,4 +566,34 @@ export async function adminView() {
   };
   await render(activeTab);
   return { el };
+}
+
+function trafficCard() {
+  return `<section class="card card-pad" style="margin-bottom:12px">
+    <div class="section-head"><h3 style="margin:0;font-size:16px">实时概况</h3><span class="muted" style="font-size:11px" data-traffic-range>加载中…</span></div>
+    <div class="stat-grid" data-traffic-kpis>
+      <div class="stat"><div class="stat-value">—</div><div class="stat-label">今日 PV</div></div>
+      <div class="stat"><div class="stat-value">—</div><div class="stat-label">今日 UV</div></div>
+      <div class="stat"><div class="stat-value">—</div><div class="stat-label">近 14 天 PV</div></div>
+      <div class="stat"><div class="stat-value">—</div><div class="stat-label">近 14 天 UV</div></div>
+    </div>
+  </section>
+  <section class="card card-pad" style="margin-bottom:12px">
+    <h3 style="margin:0 0 6px;font-size:16px">近 14 天访问</h3>
+    <div class="traffic-bars" data-traffic-bars><div class="muted">加载中…</div></div>
+  </section>
+  <div class="admin-two-col">
+    <section class="card card-pad"><h3 style="margin:0 0 8px;font-size:16px">热门页面</h3><div data-traffic-paths></div></section>
+    <section class="card card-pad"><h3 style="margin:0 0 8px;font-size:16px">来源站点</h3><div data-traffic-referers></div></section>
+  </div>
+  <section class="card card-pad" style="margin-top:12px"><h3 style="margin:0 0 8px;font-size:16px">来源 IP</h3><div data-traffic-ips></div></section>
+  <section class="card card-pad" style="margin-top:12px"><h3 style="margin:0 0 8px;font-size:16px">最近访问</h3><div data-traffic-recent></div></section>
+  <section class="card card-pad" style="margin-top:12px">
+    <h3 style="margin:0 0 4px;font-size:16px">游客清理</h3>
+    <p class="muted" style="font-size:11.5px;line-height:1.7">删除闲置游客账号及其练习、打卡等服务端记录，不影响正式账号与访客统计。当前游客 <b data-guest-count>—</b> 个；访客统计（含 IP）保留 90 天，超期自动清理。</p>
+    <div class="row-wrap" style="margin-top:8px">
+      <label class="field" style="margin:0"><span class="label">闲置天数（0 = 全部游客）</span><input class="input" type="number" min="0" max="365" value="7" data-clean-days style="width:130px"></label>
+      <button class="btn btn-danger btn-sm" type="button" data-clean-guests>清理游客</button>
+    </div>
+  </section>`;
 }

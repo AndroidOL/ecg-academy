@@ -1,7 +1,7 @@
 // Cache-busted dynamic imports: keep Node tests query-free while forcing
 // browsers with immutable 7-day static caching to load the current modules.
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108av';
+const __asset = __isNode ? '' : '?v=20261108aw';
 const { api } = await import(`./api.js${__asset}`);
 const { store, initTheme, applyTheme, toggleTheme } = await import(`./store.js${__asset}`);
 const { practiceView } = await import(`./views/practice.js${__asset}`);
@@ -223,9 +223,17 @@ async function boot() {
     app.innerHTML = shell('/');
     bindShell();
     const mount = document.getElementById('view-root');
+    let lastTracked = '';
+    let lastTrackedAt = 0;
     router = new Router(routes, mount, ({ path }) => {
       if (!document.querySelector('.app-shell')) return;
       updateNav(path);
+      const now = Date.now();
+      if ((path !== lastTracked || now - lastTrackedAt > 60000) && !path.startsWith('/admin')) {
+        lastTracked = path;
+        lastTrackedAt = now;
+        api.visit(path, document.referrer).catch(() => {});
+      }
     });
     router.start();
     store.subscribe((type) => {

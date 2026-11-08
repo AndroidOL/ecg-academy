@@ -138,6 +138,14 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 | POST | `/api/auth/passkey/login` | `{credential}`；验证断言后建立用户会话并合并游客进度 |
 | POST | `/api/auth/logout` | 销毁会话；下一次 bootstrap 创建新访客 |
 | POST | `/api/theme` | `{theme:"auto"|"light"|"dark"}` |
+| POST | `/api/visit` | `{path,referer}`；记录访客事件（IP/UA 由服务端读取），路径归一化 |
+
+## 后台运维（需管理员会话）
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/api/admin/traffic?days=14` | PV/UV 汇总、14 天序列、热门页面、来源站点、来源 IP、最近访问 |
+| POST | `/api/admin/guests/clean` | `{days}`；删除闲置游客（0 = 全部），返回删除数并清理 90 天前访客事件 |
 
 ## 个人资料与 Passkey（需正式账号会话）
 
