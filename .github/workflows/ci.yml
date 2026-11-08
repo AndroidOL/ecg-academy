@@ -1,0 +1,30 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  content-engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate content
+        run: php scripts/validate_content.php
+      - name: Lint PHP
+        run: find app scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l >/dev/null
+      - name: Install test DOM
+        run: npm install --no-audit --no-fund
+      - name: ECG engine tests
+        run: npm run test:engine
+      - name: Playback and annotation tests
+        run: npm run test:playback

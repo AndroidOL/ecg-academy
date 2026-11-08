@@ -1,0 +1,79 @@
+import { api } from './api.js';
+import { store } from './store.js';
+import { openModal, icon, escapeHtml, setButtonLoading, toast } from './ui.js';
+
+export function openAuth(mode = 'register') {
+  if (store.user && !store.user.isGuest) {
+    toast('当前已登录', 'info');
+    return;
+  }
+  const isRegister = mode === 'register';
+  const content = `
+    <div class="form-grid">
+      <div class="auth-note">${isRegister ? '当前为访客账号。注册后，已读进度与答题记录会保留，并可用于跨设备登录。' : '登录后会合并当前访客设备的已读进度。'}</div>
+      ${isRegister ? `<div class="field"><label for="auth-name">昵称（可选）</label><input class="input" id="auth-name" maxlength="20" autocomplete="nickname" placeholder="例如：心电图小白"></div>` : ''}
+      <div class="field"><label for="auth-username">用户名</label><input class="input" id="auth-username" maxlength="24" autocomplete="username" placeholder="3–24 位字母、数字或下划线"></div>
+      <div class="field"><label for="auth-password">密码</label><input class="input" id="auth-password" type="password" maxlength="72" autocomplete="${isRegister ? 'new-password' : 'current-password'}" placeholder="至少 8 位"></div>
+      ${isRegister ? `<div class="field"><label for="auth-password2">确认密码</label><input class="input" id="auth-password2" type="password" maxlength="72" autocomplete="new-password" placeholder="再次输入密码"></div>` : ''}
+      <div class="auth-note" id="auth-error" style="display:none;background:var(--danger-soft);color:var(--danger)"></div>
+      <button class="btn btn-primary btn-block" type="button" id="auth-submit">${icon(isRegister ? 'lock' : 'arrowRight', 16)}${isRegister ? '保存进度并注册' : '登录'}</button>
+      <div class="auth-switch">${isRegister ? '已有账号？' : '还没有账号？'}<button type="button" id="auth-toggle">${isRegister ? '去登录' : '注册并保存进度'}</button></div>
+    </div>`;
+  let modal;
+  modal = openModal({
+    title: isRegister ? '保存你的学习进度' : '登录心迹',
+    sub: isRegister ? '免费开源 · 无需邮箱' : '继续你的心电图学习',
+    content,
+    onClose: () => {},
+  });
+  const form = modal.el;
+  const errorBox = form.querySelector('#auth-error');
+  const submit = form.querySelector('#auth-submit');
+  const showError = (message) => {
+    errorBox.textContent = message;
+    errorBox.style.display = 'block';
+  };
+  const doSubmit = async () => {
+    const username = form.querySelector('#auth-username').value.trim().toLowerCase();
+    const password = form.querySelector('#auth-password').value;
+    const displayName = form.querySelector('#auth-name')?.value.trim() || '';
+    const password2 = form.querySelector('#auth-password2')?.value;
+    errorBox.style.display = 'none';
+    if (!/^[a-z0-9_]{3,24}$/.test(username)) return showError('用户名需为 3–24 位字母、数字或下划线');
+    if (password.length < 8) return showError('密码至少 8 位');
+    if (isRegister && password !== password2) return showError('两次输入的密码不一致');
+    setButtonLoading(submit, true, isRegister ? '正在保存' : '正在登录');
+    try {
+      if (isRegister) await api.register({ username, password, displayName });
+      else await api.login({ username, password });
+      await store.refresh();
+      window.dispatchEvent(new CustomEvent('auth:changed'));
+      toast(isRegister ? '账号已创建，进度已保存' : '登录成功', 'info');
+      modal.close();
+    } catch (error) {
+      showError(error.message || '操作失败');
+      setButtonLoading(submit, false);
+    }
+  };
+  submit?.addEventListener('click', doSubmit);
+  form.querySelectorAll('input').forEach((input) => {
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') doSubmit();
+    });
+  });
+  form.querySelector('#auth-toggle')?.addEventListener('click', () => {
+    modal.close();
+    openAuth(isRegister ? 'login' : 'register');
+  });
+}
+
+export async function logout() {
+  try {
+    await api.logout();
+    await store.refresh();
+    window.dispatchEvent(new CustomEvent('auth:changed'));
+    toast('已退出，当前为新的访客会话', 'info');
+  } catch (error) {
+    toast(error.message || '退出失败', 'error');
+  }
+}

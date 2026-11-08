@@ -1,0 +1,68 @@
+/* ECG canvas presentation and monitor-specific palettes */
+.ecg-card .ecg-canvas-shell {
+  background: var(--ecg-bg);
+  scrollbar-width: thin;
+  scrollbar-color: var(--ecg-grid-major) transparent;
+}
+.ecg-canvas-shell::-webkit-scrollbar { height: 7px; }
+.ecg-canvas-shell::-webkit-scrollbar-thumb { background: var(--ecg-grid-major); border-radius: 99px; }
+.ecg-canvas { max-width: none; }
+.ecg-canvas:focus-visible { outline-offset: -3px; }
+
+.ecg-dark-paper {
+  --ecg-bg: #081b1c;
+  --ecg-grid-minor: rgba(255, 123, 110, 0.1);
+  --ecg-grid-major: rgba(255, 123, 110, 0.23);
+  --ecg-trace: #7df0cf;
+  --ecg-glow: rgba(125, 240, 207, 0.22);
+  --ink: #e9f3f0;
+  --ink-2: #b9cdca;
+  --muted: #6f9390;
+  --surface: #0e2226;
+  --surface-2: #132d31;
+  --line: rgba(233, 243, 240, 0.12);
+  --line-strong: rgba(233, 243, 240, 0.22);
+  --brand: #5bd6c8;
+}
+
+.ecg-dark-paper .ecg-card { border-color: rgba(125, 240, 207, 0.18); }
+.ecg-dark-paper .ecg-toolbar { background: #0b1e21; border-bottom-color: rgba(233, 243, 240, 0.1); }
+.ecg-dark-paper .ecg-meta { background: #0b1e21; border-top-color: rgba(233, 243, 240, 0.1); }
+.ecg-dark-paper .ecg-legend { background: #0b1e21; border-top-color: rgba(233, 243, 240, 0.1); }
+.ecg-dark-paper .ecg-tabs { background: #132d31; border-color: rgba(233, 243, 240, 0.12); }
+.ecg-dark-paper .ecg-tab.active { background: #234247; color: #e9f3f0; }
+.ecg-dark-paper .ecg-toolbar-label { color: #6f9390; }
+
+.ecg-mini-grid {
+  background-image:
+    linear-gradient(var(--ecg-grid-minor) 0.5px, transparent 0.5px),
+    linear-gradient(90deg, var(--ecg-grid-minor) 0.5px, transparent 0.5px),
+    linear-gradient(var(--ecg-grid-major) 0.8px, transparent 0.8px),
+    linear-gradient(90deg, var(--ecg-grid-major) 0.8px, transparent 0.8px);
+  background-size: 8px 8px, 8px 8px, 40px 40px, 40px 40px;
+}
+
+.ecg-scroll-hint { display: none; padding: 6px 12px; background: var(--bg-elev); color: var(--muted); font-size: 9.5px; border-top: 1px solid var(--line); }
+@media (max-width: 719px) {
+  .ecg-scroll-hint { display: block; }
+  .ecg-card .ecg-canvas-shell { -webkit-overflow-scrolling: touch; }
+}
+
+.ecg-card.is-playing .ecg-toolbar { border-bottom-color: color-mix(in srgb, var(--brand) 30%, var(--line)); }
+
+/* compact viewer used inside quiz and monitor */
+.ecg-compact .ecg-toolbar { padding: 7px 9px; }
+.ecg-compact .ecg-meta, .ecg-compact .ecg-legend { display: none; }
+
+/* prevent double tap zoom on canvas controls */
+.ecg-tab, .ecg-toolbar .btn { touch-action: manipulation; }
+
+/* monitor live waveform card is always dark */
+.monitor-panel .ecg-card { background: #081b1c; }
+.monitor-panel .ecg-canvas { cursor: default; }
+
+/* mobile ECG paper: keep minor grid visible long enough to read P/T waves */
+@media (max-width: 719px) {
+  .ecg-canvas-shell { scroll-behavior: smooth; }
+  .ecg-card .ecg-canvas { border-radius: 0; }
+}

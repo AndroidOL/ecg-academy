@@ -1,0 +1,13 @@
+storage/sessions/*
+storage/logs/*
+storage/cache/*
+!storage/sessions/.gitkeep
+!storage/logs/.gitkeep
+!storage/cache/.gitkeep
+app/config.local.php
+*.swp
+.DS_Store
+tests/artifacts/*
+!tests/artifacts/.gitkeep
+.ssh/
+docs/*.local.md

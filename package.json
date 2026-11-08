@@ -1,0 +1,12 @@
+{
+  "name": "ecg-academy",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:engine": "node tests/engine.test.mjs",
+    "test:playback": "node tests/playback.test.mjs"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0"
+  }
+}

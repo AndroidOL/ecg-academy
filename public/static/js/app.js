@@ -1,0 +1,198 @@
+import { api } from './api.js';
+import { store, initTheme, applyTheme, toggleTheme } from './store.js';
+import { Router } from './router.js';
+import { NAV_ITEMS, icon, logo, initials, escapeHtml } from './ui.js';
+import { homeView } from './views/home.js';
+import { learnView } from './views/learn.js';
+import { articleView } from './views/article.js';
+import { practiceView } from './views/practice.js';
+import { simListView } from './views/sim-list.js';
+import { simSessionView } from './views/sim-session.js';
+import { labView } from './views/lab.js';
+import { meView } from './views/me.js';
+
+const routes = [
+  { path: '/', handler: homeView },
+  { path: '/learn', handler: learnView },
+  { path: '/learn/:id', handler: articleView },
+  { path: '/practice', handler: practiceView },
+  { path: '/sim/:sessionId', handler: simSessionView },
+  { path: '/sim', handler: simListView },
+  { path: '/lab', handler: labView },
+  { path: '/me', handler: meView },
+];
+
+let router;
+
+function sidebarNav(activePath) {
+  return NAV_ITEMS.map((item) => {
+    const active = item.path === '/' ? activePath === '/' : activePath.startsWith(item.path);
+    return `<a class="nav-link ${active ? 'active' : ''}" href="#${item.path}" data-nav="${item.path}">
+      ${icon(item.icon, 19)}<span>${item.label}</span>${item.path === '/sim' ? '<span class="nav-badge">ACLS</span>' : ''}
+    </a>`;
+  }).join('');
+}
+
+function topbarLinks(activePath) {
+  return NAV_ITEMS.filter((item) => item.path !== '/me').map((item) => {
+    const active = item.path === '/' ? activePath === '/' : activePath.startsWith(item.path);
+    return `<a class="${active ? 'active' : ''}" href="#${item.path}">${item.label}</a>`;
+  }).join('');
+}
+
+function bottomNav(activePath) {
+  return NAV_ITEMS.filter((item) => item.path !== '/me').map((item) => {
+    const active = item.path === '/' ? activePath === '/' : activePath.startsWith(item.path);
+    return `<a class="bottom-link ${active ? 'active' : ''}" href="#${item.path}">${icon(item.icon, 21)}<span>${item.label}</span></a>`;
+  }).join('');
+}
+
+function shell(activePath = '/') {
+  const user = store.user || { displayName: '访客', isGuest: true, xp: 0 };
+  const read = store.progress?.read || 0;
+  const total = store.progress?.total || store.content?.diagnoses || 40;
+  const percent = total ? Math.round((read / total) * 100) : 0;
+  return `<div class="app-shell">
+    <aside class="app-sidebar">
+      <a class="brand" href="#/" aria-label="心迹 ECG Lab 首页">${logo()}</a>
+      <nav class="sidebar-nav" aria-label="主导航">${sidebarNav(activePath)}</nav>
+      <div class="sidebar-foot">
+        <div class="sidebar-card">
+          <div class="sidebar-card-title"><span>学习进度</span><span class="mono" data-progress-percent>${percent}%</span></div>
+          <div class="sidebar-card-meta"><span data-progress-read>${read}</span> / <span data-progress-total>${total}</span> 篇已读</div>
+          <div class="progress" style="margin-top:8px"><div class="progress-bar" style="width:${percent}%" data-progress-bar></div></div>
+        </div>
+        <div class="sidebar-card" style="padding:11px">
+          <div class="sidebar-card-title"><span style="display:inline-flex;align-items:center;gap:5px">${icon('sparkles', 14)} AI 导师</span><span class="badge ${store.ai?.configured ? 'badge-brand' : ''}" data-ai-mode>${store.ai?.configured ? '在线' : '本地'}</span></div>
+          <div class="sidebar-card-meta">${store.ai?.configured ? '个性化组卷 · 错因解析' : '本地知识库降级可用'}</div>
+        </div>
+        <div class="sidebar-card" style="padding:9px 12px">
+          <div class="spread"><span class="sidebar-card-title" style="gap:6px">${icon('sun', 13)} 外观</span><button class="icon-btn" type="button" data-theme-toggle aria-label="切换深浅主题" title="切换主题" style="width:30px;height:30px">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon', 17)}</button></div>
+        </div>
+        <div class="sidebar-card" style="padding:8px">
+          <a class="sidebar-user" href="#/me">
+            <span class="avatar" data-avatar>${initials(user.displayName)}</span>
+            <span class="grow"><span class="sidebar-user-name" data-user-name>${escapeHtml(user.displayName)}</span><span class="sidebar-user-sub" data-user-sub>${user.isGuest ? '访客 · 点击保存进度' : `@${escapeHtml(user.username || '')} · ${user.xp} XP`}</span></span>
+            ${icon('chevronRight', 15)}
+          </a>
+        </div>
+      </div>
+    </aside>
+    <div class="app-main">
+      <header class="topbar">
+        <div class="topbar-inner">
+          <a class="brand" href="#/" aria-label="首页">${logo()}</a>
+          <nav class="topbar-links" aria-label="顶部导航">${topbarLinks(activePath)}</nav>
+          <div class="topbar-actions">
+            <button class="icon-btn" type="button" data-theme-toggle aria-label="切换深浅主题" title="切换主题">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon', 19)}</button>
+            <a class="avatar" href="#/me" aria-label="我的账号" data-avatar>${initials(user.displayName)}</a>
+          </div>
+        </div>
+      </header>
+      <main id="main"><div id="view-root"></div></main>
+      <nav class="bottom-nav" aria-label="底部导航">${bottomNav(activePath)}</nav>
+    </div>
+  </div>`;
+}
+
+function navLabel(path) {
+  if (path === '/') return { label: '首页', active: '/' };
+  if (path.startsWith('/learn')) return { label: '学习', active: '/learn' };
+  if (path.startsWith('/practice')) return { label: '练习', active: '/practice' };
+  if (path.startsWith('/sim')) return { label: '急救模拟', active: '/sim' };
+  if (path.startsWith('/lab')) return { label: '电解质实验室', active: '/lab' };
+  if (path.startsWith('/me')) return { label: '我的', active: '/me' };
+  return { label: '心迹', active: '/' };
+}
+
+function bindShell() {
+  document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+      toggleTheme();
+      document.querySelectorAll('[data-theme-toggle]').forEach((el) => {
+        el.innerHTML = icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon', 19);
+      });
+    });
+  });
+}
+
+function updateShell() {
+  const user = store.user || {};
+  const read = store.progress?.read || 0;
+  const total = store.progress?.total || store.content?.diagnoses || 40;
+  const percent = total ? Math.round((read / total) * 100) : 0;
+  const setText = (selector, value) => {
+    const el = document.querySelector(selector);
+    if (el) el.textContent = value;
+  };
+  setText('[data-progress-read]', String(read));
+  setText('[data-progress-total]', String(total));
+  setText('[data-progress-percent]', `${percent}%`);
+  const bar = document.querySelector('[data-progress-bar]');
+  if (bar) bar.style.width = `${percent}%`;
+  setText('[data-user-name]', user.displayName || '访客');
+  setText('[data-user-sub]', user.isGuest === false ? `@${user.username || ''} · ${user.xp || 0} XP` : '访客 · 点击保存进度');
+  document.querySelectorAll('[data-avatar]').forEach((el) => {
+    el.textContent = initials(user.displayName || '心迹');
+  });
+  const aiBadge = document.querySelector('[data-ai-mode]');
+  if (aiBadge) aiBadge.textContent = store.ai?.configured ? '在线' : '本地';
+}
+
+function updateNav(path) {
+  const { label, active } = navLabel(path);
+  document.title = `${label} · 心迹 ECG Lab`;
+  document.querySelectorAll('.nav-link[data-nav]').forEach((link) => {
+    const item = link.dataset.nav;
+    const isActive = item === '/' ? path === '/' : path.startsWith(item);
+    link.classList.toggle('active', isActive);
+  });
+  document.querySelectorAll('.topbar-links a, .bottom-link').forEach((link) => {
+    const href = link.getAttribute('href')?.replace(/^#/, '') || '';
+    const isActive = href === '/' ? path === '/' : path.startsWith(href);
+    link.classList.toggle('active', isActive);
+  });
+}
+
+async function boot() {
+  const app = document.getElementById('app');
+  try {
+    const data = await api.bootstrap();
+    store.setBootstrap(data);
+    if (!localStorage.getItem('ecg-theme') && data.user?.theme) {
+      applyTheme(data.user.theme, { persist: false });
+    }
+    initTheme();
+    app.innerHTML = shell('/');
+    bindShell();
+    const mount = document.getElementById('view-root');
+    router = new Router(routes, mount, ({ path }) => {
+      if (!document.querySelector('.app-shell')) return;
+      updateNav(path);
+    });
+    router.start();
+    store.subscribe((type) => {
+      if (['user', 'progress', 'stats', 'bootstrap'].includes(type)) updateShell();
+      if (type === 'theme') {
+        document.querySelectorAll('[data-theme-toggle]').forEach((el) => {
+          el.innerHTML = icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon', 19);
+        });
+      }
+    });
+    window.addEventListener('auth:changed', () => {
+      updateShell();
+      router?.render();
+    });
+  } catch (error) {
+    console.error(error);
+    app.innerHTML = `<div class="boot-splash" style="padding:20px;text-align:center">
+      <div class="boot-mark" style="color:var(--accent)">${icon('alert', 28)}</div>
+      <p class="boot-title">暂时无法连接服务器</p>
+      <p class="boot-sub">${escapeHtml(error.message || '请稍后重试')}</p>
+      <button class="btn btn-primary" type="button" id="boot-retry" style="margin-top:16px">重新加载</button>
+    </div>`;
+    document.getElementById('boot-retry')?.addEventListener('click', () => window.location.reload());
+  }
+}
+
+boot();
