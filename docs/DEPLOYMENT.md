@@ -8,7 +8,7 @@
 | 发布目录 | `/www/wwwroot/ecg.tianhao.me` |
 | 生产域名 | `https://ecg.tianhao.me/` |
 | Web 根 | `/www/wwwroot/ecg.tianhao.me/public` |
-| 访问 | `https://ecg.tianhao.me/` |
+| 访问 | `https://ecg.tianhao.me/`（Demo：仅静态预览，不提供公开登录/AI；按负载调整状态） |
 | 测试站 | `http://127.0.0.1:8791/`（本地开发） |
 | nginx vhost | `/www/server/panel/vhost/nginx/ecg.tianhao.me.conf` |
 | IP 直接访问 | `401`（`/www/server/panel/vhost/nginx/ecg-ip-401.conf`） |

@@ -4,7 +4,7 @@
 
 > **读懂每一次心跳。** 面向医学生、住院医师与急救培训者的免费开源心电图学习站。
 
-**在线访问：** 由实际部署环境提供（公开仓库不记录服务器地址）
+**Demo 站：** <https://ecg.tianhao.me/>（仅静态内容预览；不提供公开登录和 AI 服务；会按服务器负载调整可用状态）
 **GitHub：** <https://github.com/AndroidOL/ecg-academy>
 **项目目录：** `/www/wwwroot/ecg-academy`（独立新目录，未触碰任何既有生产站点）
 **数据库：** MySQL 8.4 `ecg_academy`（连接信息见 [`docs/DATABASE.md`](docs/DATABASE.md)）
