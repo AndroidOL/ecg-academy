@@ -55,14 +55,16 @@ const LEVELS = [
   { id: 3, name: '挑战', note: '组合诊断与复杂图形', need: CHALLENGE_UNLOCK },
 ];
 
-export async function readView() {
+export async function readView({ query } = {}) {
   const el = document.createElement('div');
   el.className = 'page read-page';
   const userLevel = store.user?.isGuest
     ? levelFromXp(Number(store.user?.xp || 0))
     : Number(store.level?.level || store.user?.level || 1);
 
+  const focus = String(query?.get('focus') || '').split(',').map((id) => id.trim()).filter(Boolean).slice(0, 8);
   const state = {
+    focus,
     quiz: null,
     reading: null,
     level: 1,
@@ -84,7 +86,7 @@ export async function readView() {
       </div>
       <div class="row-wrap">
         <span class="badge badge-brand">${icon('activity', 11)} 结构化 5 步</span>
-        <span class="badge badge-brand" data-read-stats>${statsLabel()}</span><span class="badge">键盘 1–5 / Enter / N</span>
+        ${focus.length ? `<span class="badge badge-warn">专项 ${focus.length} 个诊断</span>` : ''}<span class="badge badge-brand" data-read-stats>${statsLabel()}</span><span class="badge">键盘 1–5 / Enter / N</span>
       </div>
     </header>
     <div class="read-layout">
@@ -142,7 +144,7 @@ export async function readView() {
       button.classList.toggle('btn-ghost', Number(button.dataset.readLevel) !== level);
     });
     try {
-      const quiz = await api.quizNew({ level });
+      const quiz = await api.quizNew({ level, ...(state.focus.length ? { focus: state.focus } : {}) });
       state.quiz = quiz;
       state.reading = buildReading(quiz.spec || {});
       state.startedAt = performance.now();
