@@ -863,6 +863,45 @@
 .game-mode-card.active b { color:var(--brand-ink); }
 .game-mode-card small { font-size:9px; line-height:1.45; }
 @media (max-width:600px) { .game-mode-grid { grid-template-columns:minmax(0,1fr); } .game-mode-card { flex-direction:row; align-items:center; flex-wrap:wrap; } .game-mode-card small { margin-left:auto; } }
+/* ---------- guided reading ---------- */
+.read-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:14px; }
+.read-ecg-card { position:sticky; top:8px; z-index:2; }
+.read-steps { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.read-step { display:flex; flex-direction:column; gap:8px; }
+.read-step-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+.read-step-head h3 { margin:2px 0 3px; font-size:14px; }
+.read-step-head p { margin:0; font-size:10px; line-height:1.5; }
+.read-options { display:grid; grid-template-columns:minmax(0,1fr); gap:5px; }
+.read-option { display:flex; align-items:center; gap:8px; width:100%; min-height:40px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--bg-elev); color:var(--ink); text-align:left; font:inherit; font-size:11px; line-height:1.45; cursor:pointer; transition:border-color .15s, background .15s, transform .1s; }
+.read-option:hover:not(:disabled) { border-color:var(--brand); transform:translateY(-1px); }
+.read-option.selected { border-color:var(--brand); background:var(--brand-soft); box-shadow:0 0 0 1px var(--brand) inset; }
+.read-option.is-correct { border-color:var(--ok, #2f8f5b); background:color-mix(in srgb,var(--ok, #2f8f5b) 12%,var(--surface)); }
+.read-option.is-wrong { border-color:var(--danger, #c0392b); background:color-mix(in srgb,var(--danger, #c0392b) 10%,var(--surface)); }
+.read-option:disabled { cursor:default; opacity:1; }
+.read-step-note { display:none; padding:9px 10px; border-radius:8px; border:1px dashed var(--line); font-size:10px; line-height:1.6; }
+.read-step-note.show { display:block; }
+.read-step-note.ok { border-color:color-mix(in srgb,var(--ok, #2f8f5b) 55%,var(--line)); background:color-mix(in srgb,var(--ok, #2f8f5b) 8%,var(--surface)); }
+.read-step-note.bad { border-color:color-mix(in srgb,var(--danger, #c0392b) 55%,var(--line)); background:color-mix(in srgb,var(--danger, #c0392b) 7%,var(--surface)); }
+.read-step-note b { display:block; font-size:10px; margin-bottom:2px; }
+.read-step-note p { margin:0; color:var(--muted); }
+.read-conclusion-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:10px; }
+.read-conclusion-head h3 { margin:2px 0 3px; font-size:14px; }
+.read-conclusion-head p { margin:0; font-size:10px; }
+.read-diagnosis { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+.read-loading { display:flex; align-items:center; justify-content:center; gap:8px; min-height:220px; color:var(--muted); font-size:12px; }
+.read-feedback .quiz-feedback { margin-top:0; }
+.read-score-row { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; margin:10px 0; }
+.read-score { padding:9px; border:1px solid var(--line); border-radius:8px; background:var(--bg-elev); text-align:center; }
+.read-score b { display:block; font-size:20px; color:var(--brand); font-family:var(--font-mono); }
+.read-score span { display:block; margin-top:2px; color:var(--muted); font-size:9px; }
+.read-entry { display:flex; align-items:center; gap:10px; padding:10px 12px; margin-bottom:12px; border:1px solid color-mix(in srgb,var(--brand) 40%,var(--line)); border-radius:10px; background:linear-gradient(120deg,var(--brand-soft),var(--surface)); color:var(--ink); }
+.read-entry:hover { border-color:var(--brand); }
+.read-entry-icon { display:grid; place-items:center; width:30px; height:30px; flex:none; border-radius:8px; background:var(--brand); color:#fff; }
+.read-entry-text { min-width:0; }
+.read-entry-text b { display:block; font-size:12px; }
+.read-entry-text span { display:block; margin-top:1px; color:var(--muted); font-size:10px; line-height:1.45; }
+@media (max-width:900px) { .read-steps { grid-template-columns:minmax(0,1fr); } .read-ecg-card { position:static; } }
+@media (max-width:600px) { .read-diagnosis { grid-template-columns:minmax(0,1fr); } .read-score-row { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 /* ---------- leaderboard ---------- */
 .leaderboard-page { max-width: 1020px; }
 .lb-tabs { margin: 0 0 8px; width: fit-content; }

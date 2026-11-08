@@ -242,6 +242,20 @@ try {
   if (!document.querySelector('[data-next]')) throw new Error('next button missing after answer');
   ok('practice creates question, accepts selection, renders feedback');
 
+  await go('#/read');
+  await waitFor(() => document.querySelector('[data-step-card="rate"]'), 15000);
+  if (document.querySelectorAll('[data-step-card]').length !== 5) throw new Error('guided reading should render 5 steps');
+  if (document.querySelectorAll('[data-diagnosis]').length < 4) throw new Error('guided reading diagnosis options missing');
+  document.querySelector('[data-step-card="rate"] .read-option')?.click();
+  await waitFor(() => document.querySelector('[data-step-note="rate"].show'));
+  document.querySelector('[data-diagnosis]')?.click();
+  await waitFor(() => !document.querySelector('[data-read-submit]')?.disabled);
+  document.querySelector('[data-read-submit]')?.click();
+  await waitFor(() => document.querySelector('.read-feedback .feedback-title'), 15000);
+  if (!document.querySelector('[data-read-next]')) throw new Error('next case button missing');
+  if (document.querySelectorAll('.read-score').length !== 3) throw new Error('guided reading score summary missing');
+  ok('guided reading renders 5 steps, step feedback and final scoring');
+
   await go('#/daily');
   await waitFor(() => document.querySelector('.daily-hero'));
   if (document.querySelectorAll('.day-cell').length !== 28) throw new Error('daily calendar should have 28 cells');

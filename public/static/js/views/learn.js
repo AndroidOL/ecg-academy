@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bd';
+const __asset = __isNode ? '' : '?v=20261108be';
 const { store } = await import(`../store.js${__asset}`);
 const { icon, chapterColor, difficultyDots, escapeHtml, setupMiniECG, emptyState, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 

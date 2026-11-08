@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bd';
+const __asset = __isNode ? '' : '?v=20261108be';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -171,6 +171,7 @@ export async function practiceView({ query } = {}) {
     <div class="practice-setup">
       <section class="quiz-card">
         <div class="page-eyebrow">SETUP</div>
+        <a class="read-entry" href="#/read"><span class="read-entry-icon">${icon('target', 16)}</span><span class="read-entry-text"><b>系统判读训练</b><span>按 频率 → 节律 → 电轴 → 间期 → ST-T → 结论 的顺序读图，每一步即时反馈。</span></span><span class="badge badge-brand">NEW</span></a>
         <h2 class="section-title" style="margin-bottom:10px">选择玩法</h2>
         <div class="game-mode-grid">${GAME_MODES.map((mode) => `<button class="game-mode-card ${mode.id === state.gameMode ? 'active' : ''}" type="button" data-game-mode="${mode.id}"><span class="game-mode-icon">${icon(mode.icon, 16)}</span><b>${mode.name}</b><small>${mode.note}</small></button>`).join('')}</div>
         <h2 class="section-title" style="margin:16px 0 8px;font-size:16px">难度与范围</h2>

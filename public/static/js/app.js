@@ -1,10 +1,11 @@
 // Cache-busted dynamic imports: keep Node tests query-free while forcing
 // browsers with immutable 7-day static caching to load the current modules.
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bd';
+const __asset = __isNode ? '' : '?v=20261108be';
 const { api } = await import(`./api.js${__asset}`);
 const { store, initTheme, applyTheme, toggleTheme } = await import(`./store.js${__asset}`);
 const { practiceView } = await import(`./views/practice.js${__asset}`);
+const { readView } = await import(`./views/read.js${__asset}`);
 const { simListView } = await import(`./views/sim-list.js${__asset}`);
 const { meView } = await import(`./views/me.js${__asset}`);
 const { Router } = await import(`./router.js${__asset}`);
@@ -38,6 +39,7 @@ const routes = [
   { path: '/learn', handler: learnView },
   { path: '/learn/:id', handler: articleView },
   { path: '/practice', handler: practiceView },
+  { path: '/read', handler: readView },
   { path: '/daily', handler: dailyView },
   { path: '/review', handler: reviewView },
   { path: '/exam', handler: examView },
@@ -158,6 +160,7 @@ function navLabel(path) {
   if (path.startsWith('/ai')) return { label: 'AI 导师', active: '/ai' };
   if (path.startsWith('/learn')) return { label: '学习', active: '/learn' };
   if (path.startsWith('/practice')) return { label: '练习', active: '/practice' };
+  if (path.startsWith('/read')) return { label: '系统判读', active: '/read' };
   if (path.startsWith('/daily')) return { label: '每日挑战', active: '/daily' };
   if (path.startsWith('/exam')) return { label: '学习考试', active: '/exam' };
   if (path.startsWith('/leaderboard')) return { label: '测试排行榜', active: '/leaderboard' };

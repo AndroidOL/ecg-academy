@@ -7,14 +7,14 @@ export const LOCALES = [
 
 const DICT = {
   zh: {
-    'nav.home': '首页', 'nav.learn': '学习', 'nav.intro': '导论', 'nav.ai': 'AI 导师', 'nav.practice': '练习', 'nav.sim': '急救', 'nav.lab': '实验室', 'nav.me': '我的',
+    'nav.home': '首页', 'nav.learn': '学习', 'nav.intro': '导论', 'nav.ai': 'AI 导师', 'nav.practice': '练习', 'nav.read': '系统判读', 'nav.sim': '急救', 'nav.lab': '实验室', 'nav.me': '我的',
     'nav.exam': '考试', 'nav.leaderboard': '排行', 'nav.review': '错题复习', 'nav.glossary': '术语表', 'nav.daily': '每日挑战',
     'brand.sub': 'ECG LAB · 读懂每一次心跳',
     'footer.about': '关于 / 勘误', 'footer.github': 'GitHub',
     'common.language': '语言', 'common.chinese': '中文', 'common.english': 'English',
   },
   en: {
-    'nav.home': 'Home', 'nav.learn': 'Learn', 'nav.intro': 'Intro', 'nav.ai': 'AI Tutor', 'nav.practice': 'Practice', 'nav.sim': 'ACLS', 'nav.lab': 'Lab', 'nav.me': 'Profile',
+    'nav.home': 'Home', 'nav.learn': 'Learn', 'nav.intro': 'Intro', 'nav.ai': 'AI Tutor', 'nav.practice': 'Practice', 'nav.read': 'Guided Read', 'nav.sim': 'ACLS', 'nav.lab': 'Lab', 'nav.me': 'Profile',
     'nav.exam': 'Exam', 'nav.leaderboard': 'Ranks', 'nav.review': 'Review', 'nav.glossary': 'Glossary', 'nav.daily': 'Daily',
     'brand.sub': 'ECG LAB · Read every heartbeat',
     'footer.about': 'About / Corrections', 'footer.github': 'GitHub',
@@ -24,7 +24,7 @@ const DICT = {
 
 // UI 文案翻译（课程正文、AI 回答、题目内容保持原文）
 const EN_TEXT = {
-  '首页': 'Home', '导论': 'Intro', '学习': 'Learn', '练习': 'Practice', '每日挑战': 'Daily Challenge',
+  '首页': 'Home', '导论': 'Intro', '学习': 'Learn', '练习': 'Practice', '每日挑战': 'Daily Challenge', '系统判读': 'Guided Read',
   '考试': 'Exam', '排行': 'Ranks', '急救': 'ACLS', '实验室': 'Lab', '我的': 'Profile', 'AI 导师': 'AI Tutor',
   '错题复习': 'Wrong-book Review', '错题本': 'Wrong Book', '术语表': 'Glossary', '课程包': 'Course Packs',
   '开始学习': 'Start learning', '判读练习': 'ECG practice', '急救模拟': 'ACLS simulation',
@@ -77,6 +77,16 @@ const EN_TEXT = {
   '错题与复习': 'Wrong book & review', '打开错题本 →': 'Open wrong book →', '错题诊断': 'Wrong questions',
   '收藏章节': 'Saved chapters', '开始间隔复习': 'Start spaced review', '判读记录': 'Practice history', '去练习 →': 'Practice →',
   '还没有判读记录': 'No practice records yet', '开始练习': 'Start practice', '急救记录': 'ACLS history',
+  '系统判读训练': 'Guided ECG reading', '频率': 'Rate', '节律': 'Rhythm', '电轴': 'Axis', '间期': 'Intervals', '结论': 'Conclusion',
+  '1 · 频率': '1 · Rate', '2 · 节律': '2 · Rhythm', '3 · 电轴': '3 · Axis', '4 · 间期': '4 · Intervals', '5 · ST-T 与 U 波': '5 · ST-T & U wave', '6 · 结论': '6 · Conclusion',
+  '结构化 5 步': '5 structured steps', '每题独立计分': 'Scored per case', '待作答': 'Pending', '需复习': 'Review',
+  '确认本步': 'Confirm step', '提交诊断': 'Submit diagnosis', '下一例': 'Next case', '换一例': 'New case',
+  '加载中…': 'Loading…', '正在生成病例…': 'Generating case…',
+  '心动过缓（<60 次/分）': 'Bradycardia (<60 bpm)', '正常范围（60–100 次/分）': 'Normal (60–100 bpm)', '心动过速（>100 次/分）': 'Tachycardia (>100 bpm)',
+  '窦性心律': 'Sinus rhythm', '房性快速性心律失常': 'Atrial tachyarrhythmia', '室上性心动过速': 'SVT', '室性心律失常': 'Ventricular arrhythmia', '逸搏 / 交界性心律': 'Escape / junctional',
+  '正常电轴': 'Normal axis', '电轴左偏': 'Left axis deviation', '电轴右偏': 'Right axis deviation',
+  '均无显著异常': 'No significant abnormality', 'ST 段抬高': 'ST elevation', 'ST 段压低': 'ST depression', 'T 波形态改变': 'T-wave change', 'U 波显著': 'Prominent U wave', '无显著 ST-T 改变': 'No significant ST-T change',
+  '按顺序读图，再下结论': 'Read in order, then conclude',
   'AI 分析薄弱项': 'AI weakness analysis', '按薄弱诊断组卷': 'Quiz by weak diagnoses', '今日复习已清空': 'Today’s review is clear',
 };
 
@@ -103,7 +113,7 @@ export function localeLabel(id) {
 }
 
 export function navKey(path) {
-  return `nav.${({ '/': 'home', '/learn': 'learn', '/intro': 'intro', '/ai': 'ai', '/practice': 'practice', '/daily': 'daily', '/exam': 'exam', '/leaderboard': 'leaderboard', '/sim': 'sim', '/lab': 'lab', '/me': 'me', '/review': 'review', '/glossary': 'glossary', '/guidelines': 'guidelines' })[path] || 'home'}`;
+  return `nav.${({ '/': 'home', '/learn': 'learn', '/intro': 'intro', '/ai': 'ai', '/practice': 'practice', '/read': 'read', '/daily': 'daily', '/exam': 'exam', '/leaderboard': 'leaderboard', '/sim': 'sim', '/lab': 'lab', '/me': 'me', '/review': 'review', '/glossary': 'glossary', '/guidelines': 'guidelines' })[path] || 'home'}`;
 }
 
 let applying = false;
