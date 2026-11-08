@@ -19,7 +19,7 @@ tar -C "$ROOT" \
   --exclude='storage/master.key' --exclude='docs/*.local.md' \
   -cf - . | tar -C "$TARGET" -xf -
 mkdir -p "$TARGET/storage/sessions" "$TARGET/storage/logs" "$TARGET/storage/cache"
-chown -R www:www "$TARGET"
+find "$TARGET" -path "$TARGET/.user.ini" -prune -o -exec chown www:www {} +
 chmod 700 "$TARGET/storage/sessions" "$TARGET/storage/logs" "$TARGET/storage/cache" 2>/dev/null || true
 echo "deployed $ROOT -> $TARGET"
 echo "run: nginx -t && nginx -s reload"
