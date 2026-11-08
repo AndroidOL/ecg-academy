@@ -3,6 +3,12 @@
 测试日期：2026-11-07 ～ 2026-11-08
 环境：PHP 8.4.27 · MySQL 8.4.13 · nginx 1.30.6 · Node 22.23.4 · 内存 3.5 GB
 
+## 2026-11-08 v2.5.0 回归（20261108az）
+
+- PHP：作业 3、排行榜 2、学习 7、急救 14、每日挑战 9、账号 8、流量 5、AI 成本 3、扣分/不熟练 3、等级 5、账号同步 4、课程包 4；共 67 项全部通过。
+- Node：引擎/播放器/复习 3 组通过；jsdom UI 15 组 0 错误。
+- 浏览器：排行榜、AI 导师、课程包、供应商价格编辑、导联显示 6/6，0 控制台错误。
+
 ## 2026-11-08 v2.0.0 回归（20261108aq）
 
 - PHP：每日挑战 9/9、学习考试 7/7、排行榜 2/2、班级作业 3/3、急救 14/14。
@@ -40,6 +46,10 @@
 | 账号资料/Passkey 参数 | `php tests/profile.test.php` | **8/8 通过** |
 | 访客统计/游客清理 | `php tests/traffic.test.php` | **5/5 通过** |
 | AI 成本/折扣计算 | `php tests/ai-cost.test.php` | **3/3 通过** |
+| 扣分/不熟练判定 | `php tests/slow.test.php` | **3/3 通过** |
+| 等级与难度解锁 | `php tests/level.test.php` | **5/5 通过** |
+| 账号学习数据同步 | `php tests/study-sync.test.php` | **4/4 通过** |
+| 课程包校验/导入/发布 | `php tests/coursepack.test.php` | **4/4 通过** |
 | 播放器/12 导联/标注 | `node tests/playback.test.mjs` | **13/13 通过** |
 | 全链路 UI 冒烟 | `node tests/ui-smoke.mjs   # 15 组` | **15/15 组通过，0 控制台错误** |
 | 生产 API | curl + 独立 Cookie/CSRF | **通过**（见下） |
