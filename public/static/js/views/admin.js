@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ay';
+const __asset = __isNode ? '' : '?v=20261108az';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, escapeHtml, toast, confirmDialog, openModal } = await import(`../ui.js${__asset}`);
@@ -346,6 +346,7 @@ export async function adminView() {
       if (tab === 'cost') await loadCost();
       if (tab === 'packs') await loadPacks();
       if (tab === 'overview') bindSettings();
+      if (tab === 'ai') bindProviderForm();
       if (tab === 'assignments') {
         content.querySelector('[data-assignment-form]')?.addEventListener('submit', async (event) => {
           event.preventDefault();
