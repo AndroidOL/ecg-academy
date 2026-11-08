@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>离线 · 心迹 ECG Lab</title>
+<style>
+  :root { color-scheme: light dark; --bg:#f4f1ea; --surface:#fffdf8; --ink:#18302d; --muted:#5e756f; --brand:#0e766e; --line:#d9d4c8; }
+  @media (prefers-color-scheme:dark) { :root { --bg:#071417; --surface:#0e1e22; --ink:#e7f6f0; --muted:#90aaa5; --brand:#3dd6c4; --line:#1d3538; } }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100dvh; display:grid; place-items:center; padding:24px; background:radial-gradient(circle at 20% 0%,color-mix(in srgb,var(--brand) 18%,transparent),transparent 45%),var(--bg); color:var(--ink); font-family:system-ui,-apple-system,"Noto Sans SC",sans-serif; }
+  main { width:min(520px,100%); padding:28px; border:1px solid var(--line); border-radius:18px; background:var(--surface); box-shadow:0 20px 50px rgba(0,0,0,.08); }
+  .mark { width:52px; height:52px; display:grid; place-items:center; border-radius:14px; background:color-mix(in srgb,var(--brand) 14%,transparent); color:var(--brand); font-size:26px; }
+  h1 { margin:16px 0 8px; font-size:25px; }
+  p { color:var(--muted); line-height:1.75; font-size:14px; }
+  ul { color:var(--muted); line-height:1.8; font-size:13px; padding-left:20px; }
+  a { display:inline-flex; margin-top:14px; padding:11px 16px; border-radius:10px; background:var(--brand); color:#fff; text-decoration:none; font-weight:700; }
+  small { display:block; margin-top:14px; color:var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <div class="mark" aria-hidden="true">⌁</div>
+  <h1>当前处于离线状态</h1>
+  <p>心迹的页面外壳和已浏览过的内容可能已缓存。恢复网络后可继续同步题库、AI 与急救推演。</p>
+  <ul>
+    <li>已缓存的课程仍可阅读（内容以最后一次在线访问为准）。</li>
+    <li>错题本、收藏和复习进度保存在本设备，不受影响。</li>
+    <li>急救推演需要服务端状态机，离线时暂停使用。</li>
+  </ul>
+  <a href="/">尝试重新打开</a>
+  <small>心迹 ECG Lab · 教学用途，不替代临床判断</small>
+</main>
+<script>
+window.addEventListener('online',()=>{location.href='/';});
+</script>
+</body>
+</html>

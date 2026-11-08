@@ -3,6 +3,17 @@
 测试日期：2026-11-07 ～ 2026-11-08
 环境：PHP 8.4.27 · MySQL 8.4.13 · nginx 1.30.6 · Node 22.23.4 · 内存 3.5 GB
 
+## 2026-11-08 最终回归（1.2.18 / 20261108ad）
+
+- 内容校验：230 章 / 19 章节 / 184 主题 / 46 篇 ECG 文章，0 错误。
+- 题库校验：1920 道，0 错误；难度 1/2/3 = 320/880/720。
+- 引擎 15/15；播放器 13/13；急救状态机 14/14；jsdom UI 11 组 0 控制台错误。
+- 浏览器：390×844 与 1280×900 共 22 个页面组合，0 横向溢出、0 控制台错误；复习/术语/关于/10 场景/三行电轴/胸导联无回归。
+- 12 导联截图确认底边 1 mV 校准标记与 `25 mm/s · 10 mm/mV` 标注。
+- 无障碍自检：关键页面无可访问名称缺失的按钮/链接；焦点样式、aria-current、aria-live、降低动画已核对，真实辅助技术用户测试仍待进行。
+- PWA：`/sw.js` 返回 application/javascript，`offline.html` 可访问；生产 HTTPS 注册后需在浏览器 Application 面板确认缓存。
+
+
 ## 总览
 
 | 套件 | 命令 | 结果 |
@@ -11,9 +22,9 @@
 | 230 章课程体系 | `php scripts/validate_curriculum.php` | **230 章 / 19 章节，0 错误** |
 | 1920 道预生成题库 | `php scripts/validate_bank.php` | **1920 道，0 错误** |
 | ECG 波形引擎 | `node tests/engine.test.mjs` | **15/15 通过** |
-| ACLS 状态机 | `php tests/sim.test.php` | **12/12 通过** |
+| ACLS 状态机 | `php tests/sim.test.php` | **14/14 通过** |
 | 播放器/12 导联/标注 | `node tests/playback.test.mjs` | **13/13 通过** |
-| 全链路 UI 冒烟 | `node tests/ui-smoke.mjs` | **11/11 组通过，0 控制台错误** |
+| 全链路 UI 冒烟 | `node tests/ui-smoke.mjs   # 11 组` | **11/11 组通过，0 控制台错误** |
 | 生产 API | curl + 独立 Cookie/CSRF | **通过**（见下） |
 | 静态资源 | 逐文件 HTTP 检查 | **全部 200** |
 | 无头截图 | Chrome 150 headless | 受环境 SwiftShader 卡死限制，未完成像素级截图 |
@@ -75,7 +86,7 @@
 - **超时/死亡评分封顶**：timeout 结局分数 ≤35、Grade D，复盘分数一致。
 
 ```text
-12 passed, 0 failed
+14 passed, 0 failed
 ```
 
 ## 3.1 题库校验
@@ -131,7 +142,7 @@ Playback tests passed: 13
 4. 练习：点击开始 → 服务端出题 200 → 选择选项 → 服务端判分 200 → 显示解析与下一题；
 5. 实验室：双节律画布 + 标准 12 导联工作台；K/Ca/Mg 滑杆、预设、病例与自测更新；
 6. 我的：资料、统计、排行榜渲染；
-7. 急救列表：6 个场景；
+7. 急救列表：10 个场景（含 PEA 低血容量、低温、LAST、妊娠）；
 8. 急救会话：启动场景 200 → 轮询状态 200 → CPR action 200 → 结束 action 200 → 复盘 200 → 显示分数。
 9. 12 导联播放、12 导联→节律条切换、教科书面板与正常对照。
 10. 理论章无 ECG 渲染；分页第 2 页；急救监护常驻 IV 按钮与按压频率。
@@ -197,7 +208,7 @@ php scripts/validate_bank.php
 node tests/engine.test.mjs
 node tests/playback.test.mjs
 php tests/sim.test.php
-node tests/ui-smoke.mjs
+node tests/ui-smoke.mjs   # 11 组
 
 # 静态资源
 for f in $(cd public && find static -type f); do

@@ -20,7 +20,7 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/bootstrap` | 当前用户、CSRF、内容统计、1920 题库统计、进度、AI 状态、本周排行榜、场景数、`features`（注册/登录开关）、`site`（GitHub/许可证/版权/ICP） |
+| GET | `/api/bootstrap` | 当前用户、CSRF、内容统计、1920 题库统计、进度、AI 状态（含 `byokEnabled`）、本周排行榜、场景数、`features`（注册/登录开关）、`site`（GitHub/许可证/版权/ICP） |
 | GET | `/api/admin/auth-config` | 管理后台登录方式与 Passkey 是否存在（公开只读） |
 | POST | `/api/admin/login` | 管理员密码登录（受 `admin.password_login_enabled` 控制） |
 | GET | `/api/admin/passkey/login/options` | 生成 WebAuthn 登录 challenge |
@@ -69,7 +69,7 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/sim/scenarios` | 6 个场景列表 |
+| GET | `/api/sim/scenarios` | 10 个场景列表（含 4 个可逆病因/特殊处理场景） |
 | POST | `/api/sim/start` | `{scenarioId}`，创建 `sim_sessions`，返回监护状态 |
 | GET | `/api/sim/state?id=` | 读取状态；服务端按真实时间推进动态生理、阶段、恶化与超时 |
 | POST | `/api/sim/action` | `{sessionId, action, payload}` |
@@ -89,6 +89,7 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 | `iv` / `oxygen` / `sedate` | — | 建立通路/吸氧/电复律前镇静 |
 | `calcium` / `bicarb` / `insulin` | — | 高钾可逆病因处理 |
 | `adenosine` / `vagal` | — | 稳定 SVT 的尝试 |
+| `special` | — | 场景专属可逆病因/特殊处理：补液、复温、脂肪乳、围死亡期剖宫产 |
 | `check_pulse` / `check_rhythm` | — | 评估（按压中会扣分） |
 | `finish` | — | 提前结束并生成复盘 |
 
@@ -98,13 +99,19 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/ai/status` | `configured/model/dailyLimit/used/remaining/mode` |
-| POST | `/api/ai/chat` | `{message, diagnosisId?}` |
-| POST | `/api/ai/explain` | `{attemptId}` |
-| POST | `/api/ai/study-plan` | 生成薄弱诊断专项计划 |
-| POST | `/api/ai/sim-review` | `{runId}` 急救复盘 |
+| GET | `/api/ai/status` | `configured/allowed/byokEnabled/model/dailyLimit/used/remaining/mode` |
+| POST | `/api/ai/chat` | `{message, diagnosisId?, byok?}`；`byok={baseUrl,model,apiKey}` 仅在管理员开启 BYOK 时接受 |
+| POST | `/api/ai/explain` | `{attemptId, question?, byok?}` |
+| POST | `/api/ai/study-plan` | `{byok?}` 生成薄弱诊断专项计划 |
+| POST | `/api/ai/sim-review` | `{runId, byok?}` 急救复盘 |
 
-未配置密钥、超时或额度用尽时返回 `fallback:true` 与本地文本，HTTP 仍为 200，避免打断学习。
+未配置密钥、超时或额度用尽时返回 `fallback:true` 与本地文本，HTTP 仍为 200，避免打断学习。BYOK 请求不消耗站点每日额度；密钥只在请求内存中使用，不写数据库/日志，且 Base URL 必须为 HTTPS 公网地址。
+
+## 前端本地数据与离线
+
+- 错题、收藏、间隔重复、游客进度/XP 在 localStorage；导入/导出 JSON 仅在浏览器执行。
+- `/sw.js` 为 PWA 缓存入口，`/offline.html` 为离线回退页；API GET 采用网络优先+缓存回退，静态资源采用缓存优先+后台刷新。
+- `#/review`、`#/glossary`、`#/about` 为纯前端视图，不新增服务端接口。
 
 ## 认证
 

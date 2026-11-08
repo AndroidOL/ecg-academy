@@ -1,6 +1,7 @@
 import { api } from '../api.js';
+import { byokPayload, hasByok } from '../byok.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ab';
+const __asset = __isNode ? '' : '?v=20261108ad';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 import { navigate } from '../router.js';
@@ -385,7 +386,7 @@ export async function simSessionView({ params }) {
         <section class="card card-pad">
           <div class="section-head"><h2 class="section-title" style="font-size:18px">复盘要点</h2><span class="badge">${review.length} 条</span></div>
           ${review.map((item) => `<div class="review-item ${item.tone || ''}"><span class="review-dot"></span><div><b>${escapeHtml(item.title)}</b><div class="muted">${escapeHtml(item.detail)}</div></div></div>`).join('') || '<p class="muted">暂无复盘要点。</p>'}
-          <div class="row-wrap" style="margin-top:16px">${store.ai?.allowed !== false ? `<button class="btn btn-secondary btn-sm" type="button" data-ai-review>${icon('sparkles', 14)} AI 复盘</button>` : ''}<a class="btn btn-primary btn-sm" href="#/sim">${icon('rotate', 14)} 再来一次</a></div>
+          <div class="row-wrap" style="margin-top:16px">${(store.ai?.allowed !== false || (store.ai?.byokEnabled && hasByok())) ? `<button class="btn btn-secondary btn-sm" type="button" data-ai-review>${icon('sparkles', 14)} AI 复盘</button>` : ''}<a class="btn btn-primary btn-sm" href="#/sim">${icon('rotate', 14)} 再来一次</a></div>
           <div data-ai-review-panel></div>
         </section>
         <aside class="card card-pad">
@@ -400,7 +401,7 @@ export async function simSessionView({ params }) {
       const panel = el.querySelector('[data-ai-review-panel]');
       setButtonLoading(button, true, 'AI 复盘中');
       try {
-        const result = await api.aiSimReview(state.runId);
+        const result = await api.aiSimReview(state.runId, byokPayload());
         panel.innerHTML = `<div class="explain-block"><h4>${result.source === 'ai' ? 'AI 复盘' : '本地复盘'}</h4><p data-ai-text></p></div>`;
         panel.querySelector('[data-ai-text]').textContent = result.text;
       } catch (error) {

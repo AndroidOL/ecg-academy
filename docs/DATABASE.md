@@ -47,7 +47,7 @@ php scripts/migrate.php
 | `sim_runs` | 急救模拟完成记录与复盘 |
 | `auth_throttle` | 登录/注册失败限流 |
 | `ai_usage` | AI 每日配额 |
-| `app_settings` | 数据库驱动站点/AI/登录配置 |
+| `app_settings` | 数据库驱动站点/AI/登录配置；键包括 `ai.byok_enabled`、`ai.allow_guest`、`ai.daily_limit`、站点信息等 |
 | `admin_passkeys` | 管理员 WebAuthn 公钥、credential ID、计数器 |
 | `admin_audit` | 管理操作审计 |
 

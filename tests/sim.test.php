@@ -233,6 +233,41 @@ try {
         assert((bool) array_filter($labels, static fn (string $l): bool => str_contains($l, '电击')));
         SimEngine::action($userId, $id, 'finish', []);
     });
+    check('new reversible-cause scenarios expose and accept special action', function () use ($userId) {
+        foreach (['pea-hypovolemia', 'hypothermia-vf', 'last-arrest', 'pregnancy-arrest'] as $scenarioId) {
+            $view = SimEngine::start($userId, $scenarioId);
+            $id = $view['sessionId'];
+            $special = false;
+            foreach ($view['actions'] as $group) {
+                foreach ($group['actions'] as $action) {
+                    if (($action['id'] ?? '') === 'special') $special = true;
+                }
+            }
+            assert($special, $scenarioId . ' should expose special action');
+            $view = SimEngine::action($userId, $id, 'special', []);
+            assert((bool) array_filter($view['events'], static fn (array $e): bool => str_contains((string) $e['label'], '补液') || str_contains((string) $e['label'], '复温') || str_contains((string) $e['label'], '脂肪乳') || str_contains((string) $e['label'], '剖宫产')));
+            SimEngine::action($userId, $id, 'finish', []);
+        }
+    });
+
+    check('PEA hypovolemia reaches ROSC after CPR, epinephrine, fluids and time', function () use ($userId, $pdo) {
+        $view = SimEngine::start($userId, 'pea-hypovolemia');
+        $id = $view['sessionId'];
+        SimEngine::action($userId, $id, 'cpr_start', []);
+        SimEngine::action($userId, $id, 'iv', []);
+        pauseFor(6.5);
+        SimEngine::action($userId, $id, 'epi', []);
+        SimEngine::action($userId, $id, 'special', []);
+        $stmt = $pdo->prepare('SELECT state FROM sim_sessions WHERE id = ?');
+        $stmt->execute([$id]);
+        $state = json_decode((string) $stmt->fetchColumn(), true);
+        $state['specialAt'] = microtime(true) - 13;
+        $pdo->prepare('UPDATE sim_sessions SET state = ? WHERE id = ?')->execute([json_encode($state, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR), $id]);
+        $view = SimEngine::state($userId, $id);
+        assert($view['status'] === 'ended');
+        assert($view['outcome'] === 'rosc');
+    });
+
 } finally {
     $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$userId]);
 }

@@ -56,6 +56,8 @@ final class SimEngine
             'atropine' => 0,
             'calcium' => 0,
             'bicarb' => 0,
+            'special' => null,
+            'specialAt' => null,
             'insulin' => 0,
             'lastEpiAt' => null,
             'lastShockAt' => null,
@@ -152,6 +154,7 @@ final class SimEngine
             'calcium' => self::calcium($state, $scenario, $now),
             'bicarb' => self::bicarb($state, $scenario, $now),
             'insulin' => self::insulin($state, $scenario, $now),
+            'special' => self::specialAction($state, $scenario, $now),
             'adenosine' => self::adenosine($state, $scenario, $now),
             'vagal' => self::vagal($state, $scenario, $now),
             'check_pulse' => self::check($state, '检查脉搏', $now),
@@ -234,6 +237,7 @@ final class SimEngine
                 : ['hr' => 190, 'bpSys' => 82, 'bpDia' => 48, 'spo2' => 93, 'etco2' => 30, 'responsive' => true, 'pulse' => true],
             'brady' => ['hr' => 32, 'bpSys' => 76, 'bpDia' => 40, 'spo2' => 94, 'etco2' => 32, 'responsive' => false, 'pulse' => true],
             'hyperk' => ['hr' => 70, 'bpSys' => 0, 'bpDia' => 0, 'spo2' => 55, 'etco2' => 0, 'responsive' => false, 'pulse' => false],
+            'pea' => ['hr' => 42, 'bpSys' => 0, 'bpDia' => 0, 'spo2' => 64, 'etco2' => 0, 'responsive' => false, 'pulse' => false],
             default => ['hr' => 0, 'bpSys' => 0, 'bpDia' => 0, 'spo2' => 70, 'etco2' => 0, 'responsive' => false, 'pulse' => false],
         };
     }
@@ -328,6 +332,26 @@ final class SimEngine
                 $state['flags']['tachy_worse'] = true;
                 self::event($state, '患者出现意识模糊、末梢湿冷', 'bad');
             }
+            $state['dirty'] = true;
+            return;
+        }
+
+        if ($algorithm === 'pea') {
+            $state['hr'] = max(16, (int) round(42 - $elapsed * 0.05));
+            $state['bpSys'] = 0;
+            $state['bpDia'] = 0;
+            $state['etco2'] = 0;
+            $state['responsive'] = false;
+            $state['pulse'] = false;
+            if ($state['cpr']) {
+                $state['bpSys'] = 78;
+                $state['bpDia'] = 46;
+                $state['spo2'] = 82;
+                $state['etco2'] = 17;
+            } else {
+                $state['spo2'] = max(18, (int) round(64 - $elapsed * 0.25));
+            }
+            self::setPhase($state, 'peri-arrest', 'PEA：有电活动但无有效灌注');
             $state['dirty'] = true;
             return;
         }
@@ -434,7 +458,14 @@ final class SimEngine
         if (!empty($state['flags']['patient_dead'])) {
             return 'timeout';
         }
-        if (in_array($algorithm, ['vf', 'hyperk'], true) && !$state['cpr']) {
+        if ($algorithm === 'pea' && $state['cpr'] && $state['epi'] >= 1 && !empty($state['specialAt']) && $now - (float) $state['specialAt'] > 12) {
+            return 'rosc';
+        }
+        if (!empty($scenario['specialAction']) && empty($state['specialAt']) && $elapsed > 90 && !isset($state['flags']['late_special'])) {
+            self::penalty($state, 8, '未及时处理可逆病因：' . $scenario['specialAction']['label']);
+            $state['flags']['late_special'] = true;
+        }
+        if (in_array($algorithm, ['vf', 'hyperk', 'pea'], true) && !$state['cpr']) {
             $lastCpr = (float) ($state['lastCprEnd'] ?? $state['startedAt']);
             if ($now - $lastCpr > 60 && empty($state['flags']['patient_dead'])) {
                 $state['flags']['patient_dead'] = true;
@@ -638,6 +669,7 @@ final class SimEngine
             if (!empty($state['flags']['vf_fine'])) $chance -= 0.12;
             if ($state['epi'] > 0) $chance += 0.04;
             if ($state['amio'] > 0) $chance += 0.04;
+            if (!empty($state['specialAt'])) $chance += 0.08;
             if (self::random($state) < $chance) {
                 $state['postShockOutcome'] = 'rosc';
                 self::event($state, '除颤成功：电击后过渡心律，等待自主循环恢复', 'good');
@@ -715,7 +747,11 @@ final class SimEngine
             $state['epi']++;
             $state['lastEpiAt'] = $now;
             self::event($state, '肾上腺素 1 mg IV/IO', 'good');
-        } elseif ($algorithm === 'hyperk') {
+        } elseif (in_array($algorithm, ['hyperk', 'pea'], true)) {
+            if ($state['lastEpiAt'] && $now - $state['lastEpiAt'] < 180) {
+                $state['epiErrors']++;
+                self::penalty($state, 4, '肾上腺素间隔 <3 分钟');
+            }
             $state['epi']++;
             $state['lastEpiAt'] = $now;
             self::event($state, '肾上腺素 1 mg IV/IO', 'good');
@@ -1268,6 +1304,16 @@ final class SimEngine
             $groups[] = ['id' => 'pacing', 'label' => '起搏', 'actions' => [
                 ['id' => 'pacing', 'label' => '经皮起搏', 'tone' => 'primary'],
             ]];
+        } elseif ($algorithm === 'pea') {
+            $groups[] = ['id' => 'bls', 'label' => '基础生命支持', 'actions' => [
+                ['id' => 'cpr_start', 'label' => '开始胸外按压', 'tone' => 'primary'],
+                ['id' => 'cpr_stop', 'label' => '暂停按压', 'tone' => 'ghost'],
+                ['id' => 'oxygen', 'label' => '球囊面罩通气', 'tone' => 'ghost'],
+                ['id' => 'iv', 'label' => '建立 IV/IO', 'tone' => 'ghost'],
+            ]];
+            $groups[] = ['id' => 'drugs', 'label' => '药物与可逆病因', 'actions' => [
+                ['id' => 'epi', 'label' => '肾上腺素 1 mg', 'tone' => 'warn', 'requiresIv' => true],
+            ]];
         } else {
             $groups[] = ['id' => 'bls', 'label' => '基础生命支持', 'actions' => [
                 ['id' => 'cpr_start', 'label' => '开始胸外按压', 'tone' => 'primary'],
@@ -1282,6 +1328,13 @@ final class SimEngine
                 ['id' => 'insulin', 'label' => '胰岛素+葡萄糖', 'tone' => 'ghost', 'requiresIv' => true],
             ]];
         }
+        if (!empty($scenario['specialAction'])) {
+            $groups[] = ['id' => 'special', 'label' => '可逆病因 / 特殊处理', 'actions' => [[
+                'id' => 'special',
+                'label' => (string) $scenario['specialAction']['label'],
+                'tone' => (string) ($scenario['specialAction']['tone'] ?? 'primary'),
+            ]]];
+        }
         $groups[] = ['id' => 'assess', 'label' => '评估', 'actions' => [
             ['id' => 'check_pulse', 'label' => '检查脉搏', 'tone' => 'ghost'],
             ['id' => 'check_rhythm', 'label' => '检查心律', 'tone' => 'ghost'],
@@ -1293,6 +1346,14 @@ final class SimEngine
     private static function hint(array $scenario, array $state, int $elapsed): string
     {
         $algorithm = $scenario['algorithm'];
+        if ($algorithm === 'pea') {
+            if (empty($state['cpr'])) return 'PEA：立即开始高质量 CPR；肾上腺素每 3–5 分钟，同时寻找低血容量等可逆病因。';
+            if (empty($state['specialAt'])) return 'PEA 有电活动但无脉：快速补液/输血并控制出血，不要除颤。';
+            return '可逆病因正在处理：继续 CPR，评估脉搏与心律，准备转送确定性止血。';
+        }
+        if (!empty($scenario['specialAction']) && empty($state['specialAt']) && $elapsed > 60) {
+            return '本场景需同时处理特殊可逆病因：' . $scenario['specialAction']['label'] . '。';
+        }
         if (!empty($state['postShockUntil'])) {
             return '电击后短暂心室静止：立即恢复高质量按压；约 2 秒后评估心律，准备下一次除颤。';
         }
@@ -1332,6 +1393,24 @@ final class SimEngine
         }
         if ($state['calcium'] === 0) return '无脉电活动：CPR + 肾上腺素；结合透析病史考虑高钾，尽快静脉钙剂。';
         return '继续 CPR，纠正高钾（钙剂、胰岛素+葡萄糖、碳酸氢钠），尽早透析。';
+    }
+
+    private static function specialAction(array &$state, array $scenario, float $now): void
+    {
+        $special = $scenario['specialAction'] ?? null;
+        if (!$special) {
+            throw new ApiError(422, 'no_special_action', '当前场景没有特殊处理');
+        }
+        if (!empty($state['specialAt'])) {
+            throw new ApiError(422, 'special_done', '该特殊处理已完成');
+        }
+        if (($special['id'] ?? '') === 'cesarean' && $state['cpr'] === false) {
+            self::penalty($state, 4, '围死亡期剖宫产前应持续 CPR');
+        }
+        $state['special'] = (string) ($special['id'] ?? 'special');
+        $state['specialAt'] = $now;
+        self::event($state, (string) ($special['label'] ?? '执行特殊处理'), 'good');
+        $state['dirty'] = true;
     }
 
     private static function localReview(?array $scenario, array $events, int $score, string $outcome): array

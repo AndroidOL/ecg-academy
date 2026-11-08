@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ab';
+const __asset = __isNode ? '' : '?v=20261108ad';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const LEADS = {
@@ -19,6 +19,38 @@ const CHEST = {
   V5: { x: 236, y: 145, name: 'V5', note: '左腋前线第 5 肋间；侧壁' },
   V6: { x: 254, y: 148, name: 'V6', note: '左腋中线第 5 肋间；侧壁' },
 };
+
+const CHEST_VECTOR = {
+  V1: { x: -0.58, z: 0.82, dist: 0.95, note: '右胸第 4 肋间，胸骨右缘' },
+  V2: { x: -0.18, z: 0.98, dist: 0.95, note: '左胸第 4 肋间，胸骨左缘' },
+  V3: { x: 0.34, z: 0.94, dist: 0.98, note: 'V2 与 V4 连线中点' },
+  V4: { x: 0.78, z: 0.60, dist: 1.00, note: '左锁骨中线第 5 肋间' },
+  V5: { x: 0.97, z: 0.22, dist: 1.00, note: '左腋前线第 5 肋间' },
+  V6: { x: 0.94, z: -0.18, dist: 1.50, note: '左腋中线第 5 肋间' },
+};
+
+const CHEST_VECTOR_KEYS = ['V1', 'V5', 'V6'];
+const CHEST_VECTOR_COLORS = { V1: 'accent', V5: 'brand', V6: 'gold' };
+
+// 水平面：x = 患者左，z = 前。QRS 由“向右前的小室间隔向量”过渡到“向左后的左室主向量”。
+function chestQrsVector(u) {
+  const g = (center, width) => Math.exp(-Math.pow((u - center) / width, 2));
+  const edge = Math.max(0, Math.min(1, u / 0.045, (1 - u) / 0.045));
+  const septal = g(0.13, 0.075) * 0.42;
+  const main = g(0.44, 0.15);
+  const late = g(0.70, 0.10) * 0.48;
+  return {
+    x: (-0.38 * septal + 0.82 * main + 0.50 * late) * edge,
+    z: (0.56 * septal - 0.65 * main - 0.75 * late) * edge,
+  };
+}
+
+function chestLeadProjection(id, v) {
+  const lead = CHEST_VECTOR[id];
+  const norm = Math.hypot(lead.x, lead.z) || 1;
+  const dot = (v.x * lead.x + v.z * lead.z) / norm;
+  return dot / Math.pow(lead.dist, 1.25);
+}
 
 const LOOP_LABELS = {
   P: { color: 'var(--brand)', text: 'P 环：心房除极，向量小、时间短' },
@@ -169,7 +201,7 @@ function drawVectorCanvas(canvas, state, t) {
   ctx.fillText(`${activeLabel}${movingLabel} · ${lead.name} 投影 ${dot >= 0 ? '+' : ''}${dot.toFixed(2)}`, 12, 18);
   ctx.fillStyle = c.muted;
   ctx.font = '10px ui-monospace, monospace';
-  ctx.fillText('P/QRS/T 只在各自时间窗内转动；主向量总体指向左下', 12, height - 10);
+  ctx.fillText('P/QRS/T 只在各自时间窗内转动；正常 QRS 主向量总体指向左下、略向后', 12, height - 10);
 }
 
 function drawProjectionCanvas(canvas, state, t) {
@@ -259,12 +291,13 @@ function vectorLoopsPanel() {
       <div class="vector-projections" data-vector-projections>${Object.entries(LEADS).map(([id, lead]) => `<div data-projection-row="${id}"><b>${id}</b><div class="vector-projection-track"><i></i></div><span data-projection-value="${id}">+0.00</span></div>`).join('')}</div>
       <div class="visual-controls">
         <button class="btn btn-primary btn-sm" type="button" data-vector-play>${icon('pause', 13)} 暂停</button>
-        <label class="visual-range">旋转 <input type="range" min="-80" max="80" value="24" data-vector-rotate></label>
-        <label class="visual-range">俯仰 <input type="range" min="-50" max="50" value="18" data-vector-pitch></label>
+        <label class="visual-range">水平视角 <input type="range" min="-180" max="180" value="24" data-vector-rotate></label>
+        <label class="visual-range">俯仰视角 <input type="range" min="-85" max="85" value="18" data-vector-pitch></label>
         <label class="visual-range">速度 <select class="select" data-vector-speed style="min-height:28px;padding:2px 5px;font-size:9px"><option value="0.5">0.5× 慢</option><option value="1" selected>1×</option><option value="2">2×</option></select></label>
         <label class="visual-range vector-phase-control">时间 <input type="range" min="0" max="1000" value="0" data-vector-phase><span data-vector-phase-label>0%</span></label>
         <select class="select" data-vector-loop aria-label="选择向量环"><option value="all" selected>P + QRS + T 全部</option><option value="P">P 环</option><option value="QRS">QRS 环</option><option value="T">T 环</option></select>
         <select class="select" data-vector-lead aria-label="选择投影导联">${Object.entries(LEADS).map(([id, l]) => `<option value="${id}" ${id === 'II' ? 'selected' : ''}>${l.name}</option>`).join('')}</select>
+        <button class="chip" type="button" data-vector-reset-view>重置视角</button>
       </div>
       <div class="loop-axis-stack">
         ${[
@@ -277,9 +310,8 @@ function vectorLoopsPanel() {
           <input class="axis-range" type="range" min="-180" max="180" step="1" value="60" data-vector-axis="${key}" aria-label="${label}">
           <div class="axis-scale-ticks" aria-hidden="true"><span>-180°</span><span>-90°</span><span>-30°</span><span>0°</span><span>+90°</span><span>+180°</span></div>
         </div>`).join('')}
-        <div class="vector-control-note"><button class="chip" type="button" data-drag-mode>拖动：视角</button><span>拖动画布可旋转视角；使用上方三行分别调整 P/QRS/T 环电轴。</span></div>
+        <div class="vector-control-note"><span>拖动画布可水平旋转 −180°～+180°、俯仰 −85°～+85°，从前面、后面、左外侧和顶部观察三个环；使用上方三行分别调整 P/QRS/T 环电轴。</span></div>
       </div>
-      <div class="axis-presets vector-axis-presets"><span class="muted" style="font-size:9px">快速主方向</span><button type="button" class="chip" data-qrs-axis="60">正常 +60°</button><button type="button" class="chip" data-qrs-axis="-45">左偏 −45°</button><button type="button" class="chip" data-qrs-axis="120">右偏 +120°</button><button type="button" class="chip" data-qrs-axis="-120">极度 −120°</button><button type="button" class="chip" data-qrs-axis="90">垂直 +90°</button></div>
     </div>
     <aside class="visual-explain">
       <h3>先理解“环”，再看“波”</h3>
@@ -287,7 +319,7 @@ function vectorLoopsPanel() {
       <div class="visual-legend"><span><i style="background:var(--brand)"></i>P 环</span><span><i style="background:var(--accent)"></i>QRS 环</span><span><i style="background:var(--gold)"></i>T 环</span></div>
       <p class="muted">体表每个导联只记录该环在自身导联轴上的投影：投影为正，波形向上；投影为负，波形向下。向量环越“朝向”某个导联，该导联的波幅越大。</p>
       <p class="muted"><b>关于 P/T 电轴：</b>临床上说“电轴偏转”通常指 QRS 额面电轴，正常约 −30° 至 +90°；P 波电轴也可测量（正常约 0° 至 +75°，异常提示异位房律等），T 波电轴通常与 QRS 主向量大致一致，缺血、电解质紊乱、肥厚/劳损时可改变。本页三个环可分别调节，仅用于理解向量方向与投影，不把 P/T 偏转直接等同于 QRS 电轴诊断。</p>
-      <div class="visual-tip">${icon('sparkles', 14)} 旋转模型，观察心电轴：电轴左偏 = QRS 主向量更朝上/左；电轴右偏 = 更朝下/右。</div>
+      <div class="visual-tip">${icon('sparkles', 14)} 旋转模型，观察心电轴：正常 QRS 环主向量指向<b>左下、略向后</b>；电轴左偏 = 更朝上/左，电轴右偏 = 更朝下/右。把水平视角拖到 −180° 可从后方观察“向后”的分量。</div>
     </aside>
   </div>`;
 }
@@ -460,7 +492,174 @@ function limbPanel() {
       <div class="visual-tip">${icon('target', 14)} 本页只讲两件事：<b>投影</b>（向量在导联轴上的分量）和<b>量的大小</b>（向量越长，各导联振幅通常越大）。旋转方向或改变向量大小，观察六个导联的波形与数值。</div>
       <div class="vector-disclaimer"><b>教学示意，不是真实心电向量</b><p>图中的单一箭头只是为了说明“导联如何投影”的简化合成向量。真实心电向量是所有正在除极/复极的心肌细胞电偶向量在同一瞬间的空间叠加，会随激动部位、时间、胸壁阻抗、呼吸和导联位置持续变化，其方向和大小不能由一根固定箭头完全代表。本页用于建立方向与投影的直觉，不用于逐搏定量或临床诊断。</p></div>
     </aside>
-  </div>`;
+  </div>
+  ${chestVectorSection()}`;
+}
+
+function drawChestVectorCanvas(canvas, state) {
+  const { ctx, width, height } = canvas2d(canvas);
+  const c = palette();
+  const cx = width * 0.5;
+  const cy = height * 0.53;
+  const rx = width * 0.36;
+  const ry = height * 0.28;
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = c.bg; ctx.fillRect(0, 0, width, height);
+  // 胸廓横截面：上=前，下=后，左=患者右，右=患者左
+  ctx.fillStyle = 'rgba(255,255,255,.025)';
+  ctx.strokeStyle = c.grid; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = c.muted; ctx.globalAlpha = .35;
+  ctx.beginPath(); ctx.moveTo(cx - rx * .92, cy); ctx.lineTo(cx + rx * .92, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, cy - ry * .92); ctx.lineTo(cx, cy + ry * .92); ctx.stroke();
+  ctx.globalAlpha = 1;
+  // 胸骨与脊柱
+  ctx.fillStyle = c.muted; ctx.font = '9px ui-monospace, monospace';
+  ctx.fillText('前 / 胸骨', cx - 22, cy - ry - 9);
+  ctx.fillText('后 / 脊柱', cx - 22, cy + ry + 16);
+  ctx.fillText('患者右', 8, cy + 3);
+  ctx.textAlign = 'right'; ctx.fillText('患者左', width - 8, cy + 3); ctx.textAlign = 'left';
+  // 心脏轮廓：RV 偏右前，LV 偏左后
+  ctx.fillStyle = 'rgba(240,120,104,.12)'; ctx.strokeStyle = c.accent; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.ellipse(cx - rx * .10, cy - ry * .10, rx * .20, ry * .30, -.25, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = 'rgba(20,184,166,.13)'; ctx.strokeStyle = c.brand;
+  ctx.beginPath(); ctx.ellipse(cx + rx * .16, cy + ry * .08, rx * .25, ry * .34, .25, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = c.muted; ctx.font = '9px ui-monospace, monospace';
+  ctx.fillText('RV', cx - rx * .24, cy - ry * .42);
+  ctx.fillText('LV', cx + rx * .18, cy + ry * .46);
+  // 电极位置与连线
+  const point = (id) => {
+    const p = CHEST_VECTOR[id];
+    return [cx + p.x * rx * .84, cy - p.z * ry * .84];
+  };
+  ctx.strokeStyle = c.brand; ctx.globalAlpha = .28; ctx.setLineDash([3, 3]);
+  ctx.beginPath();
+  Object.keys(CHEST_VECTOR).forEach((id, i) => { const [x, y] = point(id); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+  ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+  Object.entries(CHEST_VECTOR).forEach(([id, p]) => {
+    const [x, y] = point(id);
+    const active = CHEST_VECTOR_KEYS.includes(id);
+    ctx.fillStyle = active ? c.bg : 'rgba(255,255,255,.03)';
+    ctx.strokeStyle = active ? c[CHEST_VECTOR_COLORS[id]] : c.muted;
+    ctx.lineWidth = active ? 2 : 1;
+    ctx.beginPath(); ctx.arc(x, y, active ? 11 : 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = active ? c[CHEST_VECTOR_COLORS[id]] : c.muted;
+    ctx.font = active ? '700 10px ui-monospace, monospace' : '8px ui-monospace, monospace';
+    ctx.textAlign = 'center'; ctx.fillText(id, x, y + 3.5); ctx.textAlign = 'left';
+  });
+  // 当前 QRS 瞬时向量
+  const v = chestQrsVector(state.qrsPhase ?? 0);
+  const mag = Math.hypot(v.x, v.z);
+  const vx = cx + v.x * rx * .72;
+  const vy = cy - v.z * ry * .72;
+  // 主向量参考虚线：左下、略向后
+  ctx.strokeStyle = c.gold; ctx.globalAlpha = .45; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + .82 * rx * .72, cy + .65 * ry * .72); ctx.stroke();
+  ctx.setLineDash([]); ctx.globalAlpha = 1;
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.4;
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(vx, vy); ctx.stroke();
+  if (mag > .04) {
+    const ux = (vx - cx) / (Math.hypot(vx - cx, vy - cy) || 1);
+    const uy = (vy - cy) / (Math.hypot(vx - cx, vy - cy) || 1);
+    const bx = vx - ux * 11; const by = vy - uy * 11;
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(vx, vy);
+    ctx.lineTo(bx - uy * 5, by + ux * 5); ctx.lineTo(bx + uy * 5, by - ux * 5); ctx.closePath(); ctx.fill();
+  }
+  ctx.fillStyle = c.text; ctx.font = '600 10px ui-monospace, monospace';
+  const phase = state.qrsPhase ?? 0;
+  const phaseLabel = phase < .25 ? '室间隔除极：向右前（V1 小 r）' : phase < .62 ? '左室游离壁除极：向左后（V5 高 R）' : '基底部/流出道：向左后上';
+  ctx.fillText(phaseLabel, 12, 18);
+  ctx.fillStyle = c.muted; ctx.font = '9px ui-monospace, monospace';
+  ctx.fillText('白色箭头 = 当前瞬时 QRS 向量；金色虚线 = 正常 QRS 主向量（左下、略向后）', 12, height - 10);
+}
+
+function drawChestVectorWaves(canvas, state) {
+  const { ctx, width, height } = canvas2d(canvas);
+  const c = palette();
+  const left = 42; const right = 12; const top = 14; const bottom = 18;
+  const plotW = width - left - right;
+  const rowH = (height - top - bottom) / 3;
+  const colors = { V1: c.accent, V5: c.brand, V6: c.gold };
+  ctx.clearRect(0, 0, width, height); ctx.fillStyle = c.bg; ctx.fillRect(0, 0, width, height);
+  const series = {};
+  let maxAbs = 0.2;
+  CHEST_VECTOR_KEYS.forEach((id) => {
+    series[id] = [];
+    for (let i = 0; i <= 120; i += 1) {
+      const u = i / 120;
+      const value = chestLeadProjection(id, chestQrsVector(u));
+      series[id].push(value);
+      maxAbs = Math.max(maxAbs, Math.abs(value));
+    }
+  });
+  const scale = rowH * .62 / maxAbs;
+  CHEST_VECTOR_KEYS.forEach((id, row) => {
+    const base = top + row * rowH + rowH * .57;
+    ctx.strokeStyle = c.grid; ctx.globalAlpha = .4;
+    ctx.beginPath(); ctx.moveTo(left, base); ctx.lineTo(left + plotW, base); ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = colors[id]; ctx.lineWidth = 1.9;
+    ctx.beginPath();
+    series[id].forEach((value, i) => {
+      const x = left + (i / 120) * plotW;
+      const y = base - value * scale;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.fillStyle = colors[id]; ctx.font = '700 9px ui-monospace, monospace';
+    ctx.fillText(id, 8, base + 3);
+    ctx.fillStyle = c.muted; ctx.font = '8px ui-monospace, monospace';
+    ctx.fillText(id === 'V1' ? 'rS' : 'qRs', 24, base + 3);
+  });
+  const x = left + (state.qrsPhase ?? 0) * plotW;
+  ctx.strokeStyle = '#fff'; ctx.globalAlpha = .55; ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, height - bottom); ctx.stroke(); ctx.globalAlpha = 1;
+  ctx.fillStyle = c.muted; ctx.font = '8px ui-monospace, monospace';
+  ctx.fillText('0', left, height - 5); ctx.textAlign = 'right'; ctx.fillText('QRS 时间 →', left + plotW, height - 5); ctx.textAlign = 'left';
+}
+
+function updateChestVectorReadout(host, state) {
+  const v = chestQrsVector(state.qrsPhase ?? 0);
+  CHEST_VECTOR_KEYS.forEach((id) => {
+    const value = chestLeadProjection(id, v);
+    const node = host.querySelector(`[data-chest-vector-value="${id}"]`);
+    if (node) {
+      node.textContent = `${value >= 0 ? '+' : ''}${value.toFixed(2)}`;
+      node.classList.toggle('negative', value < 0);
+      node.classList.toggle('positive', value > 0.15);
+    }
+  });
+  const phase = host.querySelector('[data-chest-vector-phase]');
+  const u = state.qrsPhase ?? 0;
+  if (phase) phase.textContent = u < .25 ? '室间隔：向右前，V1 形成小 r；V5/V6 形成小 q' : u < .62 ? '左室主向量：向左后，远离 V1（深 S），朝向 V5（高 R）' : '基底部：继续向左后，V5/V6 的 R 波逐渐回到基线';
+  const slider = host.querySelector('[data-chest-qrs-phase]');
+  if (slider) slider.value = String(Math.round(u * 1000));
+}
+
+function chestVectorSection() {
+  return `<section class="chest-vector-section">
+    <div class="chest-vector-head">
+      <div><div class="page-eyebrow">${icon('activity', 13)} HORIZONTAL PLANE</div><h2>胸导联向量：V1 为什么是 rS，V5 为什么是 qRs？</h2><p>把胸廓横截面看成一张地图：V1 在右前，V5/V6 在左外侧。同一个 QRS 向量先向右前（室间隔），再向左后（左室游离壁），因此在 V1 和 V5/V6 上留下方向相反的波形。</p></div>
+      <div class="chest-vector-controls"><button class="btn btn-secondary btn-sm" type="button" data-chest-qrs-play>${icon('pause', 13)} 暂停</button><label class="visual-range">QRS 进度 <input type="range" min="0" max="1000" value="0" data-chest-qrs-phase aria-label="QRS 进度"></label></div>
+    </div>
+    <div class="chest-vector-grid">
+      <div class="visual-card visual-card-dark">
+        <canvas data-chest-vector-canvas data-height="350" aria-label="胸廓横截面与 QRS 向量动画"></canvas>
+        <div class="chest-vector-phase" data-chest-vector-phase>室间隔：向右前，V1 形成小 r；V5/V6 形成小 q</div>
+      </div>
+      <div class="visual-card visual-card-dark">
+        <div class="visual-sync-head"><span>V1 / V5 / V6 同步投影波形</span><span>同一向量，不同方向</span></div>
+        <canvas data-chest-vector-waves data-height="210" aria-label="V1 V5 V6 胸导联投影波形"></canvas>
+        <div class="chest-vector-values">
+          ${CHEST_VECTOR_KEYS.map((id) => `<div><b>${id}</b><span>${id === 'V1' ? 'rS' : 'qRs'}</span><i data-chest-vector-value="${id}">+0.00</i></div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="chest-vector-notes">
+      <div><b>V1 为什么是 rS？</b><span>室间隔先从左向右除极，向量朝向 V1，形成小 r；随后左室主向量向左后，背离 V1，形成深 S。r 小、S 深，所以是 rS。</span></div>
+      <div><b>V5 为什么是 qRs？</b><span>初始小向量背离 V5，形成小 q；左室主向量朝向 V5，形成高 R；基底部向量稍向后，形成小 s。</span></div>
+      <div><b>为什么 V5 的 R 常大于 V6？</b><span>V5 更靠近左室，导联轴与左室主向量夹角更小；V6 更远、更偏外侧，距离衰减和角度差使 R 波通常略低。个体胸壁、心脏位置和肥厚会改变这一规律。</span></div>
+    </div>
+  </section>`;
 }
 
 function chestPanel() {
@@ -641,7 +840,7 @@ export async function vectorLabView() {
   let raf = 0;
   let cleanup = [];
   let start = performance.now();
-  const state = { rotate: 24, pitch: 18, playing: true, loop: 'all', lead: 'II', axes: { P: 60, QRS: 60, T: 60 }, axis: 60, angle: 60, magnitude: 1, auto: true, speed: 1, dragMode: 'view', phase: 0 };
+  const state = { rotate: 24, pitch: 18, playing: true, loop: 'all', lead: 'II', axes: { P: 60, QRS: 60, T: 60 }, axis: 60, angle: 60, magnitude: 1, auto: true, speed: 1, phase: 0, qrsPhase: 0, qrsPlaying: true };
   el.innerHTML = `<div class="page-eyebrow">${icon('compass', 14)} VECTOR & ELECTROPHYSIOLOGY</div>
     <div class="vector-head"><div><h1 class="page-title">心脏向量实验室</h1><p class="page-sub">把“背图形”变成“看方向”：P/QRS/T 环、肢体/胸导联投影、动作电位与解剖一次串起来。</p></div><a class="btn btn-secondary btn-sm" href="#/learn/ecg-calibration-paper">回到基础课程 ${icon('arrowRight', 13)}</a></div>
     <div class="vector-safety-note">${icon('info', 14)} <span>向量方向与导联投影仅供教学参考，用于理解“投影”和“向量大小”，<b>不代表任何患者实际情况</b>，不用于诊断或治疗。</span></div>
@@ -702,6 +901,18 @@ export async function vectorLabView() {
     updateLimbReadout(content, state, now);
     const waves = content.querySelector('[data-limb-waves]');
     if (waves) drawLimbWaves(waves, state, now);
+    const chestVector = content.querySelector('[data-chest-vector-canvas]');
+    if (chestVector) {
+      if (state.qrsPlaying) {
+        const dt = state.lastQrsAt ? Math.min(0.12, (now - state.lastQrsAt) / 1000) : 0;
+        state.qrsPhase = ((state.qrsPhase ?? 0) + dt / 4.2) % 1;
+      }
+      state.lastQrsAt = now;
+      drawChestVectorCanvas(chestVector, state);
+      const chestWaves = content.querySelector('[data-chest-vector-waves]');
+      if (chestWaves) drawChestVectorWaves(chestWaves, state);
+      updateChestVectorReadout(content, state);
+    }
     raf = requestAnimationFrame(drawLimbFrame);
   };
   const drawWaveFrame = (now) => {
@@ -720,6 +931,12 @@ export async function vectorLabView() {
     });
     content.querySelector('[data-vector-rotate]')?.addEventListener('input', (e) => { state.rotate = Number(e.target.value); });
     content.querySelector('[data-vector-pitch]')?.addEventListener('input', (e) => { state.pitch = Number(e.target.value); });
+    content.querySelector('[data-vector-reset-view]')?.addEventListener('click', () => {
+      state.rotate = 24; state.pitch = 18;
+      const rx = content.querySelector('[data-vector-rotate]'); const py = content.querySelector('[data-vector-pitch]');
+      if (rx) rx.value = '24'; if (py) py.value = '18';
+      renderLoopState();
+    });
     content.querySelector('[data-vector-speed]')?.addEventListener('change', (e) => { state.speed = Number(e.target.value) || 1; lastFrame = 0; });
     content.querySelector('[data-vector-phase]')?.addEventListener('input', (e) => {
       state.playing = false;
@@ -743,51 +960,29 @@ export async function vectorLabView() {
     content.querySelectorAll('[data-vector-axis]').forEach((slider) => {
       slider.addEventListener('input', (e) => setAxis(e.target.dataset.vectorAxis, e.target.value));
     });
-    const dragMode = content.querySelector('[data-drag-mode]');
-    dragMode?.addEventListener('click', () => {
-      state.dragMode = state.dragMode === 'axis' ? 'view' : 'axis';
-      dragMode.textContent = state.dragMode === 'axis' ? '拖动：主方向' : '拖动：视角';
-    });
-    content.querySelectorAll('[data-qrs-axis]').forEach((button) => button.addEventListener('click', () => {
-      const key = state.loop === 'all' ? 'QRS' : state.loop;
-      setAxis(key, Number(button.dataset.qrsAxis));
-      if (state.loop === 'all') {
-        const select = content.querySelector('[data-vector-loop]');
-        if (select) select.value = state.loop;
-      }
-    }));
     content.querySelector('[data-vector-loop]')?.addEventListener('change', (e) => { state.loop = e.target.value; });
     content.querySelector('[data-vector-lead]')?.addEventListener('change', (e) => { state.lead = e.target.value; });
     const canvas = content.querySelector('[data-vector-canvas]');
     if (canvas) {
       let dragging = false;
       let dragStart = null;
-      const pointerAngle = (e, rect) => {
-        const cx0 = rect.width / 2; const cy0 = rect.height / 2 + 6;
-        return Math.atan2(cy0 - (e.clientY - rect.top), e.clientX - rect.left - cx0) * 180 / Math.PI;
-      };
-      const normalize180 = (value) => ((value + 180) % 360 + 360) % 360 - 180;
       canvas.addEventListener('pointerdown', (e) => {
-        const rect = canvas.getBoundingClientRect();
-        dragStart = { x: e.clientX, y: e.clientY, rotate: state.rotate, pitch: state.pitch, axis: state.axes?.[state.loop === 'all' ? 'QRS' : state.loop] ?? 60, angle: pointerAngle(e, rect) };
+        dragStart = { x: e.clientX, y: e.clientY, rotate: state.rotate, pitch: state.pitch };
         dragging = true;
         canvas.setPointerCapture(e.pointerId);
       });
       canvas.addEventListener('pointerup', () => { dragging = false; dragStart = null; });
+      canvas.addEventListener('pointercancel', () => { dragging = false; dragStart = null; });
       canvas.addEventListener('pointermove', (e) => {
         if (!dragging || !dragStart) return;
-        const rect = canvas.getBoundingClientRect();
-        if (state.dragMode === 'axis') {
-          setAxis(state.loop === 'all' ? 'QRS' : state.loop, Math.round(normalize180((state.axes?.[state.loop === 'all' ? 'QRS' : state.loop] ?? 60) + pointerAngle(e, rect) - dragStart.angle)));
-          return;
-        }
         const rx = content.querySelector('[data-vector-rotate]');
         const py = content.querySelector('[data-vector-pitch]');
-        const nextRotate = Math.max(-80, Math.min(80, dragStart.rotate + (e.clientX - dragStart.x) * 0.35));
-        const nextPitch = Math.max(-50, Math.min(50, dragStart.pitch - (e.clientY - dragStart.y) * 0.35));
+        const nextRotate = Math.max(-180, Math.min(180, dragStart.rotate + (e.clientX - dragStart.x) * 0.55));
+        const nextPitch = Math.max(-85, Math.min(85, dragStart.pitch - (e.clientY - dragStart.y) * 0.55));
         state.rotate = nextRotate; state.pitch = nextPitch;
         if (rx) rx.value = String(Math.round(nextRotate));
         if (py) py.value = String(Math.round(nextPitch));
+        renderLoopState();
       });
     }
     raf = requestAnimationFrame(drawLoopFrame);
@@ -803,6 +998,19 @@ export async function vectorLabView() {
     content.querySelector('[data-limb-lead]')?.addEventListener('change', (e) => { state.lead = e.target.value; });
     content.querySelector('[data-limb-magnitude]')?.addEventListener('input', (e) => {
       state.magnitude = Number(e.target.value) || 1;
+    });
+    const qrsPlay = content.querySelector('[data-chest-qrs-play]');
+    qrsPlay?.addEventListener('click', () => {
+      state.qrsPlaying = !state.qrsPlaying;
+      state.lastQrsAt = 0;
+      qrsPlay.innerHTML = state.qrsPlaying ? `${icon('pause', 13)} 暂停` : `${icon('play', 13)} 播放`;
+    });
+    content.querySelector('[data-chest-qrs-phase]')?.addEventListener('input', (e) => {
+      state.qrsPlaying = false;
+      state.qrsPhase = Math.max(0, Math.min(1, Number(e.target.value) / 1000));
+      state.lastQrsAt = 0;
+      const button = content.querySelector('[data-chest-qrs-play]');
+      if (button) button.innerHTML = `${icon('play', 13)} 播放`;
     });
     const limbCanvas = content.querySelector('[data-limb-canvas]');
     if (limbCanvas) {

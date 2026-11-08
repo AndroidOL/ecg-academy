@@ -5,12 +5,12 @@ namespace App;
 
 final class Ai
 {
-    public static function allowedForUser(int $userId): bool
+    public static function allowedForUser(int $userId, bool $byok = false): bool
     {
         $stmt = Db::pdo()->prepare('SELECT is_guest FROM users WHERE id = ? LIMIT 1');
         $stmt->execute([$userId]);
         $isGuest = (int) ($stmt->fetchColumn() ?: 0) === 1;
-        return !$isGuest || Settings::bool('ai.allow_guest', false);
+        return !$isGuest || Settings::bool('ai.allow_guest', false) || ($byok && Settings::bool('ai.byok_enabled', false));
     }
 
     public static function configured(): bool
@@ -32,6 +32,7 @@ final class Ai
             'configured' => self::configured() && $allowed,
             'allowed' => $allowed,
             'guestAllowed' => Settings::bool('ai.allow_guest', false),
+            'byokEnabled' => Settings::bool('ai.byok_enabled', false),
             'model' => self::configured() && $allowed ? (string) ($model ?: Config::get('ai.model', '')) : null,
             'provider' => self::configured() && $allowed ? ($provider['name'] ?? '内置兼容接口') : null,
             'dailyLimit' => $limit,
@@ -109,19 +110,20 @@ final class Ai
         return max(0, Settings::int('ai.daily_limit', (int) Config::get('ai.daily_limit', 30)));
     }
 
-    public static function chat(int $userId, string $message, ?string $diagnosisId = null): array
+    public static function chat(int $userId, string $message, ?string $diagnosisId = null, ?array $byok = null): array
     {
-        if (!self::allowedForUser($userId)) throw new ApiError(403, 'ai_guest_disabled', '当前站点未开放未登录用户使用 AI');
+        $byok = self::byokConfig($byok);
+        if (!self::allowedForUser($userId, $byok !== null)) throw new ApiError(403, 'ai_guest_disabled', '当前站点未开放未登录用户使用 AI；如需使用自己的密钥，请先开启 BYOK。');
         $message = trim($message);
         if ($message === '' || mb_strlen($message, 'UTF-8') > 600) {
             throw new ApiError(422, 'invalid_message', '问题需为 1–600 字');
         }
         $diagnosis = $diagnosisId ? Content::find($diagnosisId) : null;
         $fallback = self::localChatAnswer($message, $diagnosis);
-        if (!self::configured()) {
+        if ($byok === null && !self::configured()) {
             return ['text' => $fallback, 'source' => 'local', 'fallback' => true];
         }
-        if (!self::consume($userId)) {
+        if ($byok === null && !self::consume($userId)) {
             return ['text' => $fallback . "\n\n（今日 AI 额度已用完，以上为本地知识库回答。）", 'source' => 'local', 'fallback' => true];
         }
         $context = $diagnosis ? self::diagnosisContext($diagnosis) : '未指定具体诊断。';
@@ -129,16 +131,17 @@ final class Ai
             ['role' => 'system', 'content' => self::systemPrompt()],
             ['role' => 'user', 'content' => "教学上下文：\n{$context}\n\n学生问题：{$message}\n\n请用中文回答，先给结论，再给 2–4 条依据；不超过 450 字；结尾提醒这是教学用途。"],
         ];
-        $text = self::call($messages, 0.35);
+        $text = self::call($messages, 0.35, $byok);
         if ($text === null) {
             return ['text' => $fallback . "\n\n（AI 服务暂时不可用，以上为本地知识库回答。）", 'source' => 'local', 'fallback' => true];
         }
-        return ['text' => $text, 'source' => 'ai', 'fallback' => false];
+        return ['text' => $text, 'source' => $byok !== null ? 'byok' : 'ai', 'fallback' => false];
     }
 
-    public static function explain(int $userId, int $attemptId, string $userQuestion = ''): array
+    public static function explain(int $userId, int $attemptId, string $userQuestion = '', ?array $byok = null): array
     {
-        if (!self::allowedForUser($userId)) throw new ApiError(403, 'ai_guest_disabled', '当前站点未开放未登录用户使用 AI');
+        $byok = self::byokConfig($byok);
+        if (!self::allowedForUser($userId, $byok !== null)) throw new ApiError(403, 'ai_guest_disabled', '当前站点未开放未登录用户使用 AI；如需使用自己的密钥，请先开启 BYOK。');
         $stmt = Db::pdo()->prepare('SELECT * FROM quiz_attempts WHERE id = ? AND user_id = ? AND status = "answered" LIMIT 1');
         $stmt->execute([$attemptId, $userId]);
         $attempt = $stmt->fetch();
@@ -151,10 +154,10 @@ final class Ai
         $selectedNames = array_map(static fn (string $id): string => $all[$id]['name'] ?? $id, $selectedIds);
         $correctNames = array_map(static fn (string $id): string => $all[$id]['name'] ?? $id, $correctIds);
         $fallback = self::localExplain($correct, $selectedNames, $correctNames, (bool) $attempt['is_correct']);
-        if (!self::configured()) {
+        if ($byok === null && !self::configured()) {
             return ['text' => $fallback, 'source' => 'local', 'fallback' => true];
         }
-        if (!self::consume($userId)) {
+        if ($byok === null && !self::consume($userId)) {
             return ['text' => $fallback . "\n\n（今日 AI 额度已用完，以上为本地知识库回答。）", 'source' => 'local', 'fallback' => true];
         }
         $context = [];
@@ -182,21 +185,22 @@ final class Ai
             ['role' => 'system', 'content' => self::systemPrompt() . "\n你会收到题目、选项、学生选择和心电图摘要。先判断学生错在哪一步，再解释；不要只复述正确答案。"],
             ['role' => 'user', 'content' => $userText . "\n\n请针对学生的选择解释错因或确认正确思路；必须指出最关键的心电图线索，给出下一次识别的动作；不超过 450 字。"],
         ];
-        $text = self::call($messages, 0.3);
+        $text = self::call($messages, 0.3, $byok);
         if ($text === null) {
             return ['text' => $fallback . "\n\n（AI 服务暂时不可用，以上为本地知识库回答。）", 'source' => 'local', 'fallback' => true];
         }
-        return ['text' => $text, 'source' => 'ai', 'fallback' => false];
+        return ['text' => $text, 'source' => $byok !== null ? 'byok' : 'ai', 'fallback' => false];
     }
 
-    public static function studyPlan(int $userId): array
+    public static function studyPlan(int $userId, ?array $byok = null): array
     {
-        if (!self::allowedForUser($userId)) throw new ApiError(403, 'ai_guest_disabled', '当前站点未开放未登录用户使用 AI');
+        $byok = self::byokConfig($byok);
+        if (!self::allowedForUser($userId, $byok !== null)) throw new ApiError(403, 'ai_guest_disabled', '当前站点未开放未登录用户使用 AI；如需使用自己的密钥，请先开启 BYOK。');
         $local = Quiz::localStudyPlan($userId);
-        if (!self::configured()) {
+        if ($byok === null && !self::configured()) {
             return ['plan' => $local, 'text' => implode(' ', $local['reasons']), 'source' => 'local', 'fallback' => true];
         }
-        if (!self::consume($userId)) {
+        if ($byok === null && !self::consume($userId)) {
             return ['plan' => $local, 'text' => implode(' ', $local['reasons']), 'source' => 'local', 'fallback' => true];
         }
         $focusText = implode('、', array_column($local['focus'], 'name'));
@@ -205,28 +209,29 @@ final class Ai
             ['role' => 'system', 'content' => self::systemPrompt()],
             ['role' => 'user', 'content' => "学生薄弱点：{$reasons}\n候选专项诊断：{$focusText}\n请用 150 字以内给出一个可执行的训练计划（先看什么、练什么、如何自检）。不要推荐具体药物剂量。"],
         ];
-        $text = self::call($messages, 0.4);
+        $text = self::call($messages, 0.4, $byok);
         return [
             'plan' => $local,
             'text' => $text ?? implode(' ', $local['reasons']),
-            'source' => $text !== null ? 'ai' : 'local',
+            'source' => $text !== null ? ($byok !== null ? 'byok' : 'ai') : 'local',
             'fallback' => $text === null,
         ];
     }
 
-    public static function simReview(int $userId, int $runId): array
+    public static function simReview(int $userId, int $runId, ?array $byok = null): array
     {
-        if (!self::allowedForUser($userId)) throw new ApiError(403, 'ai_guest_disabled', '当前站点未开放未登录用户使用 AI');
+        $byok = self::byokConfig($byok);
+        if (!self::allowedForUser($userId, $byok !== null)) throw new ApiError(403, 'ai_guest_disabled', '当前站点未开放未登录用户使用 AI；如需使用自己的密钥，请先开启 BYOK。');
         $stmt = Db::pdo()->prepare('SELECT * FROM sim_runs WHERE id = ? AND user_id = ? LIMIT 1');
         $stmt->execute([$runId, $userId]);
         $run = $stmt->fetch();
         if (!$run) throw new ApiError(404, 'run_not_found', '复盘记录不存在');
         $debrief = SimEngine::debrief($userId, $runId);
         $fallback = implode(' ', array_map(static fn (array $r): string => $r['title'] . '：' . $r['detail'], $debrief['review']));
-        if (!self::configured()) {
+        if ($byok === null && !self::configured()) {
             return ['text' => $fallback, 'source' => 'local', 'fallback' => true];
         }
-        if (!self::consume($userId)) {
+        if ($byok === null && !self::consume($userId)) {
             return ['text' => $fallback, 'source' => 'local', 'fallback' => true];
         }
         $events = array_map(static fn (array $e): string => sprintf('[%ss] %s%s', $e['t'] ?? '?', $e['label'] ?? '', isset($e['points']) && $e['points'] < 0 ? '（扣分）' : ''), $debrief['events']);
@@ -238,22 +243,22 @@ final class Ai
             ['role' => 'system', 'content' => self::systemPrompt()],
             ['role' => 'user', 'content' => $prompt],
         ];
-        $text = self::call($messages, 0.3);
+        $text = self::call($messages, 0.3, $byok);
         return [
             'text' => $text ?? $fallback,
-            'source' => $text !== null ? 'ai' : 'local',
+            'source' => $text !== null ? ($byok !== null ? 'byok' : 'ai') : 'local',
             'fallback' => $text === null,
         ];
     }
 
-    private static function call(array $messages, float $temperature): ?string
+    private static function call(array $messages, float $temperature, ?array $byok = null): ?string
     {
         $provider = self::provider();
-        $base = rtrim((string) ($provider['base_url'] ?? Config::get('ai.base_url', '')), '/');
+        $base = rtrim((string) ($byok['base_url'] ?? $provider['base_url'] ?? Config::get('ai.base_url', '')), '/');
         if ($base === '') return null;
         $url = str_ends_with($base, '/chat/completions') ? $base : $base . '/chat/completions';
-        $apiKey = (string) ($provider['api_key'] ?? Config::get('ai.api_key', ''));
-        $model = (string) ($provider['default_model'] ?? ($provider['models'][0] ?? Config::get('ai.model', 'gpt-4o-mini')));
+        $apiKey = (string) ($byok['api_key'] ?? $provider['api_key'] ?? Config::get('ai.api_key', ''));
+        $model = (string) ($byok['model'] ?? $provider['default_model'] ?? ($provider['models'][0] ?? Config::get('ai.model', 'gpt-4o-mini')));
         $payload = [
             'model' => $model,
             'messages' => $messages,
@@ -274,7 +279,10 @@ final class Ai
                 'Authorization: Bearer ' . $apiKey,
             ],
             CURLOPT_POSTFIELDS => json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
-        ]);
+        ] + (defined('CURLOPT_PROTOCOLS') ? [CURLOPT_PROTOCOLS => CURLPROTO_HTTPS] : []));
+        if (!empty($byok['resolve'])) {
+            curl_setopt($ch, CURLOPT_RESOLVE, [(string) $byok['resolve']]);
+        }
         $response = curl_exec($ch);
         $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
         $error = curl_error($ch);
@@ -289,6 +297,34 @@ final class Ai
         if (!is_string($text) || trim($text) === '') return null;
         $text = trim(strip_tags($text));
         return mb_substr($text, 0, 4000, 'UTF-8');
+    }
+
+    private static function byokConfig(?array $raw): ?array
+    {
+        if ($raw === null || $raw === []) return null;
+        if (!Settings::bool('ai.byok_enabled', false)) {
+            throw new ApiError(403, 'byok_disabled', '管理员未开启 BYOK 演示');
+        }
+        $base = rtrim(trim((string) ($raw['baseUrl'] ?? '')), '/');
+        $key = trim((string) ($raw['apiKey'] ?? ''));
+        $model = trim((string) ($raw['model'] ?? ''));
+        if ($base === '' || $key === '' || $model === '') throw new ApiError(422, 'byok_incomplete', 'BYOK 需要 baseUrl、model 与 apiKey');
+        if (strlen($key) < 8 || strlen($key) > 300) throw new ApiError(422, 'byok_key_invalid', 'API Key 长度不合法');
+        if (mb_strlen($model, 'UTF-8') > 100) throw new ApiError(422, 'byok_model_invalid', '模型名称过长');
+        $parts = parse_url($base);
+        if (!is_array($parts) || ($parts['scheme'] ?? '') !== 'https' || empty($parts['host'])) {
+            throw new ApiError(422, 'byok_url_invalid', 'BYOK Base URL 必须使用 HTTPS');
+        }
+        $host = strtolower((string) $parts['host']);
+        if ($host === 'localhost' || str_ends_with($host, '.local') || str_ends_with($host, '.internal')) {
+            throw new ApiError(422, 'byok_url_invalid', '不允许访问本地或内网地址');
+        }
+        $ip = gethostbyname($host);
+        if (filter_var($ip, FILTER_VALIDATE_IP) && !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            throw new ApiError(422, 'byok_url_invalid', '不允许访问私网或保留地址');
+        }
+        $port = (int) ($parts['port'] ?? 443);
+        return ['base_url' => $base, 'api_key' => $key, 'model' => $model, 'resolve' => $host . ':' . $port . ':' . $ip];
     }
 
     private static function consume(int $userId): bool

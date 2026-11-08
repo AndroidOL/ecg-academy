@@ -1,8 +1,10 @@
 import { api } from '../api.js';
 import { store } from '../store.js';
 import { navigate } from '../router.js';
+import { recordAttempt, reviewSummary, weakDiagnosisIds } from '../study-store.js';
+import { byokPayload, hasByok } from '../byok.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ab';
+const __asset = __isNode ? '' : '?v=20261108ad';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, toast, setButtonLoading, fmtDuration, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
@@ -32,6 +34,10 @@ const state = {
   aiPlan: null,
 };
 
+function aiUiAvailable() {
+  return store.ai?.allowed !== false || (Boolean(store.ai?.byokEnabled) && hasByok());
+}
+
 function clearTimer() {
   if (state.timerId) window.clearInterval(state.timerId);
   state.timerId = 0;
@@ -44,7 +50,7 @@ function destroyViewer() {
   }
 }
 
-export async function practiceView() {
+export async function practiceView({ query } = {}) {
   const el = document.createElement('div');
   el.className = 'page';
   clearTimer();
@@ -54,6 +60,14 @@ export async function practiceView() {
   state.submitted = false;
   state.result = null;
   state.focus = [];
+  const initialFocus = String(query?.get('focus') || '').split(',').map((x) => x.trim()).filter(Boolean);
+  const initialLevel = Number(query?.get('level') || 1);
+  const initialChapter = String(query?.get('chapter') || 'all');
+  const autoStart = query?.get('auto') === '1' && initialFocus.length > 0;
+  const shared = query?.get('share') === '1';
+  if ([1, 2, 3].includes(initialLevel)) state.level = initialLevel;
+  state.chapter = initialChapter;
+  const summary = reviewSummary();
 
   const chapters = store.chapters || [];
   el.innerHTML = `
@@ -65,6 +79,7 @@ export async function practiceView() {
       </div>
       <div class="row-wrap"><span class="badge badge-brand">${icon('activity', 11)} 正确率 ${store.quiz?.accuracy || 0}%</span><span class="badge">${store.quiz?.attempts || 0} 次作答</span><span class="badge">题库 ${store.bank?.total || 1920} 道</span></div>
     </header>
+    ${shared ? `<div class="callout brand" style="margin-bottom:14px">${icon('target', 14)} 这是一份只读练习分享链接：题目按分享者的难度与章节即时生成，不会修改原题或题库。</div>` : ''}
     <div class="practice-setup">
       <section class="quiz-card">
         <div class="page-eyebrow">SETUP</div>
@@ -78,6 +93,7 @@ export async function practiceView() {
         </div>
         <div class="row-wrap" style="margin-top:18px">
           <button class="btn btn-primary btn-lg" type="button" data-start>${icon('play', 17)} 开始判读</button>
+          <button class="btn btn-secondary" type="button" data-share>${icon('arrowUpRight', 16)} 分享只读组卷</button>
           <span class="muted" style="font-size:11px">答案提交后立即解析；每题都有服务端答案与知识库解释。</span>
         </div>
         <div id="ai-plan-result" style="margin-top:16px"></div>
@@ -100,6 +116,11 @@ export async function practiceView() {
           </div>
         </div>
         <div class="practice-side-card">
+          <h3>${icon('target', 14)} 错题与间隔复习</h3>
+          <p>${summary.due} 个诊断到期待复习，${summary.wrong} 个错题已记录。错题本保存在本设备，可自我评分安排下一次复习。</p>
+          <div class="row-wrap" style="margin-top:10px"><a class="btn btn-secondary btn-block btn-sm" href="#/review">${icon('bookOpen', 14)} 打开错题本</a></div>
+        </div>
+        <div class="practice-side-card">
           <h3>${icon('sparkles', 14)} AI 专项计划</h3>
           <p>根据最近答题与章节正确率，选出 3 个最该巩固的诊断，生成一局专项练习。未配置 AI 时使用本地算法。</p>
           <button class="btn btn-secondary btn-block btn-sm" type="button" data-plan style="margin-top:10px">${icon('sparkles', 14)} 生成专项计划</button>
@@ -111,6 +132,7 @@ export async function practiceView() {
   const levelButtons = el.querySelectorAll('[data-level]');
   const countButtons = el.querySelectorAll('[data-total]');
   const chapterSelect = el.querySelector('#practice-chapter');
+  chapterSelect.value = state.chapter;
   levelButtons.forEach((button) => button.addEventListener('click', () => {
     state.level = Number(button.dataset.level);
     levelButtons.forEach((b) => b.classList.toggle('active', b === button));
@@ -120,6 +142,20 @@ export async function practiceView() {
     countButtons.forEach((b) => b.classList.toggle('active', b === button));
   }));
   chapterSelect.addEventListener('change', () => { state.chapter = chapterSelect.value; });
+
+  el.querySelector('[data-share]')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    const params = new URLSearchParams({ level: String(state.level), chapter: state.chapter, share: '1' });
+    const url = `${location.origin}${location.pathname}#/practice?${params.toString()}`;
+    try {
+      if (navigator.share) await navigator.share({ title: '心迹 ECG Lab · 判读练习', text: '打开这份只读组卷，完成一局心电图判读。', url });
+      else { await navigator.clipboard.writeText(url); toast('只读组卷链接已复制', 'success'); }
+      button.innerHTML = `${icon('check', 14)} 已分享`;
+      window.setTimeout(() => { button.innerHTML = `${icon('arrowUpRight', 16)} 分享只读组卷`; }, 1800);
+    } catch (error) {
+      toast('分享未完成，可手动复制地址栏链接', 'info');
+    }
+  });
 
   const startButton = el.querySelector('[data-start]');
   startButton.addEventListener('click', async () => {
@@ -137,7 +173,7 @@ export async function practiceView() {
   planButton.addEventListener('click', async () => {
     setButtonLoading(planButton, true, '分析中');
     try {
-      const result = await api.aiStudyPlan();
+      const result = await api.aiStudyPlan(byokPayload());
       state.aiPlan = result;
       state.focus = result.plan?.focus?.map((f) => f.id) || [];
       planResult.innerHTML = `<div class="callout brand"><div style="font-weight:700;margin-bottom:4px">${result.source === 'ai' ? 'AI 专项计划' : '本地专项计划'}</div><p data-plan-text></p><div class="row-wrap" style="margin-top:8px">${(result.plan?.focus || []).map((f) => `<span class="tag">${escapeHtml(f.name)}</span>`).join('')}</div><button class="btn btn-sm btn-primary" type="button" data-start-plan style="margin-top:9px">${icon('target', 13)} 按此计划开始</button></div>`;
@@ -171,6 +207,13 @@ export async function practiceView() {
     renderQuestion(el);
   }
 
+  if (autoStart) {
+    try {
+      await startQuiz(initialFocus);
+    } catch (error) {
+      toast(error.message || '出题失败', 'error');
+    }
+  }
   return {
     el,
     destroy() {
@@ -227,7 +270,7 @@ function renderQuestion(el) {
             <span class="muted" style="font-size:11px">${multiple ? '选择所有符合的诊断后再提交。' : '选择一个最可能的诊断。'}</span>
             <button class="btn btn-primary" type="button" data-submit disabled>${icon('check', 15)} 提交答案</button>
           </div>
-          <div id="quiz-feedback"></div>
+          <div id="quiz-feedback" role="status" aria-live="polite"></div>
         </section>
         <aside>
           <div class="practice-side-card">
@@ -345,6 +388,9 @@ function renderQuestion(el) {
       }
       state.score += result.score;
       if (store.user?.isGuest) store.addLocalXp(result.xp);
+      const names = Object.fromEntries((quiz.options || []).map((option) => [option.id, option.name]));
+      const chapterMap = Object.fromEntries((quiz.options || []).map((option) => [option.id, option.chapter]));
+      recordAttempt({ correct: result.correct, correctIds: result.correctIds || [], selectedIds: [...state.selected], names, chapters: chapterMap });
       setButtonLoading(submit, false);
       submit.style.display = 'none';
       options.forEach((option) => {
@@ -385,10 +431,10 @@ function renderQuestion(el) {
       }
     });
     const ask = async (questionText) => {
-      if (store.ai?.allowed === false) return;
+      if (!aiUiAvailable()) return;
       const panel = feedback.querySelector('[data-ai-explain-panel]');
       try {
-        const result = await api.aiExplain(state.result.attemptId, questionText);
+        const result = await api.aiExplain(state.result.attemptId, questionText, byokPayload());
         panel.innerHTML = `<div class="explain-block"><h4>${result.source === 'ai' ? 'AI 回答' : '本地解析'}</h4><p data-ai-text></p></div>`;
         panel.querySelector('[data-ai-text]').textContent = result.text;
       } catch (error) {
@@ -397,17 +443,17 @@ function renderQuestion(el) {
     };
     feedback.querySelector('[data-ai-ask]')?.addEventListener('click', async (event) => {
       const button = event.currentTarget;
-      if (store.ai?.allowed === false) return;
+      if (!aiUiAvailable()) return;
       setButtonLoading(button, true, 'AI 分析中');
       await ask(feedback.querySelector('[data-ai-question]')?.value || '');
       setButtonLoading(button, false);
     });
-    feedback.querySelector('[data-ai-explain]')?.addEventListener('click', async (event) => { if (store.ai?.allowed === false) return;
+    feedback.querySelector('[data-ai-explain]')?.addEventListener('click', async (event) => { if (!aiUiAvailable()) return;
       const btn = event.currentTarget;
       const panel = feedback.querySelector('[data-ai-explain-panel]');
       setButtonLoading(btn, true, 'AI 分析中');
       try {
-        const result = await api.aiExplain(state.result.attemptId);
+        const result = await api.aiExplain(state.result.attemptId, '', byokPayload());
         panel.innerHTML = `<div class="explain-block"><h4>${result.source === 'ai' ? 'AI 错因解析' : '本地错因解析'}</h4><p data-ai-text></p></div>`;
         panel.querySelector('[data-ai-text]').textContent = result.text;
       } catch (error) {
@@ -429,8 +475,8 @@ function feedbackHtml(result, multiple) {
     <div class="feedback-head"><span class="feedback-icon ${tone === 'bad' ? 'bad' : ''}">${icon(result.correct ? 'check' : 'x', 16)}</span><div><div class="feedback-title">${title}</div><div class="muted" style="font-size:10px">得分 ${result.score} · 经验 +${result.xp}${answer ? ` · 正确答案：${escapeHtml(answer)}` : ''}</div></div></div>
     <p class="feedback-text">${escapeHtml(result.localExplanation || '')}</p>
     ${(result.explanation || []).map((item) => `<div class="explain-block"><h4>${escapeHtml(item.name)}</h4><p>${escapeHtml(item.specificity || item.oneLiner || '')}</p><ul>${(item.criteria || []).map((c) => `<li>${escapeHtml(c)}</li>`).join('')}</ul></div>`).join('')}
-    ${store.ai?.allowed !== false ? `<div class="ai-ask-row"><input class="input" data-ai-question maxlength="300" placeholder="追问 AI：为什么排除某个选项？"><button class="btn btn-secondary btn-sm" type="button" data-ai-ask>${icon('sparkles', 14)} 问 AI</button></div>` : ''}
-    <div class="row-wrap" style="margin-top:12px">${store.ai?.allowed !== false ? `<button class="btn btn-secondary btn-sm" type="button" data-ai-explain>${icon('sparkles', 14)} AI 解释错因</button>` : ''}<button class="btn btn-primary btn-sm" type="button" data-next>${icon('arrowRight', 14)} 下一题</button></div>
+    ${aiUiAvailable() ? `<div class="ai-ask-row"><input class="input" data-ai-question maxlength="300" placeholder="追问 AI：为什么排除某个选项？"><button class="btn btn-secondary btn-sm" type="button" data-ai-ask>${icon('sparkles', 14)} 问 AI</button></div>` : ''}
+    <div class="row-wrap" style="margin-top:12px">${aiUiAvailable() ? `<button class="btn btn-secondary btn-sm" type="button" data-ai-explain>${icon('sparkles', 14)} AI 解释错因</button>` : ''}<button class="btn btn-primary btn-sm" type="button" data-next>${icon('arrowRight', 14)} 下一题</button></div>
     <div data-ai-explain-panel></div>
   </div>`;
 }
@@ -448,7 +494,7 @@ function renderResults(el) {
       <div class="result-label">本局得分</div>
       <div class="result-stats"><div><b>${state.correct}/${total}</b><span class="muted">答对</span></div><div><b>${accuracy}%</b><span class="muted">正确率</span></div><div><b>${state.maxStreak}</b><span class="muted">最高连续</span></div></div>
       <p class="muted" style="font-size:12.5px">判读不是猜答案：把每一道错题还原成“哪一步看错了”，比刷更多题更有效。</p>
-      <div class="row-wrap" style="justify-content:center;margin-top:18px"><button class="btn btn-primary" type="button" data-restart>${icon('rotate', 15)} 再来一局</button><a class="btn btn-secondary" href="#/learn">${icon('bookOpen', 15)} 回到图谱</a></div>
+      <div class="row-wrap" style="justify-content:center;margin-top:18px"><button class="btn btn-primary" type="button" data-restart>${icon('rotate', 15)} 再来一局</button><a class="btn btn-secondary" href="#/review">${icon('target', 15)} 查看错题本</a><a class="btn btn-secondary" href="#/learn">${icon('bookOpen', 15)} 回到图谱</a></div>
     </div>
     ${medicalDisclaimer()}
   </div>`;

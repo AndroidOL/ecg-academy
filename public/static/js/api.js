@@ -113,8 +113,8 @@ export const api = {
   adminAiTest: (id) => request('/api/admin/ai/test', { method: 'POST', body: { id } }),
   adminAudit: () => request('/api/admin/audit'),
   aiStatus: () => request('/api/ai/status'),
-  aiChat: (message, diagnosisId) => request('/api/ai/chat', { method: 'POST', body: { message, diagnosisId } }),
-  aiExplain: (attemptId, question = '') => request('/api/ai/explain', { method: 'POST', body: { attemptId, question } }),
-  aiStudyPlan: () => request('/api/ai/study-plan', { method: 'POST', body: {} }),
-  aiSimReview: (runId) => request('/api/ai/sim-review', { method: 'POST', body: { runId } }),
+  aiChat: (message, diagnosisId, byok) => request('/api/ai/chat', { method: 'POST', body: { message, diagnosisId, byok } }),
+  aiExplain: (attemptId, question = '', byok) => request('/api/ai/explain', { method: 'POST', body: { attemptId, question, byok } }),
+  aiStudyPlan: (byok) => request('/api/ai/study-plan', { method: 'POST', body: { byok } }),
+  aiSimReview: (runId, byok) => request('/api/ai/sim-review', { method: 'POST', body: { runId, byok } }),
 };

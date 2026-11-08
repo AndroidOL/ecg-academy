@@ -238,27 +238,32 @@ final class ApiController
         $user = self::user();
         $input = Http::input();
         $diagnosisId = isset($input['diagnosisId']) ? (string) $input['diagnosisId'] : null;
-        Http::ok(Ai::chat((int) $user['id'], (string) ($input['message'] ?? ''), $diagnosisId));
+        $byok = is_array($input['byok'] ?? null) ? $input['byok'] : null;
+        Http::ok(Ai::chat((int) $user['id'], (string) ($input['message'] ?? ''), $diagnosisId, $byok));
     }
 
     public static function aiExplain(array $params = []): void
     {
         $user = self::user();
         $input = Http::input();
-        Http::ok(Ai::explain((int) $user['id'], (int) ($input['attemptId'] ?? 0), (string) ($input['question'] ?? '')));
+        $byok = is_array($input['byok'] ?? null) ? $input['byok'] : null;
+        Http::ok(Ai::explain((int) $user['id'], (int) ($input['attemptId'] ?? 0), (string) ($input['question'] ?? ''), $byok));
     }
 
     public static function aiStudyPlan(array $params = []): void
     {
         $user = self::user();
-        Http::ok(Ai::studyPlan((int) $user['id']));
+        $input = Http::input();
+        $byok = is_array($input['byok'] ?? null) ? $input['byok'] : null;
+        Http::ok(Ai::studyPlan((int) $user['id'], $byok));
     }
 
     public static function aiSimReview(array $params = []): void
     {
         $user = self::user();
         $input = Http::input();
-        Http::ok(Ai::simReview((int) $user['id'], (int) ($input['runId'] ?? 0)));
+        $byok = is_array($input['byok'] ?? null) ? $input['byok'] : null;
+        Http::ok(Ai::simReview((int) $user['id'], (int) ($input['runId'] ?? 0), $byok));
     }
 
     private static function user(): array

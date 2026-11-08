@@ -249,3 +249,5 @@ small { font-size: 12.5px; }
     transition-duration: 0.01ms !important;
   }
 }
+html[data-low-bandwidth="1"] *, html[data-low-bandwidth="1"] *::before, html[data-low-bandwidth="1"] *::after { animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; scroll-behavior:auto !important; }
+html[data-low-bandwidth="1"] .app-sidebar, html[data-low-bandwidth="1"] .site-footer { box-shadow:none !important; }

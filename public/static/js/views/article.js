@@ -1,7 +1,8 @@
 import { api } from '../api.js';
 import { store } from '../store.js';
+import { isFavorite, toggleFavorite } from '../study-store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ab';
+const __asset = __isNode ? '' : '?v=20261108ad';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 import { createAiChat } from './ai-chat.js';
 const { icon, chapterColor, difficultyDots, escapeHtml, toast, medicalDisclaimer, setupMiniECG } = await import(`../ui.js${__asset}`);
@@ -46,6 +47,8 @@ export async function articleView({ params }) {
   let textbookViewer = null;
   let readTimer = 0;
   let mastered = status === 'mastered';
+  const favorited = isFavorite(detail.id);
+  const review = detail.review || {};
 
   el.innerHTML = `
     <div class="breadcrumb"><a href="#/learn">诊断图谱</a><span>/</span><a href="#/learn?chapter=${encodeURIComponent(detail.chapter)}">${escapeHtml(chapter.name || '')}</a><span>/</span><span>${escapeHtml(detail.name)}</span></div>
@@ -71,6 +74,11 @@ export async function articleView({ params }) {
         <div class="specificity-box">
           <div class="label">${icon('target', 12)} ${isTopic ? '本章要解决的问题' : '最具特异性的线索'}</div>
           <p>${escapeHtml(detail.specificity || detail.oneLiner)}</p>
+        </div>
+        <div class="article-review-meta">
+          <div><b>${icon('shield', 12)} ${escapeHtml(review.statusLabel || '编辑核对 · 待临床同行审阅')}</b><span>最后核对 ${escapeHtml(review.lastChecked || '—')} · 整理 ${escapeHtml((review.reviewers || []).join('、') || '—')}</span></div>
+          <div><b>参考来源</b><span>${escapeHtml((review.sources || []).join(' · ') || '见文末参考说明')}</span></div>
+          <a class="btn btn-ghost btn-xs" href="#/about">报告勘误 ${icon('arrowUpRight', 12)}</a>
         </div>
 
         <section class="section" id="ecg-viewer-section" ${hasEcg ? '' : 'hidden'}>
@@ -172,7 +180,7 @@ export async function articleView({ params }) {
           ${detail.next ? `<a class="card card-pad card-hover" style="text-align:right" href="#/learn/${encodeURIComponent(detail.next.id)}"><span class="badge">下一篇</span><div style="margin-top:6px;font-weight:700">${escapeHtml(detail.next.name)}</div></a>` : '<span></span>'}
         </div>
         ${medicalDisclaimer()}
-        <footer class="page-footer">内容为教学整理，不作为个体化诊疗依据。发现错误欢迎在开源仓库提交修订。</footer>
+        <footer class="page-footer">内容为教学整理，不作为个体化诊疗依据。发现错误请通过“关于 / 勘误”页面提交；所有修订会记录在版本化勘误页。</footer>
       </article>
 
       <aside class="article-aside">
@@ -192,6 +200,7 @@ export async function articleView({ params }) {
           </div>
           <div class="article-actions">
             <button class="btn btn-sm ${mastered ? 'btn-soft' : 'btn-primary'}" type="button" data-master ${mastered ? 'disabled' : ''}>${icon(mastered ? 'check' : 'target', 14)} ${mastered ? '已掌握' : '标记掌握'}</button>
+            <button class="btn btn-sm btn-secondary ${favorited ? 'btn-soft' : ''}" type="button" data-favorite aria-pressed="${favorited}">${icon('star', 14)} ${favorited ? '已收藏' : '收藏'}</button>
             <a class="btn btn-sm btn-secondary" href="#/practice">${icon('activity', 14)} 去练习</a>
           </div>
         </div>
@@ -361,6 +370,15 @@ export async function articleView({ params }) {
     }
   });
 
+  const favoriteButton = el.querySelector('[data-favorite]');
+  favoriteButton?.addEventListener('click', () => {
+    const next = toggleFavorite({ id: detail.id, name: detail.name, chapter: detail.chapter });
+    favoriteButton.innerHTML = `${icon('star', 14)} ${next ? '已收藏' : '收藏'}`;
+    favoriteButton.classList.toggle('btn-soft', next);
+    favoriteButton.setAttribute('aria-pressed', next ? 'true' : 'false');
+    toast(next ? '已加入收藏' : '已取消收藏', 'success');
+  });
+
   if (!status) {
     readTimer = window.setTimeout(async () => {
       try {
@@ -377,7 +395,7 @@ export async function articleView({ params }) {
   }
 
   const aiHost = el.querySelector('#article-ai');
-  if (aiHost && store.ai?.allowed !== false) {
+  if (aiHost && (store.ai?.allowed !== false || store.ai?.byokEnabled)) {
     const chat = createAiChat({
       diagnosisId: detail.id,
       welcome: `关于「${detail.name}」，你可以问我诊断标准、鉴别或处理。先记住这句话：${detail.oneLiner}`,

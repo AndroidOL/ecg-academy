@@ -1,7 +1,7 @@
 // Cache-busted dynamic imports: keep Node tests query-free while forcing
 // browsers with immutable 7-day static caching to load the current modules.
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ab';
+const __asset = __isNode ? '' : '?v=20261108ad';
 const { api } = await import(`./api.js${__asset}`);
 const { store, initTheme, applyTheme, toggleTheme } = await import(`./store.js${__asset}`);
 const { practiceView } = await import(`./views/practice.js${__asset}`);
@@ -16,27 +16,44 @@ const { simSessionView } = await import(`./views/sim-session.js${__asset}`);
 const { labView } = await import(`./views/lab.js${__asset}`);
 const { adminView } = await import(`./views/admin.js${__asset}`);
 const { vectorLabView } = await import(`./views/vector-lab.js${__asset}`);
+const { reviewView } = await import(`./views/review.js${__asset}`);
+const { aboutView } = await import(`./views/about.js${__asset}`);
+const { glossaryView } = await import(`./views/glossary.js${__asset}`);
+const { applyLowBandwidth } = await import(`./bandwidth.js${__asset}`);
+const { t, navKey, getLocale } = await import(`./i18n.js${__asset}`);
 
 const routes = [
   { path: '/', handler: homeView },
   { path: '/learn', handler: learnView },
   { path: '/learn/:id', handler: articleView },
   { path: '/practice', handler: practiceView },
+  { path: '/review', handler: reviewView },
   { path: '/sim/:sessionId', handler: simSessionView },
   { path: '/sim', handler: simListView },
   { path: '/vectors', handler: vectorLabView },
   { path: '/lab', handler: labView },
   { path: '/me', handler: meView },
+  { path: '/about', handler: aboutView },
+  { path: '/glossary', handler: glossaryView },
   { path: '/admin', handler: adminView },
 ];
+
+applyLowBandwidth();
+document.documentElement.lang = getLocale() === 'en' ? 'en' : 'zh-CN';
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (event) => { event.preventDefault(); window.__ecgInstallPrompt = event; window.dispatchEvent(new CustomEvent('ecg-install-ready')); });
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+  }
+}
 
 let router;
 
 function sidebarNav(activePath) {
   return NAV_ITEMS.map((item) => {
     const active = item.path === '/' ? activePath === '/' : activePath.startsWith(item.path);
-    return `<a class="nav-link ${active ? 'active' : ''}" href="#${item.path}" data-nav="${item.path}">
-      ${icon(item.icon, 19)}<span>${item.label}</span>${item.path === '/sim' ? '<span class="nav-badge">ACLS</span>' : ''}
+    return `<a class="nav-link ${active ? 'active' : ''}" href="#${item.path}" data-nav="${item.path}" ${active ? 'aria-current="page"' : ''}>
+      ${icon(item.icon, 19)}<span>${t(navKey(item.path), item.label)}</span>${item.path === '/sim' && getLocale() !== 'en' ? '<span class="nav-badge">ACLS</span>' : ''}
     </a>`;
   }).join('');
 }
@@ -44,14 +61,14 @@ function sidebarNav(activePath) {
 function topbarLinks(activePath) {
   return NAV_ITEMS.filter((item) => item.path !== '/me').map((item) => {
     const active = item.path === '/' ? activePath === '/' : activePath.startsWith(item.path);
-    return `<a class="${active ? 'active' : ''}" href="#${item.path}">${item.label}</a>`;
+    return `<a class="${active ? 'active' : ''}" href="#${item.path}" ${active ? 'aria-current="page"' : ''}>${t(navKey(item.path), item.label)}</a>`;
   }).join('');
 }
 
 function bottomNav(activePath) {
   return NAV_ITEMS.filter((item) => item.path !== '/me').map((item) => {
     const active = item.path === '/' ? activePath === '/' : activePath.startsWith(item.path);
-    return `<a class="bottom-link ${active ? 'active' : ''}" href="#${item.path}">${icon(item.icon, 21)}<span>${item.label}</span></a>`;
+    return `<a class="bottom-link ${active ? 'active' : ''}" href="#${item.path}" ${active ? 'aria-current="page"' : ''}>${icon(item.icon, 21)}<span>${t(navKey(item.path), item.label)}</span></a>`;
   }).join('');
 }
 
@@ -103,6 +120,7 @@ function shell(activePath = '/') {
         <div class="site-footer-links">
           ${store.site?.githubUrl ? `<a href="${escapeHtml(store.site.githubUrl)}" target="_blank" rel="noopener noreferrer">${icon('github', 13)} GitHub</a>` : ''}
           ${store.site?.license ? (store.site?.githubUrl ? `<a href="${escapeHtml(store.site.githubUrl.replace(/\/$/, ''))}/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">${escapeHtml(store.site.license)}</a>` : `<span>${escapeHtml(store.site.license)}</span>`) : ''}
+          <a href="#/about">${t('footer.about', '关于 / 勘误')}</a>
           ${store.site?.icp ? `<a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">${escapeHtml(store.site.icp)}</a>` : ''}
         </div>
       </footer>

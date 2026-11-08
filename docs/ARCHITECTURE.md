@@ -16,10 +16,10 @@ nginx (new vhost, <your-host>)
 PHP application (app/)
   ├─ Router / ApiController
   ├─ Auth (PHP session, guest upgrade, CSRF)
-  ├─ Content (46 articles / 40 quiz diagnoses, 9 chapters)
+  ├─ Content (230 articles / 40 quiz diagnoses, 19 chapters)
   ├─ Quiz (curated bank + seeded variants + server-side grading)
   ├─ SimEngine (authoritative ACLS state machine)
-  ├─ Ai (OpenAI-compatible proxy + grounded prompts + fallback)
+  ├─ Ai (OpenAI-compatible proxy + grounded prompts + fallback + optional BYOK)
   └─ Db (PDO MySQL: users, progress, attempts, sim runs)
         │
 MySQL 8.4  ecg_academy
@@ -55,13 +55,18 @@ app/                 后端（Web 根之外）
   AdminController.php 管理 API
 data/
   diagnoses/*.php    判读课程（46 篇，含 ECG 规格）
-  topics/*.json      理论/病例专题（183 章）
+  topics/*.json      理论/病例专题（184 章）
   chapters.php       章节元数据
-  scenarios.php      6 个急救场景
+  scenarios.php      10 个急救场景
+  review.php         章节审阅台账/参考来源
+  corrections.php    版本化勘误
+  imports/           脱敏 CSV 导入输出
 public/
   index.php          SPA shell + API 前端控制器
   static/css/*.css   tokens / base / components / pages
-  static/js/*.js     app, router, api, ecg-engine, ecg-renderer, views
+  static/js/*.js     app, router, api, store, study-store, i18n, byok, views
+  sw.js              PWA service worker（HTTPS 注册）
+  offline.html       离线回退页
   static/img/*       logo, favicon
 scripts/             migrate, seed, export docs, tests, deploy
 storage/             sessions, logs, cache, backups（Web 不可达）
@@ -79,6 +84,10 @@ hash 路由，便于任意静态托管与无重写部署：
 - `#/sim` 急救场景
 - `#/sim/:id` 急救推演
 - `#/lab` 电解质实验室
+- `#/vectors` 向量实验室
+- `#/review` 错题/收藏/间隔复习
+- `#/glossary` 双语术语表
+- `#/about` 关于、审阅流程、版本化勘误
 - `#/me` 我的进度 / 排行榜 / 设置
 
 ## 数据流：练习
@@ -103,6 +112,13 @@ hash 路由，便于任意静态托管与无重写部署：
 - 登录限流：`auth_throttle` 按 key + IP 记录失败窗口；AI 每日配额 `ai_usage`。
 - 安全响应头：CSP、X-Content-Type-Options、Referrer-Policy、Permissions-Policy；生产不显示堆栈。
 - 上传功能不存在；无文件写入用户输入。
+
+## 本地优先与离线
+
+- 游客进度、XP、错题、收藏与复习间隔保存在浏览器 localStorage；答题使用服务端签名令牌，不写 `quiz_attempts`。
+- `sw.js` 在 HTTPS 下缓存 app shell、静态资源和最近 API GET；导航离线回退到缓存首页或 `offline.html`。
+- 低带宽模式写入 `html[data-low-bandwidth=1]`，关闭非必要动画；可由 `navigator.connection.saveData` 自动触发。
+- BYOK 密钥仅保存在当前标签页 sessionStorage；请求级传给服务端，服务端不落库、不写日志，并拒绝 HTTP/私网/保留地址。
 
 ## 性能
 

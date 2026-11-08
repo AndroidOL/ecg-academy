@@ -36,7 +36,7 @@ ECG_ADMIN_PASSWORD='换成至少12位的强密码' php scripts/create_admin.php 
 | 区域 | 能力 |
 |---|---|
 | 站点开关 | 允许注册、允许普通用户登录、管理员密码登录、管理员 Passkey 登录 |
-| AI | 总开关、普通用户每日额度、默认供应商、补充系统提示词 |
+| AI | 总开关、普通用户每日额度、默认供应商、补充系统提示词、BYOK 演示开关 |
 | AI 供应商 | OpenAI / DeepSeek / OpenRouter / 通义千问兼容模式 / 硅基流动预设，或任意 OpenAI-compatible Base URL；可保存多个模型 |
 | 站点信息 | GitHub 链接、许可证说明、版权、ICP 备案号 |
 | 用户 | 搜索、启用/停用、设为/移除管理员、每日 AI 额度覆盖、重置密码 |
@@ -60,3 +60,16 @@ php scripts/create_admin.php --username=admin --write-local
 - Passkey 目前支持 ES256（平台 Passkey 的常见算法）；不支持的安全密钥会明确报错。
 - AI 供应商必须是 OpenAI-compatible `/chat/completions`；非兼容协议需要适配层。
 - 审计日志最多保留最近记录用于界面展示；生产可按需设置数据库归档。
+
+## 内容审阅与勘误（只读台账）
+
+- 章节审阅状态在 `data/review.php`，当前全部为“编辑核对 · 待临床同行审阅”；后台不提供一键“认证”按钮，避免把编辑操作误当医学审阅。
+- 修订流程：改内容/来源 → 更新 `lastChecked` → 跑校验 → 更新 `data/corrections.php` 与静态 `public/static/js/data/corrections.js` → 发布。
+- 文章页展示审阅条与来源；`#/about` 展示版本化勘误；GitHub Issue 接收报告。
+- 医学顾问加入后，在对应章节写 `clinicalReviewers` 与 `status=clinical_reviewed`，并更新版本记录。
+
+## BYOK 风险提示
+
+- 后台开启 `ai.byok_enabled` 后，用户可自带 API Key；密钥只存在浏览器当前标签页，经本站服务器转发。
+- 服务端拒绝 HTTP、localhost、私网/保留 IP，禁止重定向；不落库、不写日志。
+- 仍建议仅在演示/培训环境开启；不要让用户输入生产环境高权限密钥。

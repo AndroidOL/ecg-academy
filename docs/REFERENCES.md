@@ -22,7 +22,7 @@
 
 ## 审阅状态
 
-当前内容为教学整理与自动校验版本，尚未完成外部临床同行双盲审阅。欢迎通过 GitHub Issue 提交勘误、引用与病例建议；医学顾问审阅流程见 [`ROADMAP.md`](ROADMAP.md) 的 v1.2 计划。
+当前内容为教学整理与自动校验版本，尚未完成外部临床同行双盲审阅。每章在页面展示“编辑核对 · 待临床同行审阅”、整理者、最后核对日期与来源；详见 [`REVIEW.md`](REVIEW.md)。欢迎通过 GitHub Issue 提交勘误；医学顾问招募见 [`MEDICAL_ADVISORS.md`](MEDICAL_ADVISORS.md)。区域指南差异见 [`GUIDELINES.md`](GUIDELINES.md)，v2.0 研究见 [`V2_RESEARCH.md`](V2_RESEARCH.md)。
 
 ## 免责声明
 

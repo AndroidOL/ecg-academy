@@ -7,6 +7,7 @@ final class Content
 {
     private static ?array $chapters = null;
     private static ?array $diagnoses = null;
+    private static ?array $review = null;
 
     public static function chapters(): array
     {
@@ -134,6 +135,7 @@ final class Content
         }
 
         $diagnosis['chapterMeta'] = $chapter;
+        $diagnosis['review'] = self::reviewInfo((string) $diagnosis['chapter'], (string) $diagnosis['id']);
         $diagnosis['related'] = array_values($related);
         $diagnosis['topic'] = (bool) ($diagnosis['topic'] ?? false);
         $diagnosis['urgency'] = (string) ($diagnosis['urgency'] ?? 'core');
@@ -141,6 +143,25 @@ final class Content
         $diagnosis['hasEcg'] = isset($diagnosis['ecg']) && is_array($diagnosis['ecg']);
         $diagnosis['ecg'] = $diagnosis['hasEcg'] ? self::fullSpec($diagnosis) : null;
         return $diagnosis;
+    }
+
+    public static function reviewInfo(string $chapterId, string $diagnosisId): array
+    {
+        if (self::$review === null) {
+            $file = BASE_PATH . '/data/review.php';
+            self::$review = is_file($file) ? require $file : [];
+        }
+        $base = self::$review['default'] ?? [];
+        $chapter = self::$review['chapters'][$chapterId] ?? [];
+        $override = self::$review['overrides'][$diagnosisId] ?? [];
+        $info = array_replace_recursive($base, $chapter, $override);
+        $info['status'] = $info['status'] ?? 'editorial';
+        $info['statusLabel'] = $info['statusLabel'] ?? '编辑核对 · 待临床同行审阅';
+        $info['reviewers'] = array_values(array_unique((array) ($info['reviewers'] ?? [])));
+        $info['clinicalReviewers'] = array_values(array_unique((array) ($info['clinicalReviewers'] ?? [])));
+        $info['sources'] = array_values(array_unique((array) ($info['sources'] ?? [])));
+        $info['lastChecked'] = (string) ($info['lastChecked'] ?? '');
+        return $info;
     }
 
     public static function previewSpec(array $diagnosis): array

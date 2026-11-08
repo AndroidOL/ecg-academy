@@ -18,3 +18,8 @@ storage/master.key
 
 # local test-data backups
 storage/backups/
+
+# imported/protected waveform data must be reviewed before commit
+# keep the directory README, ignore raw JSON by default
+data/imports/*.json
+!data/imports/README.md

@@ -10,6 +10,14 @@
 - 新诊断、新 ACLS 场景、新题目变体。
 - 翻译、错别字与文档改进。
 
+## 相关协议与流程
+
+- [贡献者协议（简版）](docs/CONTRIBUTOR_AGREEMENT.md)
+- [内容审阅台账](docs/REVIEW.md)
+- [勘误流程](docs/CORRECTIONS.md)
+- [医学顾问招募](docs/MEDICAL_ADVISORS.md)
+- [无障碍目标](docs/A11Y.md) / [i18n](docs/I18N.md)
+
 ## 医学内容规范
 
 1. 不提交真实患者数据、可识别信息或 PHI。
@@ -40,7 +48,7 @@ php scripts/validate_content.php
 - PHP 8.2+，PSR-12 风格，预处理 SQL，输出 JSON 前不拼 HTML。
 - 前端零构建原生 ES Modules；不要引入运行时 CDN 或外部字体。
 - 新增交互必须同时考虑键盘、触控与 `prefers-reduced-motion`。
-- 修改静态资源后更新 `app/config.php` 的 `asset_version`。
+- 修改静态资源后更新 `app/config.php` 的 `asset_version`，并同步 `public/sw.js` 的 `CACHE_VERSION`。
 - ECG 引擎改动必须补充 `tests/engine.test.mjs` 或 `tests/playback.test.mjs`。
 
 ## 提交前检查
@@ -51,6 +59,8 @@ node tests/engine.test.mjs
 node tests/playback.test.mjs
 php tests/sim.test.php
 node tests/ui-smoke.mjs
+php scripts/validate_curriculum.php
+php scripts/validate_bank.php
 ```
 
 `tests/ui-smoke.mjs` 需要本地 PHP 开发服务器与 MySQL；如你的环境没有 Node/Chrome，请在 PR 描述中说明未执行的测试及原因。

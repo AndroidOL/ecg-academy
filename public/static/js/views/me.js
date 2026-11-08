@@ -3,6 +3,9 @@ import { store, applyTheme, getThemeMode } from '../store.js';
 import { navigate } from '../router.js';
 import { openAuth, logout } from '../auth.js';
 import { icon, escapeHtml, toast, medicalDisclaimer } from '../ui.js';
+import { reviewSummary } from '../study-store.js';
+import { isLowBandwidth, setLowBandwidth, installPrompt, clearInstallPrompt } from '../bandwidth.js';
+import { getLocale, setLocale } from '../i18n.js';
 
 export async function meView() {
   const el = document.createElement('div');
@@ -28,6 +31,7 @@ export async function meView() {
       return { ...chapter, read: chapterRead, mastered: chapterMastered, total: items.length, percent: items.length ? Math.round((chapterRead / items.length) * 100) : 0 };
     })
     : (stats.chapters || []);
+  const localReview = reviewSummary();
   const circumference = 2 * Math.PI * 48;
   const dash = (percent / 100) * circumference;
 
@@ -54,6 +58,12 @@ export async function meView() {
           </div>
         </section>
         <section class="card card-pad">
+          <div class="section-head"><h2 class="section-title">错题与复习</h2><a class="section-kicker" href="#/review">打开错题本 →</a></div>
+          <div class="review-me-grid"><div><b>${localReview.due}</b><span>今日待复习</span></div><div><b>${localReview.wrong}</b><span>错题诊断</span></div><div><b>${localReview.favorites}</b><span>收藏章节</span></div></div>
+          <p class="muted" style="font-size:11px;line-height:1.7;margin-top:8px">答错的诊断会自动进入错题本；按 1 → 3 → 7 → 14 天间隔重现，记录只保存在本设备。</p>
+          <a class="btn btn-secondary btn-sm" href="#/review" style="margin-top:9px">${icon('target', 14)} 开始间隔复习</a>
+        </section>
+        <section class="card card-pad">
           <div class="section-head"><h2 class="section-title">判读记录</h2><a class="section-kicker" href="#/practice">去练习 →</a></div>
           ${(stats.history || []).length ? `<div class="stack">${stats.history.slice(0, 6).map((item) => `<div class="settings-row" style="padding:8px 0"><div><div class="settings-name">${escapeHtml((item.correctNames || []).join('、'))}</div><div class="settings-sub">${escapeHtml(item.createdAt || '')} · ${item.timeMs ? Math.round(item.timeMs / 1000) + ' 秒' : '—'}</div></div><span class="badge ${item.correct ? 'badge-ok' : 'badge-danger'}">${item.correct ? '正确' : '重读'}</span></div>`).join('')}</div>` : `<div class="learn-empty"><b>还没有判读记录</b><span>完成第一道题后，这里会显示你的诊断准确率与最近题目。</span><a class="btn btn-primary btn-sm" href="#/practice" style="margin-top:12px">开始练习</a></div>`}
         </section>
@@ -71,7 +81,9 @@ export async function meView() {
         <section class="card card-pad">
           <h2 class="section-title" style="font-size:16px">外观主题</h2>
           <div class="segmented" style="margin-top:8px;width:100%"><button class="segment ${getThemeMode() === 'auto' ? 'active' : ''}" type="button" data-theme-set="auto">跟随系统</button><button class="segment ${getThemeMode() === 'light' ? 'active' : ''}" type="button" data-theme-set="light">浅色</button><button class="segment ${getThemeMode() === 'dark' ? 'active' : ''}" type="button" data-theme-set="dark">深色</button></div>
-          <p class="muted" style="font-size:10.5px;margin-top:8px">主题会保存在本机；登录后同步到账号。</p>
+          <div class="row-wrap" style="margin-top:10px"><button class="btn btn-sm ${isLowBandwidth() ? 'btn-primary' : 'btn-secondary'}" type="button" data-low-bandwidth aria-pressed="${isLowBandwidth() ? 'true' : 'false'}">${icon('activity', 13)} ${isLowBandwidth() ? '低带宽已开启' : '低带宽模式'}</button><span data-install-wrap ${installPrompt() ? '' : 'hidden'}><button class="btn btn-sm btn-secondary" type="button" data-install>${icon('monitor', 13)} 安装离线应用</button></span></div>
+          <p class="muted" style="font-size:10.5px;margin-top:8px">主题与低带宽设置保存在本机；安装后可离线打开已缓存页面。</p>
+          <div class="row-wrap" style="margin-top:9px"><span class="muted" style="font-size:10px">语言 / Language</span><button class="btn btn-xs ${getLocale() === 'zh' ? 'btn-primary' : 'btn-ghost'}" type="button" data-locale="zh">中文</button><button class="btn btn-xs ${getLocale() === 'en' ? 'btn-primary' : 'btn-ghost'}" type="button" data-locale="en">English beta</button><a class="btn btn-xs btn-ghost" href="#/glossary">术语表</a></div>
         </section>
         ${store.ai?.allowed !== false ? `<section class="card card-pad">
           <h2 class="section-title" style="font-size:16px">${icon('sparkles', 14)} AI 导师</h2>
@@ -83,6 +95,7 @@ export async function meView() {
           <div class="quick-actions" style="margin-top:8px">
             <a class="quick-action" href="#/learn">${icon('bookOpen', 15)} 诊断图谱</a>
             <a class="quick-action" href="#/practice">${icon('target', 15)} 判读练习</a>
+            <a class="quick-action" href="#/review">${icon('bookOpen', 15)} 错题复习</a>
             <a class="quick-action" href="#/sim">${icon('zap', 15)} 急救推演</a>
             <a class="quick-action" href="#/lab">${icon('flask', 15)} 电解质</a>
           </div>
@@ -97,6 +110,33 @@ export async function meView() {
     await logout();
     navigate('/me');
   });
+  el.querySelectorAll('[data-locale]').forEach((button) => button.addEventListener('click', () => {
+    setLocale(button.dataset.locale);
+    toast(button.dataset.locale === 'en' ? 'English shell enabled. Course content remains Chinese with bilingual glossary.' : '已切换为中文界面', 'success');
+    window.setTimeout(() => window.location.reload(), 350);
+  }));
+
+  el.querySelector('[data-low-bandwidth]')?.addEventListener('click', (event) => {
+    const enabled = setLowBandwidth(!isLowBandwidth());
+    const button = event.currentTarget;
+    button.classList.toggle('btn-primary', enabled);
+    button.classList.toggle('btn-secondary', !enabled);
+    button.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+    button.innerHTML = `${icon('activity', 13)} ${enabled ? '低带宽已开启' : '低带宽模式'}`;
+    toast(enabled ? '已开启低带宽模式：减少装饰动画' : '已恢复正常动画', 'success');
+  });
+  const installButton = el.querySelector('[data-install]');
+  installButton?.addEventListener('click', async () => {
+    const prompt = installPrompt();
+    if (!prompt) return toast('当前浏览器不支持自动安装，请使用浏览器菜单“添加到主屏幕”', 'info');
+    prompt.prompt();
+    const choice = await prompt.userChoice;
+    if (choice?.outcome === 'accepted') { clearInstallPrompt(); toast('已安装心迹', 'success'); }
+  });
+  window.addEventListener('ecg-install-ready', () => {
+    const wrap = el.querySelector('[data-install-wrap]'); if (wrap) wrap.hidden = false;
+  }, { once: true });
+
   el.querySelectorAll('[data-theme-set]').forEach((button) => {
     button.addEventListener('click', () => {
       applyTheme(button.dataset.themeSet, { syncServer: true });

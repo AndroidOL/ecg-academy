@@ -41,7 +41,7 @@ ECG_AI_MODEL=deepseek-chat
 
 ## 安全与医学边界
 
-- 密钥只在服务端；浏览器只访问本站 `/api/ai/*` 代理。
+- 站点密钥只在服务端；浏览器只访问本站 `/api/ai/*` 代理。
 - 不把用户姓名、IP、账号 ID 发送给模型；只发送教学上下文与匿名统计。
 - 系统提示词强制：仅用于心电图教学；不得给出个体化诊疗指令；不确定时明确说明；急症一律建议按当地急救流程与临床评估。
 - AI **不生成**心电图波形、诊断金标准或选项答案；这些来自策展内容，避免模型臆造。
@@ -49,15 +49,26 @@ ECG_AI_MODEL=deepseek-chat
 - 每日配额（`ai_usage` 表）与 PHP session 双重限制；失败不扣配额。
 - 页面显示“AI 生成内容，需结合教材与临床判断”。
 
+## BYOK 演示（可选，默认关闭）
+
+管理员在后台开启 `ai.byok_enabled` 后，用户可在 AI 面板点击钥匙图标，填入自己的 OpenAI-compatible Base URL、模型与 API Key。
+
+- 密钥只保存当前标签页 `sessionStorage`，关闭标签页即失效；不写入数据库、不写日志。
+- 请求级传给服务端用于本次代理调用，不落盘。
+- Base URL 必须 HTTPS；拒绝 localhost、`.local`、`.internal`、私网/保留 IP，禁止跟随跨域跳转。
+- BYOK 请求不消耗站点每日额度；失败仍回退本地知识库。
+- 这是个人演示功能，不建议在生产环境使用高权限密钥；管理员可随时关闭。
+- 访客只有在管理员开启 BYOK 且提供密钥时才可调用；不会借用站点密钥。
+
 ## 接口
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/ai/status` | 是否配置、模型名、剩余额度 |
-| POST | `/api/ai/chat` | `{message, diagnosisId?}` 文章内问答 |
-| POST | `/api/ai/explain` | `{attemptId}` 错因解析 |
-| POST | `/api/ai/study-plan` | 基于进度生成 3 个薄弱诊断 + 训练建议 + 组卷参数 |
-| POST | `/api/ai/sim-review` | `{runId}` 急救复盘 |
+| GET | `/api/ai/status` | 是否配置、模型名、剩余额度、`byokEnabled` |
+| POST | `/api/ai/chat` | `{message, diagnosisId?, byok?}` 文章内问答 |
+| POST | `/api/ai/explain` | `{attemptId, question?, byok?}` 错因解析 |
+| POST | `/api/ai/study-plan` | `{byok?}` 基于进度生成 3 个薄弱诊断 + 训练建议 + 组卷参数 |
+| POST | `/api/ai/sim-review` | `{runId, byok?}` 急救复盘 |
 
 所有 POST 需要 CSRF token，返回统一结构：
 

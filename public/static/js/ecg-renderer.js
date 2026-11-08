@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ab';
+const __asset = __isNode ? '' : '?v=20261108ad';
 const { ECGSession, LEAD_NAMES } = await import(`./ecg-engine.js${__asset}`);
 
 const COLUMNS = [
@@ -1174,10 +1174,26 @@ export class ECGViewer {
     ctx.restore();
     ctx.fillStyle = colors.muted;
     ctx.font = '500 9px "SF Mono", ui-monospace, monospace';
-    ctx.textAlign = 'right';
-    const progressLabel = progress == null ? '12 导联 · 10 s' : `录播 ${Math.min(10, progress).toFixed(1)} / 10 s`;
-    ctx.fillText(progressLabel, this.cssWidth - 10, this.cssHeight - 3);
     ctx.textAlign = 'left';
+    const progressLabel = progress == null ? '12 导联 · 10 s' : `录播 ${Math.min(10, progress).toFixed(1)} / 10 s`;
+    ctx.fillText(progressLabel, padLeft + 2, this.cssHeight - 3);
+    // 1 mV 校准脉冲与纸速/增益标注（12 导联底边）
+    const calH = Math.min(26, 10 * pxPerMm);
+    const calX = this.cssWidth - 150;
+    const calY = this.cssHeight - 4;
+    ctx.strokeStyle = colors.muted;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(calX, calY);
+    ctx.lineTo(calX + 5, calY);
+    ctx.lineTo(calX + 5, calY - calH);
+    ctx.lineTo(calX + 13, calY - calH);
+    ctx.lineTo(calX + 13, calY);
+    ctx.lineTo(calX + 18, calY);
+    ctx.stroke();
+    ctx.fillStyle = colors.muted;
+    ctx.font = '500 8px "SF Mono", ui-monospace, monospace';
+    ctx.fillText('1 mV · 25 mm/s · 10 mm/mV', calX + 23, calY - 3);
   }
 
   draw12Cell(lead, x, y, w, h, col, colors, progress = null, fullDuration = false) {
