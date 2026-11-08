@@ -174,6 +174,111 @@ final class AdminController
         Http::ok(['ok' => true]);
     }
 
+    public static function createUser(array $params = []): void
+    {
+        $admin = AdminAuth::requireAdmin();
+        $input = Http::input();
+        $username = strtolower(trim((string) ($input['username'] ?? '')));
+        $password = (string) ($input['password'] ?? '');
+        $displayName = trim((string) ($input['displayName'] ?? ''));
+        $isAdmin = filter_var($input['isAdmin'] ?? false, FILTER_VALIDATE_BOOL);
+        $limitRaw = $input['aiDailyLimit'] ?? null;
+        $limit = ($limitRaw === null || $limitRaw === '') ? null : max(0, min(10000, (int) $limitRaw));
+        if (!preg_match('/^[a-z0-9_]{3,24}$/', $username)) throw new ApiError(422, 'invalid_username', '用户名需为 3–24 位字母、数字或下划线');
+        if (strlen($password) < 8 || strlen($password) > 72) throw new ApiError(422, 'invalid_password', '密码长度需为 8–72 位');
+        if ($displayName === '') $displayName = $username;
+        $displayName = mb_substr(preg_replace('/[\x00-\x1F\x7F]/u', '', $displayName) ?? $displayName, 0, 32, 'UTF-8');
+        $pdo = Db::pdo();
+        $exists = $pdo->prepare('SELECT COUNT(*) FROM users WHERE username = ?');
+        $exists->execute([$username]);
+        if ((int) $exists->fetchColumn() > 0) throw new ApiError(409, 'username_taken', '该用户名已被占用');
+        $pdo->prepare(
+            'INSERT INTO users (public_id, username, password_hash, display_name, is_guest, is_admin, is_active, ai_daily_limit)
+             VALUES (?, ?, ?, ?, 0, ?, 1, ?)'
+        )->execute([bin2hex(random_bytes(8)), $username, password_hash($password, PASSWORD_DEFAULT), $displayName, $isAdmin ? 1 : 0, $limit]);
+        $id = (int) $pdo->lastInsertId();
+        AdminAuth::audit((int) $admin['id'], 'admin.user.create', ['userId' => $id, 'username' => $username, 'isAdmin' => $isAdmin]);
+        Http::ok(['userId' => $id, 'username' => $username, 'displayName' => $displayName, 'isAdmin' => $isAdmin]);
+    }
+
+    public static function assignments(array $params = []): void
+    {
+        AdminAuth::requireAdmin();
+        $rows = Db::pdo()->query(
+            'SELECT a.*, COUNT(at.id) AS attempts, COUNT(DISTINCT at.device_hash) AS devices,
+                    COALESCE(ROUND(AVG(at.score), 1), 0) AS avg_score,
+                    COALESCE(ROUND(100 * SUM(at.correct) / NULLIF(COUNT(at.id), 0), 1), 0) AS accuracy
+             FROM assignments a LEFT JOIN assignment_attempts at ON at.assignment_id = a.id
+             GROUP BY a.id ORDER BY a.id DESC LIMIT 100'
+        )->fetchAll();
+        Http::ok(['items' => $rows]);
+    }
+
+    public static function assignmentSave(array $params = []): void
+    {
+        $admin = AdminAuth::requireAdmin();
+        $input = Http::input();
+        $id = (int) ($input['id'] ?? 0);
+        $title = trim((string) ($input['title'] ?? ''));
+        $className = trim((string) ($input['className'] ?? ''));
+        $level = max(1, min(3, (int) ($input['level'] ?? 1)));
+        $chapter = preg_replace('/[^a-z0-9_-]/', '', (string) ($input['chapter'] ?? 'all')) ?: 'all';
+        $focus = array_values(array_filter(array_map('trim', explode(',', (string) ($input['focus'] ?? '')))));
+        $focus = array_values(array_filter($focus, static fn (string $id): bool => Content::find($id) !== null));
+        $active = filter_var($input['active'] ?? true, FILTER_VALIDATE_BOOL);
+        if ($title === '' || mb_strlen($title, 'UTF-8') > 120) throw new ApiError(422, 'invalid_assignment', '作业标题需为 1–120 字');
+        if (mb_strlen($className, 'UTF-8') > 80) throw new ApiError(422, 'invalid_assignment', '班级名称不能超过 80 字');
+        $pdo = Db::pdo();
+        if ($id > 0) {
+            $stmt = $pdo->prepare('SELECT * FROM assignments WHERE id = ? LIMIT 1');
+            $stmt->execute([$id]);
+            if (!$stmt->fetch()) throw new ApiError(404, 'assignment_not_found', '作业不存在');
+            $pdo->prepare('UPDATE assignments SET title = ?, class_name = ?, level = ?, chapter = ?, focus = ?, active = ? WHERE id = ?')
+                ->execute([$title, $className, $level, $chapter, implode(',', $focus), $active ? 1 : 0, $id]);
+        } else {
+            $code = '';
+            for ($i = 0; $i < 5; $i++) {
+                $candidate = strtolower(bin2hex(random_bytes(6)));
+                $check = $pdo->prepare('SELECT COUNT(*) FROM assignments WHERE code = ?');
+                $check->execute([$candidate]);
+                if ((int) $check->fetchColumn() === 0) { $code = $candidate; break; }
+            }
+            if ($code === '') throw new ApiError(500, 'assignment_code_failed', '无法生成作业代码');
+            $pdo->prepare('INSERT INTO assignments (code, title, class_name, level, chapter, focus, active, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+                ->execute([$code, $title, $className, $level, $chapter, implode(',', $focus), $active ? 1 : 0, (int) $admin['id']]);
+            $id = (int) $pdo->lastInsertId();
+        }
+        AdminAuth::audit((int) $admin['id'], 'admin.assignment.save', ['id' => $id, 'title' => $title]);
+        $stmt = $pdo->prepare('SELECT * FROM assignments WHERE id = ?');
+        $stmt->execute([$id]);
+        Http::ok(['assignment' => $stmt->fetch()]);
+    }
+
+    public static function assignmentToggle(array $params = []): void
+    {
+        $admin = AdminAuth::requireAdmin();
+        $input = Http::input();
+        $id = (int) ($input['id'] ?? 0);
+        $active = filter_var($input['active'] ?? false, FILTER_VALIDATE_BOOL);
+        $exists = Db::pdo()->prepare('SELECT id FROM assignments WHERE id = ? LIMIT 1');
+        $exists->execute([$id]);
+        if (!$exists->fetch()) throw new ApiError(404, 'assignment_not_found', '作业不存在');
+        Db::pdo()->prepare('UPDATE assignments SET active = ? WHERE id = ?')->execute([$active ? 1 : 0, $id]);
+        AdminAuth::audit((int) $admin['id'], 'admin.assignment.toggle', ['id' => $id, 'active' => $active]);
+        Http::ok(['ok' => true]);
+    }
+
+    public static function assignmentDelete(array $params = []): void
+    {
+        $admin = AdminAuth::requireAdmin();
+        $id = (int) (Http::input()['id'] ?? 0);
+        $stmt = Db::pdo()->prepare('DELETE FROM assignments WHERE id = ?');
+        $stmt->execute([$id]);
+        if ($stmt->rowCount() === 0) throw new ApiError(404, 'assignment_not_found', '作业不存在');
+        AdminAuth::audit((int) $admin['id'], 'admin.assignment.delete', ['id' => $id]);
+        Http::ok(['ok' => true]);
+    }
+
     public static function aiProviderSave(array $params = []): void
     {
         $admin = AdminAuth::requireAdmin();

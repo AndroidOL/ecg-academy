@@ -1,7 +1,7 @@
 // Cache-busted dynamic imports: keep Node tests query-free while forcing
 // browsers with immutable 7-day static caching to load the current modules.
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108af';
+const __asset = __isNode ? '' : '?v=20261108ah';
 const { api } = await import(`./api.js${__asset}`);
 const { store, initTheme, applyTheme, toggleTheme } = await import(`./store.js${__asset}`);
 const { practiceView } = await import(`./views/practice.js${__asset}`);
@@ -18,6 +18,7 @@ const { adminView } = await import(`./views/admin.js${__asset}`);
 const { vectorLabView } = await import(`./views/vector-lab.js${__asset}`);
 const { reviewView } = await import(`./views/review.js${__asset}`);
 const { aboutView } = await import(`./views/about.js${__asset}`);
+const { examView } = await import(`./views/exam.js${__asset}`);
 const { glossaryView } = await import(`./views/glossary.js${__asset}`);
 const { guidelinesView } = await import(`./views/guidelines.js${__asset}`);
 const { applyLowBandwidth } = await import(`./bandwidth.js${__asset}`);
@@ -29,6 +30,7 @@ const routes = [
   { path: '/learn/:id', handler: articleView },
   { path: '/practice', handler: practiceView },
   { path: '/review', handler: reviewView },
+  { path: '/exam', handler: examView },
   { path: '/sim/:sessionId', handler: simSessionView },
   { path: '/sim', handler: simListView },
   { path: '/vectors', handler: vectorLabView },
@@ -68,7 +70,7 @@ function topbarLinks(activePath) {
 }
 
 function bottomNav(activePath) {
-  return NAV_ITEMS.filter((item) => item.path !== '/me').map((item) => {
+  return NAV_ITEMS.filter((item) => item.path !== '/me' && item.bottom !== false).map((item) => {
     const active = item.path === '/' ? activePath === '/' : activePath.startsWith(item.path);
     return `<a class="bottom-link ${active ? 'active' : ''}" href="#${item.path}" ${active ? 'aria-current="page"' : ''}>${icon(item.icon, 21)}<span>${t(navKey(item.path), item.label)}</span></a>`;
   }).join('');
@@ -135,6 +137,8 @@ function navLabel(path) {
   if (path === '/') return { label: '首页', active: '/' };
   if (path.startsWith('/learn')) return { label: '学习', active: '/learn' };
   if (path.startsWith('/practice')) return { label: '练习', active: '/practice' };
+  if (path.startsWith('/exam')) return { label: '学习考试', active: '/exam' };
+  if (path.startsWith('/review')) return { label: '错题复习', active: '/review' };
   if (path.startsWith('/sim')) return { label: '急救模拟', active: '/sim' };
   if (path.startsWith('/lab')) return { label: '电解质实验室', active: '/lab' };
   if (path.startsWith('/me')) return { label: '我的', active: '/me' };

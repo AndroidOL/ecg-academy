@@ -63,6 +63,7 @@ export const NAV_ITEMS = [
   { path: '/', label: '首页', icon: 'home' },
   { path: '/learn', label: '学习', icon: 'book' },
   { path: '/practice', label: '练习', icon: 'activity' },
+  { path: '/exam', label: '考试', icon: 'trophy' },
   { path: '/sim', label: '急救', icon: 'zap' },
   { path: '/lab', label: '实验室', icon: 'flask' },
   { path: '/me', label: '我的', icon: 'user' },

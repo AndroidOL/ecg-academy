@@ -1,10 +1,10 @@
 import { api } from '../api.js';
 import { store } from '../store.js';
 import { navigate } from '../router.js';
-import { recordAttempt, reviewSummary, weakDiagnosisIds } from '../study-store.js';
+import { recordAttempt, reviewSummary, weakDiagnosisIds, deviceId } from '../study-store.js';
 import { byokPayload, hasByok } from '../byok.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108af';
+const __asset = __isNode ? '' : '?v=20261108ah';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, toast, setButtonLoading, fmtDuration, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
@@ -32,6 +32,9 @@ const state = {
   timerId: 0,
   viewer: null,
   aiPlan: null,
+  practice: null,
+  assignmentCode: '',
+  assignmentMeta: null,
 };
 
 function aiUiAvailable() {
@@ -61,13 +64,33 @@ export async function practiceView({ query } = {}) {
   state.result = null;
   state.focus = [];
   const initialFocus = String(query?.get('focus') || '').split(',').map((x) => x.trim()).filter(Boolean);
+  const assignmentCode = String(query?.get('assignment') || '').trim().toLowerCase();
+  let assignmentError = '';
+  state.assignmentCode = assignmentCode;
+  state.assignmentMeta = null;
+  if (assignmentCode) {
+    try {
+      state.assignmentMeta = await api.assignment(assignmentCode);
+      state.level = Number(state.assignmentMeta.level) || 1;
+      state.chapter = String(state.assignmentMeta.chapter || 'all');
+      state.focus = Array.isArray(state.assignmentMeta.focus) ? state.assignmentMeta.focus : [];
+    } catch (error) {
+      assignmentError = error.message || '作业链接无效或已关闭';
+      state.assignmentCode = '';
+    }
+  }
   const initialLevel = Number(query?.get('level') || 1);
   const initialChapter = String(query?.get('chapter') || 'all');
-  const autoStart = query?.get('auto') === '1' && initialFocus.length > 0;
+  const autoStart = Boolean(state.assignmentMeta) || (query?.get('auto') === '1' && initialFocus.length > 0);
   const shared = query?.get('share') === '1';
-  if ([1, 2, 3].includes(initialLevel)) state.level = initialLevel;
-  state.chapter = initialChapter;
+  if (!state.assignmentMeta) {
+    if ([1, 2, 3].includes(initialLevel)) state.level = initialLevel;
+    state.chapter = initialChapter;
+  }
   const summary = reviewSummary();
+  let testStatus = { score: 0, correct: 0, wrong: 0, locked: false, lockedUntil: null, lockScore: -100, leaderboard: [] };
+  try { testStatus = await api.practiceStatus(); } catch { /* offline / old API */ }
+  state.practice = testStatus;
 
   const chapters = store.chapters || [];
   el.innerHTML = `
@@ -77,8 +100,11 @@ export async function practiceView({ query } = {}) {
         <h1 class="page-title">判读练习</h1>
         <p class="page-sub">题库已预置 1920 道确定性病例：由 40 种诊断 × 40 个种子、8 组组合 × 40 个种子组成；答案与解析来自策展知识库，服务端校验。</p>
       </div>
-      <div class="row-wrap"><span class="badge badge-brand">${icon('activity', 11)} 正确率 ${store.quiz?.accuracy || 0}%</span><span class="badge">${store.quiz?.attempts || 0} 次作答</span><span class="badge">题库 ${store.bank?.total || 1920} 道</span></div>
+      <div class="row-wrap"><span class="badge badge-brand">${icon('activity', 11)} 正确率 ${store.quiz?.accuracy || 0}%</span><span class="badge">${store.quiz?.attempts || 0} 次作答</span><span class="badge">题库 ${store.bank?.total || 1920} 道</span><span class="badge ${testStatus.score < 0 ? 'badge-danger' : 'badge-brand'}">测试分 ${testStatus.score > 0 ? '+' : ''}${testStatus.score}</span></div>
     </header>
+    ${testStatus.locked ? `<div class="callout danger" style="margin-bottom:14px">${icon('alert', 14)} 今日测试分已低于 ${testStatus.lockScore} 分，测试模块锁定至 ${escapeHtml(testStatus.lockedUntil || '次日 00:00')}。你仍可阅读课程、错题复习和急救推演。</div>` : ''}
+    ${state.assignmentMeta ? `<div class="callout brand" style="margin-bottom:14px">${icon('target', 14)} <b>${escapeHtml(state.assignmentMeta.title || '班级作业')}</b>${state.assignmentMeta.className ? ` · ${escapeHtml(state.assignmentMeta.className)}` : ''}：共 ${state.assignmentMeta.level >= 3 ? '组合' : state.assignmentMeta.level === 2 ? '进阶' : '基础'}难度；提交后匿名记录成绩，不收集姓名或 IP。</div>` : ''}
+    ${assignmentError ? `<div class="callout danger" style="margin-bottom:14px">${icon('alert', 14)} ${escapeHtml(assignmentError)}。可继续使用普通练习。</div>` : ''}
     ${shared ? `<div class="callout brand" style="margin-bottom:14px">${icon('target', 14)} 这是一份只读练习分享链接：题目按分享者的难度与章节即时生成，不会修改原题或题库。</div>` : ''}
     <div class="practice-setup">
       <section class="quiz-card">
@@ -92,7 +118,7 @@ export async function practiceView({ query } = {}) {
           <div class="field"><label>本局题数</label><div class="segmented" data-count><button class="segment" type="button" data-total="1">1 题</button><button class="segment active" type="button" data-total="5">5 题</button></div></div>
         </div>
         <div class="row-wrap" style="margin-top:18px">
-          <button class="btn btn-primary btn-lg" type="button" data-start>${icon('play', 17)} 开始判读</button>
+          <button class="btn btn-primary btn-lg" type="button" data-start ${testStatus.locked ? 'disabled' : ''}>${icon('play', 17)} ${testStatus.locked ? '今日已锁定' : '开始判读'}</button>
           <button class="btn btn-secondary" type="button" data-share>${icon('arrowUpRight', 16)} 分享只读组卷</button>
           <span class="muted" style="font-size:11px">答案提交后立即解析；每题都有服务端答案与知识库解释。</span>
         </div>
@@ -107,18 +133,21 @@ export async function practiceView({ query } = {}) {
           </div>
         </div>
         <div class="practice-side-card">
-          <h3>我的记录</h3>
+          <h3>测试积分与排行榜</h3>
           <div class="practice-stats">
-            <div class="practice-stat"><b>${store.quiz?.accuracy || 0}%</b><span>正确率</span></div>
-            <div class="practice-stat"><b>${store.quiz?.avgScore || 0}</b><span>平均分</span></div>
-            <div class="practice-stat"><b>${store.quiz?.correct || 0}</b><span>答对题数</span></div>
-            <div class="practice-stat"><b>${store.sim?.best || 0}</b><span>急救最高分</span></div>
+            <div class="practice-stat"><b data-test-score>${testStatus.score > 0 ? '+' : ''}${testStatus.score}</b><span>今日测试分</span></div>
+            <div class="practice-stat"><b>${testStatus.correct}</b><span>答对</span></div>
+            <div class="practice-stat"><b>${testStatus.wrong}</b><span>答错（-10）</span></div>
+            <div class="practice-stat"><b>${store.quiz?.accuracy || 0}%</b><span>历史正确率</span></div>
           </div>
+          <p class="muted" style="font-size:10px;margin-top:7px">答对 +1，答错 -10；低于 ${testStatus.lockScore} 分锁定至次日。</p>
+          <div class="practice-leaderboard-head"><b>今日排行榜</b><button class="btn btn-xs btn-ghost" type="button" data-test-scope="all">总榜</button></div>
+          <div class="practice-leaderboard" data-test-leaderboard>${renderMiniLeaderboard(testStatus.leaderboard)}</div>
         </div>
         <div class="practice-side-card">
           <h3>${icon('target', 14)} 错题与间隔复习</h3>
           <p>${summary.due} 个诊断到期待复习，${summary.wrong} 个错题已记录。错题本保存在本设备，可自我评分安排下一次复习。</p>
-          <div class="row-wrap" style="margin-top:10px"><a class="btn btn-secondary btn-block btn-sm" href="#/review">${icon('bookOpen', 14)} 打开错题本</a></div>
+          <div class="row-wrap" style="margin-top:10px"><a class="btn btn-secondary btn-block btn-sm" href="#/review">${icon('bookOpen', 14)} 打开错题本</a><a class="btn btn-secondary btn-block btn-sm" href="#/exam">${icon('trophy', 14)} 学习考试</a></div>
         </div>
         <div class="practice-side-card">
           <h3>${icon('sparkles', 14)} AI 专项计划</h3>
@@ -157,6 +186,17 @@ export async function practiceView({ query } = {}) {
     }
   });
 
+  el.querySelector('[data-test-scope]')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    const host = el.querySelector('[data-test-leaderboard]');
+    const scope = button.dataset.testScope === 'all' ? 'all' : 'today';
+    try {
+      const data = await api.practiceLeaderboard(scope);
+      if (host) host.innerHTML = renderMiniLeaderboard(data.items || []);
+      button.dataset.testScope = scope === 'all' ? 'today' : 'all';
+      button.textContent = scope === 'all' ? '今日榜' : '总榜';
+    } catch (error) { toast(error.message || '排行榜加载失败', 'error'); }
+  });
   const startButton = el.querySelector('[data-start]');
   startButton.addEventListener('click', async () => {
     setButtonLoading(startButton, true, '正在出题');
@@ -197,7 +237,7 @@ export async function practiceView({ query } = {}) {
 
   async function startQuiz(focus = []) {
     state.focus = focus;
-    const quiz = await api.quizNew({ level: state.level, chapter: state.chapter, focus });
+    const quiz = await api.quizNew({ level: state.level, chapter: state.chapter, focus, assignment: state.assignmentCode, device: state.assignmentCode ? deviceId() : undefined });
     state.quiz = quiz;
     state.index = 0;
     state.correct = 0;
@@ -209,7 +249,7 @@ export async function practiceView({ query } = {}) {
 
   if (autoStart) {
     try {
-      await startQuiz(initialFocus);
+      await startQuiz(state.focus);
     } catch (error) {
       toast(error.message || '出题失败', 'error');
     }
@@ -221,6 +261,11 @@ export async function practiceView({ query } = {}) {
       destroyViewer();
     },
   };
+}
+
+function renderMiniLeaderboard(items = []) {
+  if (!items.length) return '<div class="muted" style="font-size:10px;padding:6px 0">今日还没有测试记录。</div>';
+  return items.slice(0, 6).map((item, index) => `<div class="practice-leader-row"><span>${String(index + 1).padStart(2, '0')}</span><b class="${item.id === store.user?.id ? 'is-me' : ''}">${escapeHtml(item.name || '游客')}</b><em>${item.points > 0 ? '+' : ''}${item.points}</em></div>`).join('');
 }
 
 function renderQuestion(el) {
@@ -240,7 +285,8 @@ function renderQuestion(el) {
     <div class="quiz-shell">
       <div class="quiz-top">
         <button class="btn btn-ghost btn-sm" type="button" data-exit>${icon('arrowLeft', 14)} 退出本局</button>
-        <div class="quiz-progress"><span>第 <b>${index + 1}</b> / ${total} 题</span><span class="progress"><span class="progress-bar" style="width:${((index) / total) * 100}%"></span></span><span>正确 ${state.correct}</span><span class="timer">${icon('timer', 12)} <b data-timer>00:00</b></span></div>
+        ${state.assignmentMeta ? `<span class="badge badge-brand">${escapeHtml(state.assignmentMeta.title || '班级作业')}</span>` : ''}
+        <div class="quiz-progress"><span>第 <b>${index + 1}</b> / ${total} 题</span><span class="progress"><span class="progress-bar" style="width:${((index) / total) * 100}%"></span></span><span>正确 ${state.correct}</span><span>测试分 <b data-live-score>${state.practice?.score > 0 ? '+' : ''}${state.practice?.score || 0}</b></span><span class="timer">${icon('timer', 12)} <b data-timer>00:00</b></span></div>
       </div>
       <div class="practice-setup">
         <section class="quiz-card">
@@ -391,6 +437,14 @@ function renderQuestion(el) {
       const names = Object.fromEntries((quiz.options || []).map((option) => [option.id, option.name]));
       const chapterMap = Object.fromEntries((quiz.options || []).map((option) => [option.id, option.chapter]));
       recordAttempt({ correct: result.correct, correctIds: result.correctIds || [], selectedIds: [...state.selected], names, chapters: chapterMap });
+      try {
+        state.practice = await api.practiceStatus();
+        const scoreNode = el.querySelector('[data-live-score]');
+        if (scoreNode) scoreNode.textContent = `${state.practice.score > 0 ? '+' : ''}${state.practice.score}`;
+        if (state.practice.locked) {
+          toast(`测试分已低于 ${state.practice.lockScore}，测试模块锁定至次日`, 'error');
+        }
+      } catch { /* score refresh is non-blocking */ }
       setButtonLoading(submit, false);
       submit.style.display = 'none';
       options.forEach((option) => {
@@ -422,7 +476,7 @@ function renderQuestion(el) {
       state.index += 1;
       setButtonLoading(next, true, '出题中');
       try {
-        const newQuiz = await api.quizNew({ level: state.level, chapter: state.chapter, focus: state.focus });
+        const newQuiz = await api.quizNew({ level: state.level, chapter: state.chapter, focus: state.focus, assignment: state.assignmentCode, device: state.assignmentCode ? deviceId() : undefined });
         state.quiz = newQuiz;
         renderQuestion(el);
       } catch (error) {

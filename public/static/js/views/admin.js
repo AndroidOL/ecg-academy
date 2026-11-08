@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108af';
+const __asset = __isNode ? '' : '?v=20261108ah';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, escapeHtml, toast, confirmDialog } = await import(`../ui.js${__asset}`);
@@ -7,6 +7,7 @@ const { icon, escapeHtml, toast, confirmDialog } = await import(`../ui.js${__ass
 const TABS = [
   ['overview', '概览'],
   ['users', '用户'],
+  ['assignments', '班级作业'],
   ['ai', 'AI 供应商'],
   ['security', '安全与登录'],
   ['audit', '审计日志'],
@@ -164,7 +165,31 @@ function securityCard(session) {
 function usersCard() {
   return `<div class="card card-pad">
     <div class="section-head"><h2 class="section-title" style="font-size:17px">用户管理</h2><form class="row" data-user-search><input class="input" name="q" placeholder="搜索用户名 / 显示名 / public ID" style="min-height:34px;width:240px"><button class="btn btn-secondary btn-sm" type="submit">搜索</button></form></div>
+    <form data-admin-create-user class="admin-form-grid" style="margin:10px 0 14px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg-elev)">
+      <label class="field"><span>用户名</span><input class="input" name="username" maxlength="24" placeholder="3–24 位小写字母/数字/_" required></label>
+      <label class="field"><span>显示名</span><input class="input" name="displayName" maxlength="32" placeholder="例如：李医生"></label>
+      <label class="field"><span>初始密码</span><input class="input" name="password" type="password" minlength="8" maxlength="72" placeholder="8–72 位" required></label>
+      <label class="field"><span>AI 每日额度（留空默认）</span><input class="input" name="aiDailyLimit" type="number" min="0" max="10000"></label>
+      <label class="admin-check" style="grid-column:1/-1"><input type="checkbox" name="isAdmin"> 设为管理员</label>
+      <div class="row-wrap" style="grid-column:1/-1"><button class="btn btn-primary btn-sm" type="submit">${icon('plus', 13)} 手动创建用户</button><span class="muted" style="font-size:10px">创建后会写入审计；普通用户登录仍需在“安全与登录”中开启。</span></div>
+    </form>
     <div data-users-list><div class="muted">加载中…</div></div>
+  </div>`;
+}
+
+function assignmentsCard() {
+  const chapters = store.chapters || [];
+  return `<div class="card card-pad">
+    <div class="section-head"><div><h2 class="section-title" style="font-size:17px">班级作业链接</h2><p class="muted" style="font-size:11px;line-height:1.6">学生无需登录；服务端只记录随机设备哈希、得分与用时，不记录姓名或 IP。关闭作业后链接立即失效。</p></div><span class="badge badge-brand">匿名</span></div>
+    <form data-assignment-form class="admin-form-grid" style="margin-top:8px">
+      <label class="field"><span>作业标题</span><input class="input" name="title" maxlength="120" required placeholder="例如：2026 临床 1 班 · 心律失常判读"></label>
+      <label class="field"><span>班级/小组（可选）</span><input class="input" name="className" maxlength="80" placeholder="例如：临床 1 班"></label>
+      <label class="field"><span>难度</span><select class="select" name="level"><option value="1">基础</option><option value="2">进阶</option><option value="3">组合挑战</option></select></label>
+      <label class="field"><span>章节</span><select class="select" name="chapter"><option value="all">全部章节</option>${chapters.map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('')}</select></label>
+      <label class="field" style="grid-column:1/-1"><span>专项诊断 ID（逗号分隔，可选）</span><input class="input" name="focus" placeholder="例如：afib,vt,av-block-3"></label>
+      <div class="row-wrap" style="grid-column:1/-1"><button class="btn btn-primary btn-sm" type="submit">生成作业链接</button><span class="muted" style="font-size:10px">分享链接格式：#/practice?assignment=CODE</span></div>
+    </form>
+    <div data-assignments-list style="margin-top:14px"><div class="muted">加载中…</div></div>
   </div>`;
 }
 
@@ -294,11 +319,28 @@ export async function adminView() {
       el.querySelectorAll('[data-admin-tab]').forEach((b) => b.classList.toggle('active', b.dataset.adminTab === tab));
       content.innerHTML = tab === 'overview' ? overview(session) + settingsCard(session)
         : tab === 'users' ? usersCard()
+          : tab === 'assignments' ? assignmentsCard()
           : tab === 'ai' ? aiCard(session)
             : tab === 'security' ? securityCard(session)
               : auditCard(session);
       if (tab === 'users') await loadUsers();
       if (tab === 'overview') bindSettings();
+      if (tab === 'assignments') {
+        content.querySelector('[data-assignment-form]')?.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const form = event.currentTarget;
+          const value = (name) => (form.querySelector(`[name="${name}"]`)?.value || '').trim();
+          try {
+            const result = await api.adminAssignmentSave({ title: value('title'), className: value('className'), level: Number(value('level')), chapter: value('chapter'), focus: value('focus') });
+            toast('作业已创建');
+            form.reset();
+            await loadAssignments();
+            const code = result.assignment?.code;
+            if (code) await navigator.clipboard.writeText(`${location.origin}${location.pathname}#/practice?assignment=${encodeURIComponent(code)}`).catch(() => {});
+          } catch (err) { toast(err.message || '创建失败', 'error'); }
+        });
+        await loadAssignments();
+      }
     };
     el.querySelectorAll('[data-admin-tab]').forEach((button) => button.addEventListener('click', () => { activeTab = button.dataset.adminTab; drawTab(activeTab); }));
     el.querySelector('[data-admin-logout]')?.addEventListener('click', async () => {
@@ -362,6 +404,46 @@ export async function adminView() {
         }));
       } catch (err) { host.innerHTML = `<div class="callout danger">${escapeHtml(err.message)}</div>`; }
     };
+    const loadAssignments = async () => {
+      const host = content.querySelector('[data-assignments-list]');
+      if (!host) return;
+      try {
+        const data = await api.adminAssignments();
+        host.innerHTML = `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>作业</th><th>范围</th><th>作答</th><th>平均分</th><th>正确率</th><th>状态</th><th></th></tr></thead><tbody>${(data.items || []).map((a) => `<tr>
+          <td><b>${escapeHtml(a.title)}</b><div class="muted" style="font-size:10px">${escapeHtml(a.class_name || '未分组')} · <code>${escapeHtml(a.code)}</code></div></td>
+          <td>${a.level >= 3 ? '组合' : a.level === 2 ? '进阶' : '基础'} · ${escapeHtml(a.chapter)}</td>
+          <td>${a.devices} 人 / ${a.attempts} 次</td>
+          <td>${a.avg_score}</td>
+          <td>${a.accuracy}%</td>
+          <td>${a.active ? '启用' : '已关闭'}</td>
+          <td><div class="row-wrap" style="justify-content:flex-end;gap:3px"><button class="btn btn-xs btn-secondary" data-assignment-copy="${escapeHtml(a.code)}">复制链接</button><button class="btn btn-xs btn-ghost" data-assignment-toggle="${a.id}" data-value="${a.active ? 0 : 1}">${a.active ? '关闭' : '启用'}</button><button class="btn btn-xs btn-ghost" data-assignment-delete="${a.id}">删除</button></div></td>
+        </tr>`).join('')}</tbody></table></div><div class="pager-info" style="margin-top:8px">共 ${(data.items || []).length} 个作业</div>`;
+        host.querySelectorAll('[data-assignment-copy]').forEach((b) => b.addEventListener('click', async () => {
+          const url = `${location.origin}${location.pathname}#/practice?assignment=${encodeURIComponent(b.dataset.assignmentCopy)}`;
+          try { await navigator.clipboard.writeText(url); toast('作业链接已复制', 'success'); } catch { toast(url, 'info'); }
+        }));
+        host.querySelectorAll('[data-assignment-toggle]').forEach((b) => b.addEventListener('click', async () => {
+          try { await api.adminAssignmentToggle(Number(b.dataset.assignmentToggle), b.dataset.value === '1'); toast('状态已更新'); await loadAssignments(); } catch (e) { toast(e.message, 'error'); }
+        }));
+        host.querySelectorAll('[data-assignment-delete]').forEach((b) => b.addEventListener('click', async () => {
+          const ok = await confirmDialog({ title: '删除作业？', message: '删除后链接失效，已提交的匿名成绩也会一并删除。', confirmText: '删除', danger: true });
+          if (!ok) return;
+          try { await api.adminAssignmentDelete(Number(b.dataset.assignmentDelete)); toast('已删除'); await loadAssignments(); } catch (e) { toast(e.message, 'error'); }
+        }));
+      } catch (err) { host.innerHTML = `<div class="callout danger">${escapeHtml(err.message)}</div>`; }
+    };
+    content.addEventListener('submit', async (event) => {
+      const form = event.target.closest('[data-admin-create-user]');
+      if (!form) return;
+      event.preventDefault();
+      const value = (name) => (form.querySelector(`[name="${name}"]`)?.value || '').trim();
+      try {
+        await api.adminCreateUser({ username: value('username'), password: form.querySelector('[name="password"]').value, displayName: value('displayName'), isAdmin: Boolean(form.querySelector('[name="isAdmin"]').checked), aiDailyLimit: value('aiDailyLimit') === '' ? null : Number(value('aiDailyLimit')) });
+        toast('用户已创建');
+        form.reset();
+        await loadUsers();
+      } catch (err) { toast(err.message || '创建用户失败', 'error'); }
+    });
     content.querySelector('[data-user-search]')?.addEventListener('submit', (event) => {
       event.preventDefault();
       loadUsers(event.currentTarget.q.value.trim());

@@ -9,6 +9,21 @@ permissions:
 jobs:
   content-engine:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: ecg_academy
+          MYSQL_USER: ecg_app
+          MYSQL_PASSWORD: testpass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
@@ -24,6 +39,21 @@ jobs:
         run: php scripts/validate_bank.php
       - name: Validate review ledger
         run: php scripts/validate_review.php
+      - name: Validate section question bank
+        run: php scripts/validate_section_bank.php
+      - name: Prepare integration database
+        run: |
+          cat > app/config.local.php <<'PHP'
+          <?php
+          return ['db' => ['host' => '127.0.0.1', 'port' => 3306, 'database' => 'ecg_academy', 'user' => 'ecg_app', 'password' => 'testpass', 'charset' => 'utf8mb4']];
+          PHP
+          php scripts/migrate.php
+      - name: Simulator integration test
+        run: php tests/sim.test.php
+      - name: Assignment integration test
+        run: php tests/assignment.test.php
+      - name: Learning and exam integration test
+        run: php tests/learning.test.php
       - name: Validate multi-hundred-chapter curriculum
         run: php scripts/validate_curriculum.php
       - name: Lint PHP

@@ -178,3 +178,13 @@ nginx -t && nginx -s reload
 - Canvas DPR 上限 2；移动端只画 5 mm 主网格以降低密度。
 - 服务器内存有限，未部署常驻 Node/Playwright；测试使用 CLI 与 jsdom。
 - 若流量增大，可在 nginx 增加限流、为 `/api/` 单独配置 `limit_req`，并为 AI 设置更严格的每日配额。
+
+## 1.4.0 数据库迁移
+
+本次新增学习考试与测试分表：
+
+```bash
+php scripts/migrate.php
+```
+
+迁移会创建 `learning_events`、`learning_status`、`practice_daily_scores`；部署前请先备份数据库。`data/section_bank.php` 是随代码发布的静态题库，无需导入数据库。

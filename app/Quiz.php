@@ -7,9 +7,29 @@ final class Quiz
 {
     public static function newAttempt(int $userId, array $params): array
     {
+        $lockedUntil = Learning::practiceLockedUntil($userId);
+        if ($lockedUntil !== null && empty($params['assignment'])) {
+            throw new ApiError(423, 'practice_locked', '今日测试分已低于阈值，需等到次日 00:00 后再使用测试模块（' . $lockedUntil . '）');
+        }
         $level = max(1, min(3, (int) ($params['level'] ?? 1)));
         $chapter = (string) ($params['chapter'] ?? 'all');
         $focus = array_values(array_filter((array) ($params['focus'] ?? []), 'is_string'));
+        $assignment = null;
+        $assignmentCode = trim((string) ($params['assignment'] ?? ''));
+        if ($assignmentCode !== '') {
+            if (!preg_match('/^[a-z0-9]{6,16}$/', $assignmentCode)) throw new ApiError(404, 'assignment_not_found', '作业链接无效');
+            $stmt = Db::pdo()->prepare('SELECT * FROM assignments WHERE code = ? AND active = 1 LIMIT 1');
+            $stmt->execute([$assignmentCode]);
+            $assignment = $stmt->fetch() ?: null;
+            if (!$assignment) throw new ApiError(404, 'assignment_not_found', '作业不存在或已关闭');
+            $level = max(1, min(3, (int) ($assignment['level'] ?? 1)));
+            $chapter = (string) ($assignment['chapter'] ?? 'all');
+            $focus = array_values(array_filter(array_map('trim', explode(',', (string) ($assignment['focus'] ?? '')))));
+            $focus = array_values(array_filter($focus, static fn (string $id): bool => Content::find($id) !== null));
+        }
+        $deviceHash = null;
+        $rawDevice = trim((string) ($params['device'] ?? ''));
+        if ($rawDevice !== '' && preg_match('/^[a-f0-9-]{16,64}$/i', $rawDevice)) $deviceHash = hash('sha256', $rawDevice);
         $combo = null;
         $primary = null;
         $secondary = null;
@@ -124,6 +144,8 @@ final class Quiz
             'caseKey' => $caseKey,
             'primaryId' => $primary['id'],
             'bankId' => $bankId,
+            'assignmentId' => $assignment ? (int) $assignment['id'] : null,
+            'deviceHash' => $deviceHash,
             'createdAt' => time(),
         ];
 
@@ -147,6 +169,7 @@ final class Quiz
                 'question' => $question,
                 'stem' => $stem,
                 'chapter' => $primary['chapter'],
+                'assignment' => $assignment ? ['code' => $assignment['code'], 'title' => $assignment['title'], 'className' => $assignment['class_name']] : null,
                 'expiresIn' => 7200,
             ];
         }
@@ -176,8 +199,33 @@ final class Quiz
             'question' => $question,
             'stem' => $stem,
             'chapter' => $primary['chapter'],
+            'assignment' => $assignment ? ['code' => $assignment['code'], 'title' => $assignment['title'], 'className' => $assignment['class_name']] : null,
             'expiresIn' => 7200,
         ];
+    }
+
+    public static function assignment(string $code): array
+    {
+        if (!preg_match('/^[a-z0-9]{6,16}$/', $code)) throw new ApiError(404, 'assignment_not_found', '作业链接无效');
+        $stmt = Db::pdo()->prepare('SELECT code, title, class_name, level, chapter, focus, active, created_at FROM assignments WHERE code = ? LIMIT 1');
+        $stmt->execute([$code]);
+        $assignment = $stmt->fetch();
+        if (!$assignment || !(int) $assignment['active']) throw new ApiError(404, 'assignment_not_found', '作业不存在或已关闭');
+        $assignment['focus'] = array_values(array_filter(explode(',', (string) ($assignment['focus'] ?? ''))));
+        return $assignment;
+    }
+
+    private static function recordAssignmentAttempt(array $payload, bool $correct, int $score, int $timeMs): void
+    {
+        $assignmentId = (int) ($payload['assignmentId'] ?? 0);
+        $deviceHash = (string) ($payload['deviceHash'] ?? '');
+        if ($assignmentId <= 0 || !preg_match('/^[a-f0-9]{64}$/', $deviceHash)) return;
+        try {
+            $stmt = Db::pdo()->prepare('INSERT INTO assignment_attempts (assignment_id, device_hash, correct, score, time_ms) VALUES (?, ?, ?, ?, ?)');
+            $stmt->execute([$assignmentId, $deviceHash, $correct ? 1 : 0, max(0, $score), max(0, min(600000, $timeMs))]);
+        } catch (Throwable $e) {
+            error_log('[assignment] record failed: ' . $e->getMessage());
+        }
     }
 
     private static function buildOptions(array $primary, ?array $secondary, bool $multiple): array
@@ -225,7 +273,7 @@ final class Quiz
     public static function answer(int $userId, int|string $attemptId, array $selectedIds, int $timeMs): array
     {
         if (is_string($attemptId) && str_starts_with($attemptId, 'g_')) {
-            return self::answerGuest($attemptId, $selectedIds, $timeMs);
+            return self::answerGuest($userId, $attemptId, $selectedIds, $timeMs);
         }
         $attemptId = (int) $attemptId;
         $pdo = Db::pdo();
@@ -310,6 +358,8 @@ final class Quiz
             throw $e;
         }
 
+        self::recordAssignmentAttempt($payload, $isCorrect, $score, $timeMs);
+        Learning::recordPracticeAnswer($userId, $isCorrect, (string) ($payload['chapter'] ?? ''), (string) (($payload['bankId'] ?? '') ?: ($payload['caseKey'] ?? 'practice')));
         $all = Content::all();
         $selectedNames = [];
         foreach ($selectedIds as $id) {
@@ -348,7 +398,7 @@ final class Quiz
         ];
     }
 
-    private static function answerGuest(string $token, array $selectedIds, int $timeMs): array
+    private static function answerGuest(int $userId, string $token, array $selectedIds, int $timeMs): array
     {
         $data = Secret::open(substr($token, 2));
         if (!$data || (time() - (int) ($data['created'] ?? 0)) > 7200) {
@@ -371,6 +421,8 @@ final class Quiz
         $timeMs = max(0, min(600000, $timeMs));
         $score = $isCorrect ? $base + max(0, 40 - (int) floor($timeMs / 1000) * 2) : ($partial ? (int) round($base * 0.25) : 0);
         $xp = $isCorrect ? 10 + $level * 5 : ($partial ? 3 : 1);
+        self::recordAssignmentAttempt($payload, $isCorrect, $score, $timeMs);
+        Learning::recordPracticeAnswer($userId, $isCorrect, (string) ($payload['chapter'] ?? ''), (string) (($payload['bankId'] ?? '') ?: ($payload['caseKey'] ?? 'practice')));
         $all = Content::all();
         $selectedNames = array_map(static fn (string $id): string => $all[$id]['name'] ?? $id, $selectedIds);
         $explanation = [];

@@ -19,7 +19,7 @@ if (!$admin) {
 $adminId = (int) $admin['id'];
 $backupDir = BASE_PATH . '/storage/backups';
 if (!is_dir($backupDir)) mkdir($backupDir, 0700, true);
-$tables = ['users', 'user_progress', 'quiz_attempts', 'sim_sessions', 'sim_runs', 'ai_usage'];
+$tables = ['users', 'user_progress', 'quiz_attempts', 'sim_sessions', 'sim_runs', 'ai_usage', 'learning_events', 'learning_status', 'practice_daily_scores'];
 $backup = ['created_at' => date(DATE_ATOM), 'admin_id' => $adminId, 'tables' => []];
 foreach ($tables as $table) {
     $backup['tables'][$table] = $pdo->query("SELECT * FROM `{$table}`")->fetchAll();
@@ -35,6 +35,9 @@ try {
     $pdo->exec('DELETE FROM sim_sessions');
     $pdo->exec('DELETE FROM sim_runs');
     $pdo->exec('DELETE FROM ai_usage');
+    $pdo->exec('DELETE FROM learning_events');
+    $pdo->exec('DELETE FROM learning_status');
+    $pdo->exec('DELETE FROM practice_daily_scores');
     $pdo->exec('DELETE FROM auth_throttle');
     $pdo->commit();
 } catch (Throwable $e) {
@@ -46,3 +49,4 @@ echo "remaining users: " . (int) $pdo->query('SELECT COUNT(*) FROM users')->fetc
 echo "remaining progress: " . (int) $pdo->query('SELECT COUNT(*) FROM user_progress')->fetchColumn() . "\n";
 echo "remaining quiz attempts: " . (int) $pdo->query('SELECT COUNT(*) FROM quiz_attempts')->fetchColumn() . "\n";
 echo "remaining sim runs: " . (int) $pdo->query('SELECT COUNT(*) FROM sim_runs')->fetchColumn() . "\n";
+echo "remaining learning events: " . (int) $pdo->query('SELECT COUNT(*) FROM learning_events')->fetchColumn() . "\n";

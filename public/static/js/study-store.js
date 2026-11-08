@@ -30,6 +30,20 @@ function readFavorites() {
   return value && !Array.isArray(value) ? value : {};
 }
 
+export function deviceId() {
+  const key = 'ecg-device-id';
+  try {
+    const existing = localStorage.getItem(key);
+    if (existing && /^[a-f0-9-]{16,64}$/i.test(existing)) return existing;
+    const generated = (globalThis.crypto?.randomUUID?.() || `dev-${Date.now()}-${Math.random().toString(16).slice(2)}`)
+      .replace(/[^a-f0-9-]/gi, '').slice(0, 64);
+    localStorage.setItem(key, generated);
+    return generated;
+  } catch {
+    return `dev-${Date.now()}`;
+  }
+}
+
 export function reviewEntries() {
   return Object.values(readReviews()).map((entry) => ({ ...entry }));
 }

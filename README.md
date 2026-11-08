@@ -20,14 +20,15 @@
 - **可交互 ECG**：Canvas 生成 500 Hz 波形；支持节律条/12 导联、**循环覆盖**与**连续滚动**两种播放、12 导联录播放、标注开关、悬停测量、导联切换。移动端自适应网格疏密。
 - **心脏向量实验室**：三维 P/QRS/T 向量环（三行独立电轴、全周视角拖动）、肢体/胸导联投影、胸廓横截面 QRS 向量（解释 V1 rS、V5 qRs、V5 R > V6 R）、V1–V6 电极定位、动作电位/离子通道动画与四腔瓣膜解剖；入口 `/#/vectors`。
 - **教科书模式**：在真实心电图上直接标注 P 波、PR、QRS、T 波、QT，并附正常值、机制说明与正常窦性心律对照图。
-- **练习**：内置 **1920 道确定性预生成病例**（40 种诊断 × 40 个种子变体 + 8 组组合 × 40），难度 1–3，支持章节筛选、单诊断与组合诊断多选；答案由服务端判定，记录 XP、正确率与错题解析。新增**本地错题本、收藏、1→3→7→14 天间隔重复、按薄弱诊断组卷**与只读组卷分享链接；游客记录不写数据库。
+- **练习**：内置 **1920 道确定性预生成病例**（40 种诊断 × 40 个种子变体 + 8 组组合 × 40），难度 1–3，支持章节筛选、单诊断与组合诊断多选；答案由服务端判定，记录 XP、正确率与错题解析。新增**本地错题本、收藏、1→3→7→14 天间隔重复、按薄弱诊断组卷**与只读组卷分享链接；教师可在后台生成匿名班级作业链接，服务端只记录随机设备哈希、得分与用时。游客答题不写 `quiz_attempts`。测试模块答对 +1、答错 -10，低于 -100 分锁定次日，并提供今日/总榜。
 - **急救推演**：10 个 ACLS 场景（含 PEA 低血容量、低温室颤、局麻药中毒、妊娠心脏骤停），服务端权威状态机；CPR 质量、6 秒 IV/IO 建立、3 秒充电、停止按压后放电、电击后短暂静止；未处理时心率/血压/SpO₂/ETCO₂ 持续恶化并进入代偿—失代偿—濒危阶段；超时/死亡强制封顶评分并按时间线复盘。新增可逆病因/特殊处理操作与场景专属提示。
+- **学习考试**：19 个板块共 919 道章节题；每板块 10 题学习关卡，≥8 题标记“已学习”；完成 8 个板块解锁综合考试；最近 50 题动态评级（生疏/掌握/熟练/精通），连续错误会退回“重新学习”。入口 `/#/exam`。
 - **电解质实验室**：K⁺/Ca²⁺/Mg²⁺ 滑杆与实时 ECG；标准 12 导联/单图/单导联/横向排列四种模式、9 组预设、5 个临床病例、5 题自测；观察 T/U 波、QT、PR/QRS 的改变与处理原则。
 - **AI 导师（可选）**：兼容 OpenAI 的 API；支持错因解析、专项组卷、急救复盘与文章问答。未配置站点密钥时降级到本地知识库；管理员可开启 **BYOK 演示**（用户自带密钥，仅存当前标签页 sessionStorage、不落库/不写日志、仅允许 HTTPS 公网端点）。
 - **双主题与响应式**：日光/监护两套主题；竖屏手机、平板/横屏折叠屏、桌面三档布局；移动端重排为满宽单列、44px+ 触控、16px 输入字号与安全区适配。新增 **PWA 离线外壳、低带宽模式、双语术语表与英文界面外壳 beta**。
 - **开放学习**：当前关闭普通用户注册/登录，游客进度、掌握状态、错题/收藏与主题保存在本设备浏览器；页脚展示 GitHub、开源许可证、版权（Tianhao Wu 等）、关于/勘误与 ICP 备案信息。
 - **内容治理**：每章显示编辑核对状态、最后核对日期、整理者与参考来源；公开版本化勘误页与贡献者协议，明确“待临床同行审阅”，不冒充已审阅指南。
-- **管理后台**：仅通过 `/#/admin` URL 进入，前台不再显示后台按钮；数据库驱动配置、管理员密码 + Passkey、AI 供应商与多模型、每日额度、用户启停/密码重置、ICP 与站点信息、审计日志。API Key 使用 AES-256-GCM 加密存储。
+- **管理后台**：仅通过 `/#/admin` URL 进入，前台不再显示后台按钮；数据库驱动配置、管理员密码 + Passkey、AI 供应商与多模型、每日额度、匿名班级作业、手动创建用户、用户启停/密码重置、ICP 与站点信息、审计日志。API Key 使用 AES-256-GCM 加密存储。
 - **课程导航**：常见核心 / 不常见进阶分离，默认按难度排序，每页 24 章分页；避免一次性渲染数百张卡片。
 - **免费开源**：代码 MIT；教学内容 CC BY-SA 4.0（见 `LICENSE` 与文末说明）。
 
@@ -74,7 +75,7 @@
 
 - **前端**：原生 ES Modules + CSS 变量，零构建；Canvas ECG 引擎；hash 路由。
 - **后端**：PHP 8.4 + PDO MySQL；独立 session；CSRF；登录限流；AI 服务端代理。
-- **数据库**：MySQL 8.4；`users` / `user_progress` / `quiz_attempts` / `sim_sessions` / `sim_runs` / `auth_throttle` / `ai_usage` / `app_settings` / `admin_passkeys` / `admin_audit`。
+- **数据库**：MySQL 8.4；`users` / `user_progress` / `quiz_attempts` / `sim_sessions` / `sim_runs` / `auth_throttle` / `ai_usage` / `app_settings` / `admin_passkeys` / `admin_audit` / `assignments` / `assignment_attempts` / `learning_events` / `learning_status` / `practice_daily_scores`。
 - **Web 服务器**：nginx（新增独立 vhost，按 IP 精确匹配）。
 - **测试**：Node 22（ECG 引擎 / jsdom UI 冒烟 / Playwright 真实浏览器回归）+ PHP CLI（急救状态机 / 内容校验 / 230 章课程校验 / 1920 题库校验 / 课程包与导入校验）。
 
@@ -129,22 +130,29 @@ cd /www/wwwroot/ecg-academy
 # 1. 内容结构与引用校验（40 种判读诊断 + 230 章课程）
 php scripts/validate_content.php
 
-# 2. 波形引擎单测（15 项）
+# 2. 章节题库校验
+php scripts/validate_section_bank.php
+
+# 3. 波形引擎单测（15 项）
 node tests/engine.test.mjs
 
-# 3. 播放器/12 导联/标注测试（13 项）
+# 4. 播放器/12 导联/标注测试（13 项）
 node tests/playback.test.mjs
 
-# 4. ACLS 状态机测试（14 项，含新场景回归）
+# 5. ACLS 状态机测试（14 项，含新场景回归）
 php tests/sim.test.php
 
-# 5. 审阅台账校验
+# 6. 审阅台账校验
 php scripts/validate_review.php
 
-# 6. 本地复习与 BYOK 测试
+# 7. 班级作业与学习考试集成测试
+php tests/assignment.test.php
+php tests/learning.test.php
+
+# 8. 本地复习与 BYOK 测试
 node tests/study.test.mjs
 
-# 7. jsdom 全链路 UI 冒烟（11 组）
+# 9. jsdom 全链路 UI 冒烟（11 组）
 node tests/ui-smoke.mjs
 ```
 
@@ -163,10 +171,11 @@ data/
   chapters.php       19 个章节
   diagnoses/*.php    46 篇判读课程 + ECG 规格；topics/*.json 184 个理论/病例专题
   combos.php         8 组组合题
+  section_bank.php   19 板块 919 道章节题（生成）
   scenarios.php      10 个急救场景
 public/
   index.php          SPA 入口 + API 路由
-  static/js/         ECG 引擎、渲染器、路由、页面、本地复习、i18n、BYOK
+  static/js/         ECG 引擎、渲染器、路由、页面、学习考试、本地复习、i18n、BYOK
   sw.js              PWA 离线缓存（仅 HTTPS）
   offline.html       离线回退页
   static/css/        双主题设计系统与响应式
@@ -191,6 +200,7 @@ storage/             独立 session、日志、缓存（Web 不可达）
 - [部署与运维](docs/DEPLOYMENT.md)
 - [进度与断点清单](docs/PROGRESS.md)
 - [调研记录](docs/RESEARCH.md)
+- [学习考试与测试积分](docs/LEARNING.md)
 - [v2.0 研究](docs/V2_RESEARCH.md) / [指南差异](docs/GUIDELINES.md) / 站内 `#/guidelines`
 - [内容审阅](docs/REVIEW.md) / [勘误流程](docs/CORRECTIONS.md) / [贡献者协议](docs/CONTRIBUTOR_AGREEMENT.md)
 - [医学顾问名单](docs/MEDICAL_ADVISORS.md) / [无障碍](docs/A11Y.md) / [i18n](docs/I18N.md)

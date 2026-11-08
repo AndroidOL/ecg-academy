@@ -18,6 +18,7 @@ PHP application (app/)
   ├─ Auth (PHP session, guest upgrade, CSRF)
   ├─ Content (230 articles / 40 quiz diagnoses, 19 chapters)
   ├─ Quiz (curated bank + seeded variants + server-side grading)
+  ├─ SectionBank / Learning (919 章节题、学习状态、考试评级、测试分)
   ├─ SimEngine (authoritative ACLS state machine)
   ├─ Ai (OpenAI-compatible proxy + grounded prompts + fallback + optional BYOK)
   └─ Db (PDO MySQL: users, progress, attempts, sim runs)
@@ -45,6 +46,8 @@ app/                 后端（Web 根之外）
   ApiController.php  全部 API
   Content.php        读取并缓存 230 章课程（诊断 + 理论/病例）
   Quiz.php           出题、选项、判分、XP
+  SectionBank.php    919 道章节学习/考试题
+  Learning.php       学习状态、评级、考试、测试分与排行榜
   SimEngine.php      ACLS 状态机与评分
   Ai.php             OpenAI 兼容客户端 + 提示词 + 降级
   Schema.php         MySQL DDL
@@ -80,7 +83,8 @@ hash 路由，便于任意静态托管与无重写部署：
 - `#/` 首页
 - `#/learn` 课程库
 - `#/learn/:id` 诊断详情
-- `#/practice` 练习
+- `#/practice` 测试模块 / 排行榜
+- `#/exam` 学习关卡 / 综合考试
 - `#/sim` 急救场景
 - `#/sim/:id` 急救推演
 - `#/lab` 电解质实验室
@@ -97,6 +101,20 @@ hash 路由，便于任意静态托管与无重写部署：
 2. 前端 `ECGEngine.generate(spec)` → Canvas。
 3. 用户提交 → `POST /api/quiz/answer`：服务端对比 `correct_ids`，计算得分、更新 XP 与进度，返回逐项解析。
 4. “AI 解释错因” → `POST /api/ai/explain {attemptId}`：仅基于该题快照、知识库要点与用户选择生成，禁止凭空新增诊断标准；AI 不可用时返回本地规则解析。
+
+## 数据流：学习考试
+
+1. `GET /api/learning/start?chapter=`：从 919 题章节库随机抽 10 题，返回无答案题目与签名 round token。
+2. 前端逐题选择后 `POST /api/learning/complete`；服务端用 token 校验用户、有效期与重复提交，按答案索引判分。
+3. 写入 `learning_events`；≥8/10 更新 `learning_status=learned`；失败保持/退回学习。
+4. 最近 50 题按章节计算评级；连续错误触发 `relearning`。
+5. 已学习 ≥8 解锁考试；考试事件仍写入同一事件表，但不进排行榜。
+
+## 数据流：测试积分
+
+1. 练习答题后 `Learning::recordPracticeAnswer()`：答对 +1，答错 -10，写入 `practice_daily_scores` 与练习事件。
+2. 当日分数 ≤ -100 时写 `locked_until=次日 00:00`；`Quiz::newAttempt` 拒绝新的测试请求（班级作业链接不受影响）。
+3. 排行榜按今日/总榜查询所有用户的公开昵称与分数，不展示答案、IP 或患者信息。
 
 ## 数据流：急救
 

@@ -29,11 +29,16 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 | POST | `/api/admin/settings` | 注册/登录/AI 开关与额度 |
 | GET | `/api/admin/users` | 用户搜索与分页 |
 | POST | `/api/admin/user` | 启停、角色、额度、密码重置 |
+| POST | `/api/admin/user/create` | 管理员手动创建用户：用户名、显示名、初始密码、管理员标记、AI 额度 |
 | GET/POST | `/api/admin/passkey/*` | 注册/删除管理员 Passkey |
 | POST | `/api/admin/ai/provider` | 新增/更新 OpenAI-compatible 供应商与模型 |
 | POST | `/api/admin/ai/provider/delete` | 删除供应商 |
 | POST | `/api/admin/ai/test` | 测试供应商连接 |
 | GET | `/api/admin/audit` | 最近管理审计 |
+| GET | `/api/admin/assignments` | 作业列表与匿名统计（人数/次数/平均分/正确率） |
+| POST | `/api/admin/assignment` | 创建/更新作业 `{title,className,level,chapter,focus,active}` |
+| POST | `/api/admin/assignment/toggle` | 启用/关闭作业 |
+| POST | `/api/admin/assignment/delete` | 删除作业（级联删除匿名成绩） |
 | GET | `/api/health` | 健康检查 |
 | GET | `/api/diagnoses?q=&chapter=` | 230 章课程摘要、章节、统计；支持搜索/章节过滤 |
 | GET | `/api/diagnoses/{id}` | 诊断详情、完整文章、ECG 规格、上下篇、相关阅读、当前进度 |
@@ -43,9 +48,16 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/quiz/new?level=1|2|3&chapter=&focus=a,b` | 从 1920 道预生成病例中出题；level 3 为组合诊断；返回剥离答案的 ECG 规格、选项、attemptId、bankId |
-| POST | `/api/quiz/answer` | `{attemptId, selected:["id"], timeMs}`；服务端判分并返回解析 |
+| GET | `/api/quiz/new?level=1|2|3&chapter=&focus=a,b&assignment=CODE&device=UUID` | 从 1920 道预生成病例中出题；level 3 为组合诊断；assignment 覆盖难度/章节/专项并记录匿名成绩；返回剥离答案的 ECG 规格、选项、attemptId、bankId |
+| POST | `/api/quiz/answer` | `{attemptId, selected:["id"], timeMs}`；服务端判分并返回解析；测试模式更新 +1/-10 与锁定 |
 | GET | `/api/quiz/history` | 最近答题记录 |
+| GET | `/api/learning/status` | 19 板块学习状态、最近 50 题评级、考试解锁、919 题统计 |
+| GET | `/api/learning/start?chapter=` | 随机 10 题学习关卡（返回题目与签名 token，不含答案） |
+| POST | `/api/learning/complete` | `{token, answers}` 结算学习关卡；≥8/10 标记已学习 |
+| GET | `/api/exam/start` | 从已学习板块随机组卷；不足 8 个板块返回 403 `exam_locked` |
+| GET | `/api/practice/status` | 今日测试分、正确/错误数、锁定时间、今日排行榜 |
+| GET | `/api/practice/leaderboard?scope=today\|all` | 面向所有用户的测试排行榜 |
+| GET | `/api/assignment?code=` | 公开作业元数据（标题/班级/难度/章节），不返回答案；停用即 404 |
 | GET | `/api/stats?scope=week|all` | 进度、章节正确率、最近答题/急救、排行榜 |
 | GET | `/api/leaderboard?scope=week|all` | 排行榜 |
 
@@ -133,6 +145,7 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 | 410 | `attempt_expired` | 题目超过 2 小时 |
 | 419 | `csrf_invalid` | CSRF 校验失败（前端自动刷新 token 重试） |
 | 422 | `no_iv` / `invalid_action` | 操作不满足条件 |
+| 423 | `practice_locked` / `exam_locked` | 测试分低于阈值 / 未完成 8 个板块 |
 | 429 | `too_many_attempts` | 登录限流 |
 | 500 | `server_error` | 服务端异常（不返回堆栈） |
 

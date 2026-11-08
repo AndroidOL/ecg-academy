@@ -48,6 +48,11 @@ php scripts/migrate.php
 | `auth_throttle` | 登录/注册失败限流 |
 | `ai_usage` | AI 每日配额 |
 | `app_settings` | 数据库驱动站点/AI/登录配置；键包括 `ai.byok_enabled`、`ai.allow_guest`、`ai.daily_limit`、站点信息等 |
+| `assignments` | 班级作业：code、title、class_name、level、chapter、focus、active、created_by |
+| `assignment_attempts` | 匿名作业成绩：assignment_id、sha256(device_id)、correct、score、time_ms、created_at；不存 IP/姓名 |
+| `learning_events` | 学习/考试/练习事件：user_id、chapter、question_id、mode、round_id、correct、created_at |
+| `learning_status` | 章节学习状态：learning/learned/relearning、last_round、learned_at |
+| `practice_daily_scores` | 测试模块每日分：score、correct、wrong、locked_until |
 | `admin_passkeys` | 管理员 WebAuthn 公钥、credential ID、计数器 |
 | `admin_audit` | 管理操作审计 |
 

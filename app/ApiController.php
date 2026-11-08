@@ -130,6 +130,8 @@ final class ApiController
             'level' => (int) ($_GET['level'] ?? 1),
             'chapter' => (string) ($_GET['chapter'] ?? 'all'),
             'focus' => $focus,
+            'assignment' => (string) ($_GET['assignment'] ?? ''),
+            'device' => (string) ($_GET['device'] ?? ''),
         ]);
         Http::ok($payload);
     }
@@ -145,10 +147,55 @@ final class ApiController
         Http::ok(Quiz::answer((int) $user['id'], $attemptId, $selected, $timeMs));
     }
 
+    public static function assignment(array $params = []): void
+    {
+        self::user();
+        $code = mb_strtolower(trim((string) ($_GET['code'] ?? '')));
+        Http::ok(Quiz::assignment($code));
+    }
+
     public static function quizHistory(array $params = []): void
     {
         $user = self::user();
         Http::ok(Quiz::history((int) $user['id'], (int) ($_GET['limit'] ?? 12)));
+    }
+
+    public static function learningStatus(array $params = []): void
+    {
+        $user = self::user();
+        Http::ok(Learning::status((int) $user['id']));
+    }
+
+    public static function learningStart(array $params = []): void
+    {
+        $user = self::user();
+        Http::ok(Learning::startLearn((int) $user['id'], (string) ($_GET['chapter'] ?? '')));
+    }
+
+    public static function learningComplete(array $params = []): void
+    {
+        $user = self::user();
+        $input = Http::input();
+        $answers = is_array($input['answers'] ?? null) ? $input['answers'] : [];
+        Http::ok(Learning::submit((int) $user['id'], (string) ($input['token'] ?? ''), $answers));
+    }
+
+    public static function examStart(array $params = []): void
+    {
+        $user = self::user();
+        Http::ok(Learning::startExam((int) $user['id']));
+    }
+
+    public static function practiceStatus(array $params = []): void
+    {
+        $user = self::user();
+        Http::ok(Learning::practiceStatus((int) $user['id']));
+    }
+
+    public static function practiceLeaderboard(array $params = []): void
+    {
+        self::user();
+        Http::ok(['items' => Learning::practiceLeaderboard((string) ($_GET['scope'] ?? 'today'))]);
     }
 
     public static function stats(array $params = []): void

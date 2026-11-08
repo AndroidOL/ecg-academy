@@ -39,7 +39,8 @@ ECG_ADMIN_PASSWORD='换成至少12位的强密码' php scripts/create_admin.php 
 | AI | 总开关、普通用户每日额度、默认供应商、补充系统提示词、BYOK 演示开关 |
 | AI 供应商 | OpenAI / DeepSeek / OpenRouter / 通义千问兼容模式 / 硅基流动预设，或任意 OpenAI-compatible Base URL；可保存多个模型 |
 | 站点信息 | GitHub 链接、许可证说明、版权、ICP 备案号 |
-| 用户 | 搜索、启用/停用、设为/移除管理员、每日 AI 额度覆盖、重置密码 |
+| 用户 | 搜索、手动创建用户、启用/停用、设为/移除管理员、每日 AI 额度覆盖、重置密码 |
+| 班级作业 | 创建匿名作业链接、按难度/章节/专项筛题、查看人数/次数/平均分/正确率、停用/删除 |
 | 安全 | 注册/删除管理员 Passkey；查看审计日志 |
 
 API Key 使用 AES-256-GCM 加密后存入 `app_settings`，密钥文件为 `storage/master.key`（已 gitignore，首次使用时自动创建，权限 0600）。前端与审计日志只显示掩码。

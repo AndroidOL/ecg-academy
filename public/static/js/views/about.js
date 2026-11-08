@@ -1,7 +1,7 @@
 import { store } from '../store.js';
-import { CORRECTIONS } from '../data/corrections.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108af';
+const __asset = __isNode ? '' : '?v=20261108ah';
+const { CORRECTIONS } = await import(`../data/corrections.js${__asset}`);
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 function parseCorrections() {
