@@ -51,7 +51,7 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 | GET | `/api/quiz/new?level=1|2|3&chapter=&focus=a,b&assignment=CODE&device=UUID` | 从 1920 道预生成病例中出题；level 3 为组合诊断；assignment 覆盖难度/章节/专项并记录匿名成绩；返回剥离答案的 ECG 规格、选项、attemptId、bankId |
 | POST | `/api/quiz/answer` | `{attemptId, selected:["id"], timeMs}`；服务端判分并返回解析；测试模式更新 +1/-10 与锁定 |
 | GET | `/api/quiz/history` | 最近答题记录 |
-| GET | `/api/learning/status` | 19 板块学习状态、最近 50 题评级、考试解锁、919 题统计 |
+| GET | `/api/learning/status` | 19 板块学习状态、最近 50 题评级、考试解锁、1735 题统计 |
 | GET | `/api/learning/start?chapter=` | 随机 10 题学习关卡（返回题目与签名 token，不含答案） |
 | POST | `/api/learning/complete` | `{token, answers}` 结算学习关卡；≥8/10 标记已学习 |
 | GET | `/api/exam/start` | 从已学习板块随机组卷；不足 8 个板块返回 403 `exam_locked` |

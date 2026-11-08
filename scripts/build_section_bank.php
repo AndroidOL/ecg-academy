@@ -17,10 +17,30 @@ $clean = static function (string $text): string {
 };
 $chapterNames = [];
 foreach ($chapters as $chapter) $chapterNames[$chapter['id']] = $chapter['name'];
+$nameCounts = [];
+foreach ($all as $candidate) {
+    $rawName = (string) ($candidate['name'] ?? '');
+    $nameCounts[$rawName] = ($nameCounts[$rawName] ?? 0) + 1;
+}
+$displayNameById = [];
+foreach ($all as $id => $candidate) {
+    $rawName = (string) ($candidate['name'] ?? $id);
+    $displayNameById[$id] = $nameCounts[$rawName] > 1
+        ? $rawName . '（' . ($chapterNames[$candidate['chapter']] ?? $candidate['chapter']) . '）'
+        : $rawName;
+}
+$keyNumberText = static function (array $number): string {
+    $value = trim((string) ($number['value'] ?? ''));
+    $unit = trim((string) ($number['unit'] ?? ''));
+    $label = trim((string) ($number['label'] ?? ''));
+    return $value . ($unit !== '' ? $unit : '') . ($label !== '' ? '（' . $label . '）' : '');
+};
 $sourceTextById = [];
 foreach ($all as $item) {
     $texts = [];
-    foreach (['name', 'en', 'oneLiner', 'specificity', 'definition', 'clinicalPearl'] as $field) {
+    if (!empty($displayNameById[$item['id']])) $texts[] = (string) $displayNameById[$item['id']];
+    else if (!empty($item['name'])) $texts[] = (string) $item['name'];
+    foreach (['en', 'oneLiner', 'specificity', 'definition', 'clinicalPearl'] as $field) {
         if (!empty($item[$field])) $texts[] = (string) $item[$field];
     }
     foreach (['criteria', 'reading', 'redFlags', 'management', 'pitfalls', 'pearls', 'keyPoints', 'objectives', 'mechanism'] as $field) {
@@ -32,13 +52,14 @@ foreach ($all as $item) {
     }
     foreach (($item['keyNumbers'] ?? []) as $number) {
         if (is_array($number)) {
-            $value = trim((string) (($number['value'] ?? '') . ' ' . ($number['label'] ?? '') . ' ' . ($number['unit'] ?? '')));
+            $value = $keyNumberText($number);
             if ($value !== '') $texts[] = $value;
         }
     }
     foreach (($item['differential'] ?? []) as $diff) {
         $target = $all[$diff['id'] ?? ''] ?? null;
-        if ($target) $texts[] = (string) $target['name'];
+        if ($target) $texts[] = (string) ($displayNameById[$target['id']] ?? $target['name']);
+        if (!empty($diff['why'])) $texts[] = (string) $diff['why'];
     }
     $sourceTextById[$item['id']] = array_values(array_unique(array_filter(array_map($clean, $texts))));
 }
@@ -72,7 +93,7 @@ foreach ($chapters as $chapter) {
     $cid = (string) $chapter['id'];
     $items = $byChapter[$cid] ?? [];
     $crossItems = array_values(array_filter($all, static fn (array $candidate): bool => $candidate['chapter'] !== $cid));
-    $goal = $cid === 'theory' ? 30 : 50;
+    $goal = $cid === 'theory' ? 80 : 100;
     $questions = [];
     $used = [];
     $globalPool = [];
@@ -96,6 +117,13 @@ foreach ($chapters as $chapter) {
         }
     }
     $sectionBodyPool = array_values(array_unique(array_filter($sectionBodyPool)));
+    $crossNames = array_values(array_filter(array_map(static fn (array $candidate): string => (string) ($displayNameById[$candidate['id']] ?? ($candidate['name'] ?? '')), $crossItems)));
+    $crossKeyNumbers = [];
+    foreach ($crossItems as $candidate) foreach (($candidate['keyNumbers'] ?? []) as $number) if (is_array($number)) $crossKeyNumbers[] = $keyNumberText($number);
+    $crossKeyNumbers = array_values(array_unique(array_filter($crossKeyNumbers)));
+    $crossDiffWhy = [];
+    foreach ($crossItems as $candidate) foreach (($candidate['differential'] ?? []) as $diff) if (!empty($diff['why'])) $crossDiffWhy[] = (string) $diff['why'];
+    $crossDiffWhy = array_values(array_unique(array_filter($crossDiffWhy)));
 
     $add = static function (string $stem, string $correct, array $pool, string $sourceId, string $explanation, int $difficulty = 1) use (&$questions, &$used, $cid, $clean, $globalPool, $stableShuffle, $sourceTextById, $tooSimilar): void {
         $correct = $clean($correct);
@@ -166,7 +194,7 @@ foreach ($chapters as $chapter) {
     };
 
     foreach ($items as $item) {
-        $name = (string) ($item['name'] ?? $item['id']);
+        $name = (string) ($displayNameById[$item['id']] ?? ($item['name'] ?? $item['id']));
         $difficulty = (int) ($item['difficulty'] ?? 1);
         foreach ([
             ['oneLiner', '一句话描述'],
@@ -176,6 +204,18 @@ foreach ($chapters as $chapter) {
             if (!empty($item[$field])) {
                 $add("按本站《{$name}》课程，以下哪项是{$label}？", (string) $item[$field], $poolFor($field), $item['id'], "《{$name}》的{$label}：" . $clean((string) $item[$field]), $difficulty);
             }
+        }
+        foreach (['oneLiner', 'specificity'] as $reverseField) {
+            if (empty($item[$reverseField])) continue;
+            $description = $clean((string) $item[$reverseField]);
+            if ($description === '') continue;
+            $add("按本站课程，以下描述最符合哪个主题？{$description}", $name, $crossNames, $item['id'], "该描述对应《{$name}》：{$description}", $difficulty);
+        }
+        foreach (($item['keyNumbers'] ?? []) as $number) {
+            if (!is_array($number)) continue;
+            $correctNumber = $keyNumberText($number);
+            if ($correctNumber === '') continue;
+            $add("按本站《{$name}》课程，以下哪项是其关键数值？", $correctNumber, $crossKeyNumbers, $item['id'], "《{$name}》关键数值：{$correctNumber}", $difficulty);
         }
         foreach ([
             ['criteria', '诊断标准'],
@@ -205,11 +245,13 @@ foreach ($chapters as $chapter) {
         foreach (($item['differential'] ?? []) as $diff) {
             if (!empty($diff['id'])) {
                 $target = $all[$diff['id']] ?? null;
-                $targetName = $target['name'] ?? $diff['id'];
+                $targetName = $displayNameById[$target['id']] ?? ($target['name'] ?? $diff['id']);
                 $correct = $targetName;
-                $options = ['id' => $diff['id']];
                 $add("按本站课程，《{$name}》需要与以下哪个诊断重点鉴别？", $correct, array_values(array_filter(array_map(static fn (array $d): string => $d['name'] ?? '', $items))), $item['id'], "《{$name}》需与《{$targetName}》鉴别：" . $clean((string) ($diff['why'] ?? '')), $difficulty);
-                unset($options);
+                if (!empty($diff['why'])) {
+                    $why = $clean((string) $diff['why']);
+                    $add("按本站课程，《{$name}》与《{$targetName}》的主要鉴别点是？", $why, $crossDiffWhy, $item['id'], "《{$name}》与《{$targetName}》的鉴别点：{$why}", $difficulty);
+                }
             }
         }
         if (!empty($item['en'])) {
@@ -232,6 +274,7 @@ foreach ($chapters as $chapter) {
 }
 
 $content = "<?php\ndeclare(strict_types=1);\n\n// 由 scripts/build_section_bank.php 生成；请勿手工编辑。\nreturn " . var_export($out, true) . ";\n";
+$content = rtrim(preg_replace('/[ \t]+$/m', '', $content)) . "\n";
 file_put_contents(BASE_PATH . '/data/section_bank.php', $content, LOCK_EX);
 echo 'Section bank: ' . count($out) . " questions\n";
 foreach ($report as [$id, $items, $count, $goal]) {

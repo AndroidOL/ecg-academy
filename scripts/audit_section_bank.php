@@ -13,15 +13,34 @@ $bank = require BASE_PATH . '/data/section_bank.php';
 $all = Content::all();
 $chapters = [];
 foreach (Content::chapters() as $chapter) $chapters[$chapter['id']] = $chapter;
+$nameCounts = [];
+foreach ($all as $candidate) {
+    $rawName = (string) ($candidate['name'] ?? '');
+    $nameCounts[$rawName] = ($nameCounts[$rawName] ?? 0) + 1;
+}
+$displayNameById = [];
+foreach ($all as $id => $candidate) {
+    $rawName = (string) ($candidate['name'] ?? $id);
+    $displayNameById[$id] = $nameCounts[$rawName] > 1
+        ? $rawName . '（' . ($chapters[$candidate['chapter']]['name'] ?? $candidate['chapter']) . '）'
+        : $rawName;
+}
+$keyNumberText = static function (array $number): string {
+    $value = trim((string) ($number['value'] ?? ''));
+    $unit = trim((string) ($number['unit'] ?? ''));
+    $label = trim((string) ($number['label'] ?? ''));
+    return $value . ($unit !== '' ? $unit : '') . ($label !== '' ? '（' . $label . '）' : '');
+};
 
 $norm = static function (string $text): string {
     $text = trim(preg_replace('/\s+/u', ' ', preg_replace('/<(?=[a-zA-Z\/!])[^>]*>/u', '', $text)) ?? '');
     return mb_substr($text, 0, 260, 'UTF-8');
 };
 
-$sourceTexts = static function (array $item) use ($norm): array {
+$sourceTexts = static function (array $item) use ($norm, $displayNameById, $keyNumberText): array {
     $out = [];
-    foreach (['name', 'en', 'oneLiner', 'specificity', 'definition', 'clinicalPearl'] as $field) {
+    $out[] = $norm((string) ($displayNameById[$item['id']] ?? ($item['name'] ?? '')));
+    foreach (['en', 'oneLiner', 'specificity', 'definition', 'clinicalPearl'] as $field) {
         if (!empty($item[$field])) $out[] = $norm((string) $item[$field]);
     }
     foreach (['criteria', 'reading', 'redFlags', 'management', 'pitfalls', 'pearls', 'keyPoints', 'objectives', 'mechanism'] as $field) {
@@ -33,13 +52,14 @@ $sourceTexts = static function (array $item) use ($norm): array {
     }
     foreach (($item['keyNumbers'] ?? []) as $number) {
         if (is_array($number)) {
-            $value = trim((string) (($number['value'] ?? '') . ' ' . ($number['label'] ?? '') . ' ' . ($number['unit'] ?? '')));
+            $value = $keyNumberText($number);
             if ($value !== '') $out[] = $norm($value);
         }
     }
     foreach (($item['differential'] ?? []) as $diff) {
         $target = $all[$diff['id'] ?? ''] ?? null;
-        if ($target) $out[] = $norm((string) $target['name']);
+        if ($target) $out[] = $norm((string) ($displayNameById[$target['id']] ?? $target['name']));
+        if (!empty($diff['why'])) $out[] = $norm((string) $diff['why']);
     }
     return array_values(array_unique(array_filter($out)));
 };
@@ -69,7 +89,7 @@ foreach ($bank as $q) {
         $targets = [];
         foreach (($item['differential'] ?? []) as $diff) {
             $target = $all[$diff['id'] ?? ''] ?? null;
-            if ($target) $targets[] = $norm((string) $target['name']);
+            if ($target) $targets[] = $norm((string) ($displayNameById[$target['id']] ?? $target['name']));
         }
         if (!in_array($correctText, $targets, true)) $issues[] = [$id, 'differential_mismatch', $correctText];
     } else {

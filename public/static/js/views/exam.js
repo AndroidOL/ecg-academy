@@ -3,7 +3,7 @@ import { store } from '../store.js';
 import { navigate } from '../router.js';
 import { recordAttempt } from '../study-store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108al';
+const __asset = __isNode ? '' : '?v=20261108an';
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
 const state = {
@@ -160,7 +160,7 @@ function bindResult(el) {
   el.querySelector('[data-back]')?.addEventListener('click', () => backHome(el));
 }
 
-export async function examView() {
+export async function examView({ query } = {}) {
   const el = document.createElement('div');
   el.className = 'page exam-page';
   try {
@@ -168,6 +168,12 @@ export async function examView() {
     state.status = await api.learningStatus();
     el.innerHTML = homeMarkup();
     bindHome(el);
+    const requestedChapter = String(query?.get('chapter') || '').trim();
+    if (requestedChapter) {
+      const button = el.querySelector(`[data-learn="${requestedChapter.replace(/[^a-z0-9_-]/gi, '')}"]`);
+      if (button && query?.get('start') === '1') button.click();
+      else if (button) button.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   } catch (error) {
     el.innerHTML = `<div class="error-panel">${escapeHtml(error.message || '学习状态加载失败')}</div>`;
   }

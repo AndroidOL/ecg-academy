@@ -2,7 +2,7 @@ import { api } from '../api.js';
 import { store } from '../store.js';
 import { isFavorite, toggleFavorite } from '../study-store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108al';
+const __asset = __isNode ? '' : '?v=20261108an';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 import { createAiChat } from './ai-chat.js';
 const { icon, chapterColor, difficultyDots, escapeHtml, toast, medicalDisclaimer, setupMiniECG } = await import(`../ui.js${__asset}`);
@@ -201,7 +201,7 @@ export async function articleView({ params }) {
           <div class="article-actions">
             <button class="btn btn-sm ${mastered ? 'btn-soft' : 'btn-primary'}" type="button" data-master ${mastered ? 'disabled' : ''}>${icon(mastered ? 'check' : 'target', 14)} ${mastered ? '已掌握' : '标记掌握'}</button>
             <button class="btn btn-sm btn-secondary ${favorited ? 'btn-soft' : ''}" type="button" data-favorite aria-pressed="${favorited}">${icon('star', 14)} ${favorited ? '已收藏' : '收藏'}</button>
-            <a class="btn btn-sm btn-secondary" href="#/practice">${icon('activity', 14)} 去练习</a>
+            <a class="btn btn-sm btn-secondary" href="#/exam?chapter=${encodeURIComponent(detail.chapter)}&start=1">${icon('target', 14)} 本章测试</a><a class="btn btn-sm btn-secondary" href="#/practice">${icon('activity', 14)} 去练习</a>
           </div>
         </div>
         <div id="article-ai"></div>

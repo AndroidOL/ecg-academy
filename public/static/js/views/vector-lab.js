@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108al';
+const __asset = __isNode ? '' : '?v=20261108an';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const LEADS = {
@@ -30,6 +30,40 @@ const CHEST_VECTOR = {
 };
 
 const CHEST_VECTOR_KEYS = ['V1', 'V5', 'V6'];
+
+const LEADS_12 = {
+  I: { label: 'I', vec: [1, 0, 0], angle: 0 },
+  II: { label: 'II', vec: [0.5, -0.866, 0], angle: 60 },
+  III: { label: 'III', vec: [-0.5, -0.866, 0], angle: 120 },
+  aVR: { label: 'aVR', vec: [-0.866, 0.5, 0], angle: -150 },
+  aVL: { label: 'aVL', vec: [0.866, 0.5, 0], angle: -30 },
+  aVF: { label: 'aVF', vec: [0, -1, 0], angle: 90 },
+  V1: { label: 'V1', vec: [-0.58, 0, 0.82], angle: null },
+  V2: { label: 'V2', vec: [-0.18, 0, 0.98], angle: null },
+  V3: { label: 'V3', vec: [0.34, 0, 0.94], angle: null },
+  V4: { label: 'V4', vec: [0.78, 0, 0.60], angle: null },
+  V5: { label: 'V5', vec: [0.97, 0, 0.22], angle: null },
+  V6: { label: 'V6', vec: [0.94, 0, -0.18], angle: null },
+};
+
+const LOOPS = {
+  P: (a) => [0.18 + 0.24 * Math.cos(a), -0.1 + 0.16 * Math.sin(a), 0.04 * Math.sin(a * 2)],
+  QRS: (a) => [0.34 + 0.62 * Math.cos(a) + 0.1 * Math.cos(3 * a), -0.22 + 0.34 * Math.sin(a) + 0.09 * Math.sin(3 * a), -0.12 + 0.18 * Math.sin(a + 0.7)],
+  T: (a) => [0.3 + 0.5 * Math.cos(a) + 0.03 * Math.cos(4 * a), -0.18 + 0.28 * Math.sin(a), -0.08 + 0.1 * Math.sin(a + 1.4)],
+};
+
+function unitVector([x, y, z]) { const n = Math.hypot(x, y, z) || 1; return [x / n, y / n, z / n]; }
+function dotVector(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+function rotateForAxis(v, key, axes = {}) {
+  const d = ((axes[key] ?? 60) - 60) * Math.PI / 180;
+  return [v[0] * Math.cos(d) - v[1] * Math.sin(d), v[0] * Math.sin(d) + v[1] * Math.cos(d), v[2]];
+}
+function activeLoopAt(phase) {
+  if (phase < 0.16) return 'P';
+  if (phase < 0.42) return 'QRS';
+  if (phase < 0.8) return 'T';
+  return null;
+}
 const CHEST_VECTOR_COLORS = { V1: 'accent', V5: 'brand', V6: 'gold' };
 
 // 水平面：x = 患者左，z = 前。QRS 由“向右前的小室间隔向量”过渡到“向左后的左室主向量”。
@@ -134,12 +168,7 @@ function drawVectorCanvas(canvas, state, t) {
     ctx.fillStyle = c.muted;
     ctx.fillText(axis.label, p[0] + 4, p[1] - 4);
   });
-  const loops = {
-    // x = 左，y = 上，z = 前。正常心室除极的主向量总体指向左下、略向后。
-    P: (a) => [0.18 + 0.24 * Math.cos(a), -0.1 + 0.16 * Math.sin(a), 0.04 * Math.sin(a * 2)],
-    QRS: (a) => [0.34 + 0.62 * Math.cos(a) + 0.1 * Math.cos(3 * a), -0.22 + 0.34 * Math.sin(a) + 0.09 * Math.sin(3 * a), -0.12 + 0.18 * Math.sin(a + 0.7)],
-    T: (a) => [0.3 + 0.5 * Math.cos(a) + 0.03 * Math.cos(4 * a), -0.18 + 0.28 * Math.sin(a), -0.08 + 0.1 * Math.sin(a + 1.4)],
-  };
+  const loops = LOOPS;
   const loopColors = { P: c.brand, QRS: c.accent, T: c.gold };
   const loopAxes = state.axes || { P: 60, QRS: 60, T: 60 };
   const axisDelta = (key) => ((loopAxes[key] ?? 60) - 60) * Math.PI / 180;
@@ -202,6 +231,119 @@ function drawVectorCanvas(canvas, state, t) {
   ctx.fillStyle = c.muted;
   ctx.font = '10px ui-monospace, monospace';
   ctx.fillText('P/QRS/T 只在各自时间窗内转动；正常 QRS 主向量总体指向左下、略向后', 12, height - 10);
+}
+
+function gaussianAt(u, center, width) {
+  return Math.exp(-Math.pow((u - center) / width, 2));
+}
+
+function leadAmplitudes(key, lead, axes) {
+  const unit = unitVector(lead.vec);
+  const p = rotateForAxis([0.28, -0.16, 0.05], 'P', axes);
+  const q = rotateForAxis([0.72, -0.32, 0.12], 'QRS', axes);
+  const t = rotateForAxis([0.58, -0.3, 0.1], 'T', axes);
+  return {
+    P: dotVector(p, unit) * 0.9,
+    QRS: dotVector(q, unit) * 1.4,
+    T: dotVector(t, unit) * 0.95,
+  };
+}
+
+function leadWaveAt(lead, u, axes) {
+  const amp = leadAmplitudes('', lead, axes);
+  let value = amp.P * gaussianAt(u, 0.18, 0.03);
+  if (amp.QRS >= 0) {
+    value += amp.QRS * (-0.12 * gaussianAt(u, 0.30, 0.009) + gaussianAt(u, 0.33, 0.012) - 0.18 * gaussianAt(u, 0.365, 0.012));
+  } else {
+    value += Math.abs(amp.QRS) * (0.16 * gaussianAt(u, 0.30, 0.010) - gaussianAt(u, 0.34, 0.014) + 0.06 * gaussianAt(u, 0.38, 0.010));
+  }
+  value += amp.T * gaussianAt(u, 0.64, 0.055);
+  return value;
+}
+
+function draw12LeadCanvas(canvas, state) {
+  const { ctx, width, height } = canvas2d(canvas);
+  const c = palette();
+  const columns = [['I', 'II', 'III'], ['aVR', 'aVL', 'aVF'], ['V1', 'V2', 'V3'], ['V4', 'V5', 'V6']];
+  const left = 7; const right = 7; const top = 7; const bottom = 7; const gap = 4;
+  const cellW = (width - left - right - gap * 3) / 4;
+  const cellH = (height - top - bottom - gap * 2) / 3;
+  ctx.clearRect(0, 0, width, height); ctx.fillStyle = c.bg; ctx.fillRect(0, 0, width, height);
+  const axes = state.axes || { P: 60, QRS: 60, T: 60 };
+  const maxAmp = Math.max(0.18, ...Object.values(LEADS_12).map((lead) => Math.max(Math.abs(leadAmplitudes('', lead, axes).P), Math.abs(leadAmplitudes('', lead, axes).QRS), Math.abs(leadAmplitudes('', lead, axes).T))));
+  columns.forEach((column, col) => column.forEach((id, row) => {
+    const lead = LEADS_12[id];
+    const x = left + col * (cellW + gap);
+    const y = top + row * (cellH + gap);
+    const base = y + cellH * 0.61;
+    const selected = state.lead === id;
+    ctx.fillStyle = 'rgba(255,255,255,.025)'; ctx.fillRect(x, y, cellW, cellH);
+    ctx.strokeStyle = selected ? c.brand : c.grid; ctx.lineWidth = selected ? 1.2 : .7;
+    ctx.strokeRect(x + .5, y + .5, cellW - 1, cellH - 1);
+    ctx.fillStyle = selected ? c.brand : c.muted; ctx.font = selected ? '700 9px ui-monospace, monospace' : '9px ui-monospace, monospace';
+    ctx.fillText(id, x + 4, y + 10);
+    ctx.strokeStyle = c.grid; ctx.globalAlpha = .42; ctx.beginPath(); ctx.moveTo(x + 2, base); ctx.lineTo(x + cellW - 2, base); ctx.stroke(); ctx.globalAlpha = 1;
+    const scale = (cellH * .32) / maxAmp;
+    ctx.strokeStyle = selected ? c.brand : c.trace; ctx.lineWidth = selected ? 1.5 : 1;
+    ctx.beginPath();
+    const points = 90;
+    for (let i = 0; i <= points; i += 1) {
+      const u = i / points;
+      const v = leadWaveAt(lead, u, axes);
+      const px = x + 4 + u * (cellW - 8);
+      const py = base - v * scale;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    const cursorX = x + 4 + (state.phase ?? 0) * (cellW - 8);
+    ctx.strokeStyle = '#fff'; ctx.globalAlpha = .48; ctx.beginPath(); ctx.moveTo(cursorX, y + 2); ctx.lineTo(cursorX, y + cellH - 2); ctx.stroke(); ctx.globalAlpha = 1;
+  }));
+  ctx.fillStyle = c.muted; ctx.font = '8px ui-monospace, monospace';
+  ctx.fillText('V1–V6 为水平面近似示意；随三环电轴变化', left, height - 2);
+}
+
+function drawLimbCompassCanvas(canvas, state) {
+  const { ctx, width, height } = canvas2d(canvas);
+  const c = palette();
+  const cx = width / 2; const cy = height / 2 + 4;
+  const radius = Math.min(width, height) * 0.34;
+  ctx.clearRect(0, 0, width, height); ctx.fillStyle = c.bg; ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = c.text; ctx.font = '600 9px ui-monospace, monospace';
+  ctx.fillText('额面肢体导联方向', 10, 12);
+  ctx.strokeStyle = c.grid; ctx.globalAlpha = .6; ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
+  const axes = state.axes || { P: 60, QRS: 60, T: 60 };
+  const active = state.loop === 'all' ? (activeLoopAt(state.phase ?? 0) || 'QRS') : state.loop;
+  // P/QRS/T 环在额面的淡淡投影
+  ['P', 'QRS', 'T'].forEach((key) => {
+    ctx.strokeStyle = { P: c.brand, QRS: c.accent, T: c.gold }[key];
+    ctx.globalAlpha = key === active ? .65 : .18; ctx.lineWidth = key === active ? 1.6 : 1;
+    ctx.beginPath();
+    for (let i = 0; i <= 80; i += 1) {
+      const a = (i / 80) * Math.PI * 2;
+      const v = rotateForAxis(LOOPS[key](a), key, axes);
+      const px = cx + v[0] * radius * .72;
+      const py = cy - v[1] * radius * .72;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  });
+  ctx.globalAlpha = 1;
+  Object.entries(LEADS_12).filter(([, lead]) => lead.angle !== null).forEach(([id, lead]) => {
+    const a = lead.angle * Math.PI / 180;
+    const x = cx + Math.cos(a) * radius;
+    const y = cy + Math.sin(a) * radius;
+    ctx.strokeStyle = c.muted; ctx.globalAlpha = .6; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x, y); ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.fillStyle = c.muted; ctx.font = '700 9px ui-monospace, monospace';
+    ctx.fillText(id, x + (Math.cos(a) * 7), y + (Math.sin(a) * 7) + 3);
+  });
+  const phase = state.phase ?? 0;
+  const current = rotateForAxis(LOOPS[active](phase * Math.PI * 2), active, axes);
+  const vx = cx + current[0] * radius * .8; const vy = cy - current[1] * radius * .8;
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(vx, vy); ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(vx, vy, 3, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = c.muted; ctx.font = '8px ui-monospace, monospace';
+  ctx.fillText(`${active} 当前向量 · 六轴正向向外`, 10, height - 5);
 }
 
 function drawProjectionCanvas(canvas, state, t) {
@@ -321,6 +463,18 @@ function vectorLoopsPanel() {
       <p class="muted"><b>关于 P/T 电轴：</b>临床上说“电轴偏转”通常指 QRS 额面电轴，正常约 −30° 至 +90°；P 波电轴也可测量（正常约 0° 至 +75°，异常提示异位房律等），T 波电轴通常与 QRS 主向量大致一致，缺血、电解质紊乱、肥厚/劳损时可改变。本页三个环可分别调节，仅用于理解向量方向与投影，不把 P/T 偏转直接等同于 QRS 电轴诊断。</p>
       <div class="visual-tip">${icon('sparkles', 14)} 旋转模型，观察心电轴：正常 QRS 环主向量指向<b>左下、略向后</b>；电轴左偏 = 更朝上/左，电轴右偏 = 更朝下/右。把水平视角拖到 −180° 可从后方观察“向后”的分量。</div>
     </aside>
+  </div>
+  <div class="vector-extra-grid">
+    <div class="visual-card visual-card-dark">
+      <div class="visual-sync-head"><span>12 导联投影图</span><span>P/QRS/T 同源 · 随三环电轴变化</span></div>
+      <div class="vector-12lead-scroll"><canvas data-vector-12lead data-height="390" aria-label="由 P、QRS、T 向量环投影生成的十二导联示意图"></canvas></div><div class="vector-12lead-hint">左右滑动查看 12 导联</div>
+      <div class="vector-mini-note">同一瞬时的空间向量投影到 12 个导联轴：朝向某导联为正，背离为负。V1–V6 为水平面教学近似，不是诊断图。</div>
+    </div>
+    <div class="visual-card visual-card-dark">
+      <div class="visual-sync-head"><span>额面肢体导联方向</span><span>从中心向外为正</span></div>
+      <canvas data-vector-limb-compass data-height="390" aria-label="额面六个肢体导联方向与 P QRS T 环投影"></canvas>
+      <div class="vector-mini-note">I=0°、II=+60°、III=+120°、aVR=−150°、aVL=−30°、aVF=+90°；彩色细环为 P/QRS/T 在额面的投影。</div>
+    </div>
   </div>`;
 }
 
@@ -857,6 +1011,10 @@ export async function vectorLabView() {
     drawVectorCanvas(canvas, state, 0);
     const projection = content.querySelector('[data-vector-ecg]');
     if (projection) drawProjectionCanvas(projection, state, 0);
+    const twelve = content.querySelector('[data-vector-12lead]');
+    if (twelve) draw12LeadCanvas(twelve, state);
+    const compass = content.querySelector('[data-vector-limb-compass]');
+    if (compass) drawLimbCompassCanvas(compass, state);
     const syncLabel = content.querySelector('[data-vector-sync-label]');
     if (syncLabel) syncLabel.textContent = `${LEADS[state.lead].name} · 时间光标`;
     const bars = content.querySelector('[data-vector-projections]');

@@ -18,7 +18,7 @@ PHP application (app/)
   ├─ Auth (PHP session, guest upgrade, CSRF)
   ├─ Content (230 articles / 40 quiz diagnoses, 19 chapters)
   ├─ Quiz (curated bank + seeded variants + server-side grading)
-  ├─ SectionBank / Learning (919 章节题、学习状态、考试评级、测试分)
+  ├─ SectionBank / Learning (1735 章节题、学习状态、考试评级、测试分)
   ├─ SimEngine (authoritative ACLS state machine)
   ├─ Ai (OpenAI-compatible proxy + grounded prompts + fallback + optional BYOK)
   └─ Db (PDO MySQL: users, progress, attempts, sim runs)
@@ -46,7 +46,7 @@ app/                 后端（Web 根之外）
   ApiController.php  全部 API
   Content.php        读取并缓存 230 章课程（诊断 + 理论/病例）
   Quiz.php           出题、选项、判分、XP
-  SectionBank.php    919 道章节学习/考试题
+  SectionBank.php    1735 道章节学习/考试题
   Learning.php       学习状态、评级、考试、测试分与排行榜
   SimEngine.php      ACLS 状态机与评分
   Ai.php             OpenAI 兼容客户端 + 提示词 + 降级
@@ -105,7 +105,7 @@ hash 路由，便于任意静态托管与无重写部署：
 
 ## 数据流：学习考试
 
-1. `GET /api/learning/start?chapter=`：从 919 题章节库随机抽 10 题，返回无答案题目与签名 round token。
+1. `GET /api/learning/start?chapter=`：从 1735 题章节库随机抽 10 题，返回无答案题目与签名 round token。
 2. 前端逐题选择后 `POST /api/learning/complete`；服务端用 token 校验用户、有效期与重复提交，按答案索引判分。
 3. 写入 `learning_events`；≥8/10 更新 `learning_status=learned`；失败保持/退回学习。
 4. 最近 50 题按章节计算评级；连续错误触发 `relearning`。
