@@ -15,7 +15,7 @@ fi
 tar -C "$ROOT" \
   --exclude='.git' --exclude='.ssh' --exclude='node_modules' \
   --exclude='storage/sessions/*' --exclude='storage/logs/*' --exclude='storage/cache/*' \
-  --exclude='tests/artifacts/*' --exclude='app/config.local.php' \
+  --exclude='tests/artifacts/*' --exclude='storage/backups/*' --exclude='app/config.local.php' \
   --exclude='storage/master.key' --exclude='docs/*.local.md' \
   -cf - . | tar -C "$TARGET" -xf -
 mkdir -p "$TARGET/storage/sessions" "$TARGET/storage/logs" "$TARGET/storage/cache"
