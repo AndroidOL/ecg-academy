@@ -1,10 +1,10 @@
 import { api } from '../api.js';
 import { store } from '../store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108f';
+const __asset = __isNode ? '' : '?v=20261108g';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 import { createAiChat } from './ai-chat.js';
-import { icon, chapterColor, difficultyDots, escapeHtml, toast, medicalDisclaimer, setupMiniECG } from '../ui.js';
+const { icon, chapterColor, difficultyDots, escapeHtml, toast, medicalDisclaimer, setupMiniECG } = await import(`../ui.js${__asset}`);
 
 const SECTIONS = [
   ['definition', '定义'],

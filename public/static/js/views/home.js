@@ -1,9 +1,9 @@
 import { api } from '../api.js';
 import { store } from '../store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108f';
+const __asset = __isNode ? '' : '?v=20261108g';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
-import { icon, chapterColor, difficultyDots, escapeHtml, setupMiniECG, medicalDisclaimer } from '../ui.js';
+const { icon, chapterColor, difficultyDots, escapeHtml, setupMiniECG, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
 const FALLBACK_SPEC = {
   rhythm: 'sinus', rate: 72, atrialRate: 72, p: 'normal', pr: 0.16, qrs: 0.08,

@@ -80,6 +80,7 @@ export function normalizeSpec(spec = {}) {
     primaryLead: String(spec.primaryLead || (spec.morphology === 'brugada' ? 'V1' : 'II')),
     sineWave: Boolean(spec.sineWave),
     vfAmplitude: clamp(num(spec.vfAmplitude, 1), 0.35, 1.4),
+    cprArtifact: Boolean(spec.cprArtifact),
     conduction: String(spec.conduction || ''),
   };
   if (s.rhythm === 'sinus' && s.rate === 0) s.rate = 72;
@@ -621,6 +622,18 @@ function addSpecialRhythm(samples, sampleRate, spec, lead, rng) {
   }
 }
 
+function addCompressionArtifact(samples, sampleRate, spec, lead) {
+  if (!spec.cprArtifact) return;
+  const factor = lead === 'V1' ? 1.15 : 1;
+  const f = 1.72;
+  for (let i = 0; i < samples.length; i += 1) {
+    const t = i / sampleRate;
+    const local = (t * f) % 1;
+    const pulse = 0.2 * Math.exp(-Math.pow((local - 0.16) / 0.05, 2));
+    samples[i] += (pulse + 0.025 * Math.sin(2 * Math.PI * 0.7 * t)) * factor;
+  }
+}
+
 function addBaseline(samples, sampleRate, spec, rng) {
   const n = samples.length;
   const phase = rng() * Math.PI * 2;
@@ -685,6 +698,7 @@ function synthesizeLead(schedule, lead) {
 
   if (schedule.special) {
     addSpecialRhythm(samples, sampleRate, spec, lead, rng);
+    addCompressionArtifact(samples, sampleRate, spec, lead);
     addBaseline(samples, sampleRate, spec, rng);
     return finish(samples, spec, lead, schedule);
   }

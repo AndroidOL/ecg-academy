@@ -1,9 +1,9 @@
 import { api } from '../api.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108f';
+const __asset = __isNode ? '' : '?v=20261108g';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 import { navigate } from '../router.js';
-import { icon, escapeHtml, toast, fmtDuration, confirmDialog, medicalDisclaimer, setButtonLoading } from '../ui.js';
+const { icon, escapeHtml, toast, fmtDuration, confirmDialog, medicalDisclaimer, setButtonLoading } = await import(`../ui.js${__asset}`);
 
 const RHYTHM_LABELS = {
   vf: '心室颤动', pvt: '无脉性室速', svt: '室上性心动过速', af_fast: '快速心房颤动',
@@ -127,6 +127,8 @@ export async function simSessionView({ params }) {
     el.addEventListener('click', (event) => {
       const quick = event.target.closest('[data-quick-iv-action]');
       if (quick && !quick.disabled) act('iv', {});
+      const vent = event.target.closest('[data-quick-vent-action]');
+      if (vent && !vent.disabled) act('oxygen', {});
     });
     el.querySelector('[data-exit]')?.addEventListener('click', async () => {
       if (state?.status === 'active') {
@@ -162,6 +164,9 @@ export async function simSessionView({ params }) {
       if (flags.iv) quickIv.innerHTML = `<span class="quick-iv ready">${icon('check', 12)} IV/IO 已建立</span>`;
       else if (flags.ivPending) quickIv.innerHTML = `<span class="quick-iv pending">${icon('activity', 12)} IV/IO 建立中 · ${flags.ivReadyIn ?? 0}s</span>`;
       else quickIv.innerHTML = `<button class="quick-iv-btn" type="button" data-quick-iv-action ${state.status !== 'active' ? 'disabled' : ''}>${icon('plus', 12)} 立即建立 IV/IO 通路</button>`;
+      if (state.status === 'active') {
+        quickIv.insertAdjacentHTML('beforeend', `<button class="quick-iv-btn" type="button" data-quick-vent-action>${icon('activity', 12)} 球囊通气${flags.ventilations ? ` · ${flags.ventilations} 次` : ''}</button>`);
+      }
     }
     const phase = el.querySelector('[data-phase]');
     if (phase) {
@@ -189,7 +194,7 @@ export async function simSessionView({ params }) {
     if (!initial && actionsSig !== lastActionsSig) {
       renderActions();
     }
-    const monitorSigNew = JSON.stringify({ rhythm: state.monitor?.rhythm, rate: state.monitor?.rate, qrs: state.monitor?.qrs, morphology: state.monitor?.morphology, p: state.monitor?.p, seed: state.monitor?.seed, vfAmplitude: state.monitor?.vfAmplitude, description: state.monitor?.description });
+    const monitorSigNew = JSON.stringify({ rhythm: state.monitor?.rhythm, rate: state.monitor?.rate, qrs: state.monitor?.qrs, morphology: state.monitor?.morphology, p: state.monitor?.p, seed: state.monitor?.seed, vfAmplitude: state.monitor?.vfAmplitude, cprArtifact: state.monitor?.cprArtifact, description: state.monitor?.description });
     if (monitorSigNew !== monitorSig) {
       monitorSig = monitorSigNew;
       mountMonitor();
@@ -264,9 +269,9 @@ export async function simSessionView({ params }) {
           : flags.postShock
             ? '电击后观察期，约 2 秒'
             : chargeProgress
-              ? `充电中 · 约 ${flags.chargeReadyIn ?? 0}s`
+              ? `充电中 · 约 ${flags.chargeReadyIn ?? 0}s；需切换能量/同步模式请先解除充电`
               : chargeReady
-                ? '已充电：确认无人接触患者后放电'
+                ? '已充电：能量/同步模式已锁定；确认无人接触后放电，或先解除充电再切换'
                 : '先选择能量并充电';
         const chargeText = chargeReady ? `已充电 ${flags.chargeEnergy ?? shockEnergy} J` : chargeProgress ? `充电中 ${flags.chargeReadyIn ?? 0}s` : '充电';
         return `<div class="action-group"><div class="action-group-title">${escapeHtml(group.label)}</div>
@@ -276,9 +281,11 @@ export async function simSessionView({ params }) {
             <div class="charge-row">
               <button class="btn btn-secondary btn-sm" type="button" data-action="charge" ${chargeLocked || flags.postShock || state.status !== 'active' ? 'disabled' : ''}>${icon('bolt', 13)} ${chargeText}</button>
               <button class="btn btn-danger btn-sm" type="button" data-action="shock" ${shockBlocked ? 'disabled' : ''}>${icon('zap', 14)} 放电</button>
+              ${chargeReady || chargeProgress ? `<button class="btn btn-ghost btn-sm" type="button" data-action="disarm">${icon('rotate', 13)} 解除充电</button>` : ''}
             </div>
             <div class="charge-meter ${chargeReady ? 'ready' : chargeProgress ? 'pending' : ''}"><span></span></div>
             <div class="hint" style="margin-top:4px">${reason}</div>
+            <div class="hint" style="margin-top:2px;color:var(--faint)">真实除颤器充电后能量与同步模式通常锁定；改变设置需先解除充电/内部放电，再重新选择并充电。</div>
           </div>
         </div>`;
       }

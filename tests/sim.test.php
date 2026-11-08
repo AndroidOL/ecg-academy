@@ -175,6 +175,24 @@ try {
         assert($debrief['run']['grade'] === 'D');
     });
 
+    check('charging locks configuration until disarm, and ventilation is visible', function () use ($userId) {
+        $view = SimEngine::start($userId, 'vf-arrest');
+        $id = $view['sessionId'];
+        SimEngine::action($userId, $id, 'charge', ['energy' => 200, 'sync' => false]);
+        pauseFor(3.2);
+        $view = SimEngine::state($userId, $id);
+        assert($view['flags']['chargeReady'] === true);
+        $view = SimEngine::action($userId, $id, 'disarm', []);
+        assert($view['flags']['chargeReady'] === false, 'disarm should clear charge and unlock configuration');
+        SimEngine::action($userId, $id, 'charge', ['energy' => 150, 'sync' => false]);
+        $view = SimEngine::state($userId, $id);
+        assert($view['flags']['chargeInProgress'] === true);
+        $view = SimEngine::action($userId, $id, 'oxygen', []);
+        assert($view['flags']['ventilations'] === 1, 'bag-mask ventilation must register');
+        assert((bool) array_filter($view['events'], static fn (array $e): bool => str_contains($e['label'], '胸廓起伏')));
+        SimEngine::action($userId, $id, 'finish', []);
+    });
+
     check('a short pause for shock is not flagged as prolonged no-CPR', function () use ($userId) {
         $view = SimEngine::start($userId, 'vf-arrest');
         $id = $view['sessionId'];

@@ -1,7 +1,6 @@
 import { api } from './api.js';
 import { store, initTheme, applyTheme, toggleTheme } from './store.js';
 import { Router } from './router.js';
-import { NAV_ITEMS, icon, logo, initials, escapeHtml } from './ui.js';
 import { practiceView } from './views/practice.js';
 import { simListView } from './views/sim-list.js';
 import { meView } from './views/me.js';
@@ -9,7 +8,8 @@ import { meView } from './views/me.js';
 // Cache-busted dynamic imports: keep Node tests query-free while forcing
 // browsers with immutable 7-day static caching to load the current modules.
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108f';
+const __asset = __isNode ? '' : '?v=20261108g';
+const { NAV_ITEMS, icon, logo, initials, escapeHtml } = await import(`./ui.js${__asset}`);
 const { homeView } = await import(`./views/home.js${__asset}`);
 const { learnView } = await import(`./views/learn.js${__asset}`);
 const { articleView } = await import(`./views/article.js${__asset}`);

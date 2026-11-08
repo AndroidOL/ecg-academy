@@ -2,9 +2,9 @@ import { api } from '../api.js';
 import { store } from '../store.js';
 import { navigate } from '../router.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108f';
+const __asset = __isNode ? '' : '?v=20261108g';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
-import { icon, escapeHtml, toast, setButtonLoading, fmtDuration, medicalDisclaimer } from '../ui.js';
+const { icon, escapeHtml, toast, setButtonLoading, fmtDuration, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
 const LEVELS = [
   { id: 1, name: '基础', note: '单一诊断，常见图形' },

@@ -11,7 +11,7 @@
 | 229 章课程体系 | `php scripts/validate_curriculum.php` | **229 章 / 19 章节，0 错误** |
 | 1200 道预生成题库 | `php scripts/validate_bank.php` | **1200 道，0 错误** |
 | ECG 波形引擎 | `node tests/engine.test.mjs` | **15/15 通过** |
-| ACLS 状态机 | `php tests/sim.test.php` | **11/11 通过** |
+| ACLS 状态机 | `php tests/sim.test.php` | **12/12 通过** |
 | 播放器/12 导联/标注 | `node tests/playback.test.mjs` | **13/13 通过** |
 | 全链路 UI 冒烟 | `node tests/ui-smoke.mjs` | **11/11 组通过，0 控制台错误** |
 | 生产 API | curl + 独立 Cookie/CSRF | **通过**（见下） |
@@ -75,7 +75,7 @@
 - **超时/死亡评分封顶**：timeout 结局分数 ≤35、Grade D，复盘分数一致。
 
 ```text
-11 passed, 0 failed
+12 passed, 0 failed
 ```
 
 ## 3.1 题库校验

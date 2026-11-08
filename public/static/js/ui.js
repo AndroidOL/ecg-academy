@@ -220,7 +220,7 @@ export function confirmDialog({ title, message, confirmText = '确认', danger =
 }
 
 export function setupMiniECG(canvas, spec) {
-  if (!canvas || !spec) return;
+  if (!canvas || !spec || typeof spec !== 'object' || !spec.rhythm) return;
   const draw = () => {
     try {
       renderMiniECG(canvas, spec);
