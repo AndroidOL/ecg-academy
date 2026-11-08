@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108r';
+const __asset = __isNode ? '' : '?v=20261108s';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const LEADS = {
@@ -52,6 +52,8 @@ function palette() {
     gold: css.getPropertyValue('--gold').trim() || '#d4a45a',
   };
 }
+
+function cycleDuration(state) { return 6000 / (Number(state.speed) || 1); }
 
 function drawVectorCanvas(canvas, state, t) {
   const { ctx, width, height } = canvas2d(canvas);
@@ -135,7 +137,7 @@ function drawVectorCanvas(canvas, state, t) {
   const rotatedVec = selected === 'QRS' ? rotateAxis(vec) : vec;
   const p0 = project([0, 0, 0]);
   const p1 = project(rotatedVec);
-  if (active && (state.loop === 'all' || state.loop === active)) {
+  if (state.loop === 'all' ? (active && active === selected) : true) {
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(...p0); ctx.lineTo(...p1); ctx.stroke();
@@ -156,8 +158,8 @@ function drawVectorCanvas(canvas, state, t) {
   const dot = rotatedVec[0] * lead.vec[0] + rotatedVec[1] * lead.vec[1] + rotatedVec[2] * lead.vec[2];
   ctx.fillStyle = c.text;
   ctx.font = '600 11px ui-monospace, monospace';
-  const activeLabel = active ? `当前 ${active} 波 · ` : '等电位线 · ';
-  const movingLabel = active === selected ? `${selected} 环在转动` : `${selected} 环静止`;
+  const activeLabel = state.loop === 'all' ? (active ? `当前 ${active} 波 · ` : '等电位线 · ') : `单环观察 · `;
+  const movingLabel = state.loop === 'all' ? (active === selected ? `${selected} 环在转动` : `${selected} 环静止`) : `${selected} 环连续观察`;
   ctx.fillText(`${activeLabel}${movingLabel} · ${lead.name} 投影 ${dot >= 0 ? '+' : ''}${dot.toFixed(2)}`, 12, 18);
   ctx.fillStyle = c.muted;
   ctx.font = '10px ui-monospace, monospace';
@@ -183,7 +185,7 @@ function drawProjectionCanvas(canvas, state, t) {
   const ampP = dot([0.28, 0.18, 0.05]) * 0.7;
   const ampQ = dot([0.72, 0.32, 0.12]) * 1.5;
   const ampT = dot([0.58, 0.3, 0.1]) * 0.9;
-  const phase = (t / 1800) % 1;
+  const phase = (t / cycleDuration(state)) % 1;
   const yAt = (x) => {
     const u = x / plotW;
     let v = 0;
@@ -211,12 +213,12 @@ function drawProjectionCanvas(canvas, state, t) {
 }
 
 function updateProjectionBars(host, state, t) {
-  const cycle = (t / 1800) % 1;
+  const cycle = (t / cycleDuration(state)) % 1;
   const windows = { P: [0, 0.16], QRS: [0.2, 0.42], T: [0.55, 0.8] };
   let active = null;
   Object.entries(windows).forEach(([key, [start, end]]) => { if (cycle >= start && cycle < end) active = key; });
-  const loop = active || (state.loop === 'all' ? 'QRS' : state.loop);
-  const a = (((t / 1800) % 1) * Math.PI * 2);
+  const loop = state.loop === 'all' ? (active || 'QRS') : state.loop;
+  const a = (((t / cycleDuration(state)) % 1) * Math.PI * 2);
   let point = loop === 'P'
     ? [0.18 + 0.24 * Math.cos(a), -0.1 + 0.16 * Math.sin(a), 0.04 * Math.sin(2 * a)]
     : loop === 'T'
@@ -249,9 +251,11 @@ function vectorLoopsPanel() {
         <button class="btn btn-primary btn-sm" type="button" data-vector-play>${icon('pause', 13)} 暂停</button>
         <label class="visual-range">旋转 <input type="range" min="-80" max="80" value="24" data-vector-rotate></label>
         <label class="visual-range">俯仰 <input type="range" min="-50" max="50" value="18" data-vector-pitch></label>
+        <label class="visual-range">速度 <select class="select" data-vector-speed style="min-height:28px;padding:2px 5px;font-size:9px"><option value="0.5">0.5× 慢</option><option value="1" selected>1×</option><option value="2">2×</option></select></label>
         <select class="select" data-vector-loop aria-label="选择向量环"><option value="all">P + QRS + T 全部</option><option value="P">P 环</option><option value="QRS" selected>QRS 环</option><option value="T">T 环</option></select>
         <select class="select" data-vector-lead aria-label="选择投影导联">${Object.entries(LEADS).map(([id, l]) => `<option value="${id}" ${id === 'II' ? 'selected' : ''}>${l.name}</option>`).join('')}</select>
       </div>
+      <div class="visual-controls vector-axis-controls"><label class="visual-range">主方向 <input type="range" min="-180" max="180" value="60" data-vector-axis><span data-vector-axis-value>+60°</span></label><button class="chip" type="button" data-drag-mode>拖动：主方向</button></div>
       <div class="axis-presets vector-axis-presets"><span class="muted" style="font-size:9px">快速主方向</span><button type="button" class="chip" data-qrs-axis="60">正常 +60°</button><button type="button" class="chip" data-qrs-axis="-45">左偏 −45°</button><button type="button" class="chip" data-qrs-axis="120">右偏 +120°</button><button type="button" class="chip" data-qrs-axis="-120">极度 −120°</button><button type="button" class="chip" data-qrs-axis="90">垂直 +90°</button></div>
     </div>
     <aside class="visual-explain">
@@ -547,7 +551,7 @@ export async function vectorLabView() {
   let raf = 0;
   let cleanup = [];
   let start = performance.now();
-  const state = { rotate: 24, pitch: 18, playing: true, loop: 'QRS', lead: 'II', axis: 60, angle: 60, auto: true };
+  const state = { rotate: 24, pitch: 18, playing: true, loop: 'QRS', lead: 'II', axis: 60, angle: 60, auto: true, speed: 1, dragMode: 'axis' };
   el.innerHTML = `<div class="page-eyebrow">${icon('compass', 14)} VECTOR & ELECTROPHYSIOLOGY</div>
     <div class="vector-head"><div><h1 class="page-title">心脏向量实验室</h1><p class="page-sub">把“背图形”变成“看方向”：P/QRS/T 环、肢体/胸导联投影、动作电位与解剖一次串起来。</p></div><a class="btn btn-secondary btn-sm" href="#/learn/ecg-calibration-paper">回到基础课程 ${icon('arrowRight', 13)}</a></div>
     <div class="visual-tabs">${TABS.map(([id, label], i) => `<button class="chip ${i === 0 ? 'active' : ''}" type="button" data-visual-tab="${id}">${label}</button>`).join('')}</div>
@@ -569,8 +573,10 @@ export async function vectorLabView() {
     const timeline = content.querySelector('[data-vector-timeline]');
     if (timeline) {
       const cursor = timeline.querySelector('[data-vector-timeline-cursor]');
-      if (cursor) cursor.style.left = `${((now / 1800) % 1) * 100}%`;
-      timeline.querySelectorAll('span').forEach((node, i) => node.classList.toggle('active', i === ({ P: 0, QRS: 1, T: 2 }[state.loop === 'all' ? 'QRS' : state.loop])));
+      if (cursor) cursor.style.left = `${((now / cycleDuration(state)) % 1) * 100}%`;
+      const tc = (now / cycleDuration(state)) % 1;
+      const timelineActive = state.loop === 'all' ? (tc < 0.16 ? 'P' : tc < 0.42 ? 'QRS' : tc < 0.8 ? 'T' : null) : state.loop;
+      timeline.querySelectorAll('span').forEach((node, i) => node.classList.toggle('active', timelineActive !== null && i === ({ P: 0, QRS: 1, T: 2 }[timelineActive])));
     }
     if (state.playing) raf = requestAnimationFrame(drawLoopFrame);
   };
@@ -596,8 +602,22 @@ export async function vectorLabView() {
     });
     content.querySelector('[data-vector-rotate]')?.addEventListener('input', (e) => { state.rotate = Number(e.target.value); });
     content.querySelector('[data-vector-pitch]')?.addEventListener('input', (e) => { state.pitch = Number(e.target.value); });
+    content.querySelector('[data-vector-speed]')?.addEventListener('change', (e) => { state.speed = Number(e.target.value) || 1; });
+    const axisSlider = content.querySelector('[data-vector-axis]');
+    const axisLabel = content.querySelector('[data-vector-axis-value]');
+    const setAxis = (value) => {
+      state.axis = Math.max(-180, Math.min(180, Number(value) || 0));
+      if (axisSlider) axisSlider.value = String(state.axis);
+      if (axisLabel) axisLabel.textContent = `${state.axis >= 0 ? '+' : ''}${Math.round(state.axis)}°`;
+    };
+    axisSlider?.addEventListener('input', (e) => setAxis(e.target.value));
+    const dragMode = content.querySelector('[data-drag-mode]');
+    dragMode?.addEventListener('click', () => {
+      state.dragMode = state.dragMode === 'axis' ? 'view' : 'axis';
+      dragMode.textContent = state.dragMode === 'axis' ? '拖动：主方向' : '拖动：视角';
+    });
     content.querySelectorAll('[data-qrs-axis]').forEach((button) => button.addEventListener('click', () => {
-      state.axis = Number(button.dataset.qrsAxis);
+      setAxis(Number(button.dataset.qrsAxis));
       state.loop = 'QRS';
       const select = content.querySelector('[data-vector-loop]');
       if (select) select.value = 'QRS';
@@ -612,6 +632,12 @@ export async function vectorLabView() {
       canvas.addEventListener('pointermove', (e) => {
         if (!dragging) return;
         const rect = canvas.getBoundingClientRect();
+        if (state.dragMode === 'axis') {
+          const cx0 = rect.width / 2; const cy0 = rect.height / 2 + 6;
+          const deg = Math.atan2(cy0 - (e.clientY - rect.top), e.clientX - rect.left - cx0) * 180 / Math.PI;
+          setAxis(Math.round(deg));
+          return;
+        }
         const rx = content.querySelector('[data-vector-rotate]');
         const py = content.querySelector('[data-vector-pitch]');
         if (rx) { const val = Math.max(-80, Math.min(80, (e.clientX - rect.left - rect.width / 2) / 2)); rx.value = String(val); state.rotate = val; }

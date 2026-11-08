@@ -654,3 +654,9 @@
 .vector-disclaimer { margin-top:10px; padding:9px 10px; border:1px dashed var(--line-strong); border-radius:9px; background:var(--bg-elev); color:var(--muted); font-size:9.5px; line-height:1.6; }
 .vector-disclaimer b { display:block; color:var(--ink-2); margin-bottom:3px; font-size:10px; }
 .vector-disclaimer p { margin:0; }
+.vector-axis-controls { border-top:1px solid var(--line); }
+.vector-axis-controls .visual-range { flex:1 1 180px; }
+.vector-axis-controls .visual-range input { width:120px; }
+.vector-axis-controls [data-vector-axis-value] { min-width:38px; text-align:right; color:var(--brand); font-family:var(--font-mono); }
+[data-vector-canvas], [data-limb-canvas] { touch-action:none; cursor:grab; }
+[data-vector-canvas]:active, [data-limb-canvas]:active { cursor:grabbing; }
