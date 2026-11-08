@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108w';
+const __asset = __isNode ? '' : '?v=20261108x';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const LEADS = {
@@ -55,7 +55,7 @@ function palette() {
 
 function cycleDuration(state) { return 6000 / (Number(state.speed) || 1); }
 
-function limbAngleDegrees(state, t) { return state.auto ? (t / 90) % 360 : Number(state.angle) || 0; }
+function limbAngleDegrees(state, t) { return Number(state.angle) || 0; }
 
 function drawVectorCanvas(canvas, state, t) {
   const { ctx, width, height } = canvas2d(canvas);
@@ -358,12 +358,12 @@ function updateLimbReadout(host, state, t) {
     if (node) node.textContent = `${value >= 0 ? '+' : ''}${value.toFixed(2)}`;
     if (bar) { bar.style.width = `${Math.min(100, Math.abs(value) * 100)}%`; bar.classList.toggle('negative', value < 0); }
   });
-  const deg = ((Math.round(angle) % 360) + 360) % 360;
+  const signedAngle = (((Math.round(angle) + 180) % 360 + 360) % 360) - 180;
   const slider = host.querySelector('[data-limb-angle]');
-  if (slider) slider.value = String(deg);
+  if (slider) slider.value = String(signedAngle);
   const angleLabel = host.querySelector('[data-limb-angle-value]');
-  if (angleLabel) angleLabel.textContent = `${Math.round(angle)}°`;
-  const signed = deg > 180 ? deg - 360 : deg;
+  if (angleLabel) angleLabel.textContent = `${signedAngle >= 0 ? '+' : ''}${signedAngle}°`;
+  const signed = signedAngle;
   let axis = '正常电轴';
   if (signed < -30 && signed >= -90) axis = '电轴左偏';
   else if (signed > 90) axis = '电轴右偏';
@@ -378,8 +378,13 @@ function limbPanel() {
       <div class="vector-figure-note"><b>教学示意，不是真实心电向量</b><span>箭头是简化合成向量；真实方向/大小来自所有参与除极与复极心肌细胞的瞬时向量叠加。</span></div>
       <canvas data-limb-canvas data-height="340" aria-label="肢体导联六轴向量投影动画"></canvas>
       <div class="visual-controls">
-        <button class="btn btn-primary btn-sm" type="button" data-limb-auto>${icon('rotate', 13)} 自动旋转</button>
-        <label class="visual-range">角度 <input type="range" min="0" max="359" value="60" data-limb-angle><span data-limb-angle-value>60°</span></label>
+        <button class="btn btn-primary btn-sm" type="button" data-limb-auto>${icon('pause', 13)} 暂停旋转</button>
+        <div class="axis-scale" data-axis-scale>
+          <div class="axis-scale-head"><span>电轴方向</span><b data-limb-angle-value>60°</b></div>
+          <div class="axis-scale-zones" aria-hidden="true"><span class="zone-extreme">极度右偏 / 不确定</span><span class="zone-left">左偏</span><span class="zone-normal">正常</span><span class="zone-right">右偏</span></div>
+          <input class="axis-range" type="range" min="-180" max="180" step="1" value="60" data-limb-angle aria-label="额面电轴角度">
+          <div class="axis-scale-ticks" aria-hidden="true"><span>-180°</span><span>-90°</span><span>-30°</span><span>0°</span><span>+90°</span><span>+180°</span></div>
+        </div>
         <select class="select" data-limb-lead>${Object.entries(LEADS).map(([id, l]) => `<option value="${id}" ${id === 'II' ? 'selected' : ''}>${l.name}</option>`).join('')}</select>
       </div>
       <div class="axis-presets"><button type="button" class="chip" data-axis-preset="60">正常 +60°</button><button type="button" class="chip" data-axis-preset="-45">左偏 −45°</button><button type="button" class="chip" data-axis-preset="120">右偏 +120°</button><button type="button" class="chip" data-axis-preset="-120">极度 −120°</button></div>
@@ -626,6 +631,11 @@ export async function vectorLabView() {
   const drawLimbFrame = (now) => {
     const canvas = content.querySelector('[data-limb-canvas]');
     if (!canvas) return;
+    if (state.auto) {
+      const dt = state.lastLimbAt ? Math.min(0.12, (now - state.lastLimbAt) / 1000) : 0;
+      state.angle = ((Number(state.angle) || 0) + dt * 11) % 360;
+    }
+    state.lastLimbAt = now;
     drawLimbCanvas(canvas, state, now);
     updateLimbReadout(content, state, now);
     raf = requestAnimationFrame(drawLimbFrame);
@@ -714,14 +724,18 @@ export async function vectorLabView() {
   };
   const bindLimb = () => {
     const auto = content.querySelector('[data-limb-auto]');
-    auto?.addEventListener('click', () => { state.auto = !state.auto; auto.innerHTML = state.auto ? `${icon('pause', 13)} 暂停旋转` : `${icon('rotate', 13)} 自动旋转`; });
+    auto?.addEventListener('click', () => {
+      state.auto = !state.auto;
+      state.lastLimbAt = 0;
+      auto.innerHTML = state.auto ? `${icon('pause', 13)} 暂停旋转` : `${icon('rotate', 13)} 自动旋转`;
+    });
     content.querySelector('[data-limb-angle]')?.addEventListener('input', (e) => { state.auto = false; state.angle = Number(e.target.value); });
     content.querySelector('[data-limb-lead]')?.addEventListener('change', (e) => { state.lead = e.target.value; });
     content.querySelectorAll('[data-axis-preset]').forEach((button) => button.addEventListener('click', () => {
       state.auto = false;
       state.angle = Number(button.dataset.axisPreset);
       const slider = content.querySelector('[data-limb-angle]');
-      if (slider) slider.value = String(((state.angle % 360) + 360) % 360);
+      if (slider) slider.value = String(((state.angle + 180) % 360 + 360) % 360 - 180);
       const auto = content.querySelector('[data-limb-auto]');
       if (auto) auto.innerHTML = `${icon('rotate', 13)} 自动旋转`;
     }));
@@ -733,9 +747,10 @@ export async function vectorLabView() {
         const cx = rect.width / 2; const cy = rect.height / 2 - 18;
         const deg = (Math.atan2(cy - (e.clientY - rect.top), e.clientX - rect.left - cx) * 180 / Math.PI + 360) % 360;
         state.auto = false;
-        state.angle = deg;
+        const signed = deg > 180 ? deg - 360 : deg;
+        state.angle = signed;
         const slider = content.querySelector('[data-limb-angle]');
-        if (slider) slider.value = String(Math.round(deg));
+        if (slider) slider.value = String(Math.round(signed));
       };
       limbCanvas.addEventListener('pointerdown', (e) => { dragging = true; limbCanvas.setPointerCapture(e.pointerId); setFromPointer(e); });
       limbCanvas.addEventListener('pointermove', (e) => { if (dragging) setFromPointer(e); });
