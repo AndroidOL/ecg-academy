@@ -103,6 +103,172 @@ export const FIGURES = {
     </svg>`,
   },
 
+  'mi-18lead': {
+    caption: '18 导联 = 常规 12 导联 + V7–V9（后壁）+ V3R–V5R（右室）；后壁与右室梗死常与下壁梗死并存。',
+    legend: [
+      { label: '常规胸导联 V1–V6', color: 'var(--brand)' },
+      { label: '后壁 V7–V9', color: 'var(--gold)' },
+      { label: '右胸 V3R–V5R', color: 'var(--accent)' },
+      { label: '后壁镜像（V1–V3）', color: 'var(--ink)' },
+    ],
+    svg: `<svg viewBox="0 0 720 320" role="img" aria-label="18 导联电极位置示意：前胸、右胸与背部">
+      <g font-family="ui-monospace, monospace">
+        <rect x="20" y="26" width="300" height="270" rx="26" fill="var(--surface-2)" stroke="var(--line-strong)"/>
+        <text x="170" y="48" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">前胸</text>
+        <text x="170" y="286" text-anchor="middle" font-size="9" fill="var(--muted)">胸骨左缘 → 左腋前线</text>
+        <line x1="170" y1="62" x2="170" y2="262" stroke="var(--line-strong)" stroke-dasharray="4 4" opacity=".5"/>
+        <g fill="var(--brand)">
+          <circle cx="158" cy="90" r="7"/><text x="158" y="94" text-anchor="middle" font-size="8" fill="#fff">V1</text>
+          <circle cx="182" cy="90" r="7"/><text x="182" y="94" text-anchor="middle" font-size="8" fill="#fff">V2</text>
+          <circle cx="206" cy="112" r="7"/><text x="206" y="116" text-anchor="middle" font-size="8" fill="#fff">V3</text>
+          <circle cx="228" cy="138" r="7"/><text x="228" y="142" text-anchor="middle" font-size="8" fill="#fff">V4</text>
+          <circle cx="246" cy="168" r="7"/><text x="246" y="172" text-anchor="middle" font-size="8" fill="#fff">V5</text>
+          <circle cx="246" cy="196" r="7"/><text x="246" y="200" text-anchor="middle" font-size="8" fill="#fff">V6</text>
+        </g>
+        <g fill="var(--surface)" stroke="var(--accent)" stroke-width="2">
+          <circle cx="132" cy="112" r="7"/><text x="132" y="116" text-anchor="middle" font-size="7" fill="var(--accent)">R</text>
+          <circle cx="114" cy="138" r="7"/><text x="114" y="142" text-anchor="middle" font-size="7" fill="var(--accent)">R</text>
+          <circle cx="96" cy="168" r="7"/><text x="96" y="172" text-anchor="middle" font-size="7" fill="var(--accent)">R</text>
+        </g>
+        <text x="70" y="196" font-size="8" fill="var(--accent)">V3R–V5R</text>
+        <rect x="380" y="26" width="300" height="270" rx="26" fill="var(--surface-2)" stroke="var(--line-strong)"/>
+        <text x="530" y="48" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">背部</text>
+        <text x="530" y="286" text-anchor="middle" font-size="9" fill="var(--muted)">左腋后线 → 左脊柱旁线</text>
+        <line x1="530" y1="62" x2="530" y2="262" stroke="var(--line-strong)" stroke-dasharray="4 4" opacity=".5"/>
+        <g fill="var(--gold)">
+          <circle cx="560" cy="120" r="8"/><text x="560" y="124" text-anchor="middle" font-size="8" fill="#fff">V7</text>
+          <circle cx="590" cy="140" r="8"/><text x="590" y="144" text-anchor="middle" font-size="8" fill="#fff">V8</text>
+          <circle cx="616" cy="160" r="8"/><text x="616" y="164" text-anchor="middle" font-size="8" fill="#fff">V9</text>
+        </g>
+        <text x="470" y="200" font-size="9" fill="var(--muted)">后壁导联：V7–V9</text>
+        <text x="470" y="216" font-size="9" fill="var(--muted)">右室导联：V3R–V5R（V4R 最常用）</text>
+        <text x="470" y="232" font-size="9" fill="var(--muted)">均与 V4–V6 同一水平</text>
+      </g>
+    </svg>`,
+  },
+
+  'blocked-pac': {
+    caption: '窦性 P-QRS-T 之后提前出现异位 P 波，其后没有 QRS，形成长间歇；提前 P 常落在前一个 T 波上。',
+    legend: [
+      { label: '窦性 P 波', color: 'var(--brand)' },
+      { label: '异位提前 P 波', color: 'var(--accent)' },
+      { label: 'QRS', color: 'var(--ink)' },
+      { label: '未下传 / 长间歇', color: 'var(--muted)' },
+    ],
+    svg: `<svg viewBox="0 0 720 220" role="img" aria-label="未下传房性早搏时间轴">
+      <g font-family="ui-monospace, monospace">
+        <line x1="30" y1="150" x2="690" y2="150" stroke="var(--line-strong)"/>
+        <g stroke="var(--brand)" stroke-width="2.4" fill="none">
+          <path d="M60 150 q8 -22 16 0"/>
+          <path d="M130 150 q8 -22 16 0"/>
+          <path d="M250 150 q8 -22 16 0"/>
+          <path d="M520 150 q8 -22 16 0"/>
+          <path d="M620 150 q8 -22 16 0"/>
+        </g>
+        <g stroke="var(--ink)" stroke-width="2.4" fill="none">
+          <path d="M92 150 l6 -6 l8 34 l8 -48 l8 20 l6 0"/>
+          <path d="M162 150 l6 -6 l8 34 l8 -48 l8 20 l6 0"/>
+          <path d="M282 150 l6 -6 l8 34 l8 -48 l8 20 l6 0"/>
+          <path d="M552 150 l6 -6 l8 34 l8 -48 l8 20 l6 0"/>
+          <path d="M652 150 l6 -6 l8 34 l8 -48 l8 20 l6 0"/>
+        </g>
+        <g fill="var(--muted)" font-size="9">
+          <text x="60" y="118">P</text><text x="96" y="104">QRS</text>
+          <text x="250" y="118">P</text><text x="286" y="104">QRS</text>
+          <text x="520" y="118">P</text><text x="556" y="104">QRS</text>
+        </g>
+        <path d="M360 150 q10 -26 20 0" fill="none" stroke="var(--accent)" stroke-width="2.6"/>
+        <text x="352" y="112" fill="var(--accent)" font-size="10" font-weight="700">提前异位 P</text>
+        <line x1="368" y1="120" x2="368" y2="204" stroke="var(--accent)" stroke-dasharray="4 4"/>
+        <text x="376" y="200" fill="var(--muted)" font-size="9">无 QRS 下传</text>
+        <line x1="380" y1="190" x2="500" y2="190" stroke="var(--muted)" stroke-dasharray="2 4"/>
+        <text x="406" y="184" fill="var(--muted)" font-size="9">长间歇 / 不完全代偿</text>
+        <text x="30" y="28" fill="var(--muted)" font-size="9">发现未下传房早：先找提前且形态不同的 P 波，再看其后是否缺少 QRS</text>
+      </g>
+    </svg>`,
+  },
+
+  'mi-stages': {
+    caption: '心梗心电图演变：超急性高尖 T → 急性 ST 抬高伴 Q 波 → 亚急性 T 波倒置 → 陈旧期遗留 Q 波。',
+    legend: [
+      { label: 'ST 段', color: 'var(--brand)' },
+      { label: 'T 波', color: 'var(--accent)' },
+      { label: '病理性 Q 波', color: 'var(--ink)' },
+    ],
+    svg: `<svg viewBox="0 0 720 300" role="img" aria-label="心肌梗死四个阶段的心电图演变">
+      <g font-family="ui-monospace, monospace">
+        <g>
+          <rect x="16" y="40" width="160" height="200" rx="14" fill="var(--surface-2)" stroke="var(--line-strong)"/>
+          <text x="96" y="62" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">超急性期</text>
+          <text x="96" y="78" text-anchor="middle" font-size="9" fill="var(--muted)">数分钟–数小时</text>
+          <line x1="28" y1="150" x2="164" y2="150" stroke="var(--line-strong)"/>
+          <path d="M34 150 l8 -4 l10 20 l10 -34 l8 14 l6 0" fill="none" stroke="var(--ink)" stroke-width="2"/>
+          <path d="M96 150 q10 -22 20 0" fill="none" stroke="var(--accent)" stroke-width="3"/>
+          <text x="96" y="222" text-anchor="middle" font-size="9" fill="var(--accent)">T 高尖宽大</text>
+        </g>
+        <g>
+          <rect x="188" y="40" width="160" height="200" rx="14" fill="var(--surface-2)" stroke="var(--line-strong)"/>
+          <text x="268" y="62" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">急性期</text>
+          <text x="268" y="78" text-anchor="middle" font-size="9" fill="var(--muted)">数小时–数天</text>
+          <line x1="200" y1="160" x2="336" y2="160" stroke="var(--line-strong)"/>
+          <path d="M206 160 l10 -2 l9 22 l10 -40 l8 20 l6 0" fill="none" stroke="var(--ink)" stroke-width="2"/>
+          <path d="M249 160 l0 -18" stroke="var(--brand)" stroke-width="2.4"/>
+          <path d="M249 142 q18 -14 40 -2" fill="none" stroke="var(--brand)" stroke-width="3"/>
+          <text x="268" y="222" text-anchor="middle" font-size="9" fill="var(--brand)">ST 抬高 + Q 形成</text>
+        </g>
+        <g>
+          <rect x="360" y="40" width="160" height="200" rx="14" fill="var(--surface-2)" stroke="var(--line-strong)"/>
+          <text x="440" y="62" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">亚急性期</text>
+          <text x="440" y="78" text-anchor="middle" font-size="9" fill="var(--muted)">数天–数周</text>
+          <line x1="372" y1="150" x2="508" y2="150" stroke="var(--line-strong)"/>
+          <path d="M378 150 l10 0 l10 24 l10 -40 l8 16 l6 0" fill="none" stroke="var(--ink)" stroke-width="2"/>
+          <path d="M422 150 q16 22 40 0" fill="none" stroke="var(--accent)" stroke-width="3"/>
+          <text x="440" y="222" text-anchor="middle" font-size="9" fill="var(--accent)">T 深倒置，ST 回落</text>
+        </g>
+        <g>
+          <rect x="532" y="40" width="172" height="200" rx="14" fill="var(--surface-2)" stroke="var(--line-strong)"/>
+          <text x="618" y="62" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">陈旧期</text>
+          <text x="618" y="78" text-anchor="middle" font-size="9" fill="var(--muted)">数周–数月后</text>
+          <line x1="544" y1="150" x2="692" y2="150" stroke="var(--line-strong)"/>
+          <path d="M550 150 l12 0 l12 22 l12 -34 l10 12 l6 0" fill="none" stroke="var(--ink)" stroke-width="2"/>
+          <path d="M596 150 q12 10 28 0" fill="none" stroke="var(--muted)" stroke-width="2"/>
+          <text x="618" y="222" text-anchor="middle" font-size="9" fill="var(--muted)">遗留 Q/QS，ST 正常</text>
+        </g>
+        <text x="360" y="24" text-anchor="middle" font-size="10" fill="var(--muted)">同一导联随时间的典型演变（教学示意）</text>
+      </g>
+    </svg>`,
+  },
+
+  'bundle-block-patterns': {
+    caption: 'RBBB：V1 rsR′、V6 宽钝 S；LBBB：V1 QS/rS、V6 宽 R 无 q；两者 QRS 均 ≥120 ms。',
+    legend: [
+      { label: 'RBBB', color: 'var(--brand)' },
+      { label: 'LBBB', color: 'var(--accent)' },
+      { label: '正常 QRS', color: 'var(--muted)' },
+    ],
+    svg: `<svg viewBox="0 0 720 320" role="img" aria-label="右束支与左束支阻滞的 V1 与 V6 形态对比">
+      <g font-family="ui-monospace, monospace">
+        <rect x="16" y="16" width="688" height="132" rx="14" fill="var(--surface-2)" stroke="var(--line-strong)"/>
+        <text x="36" y="42" font-size="12" font-weight="700" fill="var(--brand)">完全性右束支阻滞 RBBB</text>
+        <line x1="36" y1="100" x2="330" y2="100" stroke="var(--line-strong)"/>
+        <path d="M46 100 l8 -4 l6 8 l10 26 l8 -42 l10 16 l8 -12 l6 8" fill="none" stroke="var(--brand)" stroke-width="2.4"/>
+        <text x="180" y="84" font-size="10" fill="var(--muted)">V1：rsR′（兔耳征）</text>
+        <line x1="380" y1="100" x2="674" y2="100" stroke="var(--line-strong)"/>
+        <path d="M390 100 l8 -3 l8 20 l10 -36 l8 14 l12 0 l10 10" fill="none" stroke="var(--brand)" stroke-width="2.4"/>
+        <text x="540" y="84" font-size="10" fill="var(--muted)">V6：宽钝 S 波</text>
+        <rect x="16" y="164" width="688" height="132" rx="14" fill="var(--surface-2)" stroke="var(--line-strong)"/>
+        <text x="36" y="190" font-size="12" font-weight="700" fill="var(--accent)">完全性左束支阻滞 LBBB</text>
+        <line x1="36" y1="248" x2="330" y2="248" stroke="var(--line-strong)"/>
+        <path d="M46 248 l10 0 l12 22 l14 -34 l12 12 l10 0" fill="none" stroke="var(--accent)" stroke-width="2.4"/>
+        <text x="180" y="232" font-size="10" fill="var(--muted)">V1：QS 或 rS（深负向）</text>
+        <line x1="380" y1="248" x2="674" y2="248" stroke="var(--line-strong)"/>
+        <path d="M390 248 l10 0 l12 -6 l10 26 l14 -44 l12 24 l10 0" fill="none" stroke="var(--accent)" stroke-width="2.4"/>
+        <text x="540" y="232" font-size="10" fill="var(--muted)">V6：宽 R，无 q 波</text>
+        <text x="360" y="312" text-anchor="middle" font-size="9" fill="var(--muted)">QRS ≥120 ms；T 波方向常与 QRS 终末向量相反</text>
+      </g>
+    </svg>`,
+  },
+
   'hexaxial-projection': {
     caption: '六轴系统：同一个向量在 II 与 aVF 上的投影为正、在 aVL 上较小，投影大小取决于夹角余弦。',
     legend: [

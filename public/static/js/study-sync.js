@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bb';
+const __asset = __isNode ? '' : '?v=20261108bd';
 const { api } = await import(`./api.js${__asset}`);
 const { snapshotStudy, mergeStudyData } = await import(`./study-store.js${__asset}`);
 

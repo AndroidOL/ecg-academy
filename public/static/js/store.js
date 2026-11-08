@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bb';
+const __asset = __isNode ? '' : '?v=20261108bd';
 const { api, setCsrf } = await import(`./api.js${__asset}`);
 
 const listeners = (typeof window !== 'undefined' && window.__ECG_STORE_LISTENERS__) || new Set();
@@ -162,9 +162,16 @@ function effectiveTheme(mode) {
   return mode;
 }
 
-export function applyTheme(mode, { persist = true, syncServer = false } = {}) {
+export function applyTheme(mode, { persist = true, syncServer = false, lock } = {}) {
   const normalized = ['auto', 'light', 'dark'].includes(mode) ? mode : 'auto';
   const effective = effectiveTheme(normalized);
+  if (persist) {
+    try {
+      if (normalized === 'auto') localStorage.removeItem('ecg-theme-lock');
+      else if (lock === true) localStorage.setItem('ecg-theme-lock', '1');
+      else if (lock === false) localStorage.removeItem('ecg-theme-lock');
+    } catch { /* storage unavailable */ }
+  }
   document.documentElement.dataset.theme = effective;
   document.documentElement.dataset.themeMode = normalized;
   document.documentElement.style.colorScheme = effective;
@@ -193,5 +200,11 @@ export function initTheme() {
 
 export function toggleTheme() {
   const current = document.documentElement.dataset.theme;
-  return applyTheme(current === 'dark' ? 'light' : 'dark', { syncServer: true });
+  const next = current === 'dark' ? 'light' : 'dark';
+  let locked = false;
+  try { locked = localStorage.getItem('ecg-theme-lock') === '1'; } catch { /* storage unavailable */ }
+  if (locked) return applyTheme(next, { syncServer: true, lock: true });
+  const system = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  // 快速切换回到与系统一致的配色时，自动恢复“跟随系统”
+  return applyTheme(next === system ? 'auto' : next, { syncServer: true });
 }

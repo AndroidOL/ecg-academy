@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bb';
+const __asset = __isNode ? '' : '?v=20261108bd';
 const { api } = await import(`../api.js${__asset}`);
 const { store, applyTheme, getThemeMode } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -7,7 +7,7 @@ const { openAuth, logout } = await import(`../auth.js${__asset}`);
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 const { reviewSummary } = await import(`../study-store.js${__asset}`);
 const { isLowBandwidth, setLowBandwidth, installPrompt, clearInstallPrompt } = await import(`../bandwidth.js${__asset}`);
-const { getLocale, setLocale } = await import(`../i18n.js${__asset}`);
+const { getLocale, setLocale, LOCALES, localeLabel } = await import(`../i18n.js${__asset}`);
 const { createPasskey } = await import(`../webauthn.js${__asset}`);
 const { levelInfo, ADVANCED_UNLOCK, CHALLENGE_UNLOCK } = await import(`../levels.js${__asset}`);
 
@@ -115,7 +115,7 @@ export async function meView() {
           <div class="segmented" style="margin-top:8px;width:100%"><button class="segment ${getThemeMode() === 'auto' ? 'active' : ''}" type="button" data-theme-set="auto">跟随系统</button><button class="segment ${getThemeMode() === 'light' ? 'active' : ''}" type="button" data-theme-set="light">浅色</button><button class="segment ${getThemeMode() === 'dark' ? 'active' : ''}" type="button" data-theme-set="dark">深色</button></div>
           <div class="row-wrap" style="margin-top:10px"><button class="btn btn-sm ${isLowBandwidth() ? 'btn-primary' : 'btn-secondary'}" type="button" data-low-bandwidth aria-pressed="${isLowBandwidth() ? 'true' : 'false'}">${icon('activity', 13)} ${isLowBandwidth() ? '低带宽已开启' : '低带宽模式'}</button><span data-install-wrap ${installPrompt() ? '' : 'hidden'}><button class="btn btn-sm btn-secondary" type="button" data-install>${icon('monitor', 13)} 安装离线应用</button></span></div>
           <p class="muted" style="font-size:10.5px;margin-top:8px">主题与低带宽设置保存在本机；安装后可离线打开已缓存页面。</p>
-          <div class="row-wrap" style="margin-top:9px"><span class="muted" style="font-size:10px">语言 / Language</span><button class="btn btn-xs ${getLocale() === 'zh' ? 'btn-primary' : 'btn-ghost'}" type="button" data-locale="zh">中文</button><button class="btn btn-xs ${getLocale() === 'en' ? 'btn-primary' : 'btn-ghost'}" type="button" data-locale="en">English beta</button><a class="btn btn-xs btn-ghost" href="#/glossary">术语表</a></div>
+          <div class="row-wrap" style="margin-top:9px"><span class="muted" style="font-size:10px">语言 / Language</span>${LOCALES.map((locale) => `<button class="btn btn-xs ${getLocale() === locale.id ? 'btn-primary' : 'btn-ghost'}" type="button" data-locale="${locale.id}">${escapeHtml(locale.label)}${locale.id === 'en' ? ' beta' : ''}</button>`).join('')}<a class="btn btn-xs btn-ghost" href="#/glossary">${icon('bookOpen', 12)} ${getLocale() === 'en' ? 'Glossary' : '术语表'}</a></div>
         </section>
         ${store.ai?.allowed !== false ? `<section class="card card-pad">
           <h2 class="section-title" style="font-size:16px">${icon('sparkles', 14)} AI 导师</h2>
@@ -204,7 +204,7 @@ export async function meView() {
   }
   el.querySelectorAll('[data-locale]').forEach((button) => button.addEventListener('click', () => {
     setLocale(button.dataset.locale);
-    toast(button.dataset.locale === 'en' ? 'English shell enabled. Course content remains Chinese with bilingual glossary.' : '已切换为中文界面', 'success');
+    toast(button.dataset.locale === 'en' ? 'English UI enabled. Course content remains Chinese for now.' : '已切换为中文界面', 'success');
     window.setTimeout(() => window.location.reload(), 350);
   }));
 
@@ -231,7 +231,7 @@ export async function meView() {
 
   el.querySelectorAll('[data-theme-set]').forEach((button) => {
     button.addEventListener('click', () => {
-      applyTheme(button.dataset.themeSet, { syncServer: true });
+      applyTheme(button.dataset.themeSet, { syncServer: true, lock: button.dataset.themeSet !== 'auto' });
       el.querySelectorAll('[data-theme-set]').forEach((b) => b.classList.toggle('active', b === button));
     });
   });

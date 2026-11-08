@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bb';
+const __asset = __isNode ? '' : '?v=20261108bd';
 const { store } = await import(`../store.js${__asset}`);
 const { icon, chapterColor, difficultyDots, escapeHtml, setupMiniECG, emptyState, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
@@ -86,12 +86,12 @@ export async function learnView({ query }) {
         <button class="chip ${state.chapter === 'all' ? 'active' : ''}" type="button" data-chapter="all">全部</button>
         ${chapters.map((chapter) => `<button class="chip ${state.chapter === chapter.id ? 'active' : ''}" type="button" data-chapter="${escapeHtml(chapter.id)}">${escapeHtml(chapter.name)}</button>`).join('')}
       </div>
-      <select class="select" style="flex:0 0 108px;min-height:36px" data-level aria-label="难度筛选">
-        <option value="0">全部难度</option>
-        <option value="1">基础</option>
-        <option value="2">进阶</option>
-        <option value="3">挑战</option>
-        <option value="4">理论</option>
+      <select class="select" style="flex:0 0 128px;min-height:36px" data-level aria-label="类型与难度筛选">
+        <option value="all">全部类型</option>
+        <option value="1">全部基础</option>
+        <option value="2">全部进阶</option>
+        <option value="3">全部挑战</option>
+        <option value="4">全部理论</option>
       </select>
       <select class="select" style="flex:0 0 118px;min-height:36px" data-urgency aria-label="紧急程度筛选">
         <option value="all">全部优先级</option>
@@ -118,7 +118,7 @@ export async function learnView({ query }) {
   const count = el.querySelector('[data-learn-count]');
   const search = el.querySelector('[data-learn-search]');
   const levelSelect = el.querySelector('[data-level]');
-  levelSelect.value = String(state.level);
+  levelSelect.value = state.level === 0 ? 'all' : String(state.level);
   const urgencySelect = el.querySelector('[data-urgency]');
   const sortSelect = el.querySelector('[data-sort]');
   const chapterChips = el.querySelector('[data-chapter-chips]');
@@ -220,7 +220,12 @@ export async function learnView({ query }) {
     render();
   });
   levelSelect.addEventListener('change', () => {
-    state.level = Number(levelSelect.value) || 0;
+    const raw = levelSelect.value;
+    state.level = raw === 'all' ? 0 : Number(raw) || 0;
+    // “全部基础/进阶/挑战/类型”都表示跨全部类型筛选
+    state.chapter = 'all';
+    chapterChips.querySelectorAll('[data-chapter]').forEach((chip) => chip.classList.toggle('active', chip.dataset.chapter === 'all'));
+    history.replaceState(null, '', '#/learn');
     try { localStorage.setItem('ecg-learn-level', String(state.level)); } catch { /* ignore */ }
     resetPage();
     render();
@@ -250,6 +255,10 @@ export async function learnView({ query }) {
     chapterChips.querySelectorAll('[data-chapter]').forEach((chip) => {
       chip.classList.toggle('active', chip.dataset.chapter === state.chapter);
     });
+    // 选择具体类型后，难度自动回到“全部类型”
+    state.level = 0;
+    levelSelect.value = 'all';
+    try { localStorage.setItem('ecg-learn-level', '0'); } catch { /* ignore */ }
     const hash = state.chapter === 'all' ? '#/learn' : `#/learn?chapter=${encodeURIComponent(state.chapter)}`;
     history.replaceState(null, '', hash);
     resetPage();

@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bb';
+const __asset = __isNode ? '' : '?v=20261108bd';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -10,6 +10,37 @@ const { icon, escapeHtml, toast, setButtonLoading, fmtDuration, medicalDisclaime
 const { streamAi } = await import(`../ai-stream.js${__asset}`);
 const { renderMarkdown } = await import(`../markdown.js${__asset}`);
 const { levelFromXp, ADVANCED_UNLOCK, CHALLENGE_UNLOCK } = await import(`../levels.js${__asset}`);
+
+const SPECIAL_PRACTICES = [
+  {
+    id: 'mi',
+    label: '心梗定位专项',
+    note: '前壁 / 下壁 / 侧壁 / 后壁 / 右室',
+    level: 2,
+    focus: ['stemi-anterior', 'stemi-inferior', 'stemi-posterior', 'stemi-rv', 'ischemia-st'],
+  },
+  {
+    id: 'posterior-rv',
+    label: '后壁与右室心梗',
+    note: '可疑后壁 + 18 导联思路',
+    level: 3,
+    focus: ['stemi-posterior', 'stemi-rv', 'stemi-inferior'],
+  },
+  {
+    id: 'av-block',
+    label: '房室阻滞专项',
+    note: '一度 / 二度 I、II / 三度',
+    level: 2,
+    focus: ['av-block-1', 'av-block-2a', 'av-block-2b', 'av-block-3'],
+  },
+  {
+    id: 'bundle-block',
+    label: '束支与分支阻滞',
+    note: 'RBBB / LBBB / 左前分支',
+    level: 2,
+    focus: ['rbbb', 'lbbb', 'lafb'],
+  },
+];
 
 const LEVELS = [
   { id: 1, name: '基础', note: '单一诊断，常见图形' },
@@ -150,6 +181,17 @@ export async function practiceView({ query } = {}) {
             return `<button class="level-card ${level.id === state.level ? 'active' : ''} ${locked ? 'locked' : ''}" type="button" data-level="${level.id}" ${locked ? 'aria-disabled="true"' : ''}><b>${level.name}${locked ? ` ${icon('lock', 11)}` : ''}</b><span>${level.note}${locked ? ` · Lv.${need} 解锁` : ''}</span></button>`;
           }).join('')}
         </div>
+        <div class="section-head" style="margin:16px 0 6px;justify-content:space-between"><h2 class="section-title" style="font-size:15px;margin:0">专项练习</h2><span class="muted" style="font-size:10px">按定位主题预选病例</span></div>
+        <div class="special-grid">
+          ${SPECIAL_PRACTICES.map((item) => {
+            const locked = userLevel < item.level;
+            return `<button class="special-card ${locked ? 'locked' : ''}" type="button" data-special="${item.id}" ${locked ? 'aria-disabled="true"' : ''}>
+              <b>${item.label}${locked ? ` ${icon('lock', 11)}` : ''}</b>
+              <span>${item.note}</span>
+              <small>${locked ? `Lv.${item.level} 解锁` : `${item.focus.length} 个相关诊断`}</small>
+            </button>`;
+          }).join('')}
+        </div>
         <div class="practice-config">
           <div class="field"><label for="practice-chapter">章节</label><select class="select" id="practice-chapter"><option value="all">全部章节</option>${chapters.map((chapter) => `<option value="${escapeHtml(chapter.id)}">${escapeHtml(chapter.name)}</option>`).join('')}</select></div>
           <div class="field" data-count-field><label>本局题数</label><div class="segmented" data-count><button class="segment" type="button" data-total="1">1 题</button><button class="segment active" type="button" data-total="5">5 题</button></div></div>
@@ -209,6 +251,24 @@ export async function practiceView({ query } = {}) {
     }
     state.level = target;
     levelButtons.forEach((b) => b.classList.toggle('active', b === button));
+  }));
+  el.querySelectorAll('[data-special]').forEach((button) => button.addEventListener('click', async () => {
+    const item = SPECIAL_PRACTICES.find((x) => x.id === button.dataset.special);
+    if (!item) return;
+    if (userLevel < item.level) {
+      toast(`升到 Lv.${item.level} 解锁${item.label}`, 'warn');
+      return;
+    }
+    state.level = item.level;
+    levelButtons.forEach((b) => b.classList.toggle('active', Number(b.dataset.level) === item.level));
+    button.disabled = true;
+    try {
+      await startQuiz(item.focus);
+    } catch (error) {
+      toast(error.message || '专项练习出题失败', 'error');
+    } finally {
+      button.disabled = false;
+    }
   }));
   countButtons.forEach((button) => button.addEventListener('click', () => {
     state.total = Number(button.dataset.total);

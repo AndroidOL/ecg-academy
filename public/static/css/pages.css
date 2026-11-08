@@ -1112,3 +1112,13 @@
 .ai-quiz-option input { accent-color: var(--brand); }
 .ai-quiz-explain { margin-top: 8px; padding: 9px 11px; border-radius: 10px; background: var(--surface-2); font-size: 11.5px; line-height: 1.7; color: var(--ink-2); }
 .ai-quiz-explain p { margin: 4px 0 0; color: var(--muted); }
+
+/* ---------- special practice ---------- */
+.special-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.special-card { display:flex; flex-direction:column; align-items:flex-start; gap:2px; padding:10px 12px; border:1px solid var(--line); border-radius:12px; background:var(--surface); text-align:left; }
+.special-card:hover { border-color:var(--brand); }
+.special-card b { font-size:13px; }
+.special-card span { font-size:11px; color:var(--muted); }
+.special-card small { font-size:9.5px; color:var(--faint); }
+.special-card.locked { opacity:.6; }
+@media (max-width:719px) { .special-grid { grid-template-columns:1fr; } }

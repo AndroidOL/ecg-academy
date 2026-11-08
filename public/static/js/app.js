@@ -1,7 +1,7 @@
 // Cache-busted dynamic imports: keep Node tests query-free while forcing
 // browsers with immutable 7-day static caching to load the current modules.
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bb';
+const __asset = __isNode ? '' : '?v=20261108bd';
 const { api } = await import(`./api.js${__asset}`);
 const { store, initTheme, applyTheme, toggleTheme } = await import(`./store.js${__asset}`);
 const { practiceView } = await import(`./views/practice.js${__asset}`);
@@ -27,7 +27,7 @@ const { introView } = await import(`./views/intro.js${__asset}`);
 const { packsView } = await import(`./views/packs.js${__asset}`);
 const { aiTutorView } = await import(`./views/ai-tutor.js${__asset}`);
 const { applyLowBandwidth } = await import(`./bandwidth.js${__asset}`);
-const { t, navKey, getLocale } = await import(`./i18n.js${__asset}`);
+const { t, navKey, getLocale, setLocale, applyLocale, startLocaleObserver } = await import(`./i18n.js${__asset}`);
 const { pullStudy, scheduleStudyPush } = await import(`./study-sync.js${__asset}`);
 
 const routes = [
@@ -130,6 +130,7 @@ function shell(activePath = '/') {
           <a class="brand" href="#/" aria-label="首页">${logo()}</a>
           <nav class="topbar-links" aria-label="顶部导航">${topbarLinks(activePath)}</nav>
           <div class="topbar-actions">
+            <button class="icon-btn" type="button" data-locale-toggle aria-label="Language" title="Language">${getLocale() === 'en' ? '中' : 'EN'}</button>
             <button class="icon-btn" type="button" data-theme-toggle aria-label="切换深浅主题" title="切换主题">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon', 19)}</button>
             <a class="avatar" href="#/me" aria-label="我的账号" data-avatar>${initials(user.displayName)}</a>
           </div>
@@ -170,6 +171,12 @@ function navLabel(path) {
 }
 
 function bindShell() {
+  document.querySelectorAll('[data-locale-toggle]').forEach((button) => {
+    button.addEventListener('click', () => {
+      setLocale(getLocale() === 'en' ? 'zh' : 'en');
+      window.location.reload();
+    });
+  });
   document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
     button.addEventListener('click', () => {
       toggleTheme();
@@ -205,7 +212,8 @@ function updateShell() {
 
 function updateNav(path) {
   const { label, active } = navLabel(path);
-  document.title = `${label} · 心迹 ECG Lab`;
+  const displayLabel = getLocale() === 'en' ? t(navKey(active), label) : label;
+  document.title = `${displayLabel} · 心迹 ECG Lab`;
   document.querySelectorAll('.nav-link[data-nav]').forEach((link) => {
     const item = link.dataset.nav;
     const isActive = item === '/' ? path === '/' : path.startsWith(item);
@@ -235,6 +243,7 @@ async function boot() {
     router = new Router(routes, mount, ({ path }) => {
       if (!document.querySelector('.app-shell')) return;
       updateNav(path);
+      if (getLocale() === 'en') setTimeout(() => applyLocale(document.body), 0);
       const now = Date.now();
       if ((path !== lastTracked || now - lastTrackedAt > 60000) && !path.startsWith('/admin')) {
         lastTracked = path;
@@ -243,6 +252,7 @@ async function boot() {
       }
     });
     router.start();
+    startLocaleObserver();
     store.subscribe((type) => {
       if (['user', 'progress', 'stats', 'bootstrap'].includes(type)) updateShell();
       if (type === 'theme') {

@@ -56,6 +56,13 @@ async function request(path, { method = 'GET', body, retry = true } = {}) {
     await bootstrapToken();
     return request(path, { method, body, retry: false });
   }
+  // 游客会话对应的用户行可能已被清理；重建会话后重试一次
+  if (response.status === 401 && retry && (data?.error?.code === 'unauthorized')) {
+    try {
+      await bootstrapToken();
+      return request(path, { method, body, retry: false });
+    } catch { /* fall through to the original error */ }
+  }
   if (!response.ok || data?.ok === false) {
     const err = data?.error || {};
     throw new ApiError(err.message || `请求失败（${response.status}）`, response.status, err.code || 'request_failed', err.details || null);
