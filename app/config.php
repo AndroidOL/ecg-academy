@@ -5,7 +5,7 @@ return [
     'app' => [
         'name' => '心迹 ECG Lab',
         'version' => '1.4.0',
-        'asset_version' => '20261108ah',
+        'asset_version' => '20261108ai',
         'env' => 'production',
         'debug' => false,
         'base_path' => '',

@@ -4,7 +4,7 @@ import { navigate } from '../router.js';
 import { recordAttempt, reviewSummary, weakDiagnosisIds, deviceId } from '../study-store.js';
 import { byokPayload, hasByok } from '../byok.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ah';
+const __asset = __isNode ? '' : '?v=20261108ai';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, toast, setButtonLoading, fmtDuration, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 

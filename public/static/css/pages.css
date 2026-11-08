@@ -847,3 +847,10 @@
 .practice-leader-row b { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600; color:var(--ink-2); }
 .practice-leader-row em { color:var(--brand); font-family:var(--font-mono); font-style:normal; font-weight:700; }
 .practice-leader-row b.is-me { color:var(--brand); }
+.exam-rating-update { margin-top:12px; }
+.exam-rating-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; margin-top:8px; }
+.exam-rating-grid > div { padding:8px 9px; border:1px solid var(--line); border-radius:8px; background:var(--bg-elev); }
+.exam-rating-grid b { display:block; font-size:11px; }
+.exam-rating-grid span { display:block; margin-top:2px; color:var(--brand); font-size:9px; }
+.exam-rating-grid small { display:block; margin-top:2px; color:var(--muted); font-size:9px; }
+@media (max-width:600px) { .exam-rating-grid { grid-template-columns:minmax(0,1fr); } }

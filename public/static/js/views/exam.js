@@ -3,7 +3,7 @@ import { store } from '../store.js';
 import { navigate } from '../router.js';
 import { recordAttempt } from '../study-store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ah';
+const __asset = __isNode ? '' : '?v=20261108ai';
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
 const state = {
@@ -78,6 +78,8 @@ function runnerMarkup() {
 function resultMarkup() {
   const result = state.result;
   const wrong = (result.details || []).filter((item) => !item.correct);
+  const affected = new Set((result.chapterResults || []).map((item) => item.chapter));
+  const affectedChapters = (result.status?.chapters || []).filter((chapter) => affected.has(chapter.id));
   return `<div class="quiz-shell exam-result-page">
     <div class="quiz-result card card-pad">
       <div class="page-eyebrow" style="justify-content:center">${icon('trophy', 14)} ROUND COMPLETE</div>
@@ -87,6 +89,7 @@ function resultMarkup() {
       <p class="muted" style="font-size:12px;line-height:1.7">${result.mode === 'exam' ? '考试只对自己可见；各板块评级已按最近 50 题动态更新。' : result.passed ? '本板块已标记为“已学习”。继续完成至少 8 个板块即可解锁综合考试。' : '本板块暂未通过，建议先回到课程复习，再重新挑战 10 题。'}</p>
       <div class="row-wrap" style="justify-content:center;margin-top:16px"><button class="btn btn-primary" type="button" data-back>${icon('arrowLeft', 15)} 返回学习考试</button><a class="btn btn-secondary" href="#/review">${icon('bookOpen', 15)} 查看错题本</a></div>
     </div>
+    ${affectedChapters.length ? `<section class="card card-pad exam-rating-update"><h2 class="section-title" style="font-size:16px">章节评级更新</h2><div class="exam-rating-grid">${affectedChapters.map((chapter) => `<div><b>${escapeHtml(chapter.name)}</b><span>${escapeHtml(chapter.statusLabel)} · ${escapeHtml(chapter.level)}</span><small>最近 ${chapter.sample} 题 · ${chapter.accuracy}%</small></div>`).join('')}</div></section>` : ''}
     ${wrong.length ? `<section class="card card-pad exam-wrong-list"><h2 class="section-title" style="font-size:16px">本轮错题 ${wrong.length} 道</h2>${wrong.map((item) => `<div class="exam-wrong-item"><b>${escapeHtml(item.stem || '')}</b><p>你的选择：${escapeHtml(item.options[item.selected] || '未选')} · 正确：${escapeHtml(item.options[item.answer] || '')}</p><small>${escapeHtml(item.explanation || '')}</small></div>`).join('')}</section>` : ''}
     ${medicalDisclaimer()}`;
 }
