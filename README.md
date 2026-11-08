@@ -150,6 +150,7 @@ storage/             独立 session、日志、缓存（Web 不可达）
 - [数据库与凭据](docs/DATABASE.md)
 - [AI 接入](docs/AI.md)
 - [测试报告](docs/TESTING.md)
+- [Git 与 GitHub](docs/GIT.md)
 - [部署与运维](docs/DEPLOYMENT.md)
 - [进度与断点清单](docs/PROGRESS.md)
 - [调研记录](docs/RESEARCH.md)
