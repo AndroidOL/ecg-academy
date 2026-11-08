@@ -118,10 +118,13 @@ export async function homeView() {
     </section>
 
     <section class="section">
-      <div class="section-head"><div><div class="page-eyebrow">TOOLS</div><h2 class="section-title">四种练习方式，同一套判读逻辑</h2></div></div>
+      <div class="section-head"><div><div class="page-eyebrow">TOOLS</div><h2 class="section-title">从系统判读到急救推演，同一套判读逻辑</h2></div></div>
       <div class="feature-grid">
         <a class="feature-card" href="#/daily">
           <div class="feature-icon" style="background:var(--accent-soft);color:var(--accent)">${icon('flame', 20)}</div><h3>每日挑战</h3><p>每天 10 道全站同题的心电图判读，连续完成累计打卡；独立计分，不占用测试分。</p><span class="feature-link">开始今日挑战 ${icon('arrowRight', 13)}</span>
+        </a>
+        <a class="feature-card" href="#/read">
+          <div class="feature-icon" style="background:var(--brand-soft);color:var(--brand)">${icon('target', 20)}</div><h3>系统判读训练</h3><p>按频率 → 节律 → 电轴 → 间期 → ST-T → 结论六步读图，每一步即时反馈；最后提交诊断并进入错题本。</p><span class="feature-link">开始六步读图 ${icon('arrowRight', 13)}</span>
         </a>
         <a class="feature-card" href="#/vectors">
           <div class="feature-icon">${icon('compass', 20)}</div><h3>心脏向量实验室</h3><p>P/QRS/T 环、肢体/胸导联投影、动作电位与四腔瓣膜解剖；拖动旋转，理解心电图为什么长这样。</p><span class="feature-link">进入向量实验室 ${icon('arrowRight', 13)}</span>

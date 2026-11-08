@@ -24,6 +24,31 @@ const STEPS = [
   { id: 'stt', title: '5 · ST-T 与 U 波', hint: '逐导联寻找 ST 抬高/压低、T 波形态改变与 U 波。', multi: true },
 ];
 
+const STATS_KEY = 'ecg-read-stats';
+
+function loadStats() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(STATS_KEY) || '{}');
+    return {
+      cases: Number(raw.cases) || 0,
+      stepsCorrect: Number(raw.stepsCorrect) || 0,
+      stepsTotal: Number(raw.stepsTotal) || 0,
+    };
+  } catch {
+    return { cases: 0, stepsCorrect: 0, stepsTotal: 0 };
+  }
+}
+
+function saveStats(stats) {
+  try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch { /* private mode */ }
+}
+
+function statsLabel() {
+  const stats = loadStats();
+  const rate = stats.stepsTotal ? Math.round((stats.stepsCorrect / stats.stepsTotal) * 100) : 0;
+  return `已完成 ${stats.cases} 例 · 步骤正确率 ${rate}%`;
+}
+
 const LEVELS = [
   { id: 1, name: '基础', note: '单一诊断，常见图形' },
   { id: 2, name: '进阶', note: '不典型表现与鉴别', need: ADVANCED_UNLOCK },
@@ -59,7 +84,7 @@ export async function readView() {
       </div>
       <div class="row-wrap">
         <span class="badge badge-brand">${icon('activity', 11)} 结构化 5 步</span>
-        <span class="badge">每题独立计分</span>
+        <span class="badge badge-brand" data-read-stats>${statsLabel()}</span><span class="badge">键盘 1–5 / Enter / N</span>
       </div>
     </header>
     <div class="read-layout">
@@ -176,7 +201,7 @@ export async function readView() {
           ${options.map((option) => `<button class="read-option" type="button" data-step="${step.id}" data-value="${escapeHtml(option.id)}"><span>${escapeHtml(option.label)}</span></button>`).join('')}
         </div>
         ${step.multi ? `<button class="btn btn-secondary btn-sm" type="button" data-step-confirm="${step.id}" disabled>${icon('check', 13)} 确认本步</button>` : ''}
-        <div class="read-step-note" data-step-note="${step.id}"></div>
+        <div class="read-step-note" role="status" aria-live="polite" data-step-note="${step.id}"></div>
       </section>`;
     }).join('');
 
@@ -289,6 +314,15 @@ export async function readView() {
         const names = Object.fromEntries((quiz.options || []).map((option) => [option.id, option.name]));
         const chapters = Object.fromEntries((quiz.options || []).map((option) => [option.id, option.chapter]));
         recordAttempt({ correct: result.correct, slow: Boolean(result.slow), correctIds: result.correctIds || [], selectedIds: [...selected], names, chapters });
+        const stepTotal = STEPS.length;
+        const stepHits = STEPS.filter((step) => state.results[step.id] === true).length;
+        const stats = loadStats();
+        stats.cases += 1;
+        stats.stepsCorrect += stepHits;
+        stats.stepsTotal += stepTotal;
+        saveStats(stats);
+        const statsNode = el.querySelector('[data-read-stats]');
+        if (statsNode) statsNode.textContent = statsLabel();
         if (store.user?.isGuest) store.addLocalXp(result.xp);
         conclusionHost.querySelectorAll('[data-diagnosis]').forEach((label) => {
           const id = label.dataset.diagnosis;
@@ -374,12 +408,51 @@ export async function readView() {
   });
   el.querySelector('[data-read-new]')?.addEventListener('click', () => loadQuiz(state.level));
 
+  const onKey = (event) => {
+    if (event.target?.closest?.('input, textarea, select, [contenteditable]')) return;
+    if (document.getElementById('modal-root')?.children.length) return;
+    if (state.submitted) {
+      if (event.key === 'n' || event.key === 'N') {
+        event.preventDefault();
+        feedbackHost.querySelector('[data-read-next]')?.click();
+      }
+      return;
+    }
+    const pending = STEPS.find((step) => state.results[step.id] === undefined);
+    if (/^[1-5]$/.test(event.key) && pending) {
+      const options = stepsHost.querySelectorAll(`[data-step-options="${pending.id}"] .read-option`);
+      const option = options[Number(event.key) - 1];
+      if (option) {
+        event.preventDefault();
+        option.click();
+      }
+      return;
+    }
+    if (event.key === 'Enter') {
+      if (pending?.multi) {
+        const confirm = stepsHost.querySelector(`[data-step-confirm="${pending.id}"]`);
+        if (confirm && !confirm.disabled) {
+          event.preventDefault();
+          confirm.click();
+          return;
+        }
+      }
+      const submit = conclusionHost.querySelector('[data-read-submit]');
+      if (submit && !submit.disabled) {
+        event.preventDefault();
+        submit.click();
+      }
+    }
+  };
+  document.addEventListener('keydown', onKey);
+
   await loadQuiz(1);
 
   return {
     el,
     destroy() {
       clearInterval(state.timerId);
+      document.removeEventListener('keydown', onKey);
       destroyViewer();
     },
   };

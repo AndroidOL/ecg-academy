@@ -872,7 +872,7 @@
 .read-step-head h3 { margin:2px 0 3px; font-size:14px; }
 .read-step-head p { margin:0; font-size:10px; line-height:1.5; }
 .read-options { display:grid; grid-template-columns:minmax(0,1fr); gap:5px; }
-.read-option { display:flex; align-items:center; gap:8px; width:100%; min-height:40px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--bg-elev); color:var(--ink); text-align:left; font:inherit; font-size:11px; line-height:1.45; cursor:pointer; transition:border-color .15s, background .15s, transform .1s; }
+.read-option { display:flex; align-items:center; gap:8px; width:100%; min-height:44px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--bg-elev); color:var(--ink); text-align:left; font:inherit; font-size:11px; line-height:1.45; cursor:pointer; transition:border-color .15s, background .15s, transform .1s; }
 .read-option:hover:not(:disabled) { border-color:var(--brand); transform:translateY(-1px); }
 .read-option.selected { border-color:var(--brand); background:var(--brand-soft); box-shadow:0 0 0 1px var(--brand) inset; }
 .read-option.is-correct { border-color:var(--ok, #2f8f5b); background:color-mix(in srgb,var(--ok, #2f8f5b) 12%,var(--surface)); }

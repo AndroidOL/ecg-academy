@@ -82,7 +82,7 @@ const EN_TEXT = {
   '系统判读训练': 'Guided ECG reading', '频率': 'Rate', '节律': 'Rhythm', '电轴': 'Axis', '间期': 'Intervals', '结论': 'Conclusion',
   '1 · 频率': '1 · Rate', '2 · 节律': '2 · Rhythm', '3 · 电轴': '3 · Axis', '4 · 间期': '4 · Intervals', '5 · ST-T 与 U 波': '5 · ST-T & U wave', '6 · 结论': '6 · Conclusion',
   '结构化 5 步': '5 structured steps', '每题独立计分': 'Scored per case', '待作答': 'Pending', '需复习': 'Review',
-  '确认本步': 'Confirm step', '提交诊断': 'Submit diagnosis', '下一例': 'Next case', '换一例': 'New case',
+  '确认本步': 'Confirm step', '开始六步读图': 'Start guided read', '提交诊断': 'Submit diagnosis', '下一例': 'Next case', '换一例': 'New case',
   '加载中…': 'Loading…', '正在生成病例…': 'Generating case…',
   '心动过缓（<60 次/分）': 'Bradycardia (<60 bpm)', '正常范围（60–100 次/分）': 'Normal (60–100 bpm)', '心动过速（>100 次/分）': 'Tachycardia (>100 bpm)',
   '窦性心律': 'Sinus rhythm', '房性快速性心律失常': 'Atrial tachyarrhythmia', '室上性心动过速': 'SVT', '室性心律失常': 'Ventricular arrhythmia', '逸搏 / 交界性心律': 'Escape / junctional',

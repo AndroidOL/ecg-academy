@@ -366,6 +366,43 @@ export async function practiceView({ query } = {}) {
     if (state.gameMode === 'speed') startSpeedTimer(el);
   }
 
+  const onKey = (event) => {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    if (event.target?.closest?.('input, textarea, select, [contenteditable]')) return;
+    if (document.getElementById('modal-root')?.children.length) return;
+    if (event.key === 'Enter') {
+      const submit = el.querySelector('[data-submit]');
+      if (submit && submit.style.display !== 'none' && !submit.disabled) {
+        event.preventDefault();
+        submit.click();
+        return;
+      }
+      const next = el.querySelector('[data-next]');
+      if (next) {
+        event.preventDefault();
+        next.click();
+        return;
+      }
+    }
+    if (event.key === 'n' || event.key === 'N') {
+      const next = el.querySelector('[data-next]');
+      if (next) {
+        event.preventDefault();
+        next.click();
+      }
+      return;
+    }
+    const match = /^([1-6])$/.exec(event.key) || /^([a-fA-F])$/.exec(event.key);
+    if (!match) return;
+    const index = /^[0-9]$/.test(match[1]) ? Number(match[1]) - 1 : match[1].toLowerCase().charCodeAt(0) - 97;
+    const options = [...el.querySelectorAll('[data-option]')];
+    if (options[index] && !state.submitted) {
+      event.preventDefault();
+      options[index].click();
+    }
+  };
+  document.addEventListener('keydown', onKey);
+
   if (autoStart) {
     try {
       await startQuiz(state.focus);
@@ -378,6 +415,7 @@ export async function practiceView({ query } = {}) {
     destroy() {
       clearTimer();
       clearSpeedTimer();
+      document.removeEventListener('keydown', onKey);
       destroyViewer();
     },
   };
@@ -452,7 +490,7 @@ function renderQuestion(el) {
             </label>`).join('')}
           </div>
           <div class="quiz-actions">
-            <span class="muted" style="font-size:11px">${multiple ? '选择所有符合的诊断后再提交。' : '选择一个最可能的诊断。'}</span>
+            <span class="muted" style="font-size:11px">${multiple ? '选择所有符合的诊断后再提交。' : '选择一个最可能的诊断。'} · 键盘 1–5 / Enter</span>
             <button class="btn btn-primary" type="button" data-submit disabled>${icon('check', 15)} 提交答案</button>
           </div>
           <div id="quiz-feedback" role="status" aria-live="polite"></div>
