@@ -1,5 +1,6 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bh';
+const __asset = __isNode ? '' : '?v=20261108bi';
+const { getLocale } = await import(`../i18n.js${__asset}`);
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const LEADS = {
@@ -1048,7 +1049,7 @@ export async function vectorLabView() {
     const twelve = content.querySelector('[data-vector-12lead]');
     if (twelve) draw12LeadCanvas(twelve, state);
     const syncLabel = content.querySelector('[data-vector-sync-label]');
-    if (syncLabel) syncLabel.textContent = `${LEADS[state.lead].name} · 时间光标`;
+    if (syncLabel) syncLabel.textContent = `${LEADS[state.lead].name} · ${getLocale() === 'en' ? 'time cursor' : '时间光标'}`;
     const bars = content.querySelector('[data-vector-projections]');
     if (bars) updateProjectionBars(bars, state, 0);
     const tc = state.phase ?? 0;
@@ -1066,7 +1067,13 @@ export async function vectorLabView() {
     const phaseState = content.querySelector('[data-vector-phase-state]');
     if (phaseState) {
       const active = tc < 0.16 ? 'P' : tc < 0.42 ? 'QRS' : tc < 0.8 ? 'T' : null;
-      phaseState.textContent = active ? `当前时间：${active} 波 · ${state.loop === 'all' ? `${active} 环活动，其他环静止` : `${state.loop} 环观察`}` : '当前时间：等电位线 · 各环静止';
+      if (getLocale() === 'en') {
+        phaseState.textContent = active
+          ? `Current phase: ${active} wave · ${state.loop === 'all' ? `${active} loop active, other loops still` : `${state.loop} loop observation`}`
+          : 'Current phase: baseline · all loops idle';
+      } else {
+        phaseState.textContent = active ? `当前时间：${active} 波 · ${state.loop === 'all' ? `${active} 环活动，其他环静止` : `${state.loop} 环观察`}` : '当前时间：等电位线 · 各环静止';
+      }
     }
   };
   const drawLoopFrame = (now) => {

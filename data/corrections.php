@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 return [
     [
-        'version' => '2.9.1',
+        'version' => '2.9.2',
         'date' => '2026-11-08',
         'title' => '心梗定位、18 导联与筛选联动',
         'items' => [

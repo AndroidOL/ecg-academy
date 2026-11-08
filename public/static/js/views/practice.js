@@ -1,6 +1,6 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bh';
-const { localizedName, getLocale } = await import(`../i18n.js${__asset}`);
+const __asset = __isNode ? '' : '?v=20261108bi';
+const { localizedName, getLocale, translate } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -606,6 +606,12 @@ function renderQuestion(el) {
         const localized = (id) => localizedName((quiz.options || []).find((option) => option.id === id) || {});
         result.correctNames = (result.correctIds || []).map(localized);
         result.selectedNames = [...state.selected].map(localized);
+        const primary = (result.explanation || [])[0] || {};
+        const clue = translate(primary.specificity || primary.oneLiner || '');
+        const criterion = translate((primary.criteria || [])[0] || '');
+        result.localExplanation = result.correct
+          ? `Correct. Key clue: ${clue} Continue with the AI Tutor to explore the mechanism and differential.`
+          : `Correct answer: ${result.correctNames.join(', ')}. ${result.partial ? 'You selected part of the correct combination.' : 'Your selection does not match the correct diagnosis.'} Key clue: ${clue}${criterion ? ` Review the criteria: ${criterion}` : ''}${result.selectedNames.length ? ` You selected: ${result.selectedNames.join(', ')}.` : ''}`;
       }
       state.result = result;
       if (result.correct) {

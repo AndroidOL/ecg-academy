@@ -137,6 +137,10 @@ const OVERRIDES = {
   'T 波 · T 环活动，其他环静止': 'T wave · T loop active, other loops idle',
   '当前时间：T 波 · T 环活动，其他环静止': 'Current phase: T wave · T loop active, other loops still',
   'II 导联 · 时间光标': 'Lead II · time cursor',
+  '判断正确': 'Correct', '判断正确，但不熟练（用时超过 15 秒）': 'Correct but slow (over 15 s)',
+  '部分正确，但诊断组合不完整': 'Partially correct; the diagnosis combination is incomplete', '需要再读一遍': 'Re-read this ECG',
+  '结论正确': 'Correct conclusion', '结论需要修正': 'Conclusion needs correction',
+  'Fixed HTML sanitization accidentally removing medical comparison symbols such as <40 次/分; audit of 1735 answers found 0 conflicts.': 'Fixed HTML sanitization that could remove medical comparison symbols such as <40 bpm; an audit of 1735 answers found 0 conflicts.',
   '心迹 ECG Lab': 'ECG Lab', '心迹 ECG Lab 首页': 'ECG Lab home',
   '12 导联': '12-lead', '12 导联较宽，可左右滑动查看。': 'The 12-lead view is wider; scroll horizontally to inspect.',
   'II 导联': 'Lead II', 'V1 导联': 'Lead V1', 'V5 导联': 'Lead V5',
@@ -194,6 +198,12 @@ const RULES = [
   [/^已学习 (\d+) \/ (\d+)$/, (m) => `Learned ${m[1]} / ${m[2]}`],
   [/^当前时间：(.+)$/, (m) => `Current phase: ${translatePhrase(m[1]) || m[1]}`],
   [/^II 导联 · 时间光标$/, () => 'Lead II · time cursor'],
+  [/^(\d+) 岁 · ([男女]) · (.+)$/, (m) => `${m[1]} y · ${m[2] === '男' ? 'M' : 'F'} · ${translatePhrase(m[3]) || m[3]}`],
+  [/^(\d+) 条关键提示$/, (m) => `${m[1]} key cues`],
+  [/^最近 (\d+) 题$/, (m) => `Last ${m[1]} questions`],
+  [/^(\d+) \/ (\d+) 篇$/, (m) => `${m[1]} / ${m[2]} articles`],
+  [/^(\d+)–(\d+) 次\/分$/, (m) => `${m[1]}–${m[2]} bpm`],
+  [/^(\d+) 次\/分$/, (m) => `${m[1]} bpm`],
   [/^(\d+)月(\d+)日\s*(未完成|已完成)?$/, (m, text) => `${MONTHS_EN[(Number(m[1]) || 1) - 1]} ${Number(m[2])}${m[3] === '已完成' ? ' · Done' : m[3] === '未完成' ? ' · Missed' : ''}`, 'date'],
 ];
 function translatePhrase(value) {
@@ -232,6 +242,12 @@ export function setLocale(locale) {
 export function t(key, fallback = '') {
   const locale = getLocale();
   return DICT[locale]?.[key] || DICT.en?.[key] || DICT.zh[key] || fallback || key;
+}
+
+export function translate(value) {
+  const text = String(value ?? '');
+  const translated = translatePhrase(text) || TEXT[getLocale()]?.[text];
+  return translated || text;
 }
 
 export function localizedName(item) {

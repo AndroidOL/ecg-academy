@@ -1,5 +1,6 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bh';
+const __asset = __isNode ? '' : '?v=20261108bi';
+const { getLocale } = await import(`../i18n.js${__asset}`);
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const TERMS = [
@@ -91,7 +92,7 @@ export async function glossaryView() {
   const renderList = () => {
     const q = query.trim().toLowerCase();
     const items = TERMS.filter(([category, en, zh, def]) => (cat === '全部' || category === cat) && (!q || `${en} ${zh} ${def}`.toLowerCase().includes(q)));
-    listEl.innerHTML = items.map(([category, en, zh, def]) => `<article class="glossary-item"><div class="glossary-term"><b>${escapeHtml(zh)}</b><span>${escapeHtml(en)}</span></div><span class="badge">${escapeHtml(category)}</span><p>${escapeHtml(def)}</p></article>`).join('') || '<div class="learn-empty"><b>没有匹配术语</b><span>换个关键词或分类试试。</span></div>';
+    listEl.innerHTML = items.map(([category, en, zh, def]) => `<article class="glossary-item"><div class="glossary-term"><b>${escapeHtml(getLocale() === 'en' ? en : zh)}</b><span>${escapeHtml(getLocale() === 'en' ? zh : en)}</span></div><span class="badge">${escapeHtml(category)}</span><p>${escapeHtml(def)}</p></article>`).join('') || '<div class="learn-empty"><b>没有匹配术语</b><span>换个关键词或分类试试。</span></div>';
   };
 
   el.querySelector('[data-glossary-search]').addEventListener('input', (event) => { query = event.target.value; renderList(); });
