@@ -4,17 +4,19 @@
 
 | 项 | 值 |
 |---|---|
-| 目录 | `/www/wwwroot/ecg-academy`（全新目录） |
-| Web 根 | `/www/wwwroot/ecg-academy/public` |
-| 访问 | `<your-host>`（由部署环境提供） |
-| 域名 | `<your-domain>`（按实际 DNS 配置） |
-| nginx vhost | `/www/server/panel/vhost/nginx/ecg-academy.conf`（新增，未修改既有站点） |
+| 测试目录 | `/www/wwwroot/ecg-academy` |
+| 发布目录 | `/www/wwwroot/ecg.tianhao.me` |
+| 生产域名 | `https://ecg.tianhao.me/` |
+| Web 根 | `/www/wwwroot/ecg.tianhao.me/public` |
+| 访问 | `https://ecg.tianhao.me/` |
+| 测试站 | `http://127.0.0.1:8791/`（本地开发） |
+| nginx vhost | `/www/server/panel/vhost/nginx/ecg.tianhao.me.conf` |
 | PHP-FPM | 8.4，`unix:/tmp/php-cgi-84.sock`，运行用户 `www` |
 | 数据库 | `ecg_academy`，见 `docs/DATABASE.md` |
 | 会话 | `storage/sessions/`，session 名 `ECGLABSESS` |
 | 日志 | `/www/wwwlogs/ecg-academy*.log`、`storage/logs/php-error.log` |
 
-> 部署只新增了项目目录与一个 nginx vhost；没有写入、覆盖或修改 `/www/wwwroot` 下任何既有生产站点目录。
+> `/www/wwwroot/ecg-academy` 保留为测试站；`/www/wwwroot/ecg.tianhao.me` 为实际发布目录。生产根目录必须指向 `public/`，并对 SPA/API 使用 `try_files`。
 
 ## nginx 配置
 
@@ -74,6 +76,16 @@ chmod 775 storage storage/sessions storage/logs storage/cache
 ```
 
 `public/` 之外的文件不可被 Web 访问；`storage/` 与 `app/config*.php` 不得放进 Web 根。
+
+## 从测试站发布
+
+```bash
+cd /www/wwwroot/ecg-academy
+./scripts/deploy-production.sh
+nginx -t && nginx -s reload
+```
+
+脚本保留生产目录的 `app/config.local.php`、`storage/master.key`、会话/日志/缓存和 `.user.ini`，只同步代码与内容；不会复制测试站的访问凭据。
 
 ## 数据库初始化与备份
 
