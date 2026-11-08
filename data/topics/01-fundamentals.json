@@ -3,7 +3,7 @@
     "id": "heart-conduction-anatomy",
     "name": "心脏传导系统解剖",
     "en": "Anatomy of the cardiac conduction system",
-    "chapter": "fundamentals",
+    "chapter": "theory",
     "difficulty": 1,
     "urgency": "core",
     "tags": [
@@ -54,7 +54,7 @@
     "id": "sa-node-physiology",
     "name": "窦房结自律性与起搏机制",
     "en": "Sinus node automaticity",
-    "chapter": "fundamentals",
+    "chapter": "theory",
     "difficulty": 1,
     "urgency": "core",
     "tags": [
@@ -105,7 +105,7 @@
     "id": "av-node-his-purkinje",
     "name": "房室结与希氏-浦肯野系统",
     "en": "AV node and His-Purkinje system",
-    "chapter": "fundamentals",
+    "chapter": "theory",
     "difficulty": 1,
     "urgency": "core",
     "tags": [
@@ -156,7 +156,7 @@
     "id": "cardiac-action-potential",
     "name": "心肌动作电位与离子通道",
     "en": "Cardiac action potential",
-    "chapter": "fundamentals",
+    "chapter": "theory",
     "difficulty": 1,
     "urgency": "core",
     "tags": [
@@ -207,7 +207,7 @@
     "id": "automaticity-and-escape",
     "name": "自律性与逸搏机制",
     "en": "Automaticity and escape rhythms",
-    "chapter": "fundamentals",
+    "chapter": "theory",
     "difficulty": 1,
     "urgency": "core",
     "tags": [
@@ -258,7 +258,7 @@
     "id": "refractory-periods",
     "name": "不应期与传导",
     "en": "Refractory periods and conduction",
-    "chapter": "fundamentals",
+    "chapter": "theory",
     "difficulty": 1,
     "urgency": "core",
     "tags": [
@@ -309,7 +309,7 @@
     "id": "depolarization-repolarization-ecg",
     "name": "除极、复极与体表波形",
     "en": "Depolarization, repolarization and surface ECG",
-    "chapter": "fundamentals",
+    "chapter": "theory",
     "difficulty": 1,
     "urgency": "core",
     "tags": [
@@ -360,7 +360,7 @@
     "id": "dipole-vector-basics",
     "name": "电偶、向量与心电向量环",
     "en": "Dipole, vectors and vector loops",
-    "chapter": "fundamentals",
+    "chapter": "theory",
     "difficulty": 1,
     "urgency": "core",
     "tags": [
@@ -411,7 +411,7 @@
     "id": "frontal-plane-axis",
     "name": "额面心电轴判读",
     "en": "Frontal plane axis",
-    "chapter": "fundamentals",
+    "chapter": "theory",
     "difficulty": 1,
     "urgency": "core",
     "tags": [
@@ -462,7 +462,7 @@
     "id": "horizontal-plane-chest-leads",
     "name": "水平面与胸导联",
     "en": "Horizontal plane and precordial leads",
-    "chapter": "fundamentals",
+    "chapter": "theory",
     "difficulty": 1,
     "urgency": "core",
     "tags": [
@@ -513,7 +513,7 @@
     "id": "standard-12-lead-system",
     "name": "标准 12 导联体系",
     "en": "Standard 12-lead ECG",
-    "chapter": "fundamentals",
+    "chapter": "theory",
     "difficulty": 1,
     "urgency": "core",
     "tags": [
@@ -564,7 +564,7 @@
     "id": "extended-leads",
     "name": "18 导联与右胸/后壁导联",
     "en": "Extended and right-sided leads",
-    "chapter": "fundamentals",
+    "chapter": "theory",
     "difficulty": 1,
     "urgency": "urgent",
     "tags": [
@@ -615,7 +615,7 @@
     "id": "monitor-leads",
     "name": "监护导联与连续监测",
     "en": "Monitor leads and continuous monitoring",
-    "chapter": "fundamentals",
+    "chapter": "theory",
     "difficulty": 1,
     "urgency": "core",
     "tags": [
@@ -666,7 +666,7 @@
     "id": "frank-orthogonal-leads",
     "name": "Frank 导联与正交心电向量",
     "en": "Frank orthogonal leads",
-    "chapter": "fundamentals",
+    "chapter": "theory",
     "difficulty": 2,
     "urgency": "advanced",
     "tags": [
@@ -717,7 +717,7 @@
     "id": "normal-ecg-intervals",
     "name": "正常心电图波形与间期",
     "en": "Normal ECG waves and intervals",
-    "chapter": "fundamentals",
+    "chapter": "theory",
     "difficulty": 1,
     "urgency": "core",
     "tags": [
@@ -768,7 +768,7 @@
     "id": "normal-variants",
     "name": "正常变异与早期复极",
     "en": "Normal variants and early repolarization",
-    "chapter": "fundamentals",
+    "chapter": "theory",
     "difficulty": 1,
     "urgency": "core",
     "tags": [
@@ -819,7 +819,7 @@
     "id": "artifact-baseline-emg",
     "name": "基线漂移、肌电干扰与伪差",
     "en": "Baseline wander and EMG artifact",
-    "chapter": "fundamentals",
+    "chapter": "theory",
     "difficulty": 1,
     "urgency": "core",
     "tags": [
@@ -870,7 +870,7 @@
     "id": "lead-reversal",
     "name": "导联错接的识别",
     "en": "Lead reversal patterns",
-    "chapter": "fundamentals",
+    "chapter": "theory",
     "difficulty": 1,
     "urgency": "core",
     "tags": [
@@ -921,7 +921,7 @@
     "id": "ecg-calibration-paper",
     "name": "定标、纸速与测量误差",
     "en": "Calibration, paper speed and measurement",
-    "chapter": "fundamentals",
+    "chapter": "theory",
     "difficulty": 1,
     "urgency": "core",
     "tags": [

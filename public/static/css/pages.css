@@ -598,3 +598,14 @@
   .lab-quiz-options .chip { font-size:8.5px; }
   .lab-ion-table > div { grid-template-columns:30px 58px minmax(0,1fr); }
 }
+.lab-12lead-card .ecg-canvas-shell { overflow-x:auto; overflow-y:hidden; }
+.lab-12lead-card .ecg-canvas { min-width:780px; }
+.lab-12lead-card .ecg-toolbar .row-wrap { flex-wrap:wrap; }
+@media (max-width:719px) {
+  .lab-12lead-card .ecg-toolbar { align-items:flex-start; }
+  .lab-12lead-card .ecg-toolbar .row-wrap { width:100%; }
+}
+.visual-sync { background:var(--ecg-bg); border-top:1px solid color-mix(in srgb,var(--brand) 18%,var(--line)); }
+.visual-sync-head { display:flex; justify-content:space-between; gap:8px; padding:6px 10px 0; color:var(--muted); font-family:var(--font-mono); font-size:8.5px; }
+.visual-sync-head span:first-child { color:var(--brand); font-weight:700; }
+.visual-sync canvas { display:block; width:100%; height:auto; }

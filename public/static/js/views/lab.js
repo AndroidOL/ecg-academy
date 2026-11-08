@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108i';
+const __asset = __isNode ? '' : '?v=20261108j';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
@@ -130,6 +130,7 @@ export async function labView() {
   const state = { k: 4.2, ca: 2.35, mg: 0.85, lead: 'V3', answers: {} };
   let viewerII = null;
   let viewerV3 = null;
+  let viewer12 = null;
   el.innerHTML = `
     <header class="page-head">
       <div>
@@ -149,7 +150,11 @@ export async function labView() {
           <div class="ecg-toolbar"><div class="ecg-toolbar-group"><span class="badge badge-brand" data-lab-lead-label>V3 导联</span><span class="ecg-toolbar-label">观察 T 波、U 波与 QT</span></div><div class="row-wrap"><span class="badge" data-lab-ca-label>Ca²⁺ 2.35</span><span class="badge" data-lab-mg-label>Mg²⁺ 0.85</span><select class="select" data-lab-lead aria-label="选择胸导联" style="width:auto;min-height:28px;padding:2px 5px;font-size:9px"><option>V1</option><option>V2</option><option selected>V3</option><option>V4</option><option>V5</option><option>V6</option></select></div></div>
           <div id="lab-ecg-v3"></div>
         </div>
-        <div class="lab-stage" data-lab-stage></div>
+        <div class="ecg-card lab-12lead-card">
+          <div class="ecg-toolbar"><div class="ecg-toolbar-group"><span class="badge badge-brand">标准 12 导联</span><span class="ecg-toolbar-label">可切换显示模式</span></div><div class="row-wrap"><select class="select" data-lab-view-mode aria-label="12导联显示模式" style="width:auto;min-height:28px;padding:2px 5px;font-size:9px"><option value="grid" selected>标准 12 导联</option><option value="snapshot">单图（无节律条）</option><option value="single">单导联</option><option value="rows">各导联横向</option></select><select class="select" data-lab-view-lead aria-label="单导联选择" style="width:auto;min-height:28px;padding:2px 5px;font-size:9px"><option>II</option><option>V1</option><option>V2</option><option>V3</option><option>V4</option><option>V5</option><option>V6</option></select></div></div>
+          <div id="lab-ecg-12lead"></div>
+          <div class="lab-stage" data-lab-stage></div>
+        </div>
       </div>
       <aside class="stack">
         <section class="lab-controls">
@@ -219,6 +224,8 @@ export async function labView() {
   const stage = el.querySelector('[data-lab-stage]');
   const summary = el.querySelector('[data-lab-summary]');
   const leadSelect = el.querySelector('[data-lab-lead]');
+  const viewMode = el.querySelector('[data-lab-view-mode]');
+  const viewLead = el.querySelector('[data-lab-view-lead]');
   const playButton = el.querySelector('[data-lab-play]');
 
   const render = () => {
@@ -237,6 +244,10 @@ export async function labView() {
     summary.innerHTML = `<span class="stage-name">综合判读</span><span>钾：${escapeHtml(ks.name)}；钙：${escapeHtml(cs.name)}；镁：${escapeHtml(ms.name)}。${escapeHtml(spec.description)}</span>`;
     if (viewerII) viewerII.setSpec(spec);
     if (viewerV3) { viewerV3.setSpec(spec); viewerV3.setLead(state.lead); }
+    if (viewer12) {
+      viewer12.setSpec(spec);
+      if (viewMode?.value === 'single') viewer12.setLead(viewLead?.value || 'II');
+    }
   };
 
   const applyValues = (k, ca, mg) => {
@@ -251,15 +262,31 @@ export async function labView() {
   viewerII = mountECG(iiHost, initialSpec, { mode: 'rhythm', lead: 'II', speed: 2, showAnnotations: true, autoPlay: false });
   viewerV3 = mountECG(v3Host, initialSpec, { mode: 'rhythm', lead: 'V3', speed: 2, showAnnotations: true, autoPlay: false });
   viewerV3.setLead('V3');
+  const twelveHost = el.querySelector('#lab-ecg-12lead');
+  viewer12 = mountECG(twelveHost, initialSpec, { mode: '12lead', speed: 1, showAnnotations: false, showSummary: false, autoPlay: false, twelveLayout: 'grid', twelveRhythm: true });
 
   kSlider.addEventListener('input', () => { state.k = Number(kSlider.value); render(); });
   caSlider.addEventListener('input', () => { state.ca = Number(caSlider.value); render(); });
   mgSlider.addEventListener('input', () => { state.mg = Number(mgSlider.value); render(); });
   leadSelect.addEventListener('change', () => { state.lead = leadSelect.value; render(); });
+  const applyViewMode = () => {
+    if (!viewer12) return;
+    const mode = viewMode?.value || 'grid';
+    if (mode === 'single') {
+      viewer12.setMode('rhythm');
+      viewer12.setLead(viewLead?.value || 'II');
+    } else {
+      viewer12.setMode('12lead');
+      viewer12.setTwelveLayout(mode === 'rows' ? 'rows' : 'grid');
+      viewer12.setTwelveRhythm(mode !== 'snapshot');
+    }
+  };
+  viewMode?.addEventListener('change', applyViewMode);
+  viewLead?.addEventListener('change', () => { if (viewMode?.value === 'single') viewer12?.setLead(viewLead.value); });
   playButton?.addEventListener('click', () => {
     const playing = viewerII?.playing;
-    if (playing) { viewerII.pause(); viewerV3?.pause(); playButton.innerHTML = `${icon('play', 12)} 播放`; }
-    else { viewerII?.play(2); viewerV3?.play(2); playButton.innerHTML = `${icon('pause', 12)} 暂停`; }
+    if (playing) { viewerII.pause(); viewerV3?.pause(); viewer12?.pause(); playButton.innerHTML = `${icon('play', 12)} 播放`; }
+    else { viewerII?.play(2); viewerV3?.play(2); viewer12?.play(2); playButton.innerHTML = `${icon('pause', 12)} 暂停`; }
   });
   el.addEventListener('click', (event) => {
     const preset = event.target.closest('[data-preset]');
@@ -290,6 +317,6 @@ export async function labView() {
 
   return {
     el,
-    destroy() { if (viewerII) viewerII.destroy(); if (viewerV3) viewerV3.destroy(); },
+    destroy() { if (viewerII) viewerII.destroy(); if (viewerV3) viewerV3.destroy(); if (viewer12) viewer12.destroy(); },
   };
 }

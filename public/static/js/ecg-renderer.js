@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108i';
+const __asset = __isNode ? '' : '?v=20261108j';
 const { ECGSession, LEAD_NAMES } = await import(`./ecg-engine.js${__asset}`);
 
 const COLUMNS = [
@@ -116,8 +116,10 @@ export class ECGViewer {
     let width = Math.max(parentWidth, mini ? 120 : mode === '12lead' ? 780 : 320);
     let height;
     if (mini) height = 62;
-    else if (mode === '12lead') height = 3 * 116 + 128 + 14;
-    else height = parentWidth < 560 ? 196 : 248;
+    else if (mode === '12lead') {
+      if (this.options.twelveLayout === 'rows') height = 12 * 58 + 14;
+      else height = 3 * 116 + (this.options.twelveRhythm === false ? 0 : 128) + 14;
+    } else height = parentWidth < 560 ? 196 : 248;
     this.cssWidth = width;
     this.cssHeight = height;
     this.canvas.style.width = `${width}px`;
@@ -182,6 +184,16 @@ export class ECGViewer {
     this.twelveProgress = null;
     this.resizeToParent();
     if (wasPlaying) this.play();
+  }
+
+  setTwelveLayout(layout) {
+    this.options.twelveLayout = layout === 'rows' ? 'rows' : 'grid';
+    this.resizeToParent();
+  }
+
+  setTwelveRhythm(show) {
+    this.options.twelveRhythm = Boolean(show);
+    if (this.options.mode === '12lead') this.resizeToParent();
   }
 
   setPlayback(mode) {
@@ -1093,6 +1105,15 @@ export class ECGViewer {
     const duration = 10;
     const progress = this.twelveProgress;
 
+    if (this.options.twelveLayout === 'rows') {
+      const rowHeight = 52;
+      const rowGap = 6;
+      LEAD_NAMES.forEach((lead, index) => {
+        this.draw12Cell(lead, padLeft, top + index * (rowHeight + rowGap), plotW, rowHeight, 0, colors, progress);
+      });
+      return;
+    }
+
     for (let col = 0; col < 4; col += 1) {
       for (let row = 0; row < 3; row += 1) {
         const lead = COLUMNS[col][row];
@@ -1102,6 +1123,7 @@ export class ECGViewer {
       }
     }
 
+    if (this.options.twelveRhythm === false) return;
     const ry = top + rows * (rowH + gap) + 6;
     if (!this.twelveSession) {
       this.twelveSession = new ECGSession({ ...this.rhythmSession.spec, duration: 10, annotations: [] });

@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108i';
+const __asset = __isNode ? '' : '?v=20261108j';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const LEADS = {
@@ -136,10 +136,57 @@ function drawVectorCanvas(canvas, state, t) {
   ctx.fillText('拖拽/旋转 = 从不同角度理解空间向量', 12, height - 10);
 }
 
+function drawProjectionCanvas(canvas, state, t) {
+  const { ctx, width, height } = canvas2d(canvas);
+  const c = palette();
+  const padL = 34; const padR = 12; const top = 12; const bottom = 18;
+  const plotW = width - padL - padR;
+  const baseline = top + (height - top - bottom) * 0.62;
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = c.bg; ctx.fillRect(0, 0, width, height);
+  ctx.strokeStyle = c.grid; ctx.globalAlpha = .35;
+  for (let i = 0; i <= 10; i += 1) {
+    const x = padL + (i / 10) * plotW;
+    ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, height - bottom); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  const lead = LEADS[state.lead];
+  const dot = (v) => v[0] * lead.vec[0] + v[1] * lead.vec[1] + v[2] * lead.vec[2];
+  const ampP = dot([0.28, 0.18, 0.05]) * 0.7;
+  const ampQ = dot([0.72, 0.32, 0.12]) * 1.5;
+  const ampT = dot([0.58, 0.3, 0.1]) * 0.9;
+  const phase = (t / 1800) % 1;
+  const yAt = (x) => {
+    const u = x / plotW;
+    let v = 0;
+    v += ampP * Math.exp(-Math.pow((u - 0.18) / 0.022, 2));
+    v -= ampQ * 0.55 * Math.exp(-Math.pow((u - 0.33) / 0.011, 2));
+    v += ampQ * Math.exp(-Math.pow((u - 0.36) / 0.012, 2));
+    v -= ampQ * 0.22 * Math.exp(-Math.pow((u - 0.39) / 0.012, 2));
+    v += ampT * Math.exp(-Math.pow((u - 0.64) / 0.055, 2));
+    return baseline - v * (height - top - bottom) * 0.5;
+  };
+  ctx.strokeStyle = c.trace; ctx.lineWidth = 1.7; ctx.beginPath();
+  for (let i = 0; i <= plotW; i += 1) {
+    const x = padL + i; const y = yAt(i);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  const cx = padL + phase * plotW;
+  const cy = yAt(phase * plotW);
+  ctx.strokeStyle = '#fff'; ctx.globalAlpha = .55; ctx.beginPath(); ctx.moveTo(cx, top); ctx.lineTo(cx, height - bottom); ctx.stroke(); ctx.globalAlpha = 1;
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx, cy, 3.2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = c.text; ctx.font = '600 9.5px ui-monospace, monospace';
+  ctx.fillText(`${lead.name} 投影 · P ${ampP >= 0 ? '+' : ''}${ampP.toFixed(2)}  QRS ${ampQ >= 0 ? '+' : ''}${ampQ.toFixed(2)}  T ${ampT >= 0 ? '+' : ''}${ampT.toFixed(2)}`, padL, 13);
+  ctx.fillStyle = c.muted; ctx.font = '9px ui-monospace, monospace';
+  ctx.fillText('时间光标同步显示：同一瞬时向量 → 同一导联波形', padL, height - 5);
+}
+
 function vectorLoopsPanel() {
   return `<div class="visual-grid">
     <div class="visual-card visual-card-dark">
       <canvas data-vector-canvas data-height="360" aria-label="心电向量环三维投影动画"></canvas>
+      <div class="visual-sync"><div class="visual-sync-head"><span>同步导联波形</span><span data-vector-sync-label>II 导联 · 时间光标</span></div><canvas data-vector-ecg data-height="112" aria-label="向量环同步导联波形"></canvas></div>
       <div class="visual-controls">
         <button class="btn btn-primary btn-sm" type="button" data-vector-play>${icon('pause', 13)} 暂停</button>
         <label class="visual-range">旋转 <input type="range" min="-80" max="80" value="24" data-vector-rotate></label>
@@ -404,6 +451,10 @@ export async function vectorLabView() {
     const canvas = content.querySelector('[data-vector-canvas]');
     if (!canvas) return;
     drawVectorCanvas(canvas, state, now);
+    const projection = content.querySelector('[data-vector-ecg]');
+    if (projection) drawProjectionCanvas(projection, state, now);
+    const syncLabel = content.querySelector('[data-vector-sync-label]');
+    if (syncLabel) syncLabel.textContent = `${LEADS[state.lead].name} · 时间光标`;
     if (state.playing) raf = requestAnimationFrame(drawLoopFrame);
   };
   const drawLimbFrame = (now) => {
