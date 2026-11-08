@@ -17,6 +17,7 @@ final class ApiController
         $stats = Stats::forUser((int) $user['id']);
         Http::ok([
             'user' => Auth::publicUser($user),
+            'level' => Level::forUser((int) $user['id']),
             'csrf' => Auth::csrf(),
             'app' => [
                 'name' => Config::get('app.name'),

@@ -18,6 +18,7 @@ final class Schema
                 is_admin TINYINT(1) NOT NULL DEFAULT 0,
                 is_active TINYINT(1) NOT NULL DEFAULT 1,
                 ai_daily_limit INT NULL,
+                level_override TINYINT NULL,
                 xp INT NOT NULL DEFAULT 0,
                 theme VARCHAR(8) NOT NULL DEFAULT 'auto',
                 created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -265,6 +266,7 @@ final class Schema
         self::ensureColumn($pdo, 'users', 'is_active', 'TINYINT(1) NOT NULL DEFAULT 1 AFTER is_admin');
         self::ensureColumn($pdo, 'users', 'ai_daily_limit', 'INT NULL AFTER is_active');
         self::ensureColumn($pdo, 'learning_events', 'time_ms', 'INT NULL AFTER correct');
+        self::ensureColumn($pdo, 'users', 'level_override', 'TINYINT NULL AFTER ai_daily_limit');
 
         $defaults = [
             'auth.registration_enabled' => true,

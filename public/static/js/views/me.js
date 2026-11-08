@@ -9,6 +9,7 @@ const { reviewSummary } = await import(`../study-store.js${__asset}`);
 const { isLowBandwidth, setLowBandwidth, installPrompt, clearInstallPrompt } = await import(`../bandwidth.js${__asset}`);
 const { getLocale, setLocale } = await import(`../i18n.js${__asset}`);
 const { createPasskey } = await import(`../webauthn.js${__asset}`);
+const { levelInfo, ADVANCED_UNLOCK, CHALLENGE_UNLOCK } = await import(`../levels.js${__asset}`);
 
 function accountCard(user) {
   return `<section class="card card-pad account-card">
@@ -34,6 +35,9 @@ export async function meView() {
   const stats = await api.stats('week');
   document.title = '我的 · 心迹 ECG Lab';
   const user = store.user || { displayName: '访客', isGuest: true, xp: 0 };
+  const level = !user.isGuest && store.level
+    ? { level: store.level.level, xp: store.level.xp, nextXp: store.level.nextXp, progress: store.level.progress }
+    : levelInfo(Number(user.xp || 0));
   const canRegister = store.features?.registrationEnabled !== false;
   const canLogin = store.features?.userLoginEnabled !== false;
   if (user.isGuest) await store.getDiagnoses();
@@ -59,7 +63,7 @@ export async function meView() {
   el.innerHTML = `
     <header class="page-head">
       <div><div class="page-eyebrow">${icon('user', 14)} MY LAB</div><h1 class="page-title">我的学习</h1><p class="page-sub">${user.isGuest ? '当前为游客模式：学习进度保存在本设备浏览器；本站暂不开放注册与普通用户登录。' : '进度、答题与急救记录保存在当前账号。'}</p></div>
-      <span class="badge badge-brand">${user.isGuest ? '访客模式' : '已登录'} · ${user.xp || 0} XP</span>
+      <span class="badge badge-brand">${user.isGuest ? '访客模式' : '已登录'} · Lv.${level.level} · ${user.xp || 0} XP</span>
     </header>
     <div class="me-header" style="margin-bottom:14px">
       <div class="row"><span class="profile-avatar">${escapeHtml((user.displayName || '心迹').replace(/[·\s]/g, '').slice(0, 2))}</span><div><div class="profile-name">${escapeHtml(user.displayName || '访客')}</div><div class="profile-sub">${user.isGuest ? '访客模式 · 进度保存在当前设备浏览器' : `@${escapeHtml(user.username || '')}`}</div></div></div>
@@ -96,6 +100,12 @@ export async function meView() {
         ${medicalDisclaimer()}
       </div>
       <aside class="stack">
+        <section class="card card-pad">
+          <div class="section-head"><h2 class="section-title" style="font-size:16px">成长等级</h2><span class="badge badge-brand">Lv.${level.level}</span></div>
+          <div class="row-wrap" style="justify-content:space-between;margin-top:6px"><b>${level.xp || 0} XP</b><span class="muted" style="font-size:10.5px">${level.nextXp ? `距 Lv.${level.level + 1} 还差 ${Math.max(0, level.nextXp - (level.xp || 0))} XP` : '已达最高等级'}</span></div>
+          <div class="progress" style="margin-top:6px"><div class="progress-bar" style="width:${level.progress || 0}%"></div></div>
+          <p class="muted" style="font-size:10.5px;margin-top:8px;line-height:1.7">Lv.${ADVANCED_UNLOCK} 解锁进阶难度、Lv.${CHALLENGE_UNLOCK} 解锁挑战；答错扣分导致 XP 下降时，等级会同步下降。</p>
+        </section>
         <section class="card card-pad">
           <div class="section-head"><h2 class="section-title" style="font-size:16px">排行榜</h2><div class="segmented"><button class="segment active" type="button" data-scope="week">本周</button><button class="segment" type="button" data-scope="all">总榜</button></div></div>
           <div class="leaderboard" data-leaderboard>${renderLeaderboard(stats.leaderboard || [])}</div>

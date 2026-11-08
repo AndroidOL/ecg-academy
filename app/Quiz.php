@@ -12,6 +12,14 @@ final class Quiz
             throw new ApiError(423, 'practice_locked', '今日测试分已低于阈值，需等到次日 00:00 后再使用测试模块（' . $lockedUntil . '）');
         }
         $level = max(1, min(3, (int) ($params['level'] ?? 1)));
+        $requestedAssignment = trim((string) ($params['assignment'] ?? ''));
+        if ($requestedAssignment === '' && $level > 1) {
+            $me = Auth::user(false);
+            if ($me && !Level::canUseQuizLevel($me, $level)) {
+                $need = $level === 2 ? Level::ADVANCED_UNLOCK : Level::CHALLENGE_UNLOCK;
+                throw new ApiError(403, 'level_locked', '升到 Lv.' . $need . ' 解锁' . ($level === 2 ? '进阶' : '挑战') . '难度');
+            }
+        }
         $chapter = (string) ($params['chapter'] ?? 'all');
         $focus = array_values(array_filter((array) ($params['focus'] ?? []), 'is_string'));
         $assignment = null;

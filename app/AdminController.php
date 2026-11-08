@@ -87,11 +87,16 @@ final class AdminController
         $countStmt->execute($bind);
         $total = (int) $countStmt->fetchColumn();
         $stmt = Db::pdo()->prepare(
-            'SELECT id, public_id, username, display_name, is_guest, is_admin, is_active, ai_daily_limit, xp, created_at, last_seen_at
+            'SELECT id, public_id, username, display_name, is_guest, is_admin, is_active, ai_daily_limit, level_override, xp, created_at, last_seen_at
              FROM users ' . $where . ' ORDER BY id DESC LIMIT ' . $size . ' OFFSET ' . (($page - 1) * $size)
         );
         $stmt->execute($bind);
-        Http::ok(['items' => $stmt->fetchAll(), 'total' => $total, 'page' => $page, 'pageSize' => $size]);
+        $items = $stmt->fetchAll();
+        foreach ($items as &$item) {
+            $item['level'] = Level::levelFrom((int) $item['xp'], $item['level_override'] === null ? null : (int) $item['level_override']);
+        }
+        unset($item);
+        Http::ok(['items' => $items, 'total' => $total, 'page' => $page, 'pageSize' => $size]);
     }
 
     public static function updateUser(array $params = []): void
@@ -122,6 +127,12 @@ final class AdminController
             if ($name === '' || mb_strlen($name, 'UTF-8') > 32) throw new ApiError(422, 'invalid_display_name', '显示名需为 1–32 字');
             $fields[] = 'display_name = ?';
             $values[] = $name;
+        }
+        if (array_key_exists('level_override', $input)) {
+            $raw = $input['level_override'];
+            $levelOverride = ($raw === null || $raw === '') ? null : max(1, min(Level::MAX, (int) $raw));
+            $fields[] = 'level_override = ?';
+            $values[] = $levelOverride;
         }
         if (array_key_exists('ai_daily_limit', $input)) {
             $raw = $input['ai_daily_limit'];

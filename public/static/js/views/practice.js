@@ -9,6 +9,7 @@ const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, toast, setButtonLoading, fmtDuration, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 const { streamAi } = await import(`../ai-stream.js${__asset}`);
 const { renderMarkdown } = await import(`../markdown.js${__asset}`);
+const { levelFromXp, ADVANCED_UNLOCK, CHALLENGE_UNLOCK } = await import(`../levels.js${__asset}`);
 
 const LEVELS = [
   { id: 1, name: '基础', note: '单一诊断，常见图形' },
@@ -139,7 +140,11 @@ export async function practiceView({ query } = {}) {
         <div class="game-mode-grid">${GAME_MODES.map((mode) => `<button class="game-mode-card ${mode.id === state.gameMode ? 'active' : ''}" type="button" data-game-mode="${mode.id}"><span class="game-mode-icon">${icon(mode.icon, 16)}</span><b>${mode.name}</b><small>${mode.note}</small></button>`).join('')}</div>
         <h2 class="section-title" style="margin:16px 0 8px;font-size:16px">难度与范围</h2>
         <div class="level-grid">
-          ${LEVELS.map((level) => `<button class="level-card ${level.id === state.level ? 'active' : ''}" type="button" data-level="${level.id}"><b>${level.name}</b><span>${level.note}</span></button>`).join('')}
+          ${LEVELS.map((level) => {
+            const need = level.id === 2 ? ADVANCED_UNLOCK : level.id === 3 ? CHALLENGE_UNLOCK : 0;
+            const locked = need > 0 && userLevel < need;
+            return `<button class="level-card ${level.id === state.level ? 'active' : ''} ${locked ? 'locked' : ''}" type="button" data-level="${level.id}" ${locked ? 'aria-disabled="true"' : ''}><b>${level.name}${locked ? ` ${icon('lock', 11)}` : ''}</b><span>${level.note}${locked ? ` · Lv.${need} 解锁` : ''}</span></button>`;
+          }).join('')}
         </div>
         <div class="practice-config">
           <div class="field"><label for="practice-chapter">章节</label><select class="select" id="practice-chapter"><option value="all">全部章节</option>${chapters.map((chapter) => `<option value="${escapeHtml(chapter.id)}">${escapeHtml(chapter.name)}</option>`).join('')}</select></div>
@@ -191,7 +196,13 @@ export async function practiceView({ query } = {}) {
   const chapterSelect = el.querySelector('#practice-chapter');
   chapterSelect.value = state.chapter;
   levelButtons.forEach((button) => button.addEventListener('click', () => {
-    state.level = Number(button.dataset.level);
+    const target = Number(button.dataset.level);
+    const need = target === 2 ? ADVANCED_UNLOCK : target === 3 ? CHALLENGE_UNLOCK : 0;
+    if (need > 0 && userLevel < need) {
+      toast(`升到 Lv.${need} 解锁${target === 2 ? '进阶' : '挑战'}难度`, 'warn');
+      return;
+    }
+    state.level = target;
     levelButtons.forEach((b) => b.classList.toggle('active', b === button));
   }));
   countButtons.forEach((button) => button.addEventListener('click', () => {

@@ -294,6 +294,7 @@ final class Auth
             'isGuest' => (int) $user['is_guest'] === 1,
             'isAdmin' => (int) ($user['is_admin'] ?? 0) === 1,
             'xp' => (int) $user['xp'],
+            'level' => Level::levelFrom((int) $user['xp'], isset($user['level_override']) && $user['level_override'] !== null ? (int) $user['level_override'] : null),
             'theme' => $user['theme'],
             'createdAt' => $user['created_at'],
         ];

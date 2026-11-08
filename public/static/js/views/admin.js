@@ -388,15 +388,24 @@ export async function adminView() {
           <td>${u.is_admin ? badge('管理员', 'badge-brand') : '用户'}</td>
           <td>${u.is_active ? badge('启用', 'badge-ok') : badge('停用', 'badge-danger')}</td>
           <td>${u.ai_daily_limit === null ? '默认' : u.ai_daily_limit}</td>
-          <td>${u.xp}</td>
+          <td>${u.xp}<div class="muted" style="font-size:9px">Lv.${u.level || 1}${u.level_override ? ' · 手动' : ''}</div></td>
           <td class="muted" style="font-size:10px">${escapeHtml(u.last_seen_at || '')}</td>
-          <td><div class="row-wrap" style="justify-content:flex-end;gap:3px"><button class="btn btn-xs btn-ghost" data-user-active="${u.id}" data-value="${u.is_active ? 0 : 1}">${u.is_active ? '停用' : '启用'}</button><button class="btn btn-xs btn-ghost" data-user-admin="${u.id}" data-value="${u.is_admin ? 0 : 1}">${u.is_admin ? '移除管理员' : '设为管理员'}</button><button class="btn btn-xs btn-ghost" data-user-limit="${u.id}">AI 额度</button><button class="btn btn-xs btn-ghost" data-user-password="${u.id}">重置密码</button></div></td>
+          <td><div class="row-wrap" style="justify-content:flex-end;gap:3px"><button class="btn btn-xs btn-ghost" data-user-active="${u.id}" data-value="${u.is_active ? 0 : 1}">${u.is_active ? '停用' : '启用'}</button><button class="btn btn-xs btn-ghost" data-user-admin="${u.id}" data-value="${u.is_admin ? 0 : 1}">${u.is_admin ? '移除管理员' : '设为管理员'}</button><button class="btn btn-xs btn-ghost" data-user-level="${u.id}">设置等级</button><button class="btn btn-xs btn-ghost" data-user-limit="${u.id}">AI 额度</button><button class="btn btn-xs btn-ghost" data-user-password="${u.id}">重置密码</button></div></td>
         </tr>`).join('')}</tbody></table></div><div class="pager-info" style="margin-top:8px">共 ${data.total} 个用户，显示第 ${data.page} 页</div>`;
         host.querySelectorAll('[data-user-active]').forEach((b) => b.addEventListener('click', async () => {
           try { await api.adminUpdateUser({ userId: Number(b.dataset.userActive), is_active: b.dataset.value === '1' }); toast('状态已更新'); await loadUsers(query); } catch (e) { toast(e.message, 'error'); }
         }));
         host.querySelectorAll('[data-user-admin]').forEach((b) => b.addEventListener('click', async () => {
           try { await api.adminUpdateUser({ userId: Number(b.dataset.userAdmin), is_admin: b.dataset.value === '1' }); toast('角色已更新'); await loadUsers(query); } catch (e) { toast(e.message, 'error'); }
+        }));
+        host.querySelectorAll('[data-user-level]').forEach((b) => b.addEventListener('click', async () => {
+          const raw = window.prompt('设置用户等级（1–20；留空恢复按 XP 自动计算）：');
+          if (raw === null) return;
+          try {
+            await api.adminUpdateUser({ userId: Number(b.dataset.userLevel), level_override: raw === '' ? null : Number(raw) });
+            toast('等级已更新');
+            await loadUsers(query);
+          } catch (e) { toast(e.message, 'error'); }
         }));
         host.querySelectorAll('[data-user-limit]').forEach((b) => b.addEventListener('click', async () => {
           const raw = window.prompt('每日 AI 额度（留空使用全局默认）：');

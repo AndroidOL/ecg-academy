@@ -20,6 +20,7 @@ const baseStore = {
   sim: { runs: 0, best: 0 },
   leaderboard: [],
   scenarioCount: 0,
+  level: null,
   bank: { total: 0, byLevel: { 1: 0, 2: 0, 3: 0 }, byChapter: {} },
   diagnosesCache: null,
   scenariosCache: null,
@@ -45,6 +46,7 @@ const baseStore = {
     this.leaderboard = data.leaderboard || this.leaderboard;
     this.scenarioCount = data.scenarioCount || 0;
     this.bank = data.bank || this.bank;
+    this.level = data.level || this.level;
     this.emit('bootstrap', data);
   },
 
