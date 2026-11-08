@@ -663,3 +663,6 @@
 .vector-figure-note { display:flex; flex-wrap:wrap; gap:4px 8px; align-items:baseline; padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.045); color:var(--muted); font-size:9px; line-height:1.5; }
 .vector-figure-note b { color:var(--ink); font-size:9.5px; white-space:nowrap; }
 .vector-figure-note span { opacity:.9; }
+.visual-controls .visual-range { flex: 0 0 auto; white-space: nowrap; }
+.visual-controls .visual-range select { min-width: 70px; }
+.visual-controls .visual-range input[type="range"] { vertical-align: middle; }

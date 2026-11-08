@@ -1,6 +1,6 @@
 import { api } from '../api.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108t';
+const __asset = __isNode ? '' : '?v=20261108u';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 import { navigate } from '../router.js';

@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108t';
+const __asset = __isNode ? '' : '?v=20261108u';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const LEADS = {
@@ -297,7 +297,17 @@ function drawLimbCanvas(canvas, state, t) {
   const vy = cy + Math.sin(angle) * r * 0.9;
   ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.4;
   ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(vx, vy); ctx.stroke();
-  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(vx, vy, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(vx, vy, 3.2, 0, Math.PI * 2); ctx.fill();
+  // 向量箭头：强调这是一个有方向的合成向量，而不是一个标量
+  const ux = Math.cos(angle); const uy = Math.sin(angle);
+  const bx = vx - ux * 11; const by = vy - uy * 11;
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.moveTo(vx, vy);
+  ctx.lineTo(bx - uy * 5, by + ux * 5);
+  ctx.lineTo(bx + uy * 5, by - ux * 5);
+  ctx.closePath();
+  ctx.fill();
   const lead = LEADS[state.lead];
   const leadRad = lead.angle * Math.PI / 180;
   const projected = Math.cos(angle - leadRad);
