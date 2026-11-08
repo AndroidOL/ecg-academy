@@ -44,7 +44,7 @@ app/                 后端（Web 根之外）
   Auth.php           游客、注册、登录、CSRF、限流
   Router.php         小型路由
   ApiController.php  全部 API
-  Content.php        读取并缓存 230 章课程（诊断 + 理论/病例）
+  Content.php        读取并缓存 231 章课程（诊断 + 理论/病例）
   Quiz.php           出题、选项、判分、XP
   SectionBank.php    1735 道章节学习/考试题
   Learning.php       学习状态、评级、考试、测试分与排行榜
