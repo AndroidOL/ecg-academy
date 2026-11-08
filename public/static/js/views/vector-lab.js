@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108p';
+const __asset = __isNode ? '' : '?v=20261108q';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const LEADS = {
@@ -105,30 +105,36 @@ function drawVectorCanvas(canvas, state, t) {
     T: (a) => [0.3 + 0.5 * Math.cos(a) + 0.03 * Math.cos(4 * a), -0.18 + 0.28 * Math.sin(a), -0.08 + 0.1 * Math.sin(a + 1.4)],
   };
   const loopColors = { P: c.brand, QRS: c.accent, T: c.gold };
-  Object.entries(loops).forEach(([key, fn]) => {
-    if (state.loop !== 'all' && state.loop !== key) return;
-    const color = loopColors[key];
-    ctx.strokeStyle = color;
-    ctx.lineWidth = key === state.loop ? 2.2 : 1.4;
-    ctx.globalAlpha = key === state.loop ? 1 : 0.52;
-    ctx.beginPath();
-    for (let i = 0; i <= 100; i += 1) {
-      const a = (i / 100) * Math.PI * 2;
-      const p = project(fn(a));
-      if (i === 0) ctx.moveTo(...p); else ctx.lineTo(...p);
-    }
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-  });
+  const axisDelta = ((state.axis ?? 60) - 60) * Math.PI / 180;
+  const rotateAxis = ([x, y, z]) => [x * Math.cos(axisDelta) - y * Math.sin(axisDelta), x * Math.sin(axisDelta) + y * Math.cos(axisDelta), z];
+  const loopPoint = (key, a) => (key === 'QRS' ? rotateAxis(loops.QRS(a)) : loops[key](a));
   const cycle = (t / 1800) % 1;
   const windows = { P: [0, 0.16], QRS: [0.2, 0.42], T: [0.55, 0.8] };
   let active = null;
   Object.entries(windows).forEach(([key, [start, end]]) => { if (cycle >= start && cycle < end) active = key; });
+  Object.entries(loops).forEach(([key, fn]) => {
+    if (state.loop !== 'all' && state.loop !== key) return;
+    const isActive = key === active;
+    ctx.strokeStyle = loopColors[key];
+    ctx.lineWidth = key === state.loop ? 2.2 : 1.4;
+    ctx.globalAlpha = state.loop === 'all' ? (isActive ? 1 : 0.12) : 1;
+    if (isActive) { ctx.shadowColor = loopColors[key]; ctx.shadowBlur = 5; }
+    ctx.beginPath();
+    for (let i = 0; i <= 100; i += 1) {
+      const a = (i / 100) * Math.PI * 2;
+      const p = project(loopPoint(key, a));
+      if (i === 0) ctx.moveTo(...p); else ctx.lineTo(...p);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+  });
   const selected = state.loop === 'all' ? (active || 'QRS') : state.loop;
   const phase = active === selected ? (cycle - windows[selected][0]) / (windows[selected][1] - windows[selected][0]) : 0;
   const vec = loops[selected](Math.max(0, Math.min(1, phase)) * Math.PI * 2);
+  const rotatedVec = selected === 'QRS' ? rotateAxis(vec) : vec;
   const p0 = project([0, 0, 0]);
-  const p1 = project(vec);
+  const p1 = project(rotatedVec);
   if (active && (state.loop === 'all' || state.loop === active)) {
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
@@ -136,7 +142,7 @@ function drawVectorCanvas(canvas, state, t) {
     ctx.fillStyle = '#ffffff';
     ctx.beginPath(); ctx.arc(...p1, 3.5, 0, Math.PI * 2); ctx.fill();
   }
-  const main = loops[selected](0.8);
+  const main = selected === 'QRS' ? rotateAxis(loops.QRS(0.8)) : loops[selected](0.8);
   const pm = project(main);
   ctx.strokeStyle = c.gold;
   ctx.setLineDash([5, 4]);
@@ -147,7 +153,7 @@ function drawVectorCanvas(canvas, state, t) {
   ctx.font = '600 9.5px ui-monospace, monospace';
   ctx.fillText('主方向', pm[0] + 5, pm[1] - 4);
   const lead = LEADS[state.lead];
-  const dot = vec[0] * lead.vec[0] + vec[1] * lead.vec[1] + vec[2] * lead.vec[2];
+  const dot = rotatedVec[0] * lead.vec[0] + rotatedVec[1] * lead.vec[1] + rotatedVec[2] * lead.vec[2];
   ctx.fillStyle = c.text;
   ctx.font = '600 11px ui-monospace, monospace';
   const activeLabel = active ? `当前 ${active} 波 · ` : '等电位线 · ';
@@ -205,13 +211,21 @@ function drawProjectionCanvas(canvas, state, t) {
 }
 
 function updateProjectionBars(host, state, t) {
-  const loop = state.loop === 'all' ? 'QRS' : state.loop;
+  const cycle = (t / 1800) % 1;
+  const windows = { P: [0, 0.16], QRS: [0.2, 0.42], T: [0.55, 0.8] };
+  let active = null;
+  Object.entries(windows).forEach(([key, [start, end]]) => { if (cycle >= start && cycle < end) active = key; });
+  const loop = active || (state.loop === 'all' ? 'QRS' : state.loop);
   const a = (((t / 1800) % 1) * Math.PI * 2);
-  const point = loop === 'P'
+  let point = loop === 'P'
     ? [0.18 + 0.24 * Math.cos(a), -0.1 + 0.16 * Math.sin(a), 0.04 * Math.sin(2 * a)]
     : loop === 'T'
       ? [0.3 + 0.5 * Math.cos(a), -0.18 + 0.28 * Math.sin(a), -0.08 + 0.1 * Math.sin(a + 1.4)]
       : [0.34 + 0.62 * Math.cos(a) + 0.1 * Math.cos(3 * a), -0.22 + 0.34 * Math.sin(a) + 0.09 * Math.sin(3 * a), -0.12 + 0.18 * Math.sin(a + 0.7)];
+  if (loop === 'QRS') {
+    const d = ((state.axis ?? 60) - 60) * Math.PI / 180;
+    point = [point[0] * Math.cos(d) - point[1] * Math.sin(d), point[0] * Math.sin(d) + point[1] * Math.cos(d), point[2]];
+  }
   Object.entries(LEADS).forEach(([id, lead]) => {
     const value = point[0] * lead.vec[0] + point[1] * lead.vec[1] + point[2] * lead.vec[2];
     const valueNode = host.querySelector(`[data-projection-value="${id}"]`);
@@ -228,6 +242,7 @@ function vectorLoopsPanel() {
   return `<div class="visual-grid">
     <div class="visual-card visual-card-dark">
       <canvas data-vector-canvas data-height="360" aria-label="心电向量环三维投影动画"></canvas>
+      <div class="vector-timeline" data-vector-timeline><span>P</span><span>QRS</span><span>T</span><i data-vector-timeline-cursor></i></div>
       <div class="visual-sync"><div class="visual-sync-head"><span>同步导联波形</span><span data-vector-sync-label>II 导联 · 时间光标</span></div><canvas data-vector-ecg data-height="112" aria-label="向量环同步导联波形"></canvas></div>
       <div class="vector-projections" data-vector-projections>${Object.entries(LEADS).map(([id, lead]) => `<div data-projection-row="${id}"><b>${id}</b><div class="vector-projection-track"><i></i></div><span data-projection-value="${id}">+0.00</span></div>`).join('')}</div>
       <div class="visual-controls">
@@ -237,6 +252,7 @@ function vectorLoopsPanel() {
         <select class="select" data-vector-loop aria-label="选择向量环"><option value="all">P + QRS + T 全部</option><option value="P">P 环</option><option value="QRS" selected>QRS 环</option><option value="T">T 环</option></select>
         <select class="select" data-vector-lead aria-label="选择投影导联">${Object.entries(LEADS).map(([id, l]) => `<option value="${id}" ${id === 'II' ? 'selected' : ''}>${l.name}</option>`).join('')}</select>
       </div>
+      <div class="axis-presets vector-axis-presets"><span class="muted" style="font-size:9px">快速主方向</span><button type="button" class="chip" data-qrs-axis="60">正常 +60°</button><button type="button" class="chip" data-qrs-axis="-45">左偏 −45°</button><button type="button" class="chip" data-qrs-axis="120">右偏 +120°</button><button type="button" class="chip" data-qrs-axis="-120">极度 −120°</button><button type="button" class="chip" data-qrs-axis="90">垂直 +90°</button></div>
     </div>
     <aside class="visual-explain">
       <h3>先理解“环”，再看“波”</h3>
@@ -278,7 +294,28 @@ function drawLimbCanvas(canvas, state, t) {
   ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(vx, vy); ctx.stroke();
   ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(vx, vy, 4, 0, Math.PI * 2); ctx.fill();
   const lead = LEADS[state.lead];
-  const projected = Math.cos(angle - (lead.angle * Math.PI / 180));
+  const leadRad = lead.angle * Math.PI / 180;
+  const projected = Math.cos(angle - leadRad);
+  const px = cx + Math.cos(leadRad) * projected * r * 0.9;
+  const py = cy + Math.sin(leadRad) * projected * r * 0.9;
+  // 淡色三角形：向量尖端 → 选中导联轴上的投影点 → 原点
+  ctx.save();
+  ctx.globalAlpha = 0.13;
+  ctx.fillStyle = c.accent;
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(vx, vy); ctx.lineTo(px, py); ctx.closePath(); ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = c.accent;
+  ctx.globalAlpha = 0.6;
+  ctx.setLineDash([4, 4]);
+  ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(vx, vy); ctx.lineTo(px, py); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = c.accent;
+  ctx.beginPath(); ctx.arc(px, py, 3.2, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = c.muted;
+  ctx.font = '9px ui-monospace, monospace';
+  ctx.fillText(`投影 ${projected >= 0 ? '+' : ''}${projected.toFixed(2)}`, px + 5, py + 10);
   ctx.fillStyle = c.text; ctx.font = '600 11px ui-monospace, monospace';
   const signedAngle = Math.round(((angle * 180 / Math.PI + 180) % 360 + 360) % 360 - 180);
   ctx.fillText(`主向量 ${signedAngle}° · ${lead.name} 投影 ${projected >= 0 ? '+' : ''}${projected.toFixed(2)}`, 12, 18);
@@ -509,7 +546,7 @@ export async function vectorLabView() {
   let raf = 0;
   let cleanup = [];
   let start = performance.now();
-  const state = { rotate: 24, pitch: 18, playing: true, loop: 'QRS', lead: 'II', angle: 60, auto: true };
+  const state = { rotate: 24, pitch: 18, playing: true, loop: 'QRS', lead: 'II', axis: 60, angle: 60, auto: true };
   el.innerHTML = `<div class="page-eyebrow">${icon('compass', 14)} VECTOR & ELECTROPHYSIOLOGY</div>
     <div class="vector-head"><div><h1 class="page-title">心脏向量实验室</h1><p class="page-sub">把“背图形”变成“看方向”：P/QRS/T 环、肢体/胸导联投影、动作电位与解剖一次串起来。</p></div><a class="btn btn-secondary btn-sm" href="#/learn/ecg-calibration-paper">回到基础课程 ${icon('arrowRight', 13)}</a></div>
     <div class="visual-tabs">${TABS.map(([id, label], i) => `<button class="chip ${i === 0 ? 'active' : ''}" type="button" data-visual-tab="${id}">${label}</button>`).join('')}</div>
@@ -528,6 +565,12 @@ export async function vectorLabView() {
     if (syncLabel) syncLabel.textContent = `${LEADS[state.lead].name} · 时间光标`;
     const bars = content.querySelector('[data-vector-projections]');
     if (bars) updateProjectionBars(bars, state, now);
+    const timeline = content.querySelector('[data-vector-timeline]');
+    if (timeline) {
+      const cursor = timeline.querySelector('[data-vector-timeline-cursor]');
+      if (cursor) cursor.style.left = `${((now / 1800) % 1) * 100}%`;
+      timeline.querySelectorAll('span').forEach((node, i) => node.classList.toggle('active', i === ({ P: 0, QRS: 1, T: 2 }[state.loop === 'all' ? 'QRS' : state.loop])));
+    }
     if (state.playing) raf = requestAnimationFrame(drawLoopFrame);
   };
   const drawLimbFrame = (now) => {
@@ -552,6 +595,12 @@ export async function vectorLabView() {
     });
     content.querySelector('[data-vector-rotate]')?.addEventListener('input', (e) => { state.rotate = Number(e.target.value); });
     content.querySelector('[data-vector-pitch]')?.addEventListener('input', (e) => { state.pitch = Number(e.target.value); });
+    content.querySelectorAll('[data-qrs-axis]').forEach((button) => button.addEventListener('click', () => {
+      state.axis = Number(button.dataset.qrsAxis);
+      state.loop = 'QRS';
+      const select = content.querySelector('[data-vector-loop]');
+      if (select) select.value = 'QRS';
+    }));
     content.querySelector('[data-vector-loop]')?.addEventListener('change', (e) => { state.loop = e.target.value; });
     content.querySelector('[data-vector-lead]')?.addEventListener('change', (e) => { state.lead = e.target.value; });
     const canvas = content.querySelector('[data-vector-canvas]');

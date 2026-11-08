@@ -646,3 +646,8 @@
 .ai-ask-row { display:flex; gap:6px; margin-top:10px; }
 .ai-ask-row .input { min-height:36px; font-size:12px; }
 .ai-ask-row .btn { flex:0 0 auto; }
+.vector-timeline { position:relative; display:grid; grid-template-columns:16% 26% 35% 23%; margin:0; padding:5px 10px; background:var(--bg-elev); border-top:1px solid var(--line); color:var(--faint); font-family:var(--font-mono); font-size:8px; letter-spacing:.05em; }
+.vector-timeline span { text-align:center; padding:2px 0; border-radius:3px; }
+.vector-timeline span.active { color:var(--brand-ink); background:var(--brand-soft); font-weight:700; }
+.vector-timeline i { position:absolute; top:3px; bottom:3px; width:1px; background:var(--brand); transition:left .1s linear; box-shadow:0 0 0 2px color-mix(in srgb,var(--brand) 20%,transparent); }
+.vector-axis-presets { align-items:center; border-top:1px solid var(--line); }
