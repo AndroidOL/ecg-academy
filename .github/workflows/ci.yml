@@ -56,6 +56,8 @@ jobs:
         run: php tests/assignment.test.php
       - name: Learning and exam integration test
         run: php tests/learning.test.php
+      - name: Leaderboard integration test
+        run: php tests/leaderboard.test.php
       - name: Validate multi-hundred-chapter curriculum
         run: php scripts/validate_curriculum.php
       - name: Lint PHP

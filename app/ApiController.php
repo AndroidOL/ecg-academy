@@ -194,8 +194,8 @@ final class ApiController
 
     public static function practiceLeaderboard(array $params = []): void
     {
-        self::user();
-        Http::ok(['items' => Learning::practiceLeaderboard((string) ($_GET['scope'] ?? 'today'))]);
+        $user = self::user();
+        Http::ok(Learning::practiceLeaderboardData((int) $user['id'], (string) ($_GET['scope'] ?? 'today')));
     }
 
     public static function stats(array $params = []): void

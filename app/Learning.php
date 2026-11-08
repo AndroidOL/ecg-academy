@@ -363,6 +363,7 @@ final class Learning
         $stmt->execute([$userId]);
         $row = $stmt->fetch() ?: ['score' => 0, 'correct' => 0, 'wrong' => 0, 'locked_until' => null];
         $lockedUntil = $row['locked_until'] && strtotime((string) $row['locked_until']) > time() ? (string) $row['locked_until'] : null;
+        $leaderboard = self::practiceLeaderboardData($userId, 'today');
         return [
             'score' => (int) $row['score'],
             'correct' => (int) $row['correct'],
@@ -370,34 +371,80 @@ final class Learning
             'locked' => $lockedUntil !== null,
             'lockedUntil' => $lockedUntil,
             'lockScore' => self::PRACTICE_LOCK_SCORE,
-            'leaderboard' => self::practiceLeaderboard('today'),
+            'leaderboard' => $leaderboard['items'],
+            'leaderboardMe' => $leaderboard['me'],
         ];
     }
 
     public static function practiceLeaderboard(string $scope = 'today'): array
     {
-        $pdo = Db::pdo();
-        if ($scope === 'all') {
-            $stmt = $pdo->query(
-                'SELECT u.public_id, u.display_name, u.is_guest, SUM(p.score) AS score, SUM(p.correct) AS correct, SUM(p.wrong) AS wrong
-                 FROM practice_daily_scores p JOIN users u ON u.id = p.user_id
-                 GROUP BY u.id ORDER BY score DESC, correct DESC, u.id ASC LIMIT 20'
-            );
-        } else {
-            $stmt = $pdo->query(
-                'SELECT u.public_id, u.display_name, u.is_guest, p.score, p.correct, p.wrong
-                 FROM practice_daily_scores p JOIN users u ON u.id = p.user_id
-                 WHERE p.day = CURDATE()
-                 ORDER BY p.score DESC, p.correct DESC, u.id ASC LIMIT 20'
-            );
-        }
-        return array_map(static fn (array $row): array => [
-            'id' => $row['public_id'],
-            'name' => $row['display_name'],
-            'isGuest' => (int) $row['is_guest'] === 1,
-            'points' => (int) $row['score'],
-            'correct' => (int) $row['correct'],
-            'wrong' => (int) $row['wrong'],
-        ], $stmt->fetchAll());
+        return self::practiceLeaderboardData(0, $scope)['items'];
     }
+
+    public static function practiceLeaderboardData(int $userId, string $scope = 'today'): array
+    {
+        $scope = in_array($scope, ['today', 'week', 'all'], true) ? $scope : 'today';
+        $pdo = Db::pdo();
+        $where = '';
+        if ($scope === 'today') $where = 'WHERE p.day = CURDATE()';
+        elseif ($scope === 'week') $where = 'WHERE p.day >= CURDATE() - INTERVAL 6 DAY';
+        $stmt = $pdo->query(
+            'SELECT u.public_id, u.display_name, u.is_guest,
+                    SUM(p.score) AS score, SUM(p.correct) AS correct, SUM(p.wrong) AS wrong,
+                    COUNT(*) AS active_days
+             FROM practice_daily_scores p JOIN users u ON u.id = p.user_id
+             ' . $where . '
+             GROUP BY u.id
+             ORDER BY score DESC, correct DESC, u.id ASC'
+        );
+        $rows = $stmt->fetchAll();
+        $publicId = '';
+        $me = null;
+        if ($userId > 0) {
+            $userStmt = $pdo->prepare('SELECT public_id, display_name, is_guest FROM users WHERE id = ? LIMIT 1');
+            $userStmt->execute([$userId]);
+            $user = $userStmt->fetch();
+            if ($user) {
+                $publicId = (string) $user['public_id'];
+                $me = [
+                    'rank' => null,
+                    'id' => $user['public_id'],
+                    'name' => $user['display_name'],
+                    'isGuest' => (int) $user['is_guest'] === 1,
+                    'points' => 0,
+                    'correct' => 0,
+                    'wrong' => 0,
+                    'accuracy' => 0,
+                    'activeDays' => 0,
+                ];
+            }
+        }
+        $items = [];
+        foreach ($rows as $index => $row) {
+            $accuracy = ((int) $row['correct'] + (int) $row['wrong']) > 0
+                ? (int) round(((int) $row['correct'] / ((int) $row['correct'] + (int) $row['wrong'])) * 100)
+                : 0;
+            $item = [
+                'rank' => $index + 1,
+                'id' => $row['public_id'],
+                'name' => $row['display_name'],
+                'isGuest' => (int) $row['is_guest'] === 1,
+                'points' => (int) $row['score'],
+                'correct' => (int) $row['correct'],
+                'wrong' => (int) $row['wrong'],
+                'accuracy' => $accuracy,
+                'activeDays' => (int) $row['active_days'],
+            ];
+            if (count($items) < 50) $items[] = $item;
+            if ($publicId !== '' && (string) $row['public_id'] === $publicId) $me = $item;
+        }
+        return [
+            'scope' => $scope,
+            'items' => $items,
+            'me' => $me,
+            'total' => count($rows),
+            'updatedAt' => date(DATE_ATOM),
+        ];
+    }
+
 }

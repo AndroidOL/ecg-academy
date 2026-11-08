@@ -96,6 +96,7 @@ export async function meView() {
             <a class="quick-action" href="#/learn">${icon('bookOpen', 15)} 诊断图谱</a>
             <a class="quick-action" href="#/practice">${icon('target', 15)} 判读练习</a>
             <a class="quick-action" href="#/exam">${icon('trophy', 15)} 学习考试</a>
+            <a class="quick-action" href="#/leaderboard">${icon('trophy', 15)} 测试排行</a>
             <a class="quick-action" href="#/review">${icon('bookOpen', 15)} 错题复习</a>
             <a class="quick-action" href="#/sim">${icon('zap', 15)} 急救推演</a>
             <a class="quick-action" href="#/lab">${icon('flask', 15)} 电解质</a>

@@ -3,7 +3,7 @@ import { store } from '../store.js';
 import { navigate } from '../router.js';
 import { recordAttempt } from '../study-store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108aj';
+const __asset = __isNode ? '' : '?v=20261108al';
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
 const state = {

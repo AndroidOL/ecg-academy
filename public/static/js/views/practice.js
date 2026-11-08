@@ -4,7 +4,7 @@ import { navigate } from '../router.js';
 import { recordAttempt, reviewSummary, weakDiagnosisIds, deviceId } from '../study-store.js';
 import { byokPayload, hasByok } from '../byok.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108aj';
+const __asset = __isNode ? '' : '?v=20261108al';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, toast, setButtonLoading, fmtDuration, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
@@ -12,6 +12,12 @@ const LEVELS = [
   { id: 1, name: '基础', note: '单一诊断，常见图形' },
   { id: 2, name: '进阶', note: '不典型表现与鉴别' },
   { id: 3, name: '组合挑战', note: '一张图两诊断' },
+];
+
+const GAME_MODES = [
+  { id: 'classic', name: '经典判读', note: '按题数完成一局', icon: 'target' },
+  { id: 'speed', name: '极速 60 秒', note: '60 秒内尽可能多答', icon: 'timer' },
+  { id: 'survival', name: '连击生存', note: '3 条命，答错扣命', icon: 'heart' },
 ];
 
 const state = {
@@ -35,6 +41,13 @@ const state = {
   practice: null,
   assignmentCode: '',
   assignmentMeta: null,
+  gameMode: 'classic',
+  roundTotal: 0,
+  speedRemaining: 60,
+  speedTimerId: 0,
+  lives: 3,
+  answeredCount: 0,
+  roundOver: false,
 };
 
 function aiUiAvailable() {
@@ -44,6 +57,11 @@ function aiUiAvailable() {
 function clearTimer() {
   if (state.timerId) window.clearInterval(state.timerId);
   state.timerId = 0;
+}
+
+function clearSpeedTimer() {
+  if (state.speedTimerId) window.clearInterval(state.speedTimerId);
+  state.speedTimerId = 0;
 }
 
 function destroyViewer() {
@@ -57,8 +75,13 @@ export async function practiceView({ query } = {}) {
   const el = document.createElement('div');
   el.className = 'page';
   clearTimer();
+  clearSpeedTimer();
   destroyViewer();
   state.quiz = null;
+  state.gameMode = 'classic';
+  state.answeredCount = 0;
+  state.roundOver = false;
+  state.lives = 3;
   state.selected = new Set();
   state.submitted = false;
   state.result = null;
@@ -109,13 +132,15 @@ export async function practiceView({ query } = {}) {
     <div class="practice-setup">
       <section class="quiz-card">
         <div class="page-eyebrow">SETUP</div>
-        <h2 class="section-title" style="margin-bottom:10px">选择训练方式</h2>
+        <h2 class="section-title" style="margin-bottom:10px">选择玩法</h2>
+        <div class="game-mode-grid">${GAME_MODES.map((mode) => `<button class="game-mode-card ${mode.id === state.gameMode ? 'active' : ''}" type="button" data-game-mode="${mode.id}"><span class="game-mode-icon">${icon(mode.icon, 16)}</span><b>${mode.name}</b><small>${mode.note}</small></button>`).join('')}</div>
+        <h2 class="section-title" style="margin:16px 0 8px;font-size:16px">难度与范围</h2>
         <div class="level-grid">
           ${LEVELS.map((level) => `<button class="level-card ${level.id === state.level ? 'active' : ''}" type="button" data-level="${level.id}"><b>${level.name}</b><span>${level.note}</span></button>`).join('')}
         </div>
         <div class="practice-config">
           <div class="field"><label for="practice-chapter">章节</label><select class="select" id="practice-chapter"><option value="all">全部章节</option>${chapters.map((chapter) => `<option value="${escapeHtml(chapter.id)}">${escapeHtml(chapter.name)}</option>`).join('')}</select></div>
-          <div class="field"><label>本局题数</label><div class="segmented" data-count><button class="segment" type="button" data-total="1">1 题</button><button class="segment active" type="button" data-total="5">5 题</button></div></div>
+          <div class="field" data-count-field><label>本局题数</label><div class="segmented" data-count><button class="segment" type="button" data-total="1">1 题</button><button class="segment active" type="button" data-total="5">5 题</button></div></div>
         </div>
         <div class="row-wrap" style="margin-top:18px">
           <button class="btn btn-primary btn-lg" type="button" data-start ${testStatus.locked ? 'disabled' : ''}>${icon('play', 17)} ${testStatus.locked ? '今日已锁定' : '开始判读'}</button>
@@ -140,8 +165,8 @@ export async function practiceView({ query } = {}) {
             <div class="practice-stat"><b>${testStatus.wrong}</b><span>答错（-10）</span></div>
             <div class="practice-stat"><b>${store.quiz?.accuracy || 0}%</b><span>历史正确率</span></div>
           </div>
-          <p class="muted" style="font-size:10px;margin-top:7px">答对 +1，答错 -10；低于 ${testStatus.lockScore} 分锁定至次日。</p>
-          <div class="practice-leaderboard-head"><b>今日排行榜</b><button class="btn btn-xs btn-ghost" type="button" data-test-scope="all">总榜</button></div>
+          <p class="muted" style="font-size:10px;margin-top:7px">答对 +1，答错 -10；低于 ${testStatus.lockScore} 分锁定至次日。${testStatus.leaderboardMe?.rank ? ` 今日名次 <b>#${testStatus.leaderboardMe.rank}</b>。` : ' 今日暂未上榜。'}</p>
+          <div class="practice-leaderboard-head"><b>今日排行榜</b><div class="row-wrap" style="gap:2px"><a class="btn btn-xs btn-ghost" href="#/leaderboard">完整排行</a><button class="btn btn-xs btn-ghost" type="button" data-test-scope="all">总榜</button></div></div>
           <div class="practice-leaderboard" data-test-leaderboard>${renderMiniLeaderboard(testStatus.leaderboard)}</div>
         </div>
         <div class="practice-side-card">
@@ -170,7 +195,14 @@ export async function practiceView({ query } = {}) {
     state.total = Number(button.dataset.total);
     countButtons.forEach((b) => b.classList.toggle('active', b === button));
   }));
-  chapterSelect.addEventListener('change', () => { state.chapter = chapterSelect.value; });
+  chapterSelect.addEventListener('change', () => { state.chapter = chapterSelect.value; });  const gameModeButtons = el.querySelectorAll('[data-game-mode]');
+  const countField = el.querySelector('[data-count-field]');
+  gameModeButtons.forEach((button) => button.addEventListener('click', () => {
+    state.gameMode = button.dataset.gameMode;
+    gameModeButtons.forEach((b) => b.classList.toggle('active', b === button));
+    if (countField) countField.style.display = state.gameMode === 'classic' ? '' : 'none';
+  }));
+
 
   el.querySelector('[data-share]')?.addEventListener('click', async (event) => {
     const button = event.currentTarget;
@@ -236,7 +268,13 @@ export async function practiceView({ query } = {}) {
   });
 
   async function startQuiz(focus = []) {
+    clearSpeedTimer();
     state.focus = focus;
+    state.answeredCount = 0;
+    state.roundOver = false;
+    state.lives = 3;
+    state.speedRemaining = 60;
+    state.roundTotal = state.gameMode === 'classic' ? state.total : 0;
     const quiz = await api.quizNew({ level: state.level, chapter: state.chapter, focus, assignment: state.assignmentCode, device: state.assignmentCode ? deviceId() : undefined });
     state.quiz = quiz;
     state.index = 0;
@@ -245,6 +283,7 @@ export async function practiceView({ query } = {}) {
     state.streak = 0;
     state.maxStreak = 0;
     renderQuestion(el);
+    if (state.gameMode === 'speed') startSpeedTimer(el);
   }
 
   if (autoStart) {
@@ -258,6 +297,7 @@ export async function practiceView({ query } = {}) {
     el,
     destroy() {
       clearTimer();
+      clearSpeedTimer();
       destroyViewer();
     },
   };
@@ -266,6 +306,23 @@ export async function practiceView({ query } = {}) {
 function renderMiniLeaderboard(items = []) {
   if (!items.length) return '<div class="muted" style="font-size:10px;padding:6px 0">今日还没有测试记录。</div>';
   return items.slice(0, 6).map((item, index) => `<div class="practice-leader-row"><span>${String(index + 1).padStart(2, '0')}</span><b class="${item.id === store.user?.id ? 'is-me' : ''}">${escapeHtml(item.name || '游客')}</b><em>${item.points > 0 ? '+' : ''}${item.points}</em></div>`).join('');
+}
+
+function startSpeedTimer(el) {
+  clearSpeedTimer();
+  state.speedRemaining = 60;
+  const tick = () => {
+    if (state.roundOver) return;
+    state.speedRemaining = Math.max(0, state.speedRemaining - 1);
+    const clock = el.querySelector('[data-speed-clock]');
+    if (clock) clock.textContent = `${state.speedRemaining}s`;
+    if (state.speedRemaining <= 0) {
+      state.roundOver = true;
+      clearSpeedTimer();
+      renderResults(el);
+    }
+  };
+  state.speedTimerId = window.setInterval(tick, 1000);
 }
 
 function renderQuestion(el) {
@@ -278,15 +335,17 @@ function renderQuestion(el) {
   const quiz = state.quiz;
   const multiple = quiz.multiple;
   const index = state.index;
-  const total = state.total;
+  const total = state.roundTotal || state.total;
   const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+  const roundProgress = state.gameMode === 'classic' ? (index / total) * 100 : 0;
+  const modeBadge = state.gameMode === 'speed' ? `<span class="badge badge-warn">极速 <b data-speed-clock>${state.speedRemaining}s</b></span>` : state.gameMode === 'survival' ? `<span class="badge ${state.lives <= 1 ? 'badge-danger' : 'badge-brand'}">生命 <b data-lives>${state.lives}</b> / 3</span>` : '<span class="badge badge-brand">经典</span>';
 
   el.innerHTML = `
     <div class="quiz-shell">
       <div class="quiz-top">
         <button class="btn btn-ghost btn-sm" type="button" data-exit>${icon('arrowLeft', 14)} 退出本局</button>
         ${state.assignmentMeta ? `<span class="badge badge-brand">${escapeHtml(state.assignmentMeta.title || '班级作业')}</span>` : ''}
-        <div class="quiz-progress"><span>第 <b>${index + 1}</b> / ${total} 题</span><span class="progress"><span class="progress-bar" style="width:${((index) / total) * 100}%"></span></span><span>正确 ${state.correct}</span><span>测试分 <b data-live-score>${state.practice?.score > 0 ? '+' : ''}${state.practice?.score || 0}</b></span><span class="timer">${icon('timer', 12)} <b data-timer>00:00</b></span></div>
+        <div class="quiz-progress"><span>${state.gameMode === 'classic' ? `第 <b>${index + 1}</b> / ${total} 题` : `第 <b>${index + 1}</b> 题`}</span><span class="progress"><span class="progress-bar" style="width:${roundProgress}%"></span></span>${modeBadge}<span>正确 ${state.correct}</span><span>测试分 <b data-live-score>${state.practice?.score > 0 ? '+' : ''}${state.practice?.score || 0}</b></span><span class="timer">${icon('timer', 12)} <b data-timer>00:00</b></span></div>
       </div>
       <div class="practice-setup">
         <section class="quiz-card">
@@ -437,6 +496,13 @@ function renderQuestion(el) {
       const names = Object.fromEntries((quiz.options || []).map((option) => [option.id, option.name]));
       const chapterMap = Object.fromEntries((quiz.options || []).map((option) => [option.id, option.chapter]));
       recordAttempt({ correct: result.correct, correctIds: result.correctIds || [], selectedIds: [...state.selected], names, chapters: chapterMap });
+      state.answeredCount += 1;
+      if (state.gameMode === 'survival' && !result.correct) {
+        state.lives = Math.max(0, state.lives - 1);
+        if (state.lives === 0) state.roundOver = true;
+        const livesNode = el.querySelector('[data-lives]');
+        if (livesNode) livesNode.textContent = String(state.lives);
+      }
       try {
         state.practice = await api.practiceStatus();
         const scoreNode = el.querySelector('[data-live-score]');
@@ -456,6 +522,10 @@ function renderQuestion(el) {
         else if (result.selectedNames && [...state.selected].includes(id)) option.classList.add('wrong');
       });
       feedback.innerHTML = feedbackHtml(result, multiple);
+      if (state.roundOver) {
+        const nextButton = feedback.querySelector('[data-next]');
+        if (nextButton) nextButton.innerHTML = `${icon('trophy', 14)} 查看本轮结果`;
+      }
       bindFeedback();
       const actionHint = el.querySelector('.quiz-actions > span.muted');
       if (actionHint) actionHint.textContent = '已提交，查看下方解析。';
@@ -469,7 +539,11 @@ function renderQuestion(el) {
   function bindFeedback() {
     const next = feedback.querySelector('[data-next]');
     next?.addEventListener('click', async () => {
-      if (state.index + 1 >= state.total) {
+      if (state.gameMode !== 'classic' && state.roundOver) {
+        renderResults(el);
+        return;
+      }
+      if (state.gameMode === 'classic' && state.index + 1 >= state.roundTotal) {
         renderResults(el);
         return;
       }
@@ -478,6 +552,8 @@ function renderQuestion(el) {
       try {
         const newQuiz = await api.quizNew({ level: state.level, chapter: state.chapter, focus: state.focus, assignment: state.assignmentCode, device: state.assignmentCode ? deviceId() : undefined });
         state.quiz = newQuiz;
+        state.submitted = false;
+        state.selected = new Set();
         renderQuestion(el);
       } catch (error) {
         toast(error.message || '出题失败', 'error');
@@ -536,9 +612,11 @@ function feedbackHtml(result, multiple) {
 }
 
 function renderResults(el) {
+  state.roundOver = true;
   clearTimer();
+  clearSpeedTimer();
   destroyViewer();
-  const total = state.total;
+  const total = state.gameMode === 'classic' ? (state.roundTotal || state.total) : Math.max(1, state.answeredCount);
   const accuracy = total ? Math.round((state.correct / total) * 100) : 0;
   store.refresh().catch(() => {});
   el.innerHTML = `<div class="page" style="padding:0;max-width:none">
@@ -547,7 +625,7 @@ function renderResults(el) {
       <div class="result-score">${state.score}</div>
       <div class="result-label">本局得分</div>
       <div class="result-stats"><div><b>${state.correct}/${total}</b><span class="muted">答对</span></div><div><b>${accuracy}%</b><span class="muted">正确率</span></div><div><b>${state.maxStreak}</b><span class="muted">最高连续</span></div></div>
-      <p class="muted" style="font-size:12.5px">判读不是猜答案：把每一道错题还原成“哪一步看错了”，比刷更多题更有效。</p>
+      <p class="muted" style="font-size:12.5px">${state.gameMode === 'speed' ? '极速 60 秒：先保证节奏，再回头复盘漏掉的关键线索。' : state.gameMode === 'survival' ? '连击生存：3 条命用完即结束；错题已经进入复习队列。' : '判读不是猜答案：把每一道错题还原成“哪一步看错了”，比刷更多题更有效。'}</p>
       <div class="row-wrap" style="justify-content:center;margin-top:18px"><button class="btn btn-primary" type="button" data-restart>${icon('rotate', 15)} 再来一局</button><a class="btn btn-secondary" href="#/review">${icon('target', 15)} 查看错题本</a><a class="btn btn-secondary" href="#/learn">${icon('bookOpen', 15)} 回到图谱</a></div>
     </div>
     ${medicalDisclaimer()}
