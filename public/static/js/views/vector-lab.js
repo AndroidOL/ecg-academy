@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ao';
+const __asset = __isNode ? '' : '?v=20261108ap';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const LEADS = {
@@ -435,7 +435,7 @@ function vectorLoopsPanel() {
         <button class="btn btn-primary btn-sm" type="button" data-vector-play>${icon('pause', 13)} 暂停</button>
         <label class="visual-range">水平视角 <input type="range" min="-180" max="180" value="24" data-vector-rotate></label>
         <label class="visual-range">俯仰视角 <input type="range" min="-85" max="85" value="18" data-vector-pitch></label>
-        <label class="visual-range">速度 <select class="select" data-vector-speed style="min-height:28px;padding:2px 5px;font-size:9px"><option value="0.5">0.5× 慢</option><option value="1" selected>1×</option><option value="2">2×</option></select></label>
+        <label class="visual-range">速度 <select class="select" data-vector-speed><option value="0.5">0.5× 慢</option><option value="1" selected>1×</option><option value="2">2×</option></select></label>
         <label class="visual-range vector-phase-control">时间 <input type="range" min="0" max="1000" value="0" data-vector-phase><span data-vector-phase-label>0%</span></label>
         <select class="select" data-vector-loop aria-label="选择向量环"><option value="all" selected>P + QRS + T 全部</option><option value="P">P 环</option><option value="QRS">QRS 环</option><option value="T">T 环</option></select>
         <select class="select" data-vector-lead aria-label="选择投影导联">${Object.entries(LEADS).map(([id, l]) => `<option value="${id}" ${id === 'II' ? 'selected' : ''}>${l.name}</option>`).join('')}</select>

@@ -283,7 +283,7 @@
   .ecg-toolbar-label { font-size: 9px; }
   .ecg-tab { min-height: 44px; padding: 8px 10px; font-size: 10.5px; }
   .ecg-toolbar .btn-xs { min-height: 44px; }
-  .ecg-toolbar select { min-height: 44px !important; font-size: 14px !important; }
+  .ecg-toolbar select { min-height: 44px !important; font-size: 16px !important; }
   .ecg-meta { padding: 6px 9px; gap: 4px 9px; font-size: 8px; line-height: 1.5; }
   .ecg-legend { display: none; }
   .ecg-note { font-size: 9.5px; }
@@ -340,7 +340,7 @@
   .action-grid { grid-template-columns: 1fr 1fr; gap: 5px; }
   .action-btn { min-height: 46px; font-size: 11px; padding: 7px; }
   .shock-controls { padding: 9px; }
-  .shock-controls select { min-height: 42px !important; font-size: 14px !important; }
+  .shock-controls select { min-height: 42px !important; font-size: 16px !important; }
   .sync-switch button { min-height: 44px; padding: 6px 10px; font-size: 10px; }
   .hint-card { font-size: 11px; padding: 9px 10px; }
   .event-log { max-height: 160px; padding: 9px 10px; }
@@ -382,7 +382,7 @@
   .ai-messages { max-height: 260px; }
   .ai-bubble { font-size: 12px; }
   .ai-suggestion { min-height: 44px; padding: 8px 10px; font-size: 10px; }
-  .ai-input-row .input { min-height: 44px; font-size: 16px; }
+  .ai-input-row .input, .ai-ask-row .input { min-height: 44px !important; font-size: 16px !important; }
   .toast-region { bottom: calc(78px + env(safe-area-inset-bottom)); }
   .footer, .page-footer { font-size: 9.5px; }
 }
@@ -772,7 +772,7 @@
 @media (max-width:719px) { .correction-item { grid-template-columns:1fr; gap:4px; } }
 .glossary-page { max-width:1080px; }
 .glossary-toolbar { display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
-.glossary-toolbar .input { max-width:460px; min-height:42px; font-size:15px; }
+.glossary-toolbar .input { max-width:460px; min-height:42px; font-size:16px; }
 .glossary-cats { display:flex; flex-wrap:wrap; gap:5px; }
 .glossary-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
 .glossary-item { position:relative; padding:11px 13px; border:1px solid var(--line); border-radius:10px; background:var(--surface); }
