@@ -2,7 +2,7 @@ import { api } from '../api.js';
 import { store } from '../store.js';
 import { navigate } from '../router.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108n';
+const __asset = __isNode ? '' : '?v=20261108o';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, toast, setButtonLoading, fmtDuration, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
@@ -344,6 +344,7 @@ function renderQuestion(el) {
         state.streak = 0;
       }
       state.score += result.score;
+      if (store.user?.isGuest) store.addLocalXp(result.xp);
       setButtonLoading(submit, false);
       submit.style.display = 'none';
       options.forEach((option) => {

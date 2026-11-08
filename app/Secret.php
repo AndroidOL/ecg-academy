@@ -43,6 +43,24 @@ final class Secret
         return is_string($plain) ? $plain : '';
     }
 
+    public static function seal(array $data): string
+    {
+        $blob = self::encrypt(json_encode($data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+        return rtrim(strtr(base64_encode($blob), '+/', '-_'), '=');
+    }
+
+    public static function open(string $token): ?array
+    {
+        $pad = strlen($token) % 4;
+        if ($pad) $token .= str_repeat('=', 4 - $pad);
+        $raw = base64_decode(strtr($token, '-_', '+/'), true);
+        if ($raw === false) return null;
+        $json = self::decrypt($raw);
+        if ($json === '') return null;
+        $data = json_decode($json, true);
+        return is_array($data) ? $data : null;
+    }
+
     public static function mask(string $value): string
     {
         if ($value === '') return '';

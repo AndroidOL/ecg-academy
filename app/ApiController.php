@@ -138,7 +138,7 @@ final class ApiController
     {
         $user = self::user();
         $input = Http::input();
-        $attemptId = (int) ($input['attemptId'] ?? 0);
+        $attemptId = (string) ($input['attemptId'] ?? '');
         $selected = $input['selected'] ?? [];
         if (!is_array($selected)) throw new ApiError(422, 'invalid_selection', '答案格式错误');
         $timeMs = (int) ($input['timeMs'] ?? 0);

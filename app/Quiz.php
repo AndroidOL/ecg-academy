@@ -128,6 +128,28 @@ final class Quiz
         ];
 
         $pdo = Db::pdo();
+        $guestStmt = $pdo->prepare('SELECT is_guest FROM users WHERE id = ? LIMIT 1');
+        $guestStmt->execute([$userId]);
+        $isGuest = (int) ($guestStmt->fetchColumn() ?: 0) === 1;
+        if ($isGuest) {
+            $attemptId = 'g_' . Secret::seal([
+                'payload' => $payload,
+                'correctIds' => $correctIds,
+                'optionIds' => $optionIds,
+                'created' => time(),
+            ]);
+            return [
+                'attemptId' => $attemptId,
+                'spec' => $spec,
+                'options' => $options,
+                'multiple' => count($correctIds) > 1,
+                'level' => $level,
+                'question' => $question,
+                'stem' => $stem,
+                'chapter' => $primary['chapter'],
+                'expiresIn' => 7200,
+            ];
+        }
         if (random_int(1, 20) === 1) {
             $pdo->exec('DELETE FROM quiz_attempts WHERE status = "pending" AND created_at < NOW() - INTERVAL 2 HOUR');
         }
@@ -200,8 +222,12 @@ final class Quiz
         return $options;
     }
 
-    public static function answer(int $userId, int $attemptId, array $selectedIds, int $timeMs): array
+    public static function answer(int $userId, int|string $attemptId, array $selectedIds, int $timeMs): array
     {
+        if (is_string($attemptId) && str_starts_with($attemptId, 'g_')) {
+            return self::answerGuest($attemptId, $selectedIds, $timeMs);
+        }
+        $attemptId = (int) $attemptId;
         $pdo = Db::pdo();
         $stmt = $pdo->prepare('SELECT * FROM quiz_attempts WHERE id = ? AND user_id = ? LIMIT 1');
         $stmt->execute([$attemptId, $userId]);
@@ -319,6 +345,53 @@ final class Quiz
             'explanation' => $explanation,
             'localExplanation' => $localText,
             'aiAvailable' => Ai::configured(),
+        ];
+    }
+
+    private static function answerGuest(string $token, array $selectedIds, int $timeMs): array
+    {
+        $data = Secret::open(substr($token, 2));
+        if (!$data || (time() - (int) ($data['created'] ?? 0)) > 7200) {
+            throw new ApiError(410, 'attempt_expired', '题目已过期，请重新出题');
+        }
+        $payload = (array) ($data['payload'] ?? []);
+        $correctIds = array_values(array_map('strval', (array) ($data['correctIds'] ?? [])));
+        $optionIds = array_values(array_map('strval', (array) ($data['optionIds'] ?? [])));
+        $selectedIds = array_values(array_unique(array_filter(array_map('strval', $selectedIds))));
+        foreach ($selectedIds as $id) {
+            if (!in_array($id, $optionIds, true)) throw new ApiError(422, 'invalid_option', '包含无效选项');
+        }
+        if ($selectedIds === []) throw new ApiError(422, 'empty_answer', '请至少选择一个诊断');
+        $sortedCorrect = $correctIds; $sortedSelected = $selectedIds;
+        sort($sortedCorrect); sort($sortedSelected);
+        $isCorrect = $sortedCorrect === $sortedSelected;
+        $partial = !$isCorrect && array_intersect($correctIds, $selectedIds) !== [];
+        $level = (int) ($payload['level'] ?? 1);
+        $base = [1 => 100, 2 => 140, 3 => 180][$level] ?? 100;
+        $timeMs = max(0, min(600000, $timeMs));
+        $score = $isCorrect ? $base + max(0, 40 - (int) floor($timeMs / 1000) * 2) : ($partial ? (int) round($base * 0.25) : 0);
+        $xp = $isCorrect ? 10 + $level * 5 : ($partial ? 3 : 1);
+        $all = Content::all();
+        $selectedNames = array_map(static fn (string $id): string => $all[$id]['name'] ?? $id, $selectedIds);
+        $explanation = [];
+        foreach ($correctIds as $id) {
+            $d = $all[$id] ?? null;
+            if (!$d) continue;
+            $explanation[] = [
+                'id' => $d['id'], 'name' => $d['name'], 'oneLiner' => $d['oneLiner'] ?? '',
+                'specificity' => $d['specificity'] ?? '', 'keyNumbers' => $d['keyNumbers'] ?? [],
+                'criteria' => array_slice($d['criteria'] ?? [], 0, 3), 'management' => array_slice($d['management'] ?? [], 0, 2),
+                'description' => $d['ecg']['description'] ?? '',
+            ];
+        }
+        return [
+            'attemptId' => $token, 'correct' => $isCorrect, 'partial' => $partial,
+            'correctIds' => $correctIds,
+            'correctNames' => array_map(static fn (string $id): string => $all[$id]['name'] ?? $id, $correctIds),
+            'selectedNames' => $selectedNames, 'score' => $score, 'xp' => $xp, 'timeMs' => $timeMs,
+            'explanation' => $explanation,
+            'localExplanation' => self::localExplanation($isCorrect, $partial, $correctIds, $selectedIds, $all),
+            'aiAvailable' => false,
         ];
     }
 

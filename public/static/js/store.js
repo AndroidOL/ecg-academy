@@ -12,6 +12,7 @@ const baseStore = {
   features: { registrationEnabled: true, userLoginEnabled: true },
   site: { githubUrl: '', license: '', copyright: '', icp: '' },
   localProgress: {},
+  localXp: 0,
   chapters: [],
   quiz: { attempts: 0, correct: 0, accuracy: 0, avgScore: 0 },
   sim: { runs: 0, best: 0 },
@@ -23,6 +24,11 @@ const baseStore = {
 
   setBootstrap(data) {
     this.user = data.user;
+    if (data.user?.isGuest) {
+      const storedXp = Number(localStorage.getItem('ecg-local-xp') || 0);
+      this.localXp = Number.isFinite(storedXp) ? storedXp : 0;
+      this.user = { ...data.user, xp: this.localXp };
+    }
     setCsrf(data.csrf);
     this.app = data.app || this.app;
     this.content = data.content || this.content;
@@ -68,6 +74,14 @@ const baseStore = {
     const mastered = Object.values(this.localProgress).filter((x) => x === 'mastered').length;
     this.progress = { read, mastered, total: total || this.progress.total || 0 };
     return this.progress;
+  },
+
+  addLocalXp(amount) {
+    if (!this.user?.isGuest) return;
+    this.localXp = Math.max(0, (this.localXp || 0) + Math.max(0, Number(amount) || 0));
+    try { localStorage.setItem('ecg-local-xp', String(this.localXp)); } catch { /* storage unavailable */ }
+    this.user = { ...this.user, xp: this.localXp };
+    this.emit('user', this.user);
   },
 
   setLocalProgress(diagnosisId, status) {
