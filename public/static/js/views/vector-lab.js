@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108s';
+const __asset = __isNode ? '' : '?v=20261108t';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const LEADS = {
@@ -137,7 +137,7 @@ function drawVectorCanvas(canvas, state, t) {
   const rotatedVec = selected === 'QRS' ? rotateAxis(vec) : vec;
   const p0 = project([0, 0, 0]);
   const p1 = project(rotatedVec);
-  if (state.loop === 'all' ? (active && active === selected) : true) {
+  if (state.loop === 'all' ? (active && active === selected) : (active === selected)) {
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(...p0); ctx.lineTo(...p1); ctx.stroke();
@@ -159,7 +159,7 @@ function drawVectorCanvas(canvas, state, t) {
   ctx.fillStyle = c.text;
   ctx.font = '600 11px ui-monospace, monospace';
   const activeLabel = state.loop === 'all' ? (active ? `当前 ${active} 波 · ` : '等电位线 · ') : `单环观察 · `;
-  const movingLabel = state.loop === 'all' ? (active === selected ? `${selected} 环在转动` : `${selected} 环静止`) : `${selected} 环连续观察`;
+  const movingLabel = active === selected ? `${selected} 环在当前时间窗转动` : `${selected} 环静止（等待其时间窗）`;
   ctx.fillText(`${activeLabel}${movingLabel} · ${lead.name} 投影 ${dot >= 0 ? '+' : ''}${dot.toFixed(2)}`, 12, 18);
   ctx.fillStyle = c.muted;
   ctx.font = '10px ui-monospace, monospace';
@@ -243,6 +243,7 @@ function updateProjectionBars(host, state, t) {
 function vectorLoopsPanel() {
   return `<div class="visual-grid">
     <div class="visual-card visual-card-dark">
+      <div class="vector-figure-note"><b>教学示意，不是真实心电向量</b><span>单箭头是用于理解导联投影的简化合成向量；真实向量是无数心肌细胞瞬时电偶向量的空间叠加。</span></div>
       <canvas data-vector-canvas data-height="360" aria-label="心电向量环三维投影动画"></canvas>
       <div class="vector-timeline" data-vector-timeline><span>P</span><span>QRS</span><span>T</span><i data-vector-timeline-cursor></i></div>
       <div class="visual-sync"><div class="visual-sync-head"><span>同步导联波形</span><span data-vector-sync-label>II 导联 · 时间光标</span></div><canvas data-vector-ecg data-height="112" aria-label="向量环同步导联波形"></canvas></div>
@@ -252,10 +253,10 @@ function vectorLoopsPanel() {
         <label class="visual-range">旋转 <input type="range" min="-80" max="80" value="24" data-vector-rotate></label>
         <label class="visual-range">俯仰 <input type="range" min="-50" max="50" value="18" data-vector-pitch></label>
         <label class="visual-range">速度 <select class="select" data-vector-speed style="min-height:28px;padding:2px 5px;font-size:9px"><option value="0.5">0.5× 慢</option><option value="1" selected>1×</option><option value="2">2×</option></select></label>
-        <select class="select" data-vector-loop aria-label="选择向量环"><option value="all">P + QRS + T 全部</option><option value="P">P 环</option><option value="QRS" selected>QRS 环</option><option value="T">T 环</option></select>
+        <select class="select" data-vector-loop aria-label="选择向量环"><option value="all" selected>P + QRS + T 全部</option><option value="P">P 环</option><option value="QRS">QRS 环</option><option value="T">T 环</option></select>
         <select class="select" data-vector-lead aria-label="选择投影导联">${Object.entries(LEADS).map(([id, l]) => `<option value="${id}" ${id === 'II' ? 'selected' : ''}>${l.name}</option>`).join('')}</select>
       </div>
-      <div class="visual-controls vector-axis-controls"><label class="visual-range">主方向 <input type="range" min="-180" max="180" value="60" data-vector-axis><span data-vector-axis-value>+60°</span></label><button class="chip" type="button" data-drag-mode>拖动：主方向</button></div>
+      <div class="visual-controls vector-axis-controls"><label class="visual-range">主方向 <input type="range" min="-180" max="180" value="60" data-vector-axis><span data-vector-axis-value>+60°</span></label><button class="chip" type="button" data-drag-mode>拖动：视角</button></div>
       <div class="axis-presets vector-axis-presets"><span class="muted" style="font-size:9px">快速主方向</span><button type="button" class="chip" data-qrs-axis="60">正常 +60°</button><button type="button" class="chip" data-qrs-axis="-45">左偏 −45°</button><button type="button" class="chip" data-qrs-axis="120">右偏 +120°</button><button type="button" class="chip" data-qrs-axis="-120">极度 −120°</button><button type="button" class="chip" data-qrs-axis="90">垂直 +90°</button></div>
     </div>
     <aside class="visual-explain">
@@ -353,6 +354,7 @@ function updateLimbReadout(host, state, t) {
 function limbPanel() {
   return `<div class="visual-grid">
     <div class="visual-card visual-card-dark">
+      <div class="vector-figure-note"><b>教学示意，不是真实心电向量</b><span>箭头是简化合成向量；真实方向/大小来自所有参与除极与复极心肌细胞的瞬时向量叠加。</span></div>
       <canvas data-limb-canvas data-height="340" aria-label="肢体导联六轴向量投影动画"></canvas>
       <div class="visual-controls">
         <button class="btn btn-primary btn-sm" type="button" data-limb-auto>${icon('rotate', 13)} 自动旋转</button>
@@ -551,7 +553,7 @@ export async function vectorLabView() {
   let raf = 0;
   let cleanup = [];
   let start = performance.now();
-  const state = { rotate: 24, pitch: 18, playing: true, loop: 'QRS', lead: 'II', axis: 60, angle: 60, auto: true, speed: 1, dragMode: 'axis' };
+  const state = { rotate: 24, pitch: 18, playing: true, loop: 'all', lead: 'II', axis: 60, angle: 60, auto: true, speed: 1, dragMode: 'view' };
   el.innerHTML = `<div class="page-eyebrow">${icon('compass', 14)} VECTOR & ELECTROPHYSIOLOGY</div>
     <div class="vector-head"><div><h1 class="page-title">心脏向量实验室</h1><p class="page-sub">把“背图形”变成“看方向”：P/QRS/T 环、肢体/胸导联投影、动作电位与解剖一次串起来。</p></div><a class="btn btn-secondary btn-sm" href="#/learn/ecg-calibration-paper">回到基础课程 ${icon('arrowRight', 13)}</a></div>
     <div class="visual-tabs">${TABS.map(([id, label], i) => `<button class="chip ${i === 0 ? 'active' : ''}" type="button" data-visual-tab="${id}">${label}</button>`).join('')}</div>
@@ -627,21 +629,33 @@ export async function vectorLabView() {
     const canvas = content.querySelector('[data-vector-canvas]');
     if (canvas) {
       let dragging = false;
-      canvas.addEventListener('pointerdown', (e) => { dragging = true; canvas.setPointerCapture(e.pointerId); });
-      canvas.addEventListener('pointerup', () => { dragging = false; });
+      let dragStart = null;
+      const pointerAngle = (e, rect) => {
+        const cx0 = rect.width / 2; const cy0 = rect.height / 2 + 6;
+        return Math.atan2(cy0 - (e.clientY - rect.top), e.clientX - rect.left - cx0) * 180 / Math.PI;
+      };
+      const normalize180 = (value) => ((value + 180) % 360 + 360) % 360 - 180;
+      canvas.addEventListener('pointerdown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        dragStart = { x: e.clientX, y: e.clientY, rotate: state.rotate, pitch: state.pitch, axis: state.axis, angle: pointerAngle(e, rect) };
+        dragging = true;
+        canvas.setPointerCapture(e.pointerId);
+      });
+      canvas.addEventListener('pointerup', () => { dragging = false; dragStart = null; });
       canvas.addEventListener('pointermove', (e) => {
-        if (!dragging) return;
+        if (!dragging || !dragStart) return;
         const rect = canvas.getBoundingClientRect();
         if (state.dragMode === 'axis') {
-          const cx0 = rect.width / 2; const cy0 = rect.height / 2 + 6;
-          const deg = Math.atan2(cy0 - (e.clientY - rect.top), e.clientX - rect.left - cx0) * 180 / Math.PI;
-          setAxis(Math.round(deg));
+          setAxis(Math.round(normalize180(dragStart.axis + pointerAngle(e, rect) - dragStart.angle)));
           return;
         }
         const rx = content.querySelector('[data-vector-rotate]');
         const py = content.querySelector('[data-vector-pitch]');
-        if (rx) { const val = Math.max(-80, Math.min(80, (e.clientX - rect.left - rect.width / 2) / 2)); rx.value = String(val); state.rotate = val; }
-        if (py) { const val = Math.max(-50, Math.min(50, (e.clientY - rect.top - rect.height / 2) / 2)); py.value = String(val); state.pitch = val; }
+        const nextRotate = Math.max(-80, Math.min(80, dragStart.rotate + (e.clientX - dragStart.x) * 0.35));
+        const nextPitch = Math.max(-50, Math.min(50, dragStart.pitch - (e.clientY - dragStart.y) * 0.35));
+        state.rotate = nextRotate; state.pitch = nextPitch;
+        if (rx) rx.value = String(Math.round(nextRotate));
+        if (py) py.value = String(Math.round(nextPitch));
       });
     }
     raf = requestAnimationFrame(drawLoopFrame);

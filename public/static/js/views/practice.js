@@ -2,7 +2,7 @@ import { api } from '../api.js';
 import { store } from '../store.js';
 import { navigate } from '../router.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108s';
+const __asset = __isNode ? '' : '?v=20261108t';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, toast, setButtonLoading, fmtDuration, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
