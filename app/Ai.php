@@ -103,9 +103,11 @@ final class Ai
 
     private static function limitFor(int $userId): int
     {
-        $stmt = Db::pdo()->prepare('SELECT ai_daily_limit FROM users WHERE id = ? LIMIT 1');
+        $stmt = Db::pdo()->prepare('SELECT ai_daily_limit, is_admin FROM users WHERE id = ? LIMIT 1');
         $stmt->execute([$userId]);
-        $override = $stmt->fetchColumn();
+        $row = $stmt->fetch();
+        if ($row && (int) ($row['is_admin'] ?? 0) === 1) return 1000000;
+        $override = $row['ai_daily_limit'] ?? null;
         if ($override !== false && $override !== null && $override !== '') return max(0, (int) $override);
         return max(0, Settings::int('ai.daily_limit', (int) Config::get('ai.daily_limit', 30)));
     }

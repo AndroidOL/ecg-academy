@@ -10,6 +10,7 @@ final class Traffic
         $path = self::normalizePath((string) ($input['path'] ?? ''));
         if ($path === '') return;
         $ip = Http::clientIp();
+        if (in_array($ip, ['127.0.0.1', '::1'], true)) return;
         $ua = mb_substr((string) ($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 255, 'UTF-8');
         $referer = mb_substr(trim((string) ($input['referer'] ?? '')), 0, 255, 'UTF-8');
         if ($referer !== '' && !preg_match('#^https?://#i', $referer)) $referer = '';
