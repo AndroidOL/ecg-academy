@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108aa';
+const __asset = __isNode ? '' : '?v=20261108ab';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const LEADS = {
@@ -266,11 +266,18 @@ function vectorLoopsPanel() {
         <select class="select" data-vector-loop aria-label="选择向量环"><option value="all" selected>P + QRS + T 全部</option><option value="P">P 环</option><option value="QRS">QRS 环</option><option value="T">T 环</option></select>
         <select class="select" data-vector-lead aria-label="选择投影导联">${Object.entries(LEADS).map(([id, l]) => `<option value="${id}" ${id === 'II' ? 'selected' : ''}>${l.name}</option>`).join('')}</select>
       </div>
-      <div class="visual-controls vector-axis-controls vector-axis-three">
-        <label class="visual-range">P 环电轴 <input type="range" min="-180" max="180" value="60" data-vector-axis="P"><span data-vector-axis-value="P">+60°</span></label>
-        <label class="visual-range">QRS 电轴 <input type="range" min="-180" max="180" value="60" data-vector-axis="QRS"><span data-vector-axis-value="QRS">+60°</span></label>
-        <label class="visual-range">T 环电轴 <input type="range" min="-180" max="180" value="60" data-vector-axis="T"><span data-vector-axis-value="T">+60°</span></label>
-        <button class="chip" type="button" data-drag-mode>拖动：视角</button>
+      <div class="loop-axis-stack">
+        ${[
+          ['P', 'P 环电轴'],
+          ['QRS', 'QRS 环电轴'],
+          ['T', 'T 环电轴'],
+        ].map(([key, label]) => `<div class="axis-scale loop-axis-row" data-loop-axis-row="${key}">
+          <div class="axis-scale-head"><span>${label}</span><b data-vector-axis-value="${key}">+60°</b></div>
+          <div class="axis-scale-zones" aria-hidden="true"><span class="zone-extreme">极度右偏 / 不确定</span><span class="zone-left">左偏</span><span class="zone-normal">正常</span><span class="zone-right">右偏</span></div>
+          <input class="axis-range" type="range" min="-180" max="180" step="1" value="60" data-vector-axis="${key}" aria-label="${label}">
+          <div class="axis-scale-ticks" aria-hidden="true"><span>-180°</span><span>-90°</span><span>-30°</span><span>0°</span><span>+90°</span><span>+180°</span></div>
+        </div>`).join('')}
+        <div class="vector-control-note"><button class="chip" type="button" data-drag-mode>拖动：视角</button><span>拖动画布可旋转视角；使用上方三行分别调整 P/QRS/T 环电轴。</span></div>
       </div>
       <div class="axis-presets vector-axis-presets"><span class="muted" style="font-size:9px">快速主方向</span><button type="button" class="chip" data-qrs-axis="60">正常 +60°</button><button type="button" class="chip" data-qrs-axis="-45">左偏 −45°</button><button type="button" class="chip" data-qrs-axis="120">右偏 +120°</button><button type="button" class="chip" data-qrs-axis="-120">极度 −120°</button><button type="button" class="chip" data-qrs-axis="90">垂直 +90°</button></div>
     </div>
@@ -444,7 +451,7 @@ function limbPanel() {
       </div>
       <div class="vector-projections axis-projections" data-limb-projections>${Object.entries(LEADS).map(([id, lead]) => `<div data-limb-projection="${id}"><b>${id}</b><div class="vector-projection-track"><i></i></div><span data-limb-value="${id}">+0.00</span></div>`).join('')}</div>
       <div class="axis-readout" data-limb-readout></div>
-      <div class="limb-wave-panel"><div class="visual-sync-head"><span>各肢体导联投影波形</span><span>随电轴角度实时变化</span></div><canvas data-limb-waves data-height="245" aria-label="六个肢体导联投影波形"></canvas></div>
+      <div class="limb-wave-panel"><div class="visual-sync-head"><span>各肢体导联投影波形</span><span>随向量方向实时变化</span></div><canvas data-limb-waves data-height="245" aria-label="六个肢体导联投影波形"></canvas></div>
     </div>
     <aside class="visual-explain">
       <h3>肢体导联是同一向量的不同投影</h3>

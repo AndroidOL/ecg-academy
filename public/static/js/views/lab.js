@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108aa';
+const __asset = __isNode ? '' : '?v=20261108ab';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
