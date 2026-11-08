@@ -11,6 +11,7 @@
 | 访问 | `https://ecg.tianhao.me/` |
 | 测试站 | `http://127.0.0.1:8791/`（本地开发） |
 | nginx vhost | `/www/server/panel/vhost/nginx/ecg.tianhao.me.conf` |
+| IP 直接访问 | `401`（`/www/server/panel/vhost/nginx/ecg-ip-401.conf`） |
 | PHP-FPM | 8.4，`unix:/tmp/php-cgi-84.sock`，运行用户 `www` |
 | 数据库 | `ecg_academy`，见 `docs/DATABASE.md` |
 | 会话 | `storage/sessions/`，session 名 `ECGLABSESS` |
@@ -86,6 +87,15 @@ nginx -t && nginx -s reload
 ```
 
 脚本保留生产目录的 `app/config.local.php`、`storage/master.key`、会话/日志/缓存和 `.user.ini`，只同步代码与内容；不会复制测试站的访问凭据。
+
+生产 vhost 必须使用：
+
+```nginx
+root /www/wwwroot/ecg.tianhao.me/public;
+location / { try_files $uri $uri/ /index.php?$query_string; }
+```
+
+独立 IP 拒绝规则放在 `ecg-ip-401.conf`；不要把它改成 Basic Auth，否则会拦截域名站点。
 
 ## 数据库初始化与备份
 
