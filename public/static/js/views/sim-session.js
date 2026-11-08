@@ -1,7 +1,7 @@
 import { api } from '../api.js';
 import { byokPayload, hasByok } from '../byok.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108an';
+const __asset = __isNode ? '' : '?v=20261108ao';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 import { navigate } from '../router.js';

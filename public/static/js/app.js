@@ -1,7 +1,7 @@
 // Cache-busted dynamic imports: keep Node tests query-free while forcing
 // browsers with immutable 7-day static caching to load the current modules.
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108an';
+const __asset = __isNode ? '' : '?v=20261108ao';
 const { api } = await import(`./api.js${__asset}`);
 const { store, initTheme, applyTheme, toggleTheme } = await import(`./store.js${__asset}`);
 const { practiceView } = await import(`./views/practice.js${__asset}`);
@@ -49,6 +49,12 @@ document.documentElement.lang = getLocale() === 'en' ? 'en' : 'zh-CN';
 if (typeof window !== 'undefined') {
   window.addEventListener('beforeinstallprompt', (event) => { event.preventDefault(); window.__ecgInstallPrompt = event; window.dispatchEvent(new CustomEvent('ecg-install-ready')); });
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    let swRefreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (swRefreshing) return;
+      swRefreshing = true;
+      window.location.reload();
+    });
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   }
 }

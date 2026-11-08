@@ -1,7 +1,7 @@
 import { api } from '../api.js';
 import { store } from '../store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108an';
+const __asset = __isNode ? '' : '?v=20261108ao';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, chapterColor, difficultyDots, escapeHtml, setupMiniECG, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 

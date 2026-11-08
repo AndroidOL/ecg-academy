@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'ecg-20261108an';
+const CACHE_VERSION = 'ecg-20261108ao';
 const SHELL = [
   '/', '/offline.html', '/static/manifest.webmanifest',
   '/static/css/tokens.css', '/static/css/base.css', '/static/css/components.css',
@@ -45,10 +45,8 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(networkFirst(request));
-    return;
-  }
+  // API 直接走网络：避免 SW 缓存/网络优先策略让会话 API 请求挂起。
+  if (url.pathname.startsWith('/api/')) return;
   if (request.mode === 'navigate') {
     event.respondWith(networkFirst(request, '/offline.html'));
     return;
