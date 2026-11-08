@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bf';
+const __asset = __isNode ? '' : '?v=20261108bg';
 const { ECGSession, LEAD_NAMES } = await import(`./ecg-engine.js${__asset}`);
 
 const COLUMNS = [
@@ -99,8 +99,8 @@ export class ECGViewer {
 
   ariaLabel() {
     const summary = this.rhythmSession.summary();
-    const playback = this.playback === 'scroll' ? '连续滚动' : '循环覆盖';
-    return `心电图演示，${this.options.mode === '12lead' ? '十二导联' : this.options.lead + ' 导联'}，${playback}播放。${summary.description || ''} 心率约 ${summary.rateText}。`;
+    const playback = this.options.mode === '12lead' ? '十二导联实时滚动' : this.playback === 'scroll' ? '连续滚动' : '循环覆盖';
+    return `心电图演示，${this.options.mode === '12lead' ? '十二导联' : this.options.lead + ' 导联'}，${playback}。${summary.description || ''} 心率约 ${summary.rateText}。`;
   }
 
   resizeToParent() {
@@ -323,14 +323,7 @@ export class ECGViewer {
       this.scrollLast = now;
       const speedNow = this.options.speed;
       if (this.options.mode === '12lead') {
-        this.twelveProgress = (this.twelveProgress ?? 0) + dt * speedNow;
-        if (this.twelveProgress >= 10) {
-          this.playing = false;
-          this.twelveProgress = null;
-          this.draw();
-          this.root.dispatchEvent(new CustomEvent('ecg:ended', { bubbles: true }));
-          return;
-        }
+        this.twelveProgress = ((this.twelveProgress ?? 0) + dt * speedNow) % 10;
       } else if (this.playback === 'scroll') {
         const bufferDuration = this.getScrollSession().duration;
         const maxOffset = Math.max(0.1, bufferDuration - this.windowSeconds());
@@ -1147,36 +1140,39 @@ export class ECGViewer {
     ctx.strokeStyle = colors.trace;
     ctx.lineWidth = 1.25;
     ctx.beginPath();
-    const endIndex = result.samples.length - 1;
-    for (let i = 0; i <= endIndex; i += 1) {
-      const x = padLeft + 28 + (i / result.sampleRate) * pxPerSec;
-      const yy = baseline - result.samples[i] * 10 * pxPerMm;
+    // 播放时整条节律条向左滚动，右侧持续进入新波形；暂停时展示完整 10 s。
+    const stripW = plotW - 28;
+    const points = Math.max(2, Math.ceil(stripW * 1.5));
+    const windowStart = progress == null ? 0 : progress - duration;
+    for (let i = 0; i <= points; i += 1) {
+      const frac = i / points;
+      const tRaw = windowStart + frac * duration;
+      const t = ((tRaw % duration) + duration) % duration;
+      const x = padLeft + 28 + frac * stripW;
+      const idx = Math.min(result.samples.length - 1, Math.round(t * result.sampleRate));
+      const yy = baseline - result.samples[idx] * 10 * pxPerMm;
       if (i === 0) ctx.moveTo(x, yy);
       else ctx.lineTo(x, yy);
     }
-    if (endIndex > 0) ctx.stroke();
+    if (points > 0) ctx.stroke();
     if (progress != null) {
-      const reveal = Math.max(0, Math.min(duration, progress));
-      const cursorX = padLeft + 28 + reveal * pxPerSec;
-      const idx = Math.min(result.samples.length - 1, Math.round(reveal * result.sampleRate));
+      const idx = Math.min(result.samples.length - 1, Math.round((progress % duration) * result.sampleRate));
       const cursorY = baseline - result.samples[idx] * 10 * pxPerMm;
+      const cursorX = padLeft + 28 + stripW;
       ctx.fillStyle = colors.brand;
       ctx.beginPath();
-      ctx.arc(cursorX, cursorY, 2.8, 0, Math.PI * 2);
+      ctx.arc(cursorX - 1, cursorY, 2.8, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = colors.brand;
-      ctx.globalAlpha = 0.3;
-      ctx.beginPath();
-      ctx.moveTo(cursorX, ry);
-      ctx.lineTo(cursorX, ry + rhythmH - 22);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
     }
     ctx.restore();
     ctx.fillStyle = colors.muted;
     ctx.font = '500 9px "SF Mono", ui-monospace, monospace';
     ctx.textAlign = 'left';
-    const progressLabel = progress == null ? '12 导联 · 10 s' : `录播 ${Math.min(10, progress).toFixed(1)} / 10 s`;
+    const progressLabel = progress == null
+      ? '12 导联 · 10 s'
+      : this.options.twelveLayout === 'rows'
+        ? '播放中 · 各导联 10 s 实时滚动'
+        : '播放中 · 各导联同步 2.5 s 滚动窗口';
     ctx.fillText(progressLabel, padLeft + 2, this.cssHeight - 3);
     // 1 mV 校准脉冲与纸速/增益标注（12 导联底边）
     const calH = Math.min(26, 10 * pxPerMm);
@@ -1206,6 +1202,7 @@ export class ECGViewer {
       this.twelveSession = new ECGSession({ ...this.rhythmSession.spec, duration: 10, start: 0.08, annotations: [] });
     }
     const result = this.twelveSession.lead(lead);
+    const window = fullDuration ? duration : segment;
     const startT = fullDuration ? 0 : col * segment;
     const endT = fullDuration ? duration : startT + segment;
     const baseline = y + h * 0.60;
@@ -1224,33 +1221,27 @@ export class ECGViewer {
     ctx.lineWidth = 1.3;
     ctx.lineJoin = 'round';
     ctx.beginPath();
-    const i0 = Math.floor(startT * result.sampleRate);
-    const i1 = Math.min(result.samples.length - 1, Math.ceil(endT * result.sampleRate));
-    if (i1 > i0) {
-      for (let i = i0; i <= i1; i += 1) {
-        const t = i / result.sampleRate;
-        const px = x + (t - startT) * (w / (endT - startT));
-        const py = baseline - result.samples[i] * 10 * pxPerMm;
-        if (i === i0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      }
-      ctx.stroke();
+    // 暂停：按标准 12 导联分段显示；播放：每个导联同时向左滚动同一时间窗口。
+    const windowStart = progress == null ? startT : progress - window;
+    const points = Math.max(2, Math.ceil(w * 1.5));
+    for (let i = 0; i <= points; i += 1) {
+      const frac = i / points;
+      const tRaw = windowStart + frac * window;
+      const t = ((tRaw % duration) + duration) % duration;
+      const idx = Math.min(result.samples.length - 1, Math.round(t * result.sampleRate));
+      const px = x + frac * w;
+      const py = baseline - result.samples[idx] * 10 * pxPerMm;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
     }
-    if (progress != null && progress >= startT && progress <= endT) {
-      const cursorX = x + (progress - startT) * (w /(endT - startT));
-      const idx = Math.min(result.samples.length - 1, Math.round(progress * result.sampleRate));
-      const cursorY = baseline - result.samples[idx] * 10 * pxPerMm;
+    if (points > 0) ctx.stroke();
+    if (progress != null) {
+      const idx = Math.min(result.samples.length - 1, Math.round((progress % duration) * result.sampleRate));
+      const py = baseline - result.samples[idx] * 10 * pxPerMm;
       ctx.fillStyle = colors.brand;
       ctx.beginPath();
-      ctx.arc(cursorX, cursorY, 2.6, 0, Math.PI * 2);
+      ctx.arc(x + w - 1.5, py, 2.2, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = colors.brand;
-      ctx.globalAlpha = 0.28;
-      ctx.beginPath();
-      ctx.moveTo(cursorX, y);
-      ctx.lineTo(cursorX, y + h);
-      ctx.stroke();
-      ctx.globalAlpha = 1;
     }
     ctx.restore();
   }

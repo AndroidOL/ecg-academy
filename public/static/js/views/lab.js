@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bf';
+const __asset = __isNode ? '' : '?v=20261108bg';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
@@ -151,7 +151,7 @@ export async function labView() {
           <div id="lab-ecg-v3"></div>
         </div>
         <div class="ecg-card lab-12lead-card">
-          <div class="ecg-toolbar"><div class="ecg-toolbar-group"><span class="badge badge-brand">标准 12 导联</span><span class="ecg-toolbar-label">可切换显示模式</span></div><div class="row-wrap"><select class="select" data-lab-view-mode aria-label="12导联显示模式" style="width:auto;min-height:28px;padding:2px 5px;font-size:9px"><option value="grid" selected>标准 12 导联</option><option value="snapshot">单图（无节律条）</option><option value="single">单导联</option><option value="rows">各导联横向</option></select><select class="select" data-lab-view-lead aria-label="单导联选择" style="width:auto;min-height:28px;padding:2px 5px;font-size:9px"><option>II</option><option>V1</option><option>V2</option><option>V3</option><option>V4</option><option>V5</option><option>V6</option></select></div></div>
+          <div class="ecg-toolbar"><div class="ecg-toolbar-group"><span class="badge badge-brand">标准 12 导联</span><span class="ecg-toolbar-label">播放时各导联同步滚动</span></div><div class="row-wrap"><button class="btn btn-xs btn-ghost" type="button" data-lab-play-12>${icon('play', 12)} 播放</button><select class="select" data-lab-view-mode aria-label="12导联显示模式" style="width:auto;min-height:28px;padding:2px 5px;font-size:9px"><option value="grid" selected>标准 12 导联</option><option value="snapshot">单图（无节律条）</option><option value="single">单导联</option><option value="rows">各导联横向</option></select><select class="select" data-lab-view-lead aria-label="单导联选择" style="width:auto;min-height:28px;padding:2px 5px;font-size:9px"><option>II</option><option>V1</option><option>V2</option><option>V3</option><option>V4</option><option>V5</option><option>V6</option></select></div></div>
           <div id="lab-ecg-12lead"></div>
           <div class="lab-stage" data-lab-stage></div>
         </div>
@@ -227,6 +227,10 @@ export async function labView() {
   const viewMode = el.querySelector('[data-lab-view-mode]');
   const viewLead = el.querySelector('[data-lab-view-lead]');
   const playButton = el.querySelector('[data-lab-play]');
+  const play12Button = el.querySelector('[data-lab-play-12]');
+  const sync12Button = () => {
+    if (play12Button) play12Button.innerHTML = viewer12?.playing ? `${icon('pause', 12)} 暂停` : `${icon('play', 12)} 播放`;
+  };
 
   const render = () => {
     const spec = buildSpec(state.k, state.ca, state.mg);
@@ -287,7 +291,15 @@ export async function labView() {
     const playing = viewerII?.playing;
     if (playing) { viewerII.pause(); viewerV3?.pause(); viewer12?.pause(); playButton.innerHTML = `${icon('play', 12)} 播放`; }
     else { viewerII?.play(1); viewerV3?.play(1); viewer12?.play(1); playButton.innerHTML = `${icon('pause', 12)} 暂停`; }
+    sync12Button();
   });
+  play12Button?.addEventListener('click', () => {
+    if (viewer12?.playing) viewer12.pause();
+    else viewer12?.play(1);
+    sync12Button();
+  });
+  twelveHost.addEventListener('ecg:play', sync12Button);
+  twelveHost.addEventListener('ecg:pause', sync12Button);
   el.addEventListener('click', (event) => {
     const preset = event.target.closest('[data-preset]');
     if (preset) {
