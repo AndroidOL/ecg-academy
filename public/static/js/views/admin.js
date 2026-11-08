@@ -1,13 +1,14 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ax';
+const __asset = __isNode ? '' : '?v=20261108ay';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
-const { icon, escapeHtml, toast, confirmDialog } = await import(`../ui.js${__asset}`);
+const { icon, escapeHtml, toast, confirmDialog, openModal } = await import(`../ui.js${__asset}`);
 
 const TABS = [
   ['overview', '概览'],
   ['traffic', '流量统计'],
   ['cost', 'AI 成本'],
+  ['packs', '课程包'],
   ['users', '用户'],
   ['assignments', '班级作业'],
   ['ai', 'AI 供应商'],
@@ -149,6 +150,11 @@ function aiCard(session) {
       <label class="field"><span>API Key（编辑时留空表示不修改）</span><input class="input" name="api_key" type="password" autocomplete="new-password" maxlength="300"></label>
       <label class="field"><span>模型（逗号分隔）</span><input class="input" name="models" required placeholder="deepseek-chat, deepseek-reasoner"></label>
       <label class="field"><span>默认模型</span><input class="input" name="default_model" placeholder="deepseek-chat"></label>
+      <div style="grid-column:1/-1">
+        <div class="spread"><span class="label">模型价格（每百万 tokens；可单独设置折扣时段）</span><button class="btn btn-xs btn-secondary" type="button" data-provider-pricing-build>按模型生成 / 刷新</button></div>
+        <div class="admin-table-wrap" style="margin-top:6px;max-height:260px;overflow:auto"><table class="admin-table"><thead><tr><th>模型</th><th>输入</th><th>输出</th><th>折扣开始</th><th>结束</th><th>比例</th></tr></thead><tbody data-provider-pricing></tbody></table></div>
+        <p class="muted" style="font-size:10px;margin-top:4px">价格留空按 0 计算；比例 1 = 原价，0.5 = 五折；折扣时段按服务器本地时间生效。</p>
+      </div>
       <label class="admin-check"><input type="checkbox" name="enabled" checked> 启用该供应商</label>
       <div style="grid-column:1/-1"><button class="btn btn-primary" type="submit">保存供应商</button><button class="btn btn-ghost" type="reset">清空</button></div>
     </form>
@@ -252,6 +258,7 @@ export async function adminView() {
     const active = startTab;
     let registerPasskey = async () => {};
     let saveProvider = async () => {};
+    let fillPricing = () => {};
     content.addEventListener('click', async (event) => {
       const register = event.target.closest('[data-passkey-register]');
       if (register) { await registerPasskey(); return; }
@@ -274,6 +281,7 @@ export async function adminView() {
         form.querySelector('[name="default_model"]').value = p.default_model || '';
         form.querySelector('[name="enabled"]').checked = Boolean(p.enabled);
         form.querySelector('[name="api_key"]').value = '';
+        fillPricing(p.model_pricing || {});
         form.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
@@ -290,6 +298,10 @@ export async function adminView() {
         try { await api.adminProviderDelete(delProvider.dataset.providerDelete); toast('已删除'); await reloadSession(); } catch (err) { toast(err.message, 'error'); }
         return;
       }
+      if (event.target.closest('[data-provider-pricing-build]')) {
+        fillPricing({});
+        return;
+      }
       if (event.target.closest('[data-audit-refresh]')) await reloadSession();
     });
     content.addEventListener('change', (event) => {
@@ -303,6 +315,7 @@ export async function adminView() {
       form.querySelector('[name="models"]').value = option.dataset.models || '';
       form.querySelector('[name="default_model"]').value = (option.dataset.models || '').split(',')[0].trim();
       if (!form.querySelector('[name="name"]').value) form.querySelector('[name="name"]').value = option.textContent;
+      fillPricing({});
     });
     content.addEventListener('submit', async (event) => {
       const userSearch = event.target.closest('[data-user-search]');
@@ -322,6 +335,7 @@ export async function adminView() {
       content.innerHTML = tab === 'overview' ? overview(session) + settingsCard(session)
         : tab === 'traffic' ? trafficCard()
           : tab === 'cost' ? costCard()
+            : tab === 'packs' ? packsCard()
             : tab === 'users' ? usersCard()
               : tab === 'assignments' ? assignmentsCard()
                 : tab === 'ai' ? aiCard(session)
@@ -330,6 +344,7 @@ export async function adminView() {
       if (tab === 'users') await loadUsers();
       if (tab === 'traffic') await loadTraffic();
       if (tab === 'cost') await loadCost();
+      if (tab === 'packs') await loadPacks();
       if (tab === 'overview') bindSettings();
       if (tab === 'assignments') {
         content.querySelector('[data-assignment-form]')?.addEventListener('submit', async (event) => {
@@ -500,6 +515,82 @@ export async function adminView() {
         host.innerHTML = `<div class="callout danger">${escapeHtml(error.message || '流量统计加载失败')}</div>`;
       }
     };
+    const loadPacks = async () => {
+      const listHost = content.querySelector('[data-pack-list]');
+      if (!listHost) return;
+      const readPack = () => {
+        const raw = String(content.querySelector('[data-pack-json]')?.value || '').trim();
+        if (!raw) { toast('请先粘贴或选择课程包 JSON', 'warn'); return null; }
+        try { return JSON.parse(raw); } catch { toast('JSON 解析失败，请检查格式', 'error'); return null; }
+      };
+      const renderList = (items) => {
+        listHost.innerHTML = items.length
+          ? `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>课程包</th><th>许可</th><th>内容</th><th>审阅/状态</th><th></th></tr></thead><tbody>${items.map((item) => `<tr>
+            <td><b>${escapeHtml(item.name)}</b><div class="muted" style="font-size:10px">${escapeHtml(item.packId)}@${escapeHtml(item.version)} · ${escapeHtml(String(item.sha256).slice(0, 10))}</div></td>
+            <td>${escapeHtml(item.license)}</td>
+            <td>${item.chapters} 章 · ${item.articles} 篇</td>
+            <td>${escapeHtml(item.reviewStatus)} · ${item.status === 'published' ? badge('已发布', 'badge-ok') : item.status === 'draft' ? badge('草稿', 'badge-warn') : badge('归档', '')}</td>
+            <td><div class="row-wrap" style="justify-content:flex-end;gap:3px"><button class="btn btn-xs btn-ghost" data-pack-preview="${item.id}">预览</button>${item.status === 'published' ? `<button class="btn btn-xs btn-ghost" data-pack-status="draft" data-pack-id="${item.id}">撤回</button>` : `<button class="btn btn-xs btn-secondary" data-pack-status="published" data-pack-id="${item.id}">发布</button>`}<button class="btn btn-xs btn-ghost" data-pack-status="archived" data-pack-id="${item.id}">归档</button></div></td>
+          </tr>`).join('')}</tbody></table></div>`
+          : '<div class="muted" style="font-size:12px">尚未导入课程包。</div>';
+        listHost.querySelectorAll('[data-pack-preview]').forEach((button) => button.addEventListener('click', async () => {
+          try {
+            const pack = await api.adminPackPreview(Number(button.dataset.packPreview));
+            openModal({
+              title: `${pack.name} · ${pack.version}`,
+              sub: `命名空间 ${pack.namespace} · ${escapeHtml(String(pack.license || ''))}`,
+              content: `<div class="stack">${(pack.chapters || []).map((chapter) => `<div><b>${escapeHtml(chapter.name)}</b><div class="muted" style="font-size:10px">${escapeHtml(chapter.localId || '')}</div><div class="stack" style="margin-top:4px">${(pack.articles || []).filter((article) => article.chapter === chapter.id).map((article) => `<div class="settings-row" style="padding:5px 0"><div><div class="settings-name">${escapeHtml(article.name)}</div><div class="settings-sub">${escapeHtml(article.oneLiner || article.content?.oneLiner || '')}</div></div><span class="badge">${escapeHtml(article.localId || '')}</span></div>`).join('') || '<span class="muted" style="font-size:11px">暂无文章</span>'}</div></div>`).join('')}</div>`,
+            });
+          } catch (error) { toast(error.message || '预览失败', 'error'); }
+        }));
+        listHost.querySelectorAll('[data-pack-status]').forEach((button) => button.addEventListener('click', async () => {
+          try {
+            await api.adminPackStatus(Number(button.dataset.packId), button.dataset.packStatus);
+            toast('状态已更新');
+            await loadPacks();
+          } catch (error) { toast(error.message, 'error'); }
+        }));
+      };
+      try {
+        const data = await api.adminPacks();
+        renderList(data.items || []);
+      } catch (error) {
+        listHost.innerHTML = `<div class="callout danger">${escapeHtml(error.message)}</div>`;
+      }
+      const statusHost = content.querySelector('[data-pack-status]');
+      const show = (text, danger = false) => { if (statusHost) { statusHost.textContent = text; statusHost.style.color = danger ? 'var(--danger)' : 'var(--muted)'; } };
+      content.querySelector('[data-pack-file]')?.addEventListener('change', async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          const parsed = JSON.parse(text);
+          content.querySelector('[data-pack-json]').value = JSON.stringify(parsed, null, 2);
+          show(`已读取 ${file.name}（${(file.size / 1024).toFixed(1)} KB）`);
+        } catch {
+          show('文件不是合法 JSON', true);
+        }
+      });
+      content.querySelector('[data-pack-validate]')?.addEventListener('click', async () => {
+        const pack = readPack();
+        if (!pack) return;
+        try {
+          const result = await api.adminPackValidate(pack);
+          show(result.ok ? `校验通过：${result.summary.id}@${result.summary.version} · ${result.summary.chapters} 章 · ${result.summary.articles} 篇` : `校验失败：${result.errors.join('；')}`, !result.ok);
+        } catch (error) { show(error.message || '校验失败', true); }
+      });
+      content.querySelector('[data-pack-import]')?.addEventListener('click', async () => {
+        const pack = readPack();
+        if (!pack) return;
+        const ok = await confirmDialog({ title: '导入课程包？', message: '导入后为草稿状态，需在列表中发布。ID 将加上包命名空间。', confirmText: '导入' });
+        if (!ok) return;
+        try {
+          const result = await api.adminPackImport(pack);
+          toast(`已导入 ${result.summary.id}@${result.summary.version}（草稿）`, 'success');
+          await loadPacks();
+        } catch (error) { show(error.message || '导入失败', true); }
+      });
+    };
     const loadCost = async () => {
       const host = content.querySelector('[data-cost-kpis]');
       if (!host) return;
@@ -622,14 +713,56 @@ export async function adminView() {
     // AI provider forms
     const bindProviderForm = () => {
       const form = content.querySelector('[data-provider-form]');
+      fillPricing = (pricing = {}) => {
+        if (!form) return;
+        const body = form.querySelector('[data-provider-pricing]');
+        if (!body) return;
+        const models = String(form.querySelector('[name="models"]')?.value || '').split(',').map((item) => item.trim()).filter(Boolean);
+        const previous = {};
+        body.querySelectorAll('tr').forEach((row) => {
+          const model = String(row.querySelector('[data-price-model]')?.value || '').trim();
+          if (!model) return;
+          previous[model] = {
+            input: row.querySelector('[data-price-input]')?.value || 0,
+            output: row.querySelector('[data-price-output]')?.value || 0,
+            discount_from: row.querySelector('[data-price-from]')?.value || '',
+            discount_to: row.querySelector('[data-price-to]')?.value || '',
+            discount_ratio: row.querySelector('[data-price-ratio]')?.value || '',
+          };
+        });
+        body.innerHTML = models.map((model) => {
+          const rate = pricing[model] || previous[model] || {};
+          const discount = rate.discount || {};
+          return `<tr>
+            <td><input class="input" data-price-model value="${escapeHtml(model)}" readonly></td>
+            <td><input class="input" type="number" min="0" step="0.0001" data-price-input value="${Number(rate.input ?? 0)}"></td>
+            <td><input class="input" type="number" min="0" step="0.0001" data-price-output value="${Number(rate.output ?? 0)}"></td>
+            <td><input class="input" data-price-from value="${escapeHtml(discount.from || rate.discount_from || '')}" placeholder="22:00" style="width:80px"></td>
+            <td><input class="input" data-price-to value="${escapeHtml(discount.to || rate.discount_to || '')}" placeholder="08:00" style="width:80px"></td>
+            <td><input class="input" type="number" min="0" max="1" step="0.05" data-price-ratio value="${Number(discount.ratio ?? rate.discount_ratio ?? 1)}" style="width:70px"></td>
+          </tr>`;
+        }).join('') || '<tr><td colspan="6" class="muted">先填写模型列表</td></tr>';
+      };
       form?.addEventListener('submit', async (event) => {
         event.preventDefault();
         const f = event.currentTarget;
         const val = (name) => (f.querySelector(`[name="${name}"]`)?.value || '').trim();
-        const provider = { id: val('id'), name: val('name'), base_url: val('base_url'), api_key: f.querySelector('[name="api_key"]')?.value || '', models: val('models'), default_model: val('default_model'), enabled: Boolean(f.querySelector('[name="enabled"]')?.checked) };
+        const model_pricing = {};
+        f.querySelectorAll('[data-provider-pricing] tr').forEach((row) => {
+          const model = String(row.querySelector('[data-price-model]')?.value || '').trim();
+          if (!model) return;
+          model_pricing[model] = {
+            input: Number(row.querySelector('[data-price-input]')?.value || 0),
+            output: Number(row.querySelector('[data-price-output]')?.value || 0),
+            discount_from: String(row.querySelector('[data-price-from]')?.value || '').trim(),
+            discount_to: String(row.querySelector('[data-price-to]')?.value || '').trim(),
+            discount_ratio: Number(row.querySelector('[data-price-ratio]')?.value || 1),
+          };
+        });
+        const provider = { id: val('id'), name: val('name'), base_url: val('base_url'), api_key: f.querySelector('[name="api_key"]')?.value || '', models: val('models'), default_model: val('default_model'), model_pricing, enabled: Boolean(f.querySelector('[name="enabled"]')?.checked) };
         try { await api.adminProviderSave(provider); toast('供应商已保存'); await reloadSession(); } catch (err) { toast(err.message || '保存失败', 'error'); }
       });
-      form?.addEventListener('reset', () => { const idField = form.querySelector('[name="id"]'); if (idField) idField.value = ''; });
+      form?.addEventListener('reset', () => { const idField = form.querySelector('[name="id"]'); if (idField) idField.value = ''; fillPricing({}); });
       content.querySelectorAll('[data-provider-edit]').forEach((b) => b.addEventListener('click', () => {
         const p = (session.settings.providers || []).find((x) => x.id === b.dataset.providerEdit);
         if (!p || !form) return;
@@ -640,6 +773,7 @@ export async function adminView() {
         form.querySelector('[name="default_model"]').value = p.default_model || '';
         form.querySelector('[name="enabled"]').checked = Boolean(p.enabled);
         form.querySelector('[name="api_key"]').value = '';
+        fillPricing(p.model_pricing || {});
         form.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }));
       content.querySelectorAll('[data-provider-test]').forEach((b) => b.addEventListener('click', async () => {
@@ -744,5 +878,18 @@ function costCard() {
     <div class="section-head"><h3 style="margin:0;font-size:16px">折扣时间段</h3><button class="btn btn-sm btn-secondary" type="button" data-cost-add-discount>添加时段</button></div>
     <div class="admin-table-wrap" style="margin-top:8px"><table class="admin-table"><thead><tr><th>名称</th><th>开始</th><th>结束</th><th>折扣比例</th><th></th></tr></thead><tbody data-cost-discounts></tbody></table></div>
     <p class="muted" style="font-size:10px;margin-top:6px">比例 1 = 不打折，0.5 = 五折；跨午夜时段可设 22:00–08:00。</p>
+  </section>`;
+}
+
+function packsCard() {
+  return `<section class="card card-pad">
+    <div class="section-head"><h3 style="margin:0;font-size:16px">导入课程包</h3><div class="row-wrap"><label class="btn btn-secondary btn-sm" style="cursor:pointer">选择 JSON 文件<input type="file" accept=".json,application/json" data-pack-file hidden></label><button class="btn btn-secondary btn-sm" type="button" data-pack-validate>校验</button><button class="btn btn-primary btn-sm" type="button" data-pack-import>导入为草稿</button></div></div>
+    <p class="muted" style="font-size:11px;line-height:1.7">规范见 docs/COURSE_PACK.md。导入时自动校验字段、章节引用与脚本注入，并为文章分配 <code>pack-id:article-id</code> 命名空间；发布前需人工审阅许可与医学内容。</p>
+    <textarea class="textarea" data-pack-json rows="9" placeholder="粘贴课程包 JSON…" style="margin-top:8px;font-family:var(--font-mono);font-size:11px"></textarea>
+    <div class="muted" style="font-size:11px;margin-top:6px" data-pack-status>未选择文件</div>
+  </section>
+  <section class="card card-pad" style="margin-top:12px">
+    <div class="section-head"><h3 style="margin:0;font-size:16px">已导入课程包</h3><span class="muted" style="font-size:11px">草稿不会对学员可见</span></div>
+    <div data-pack-list style="margin-top:8px"></div>
   </section>`;
 }

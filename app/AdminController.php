@@ -303,6 +303,27 @@ final class AdminController
         if (is_string($models)) $models = array_values(array_filter(array_map('trim', explode(',', $models))));
         $models = array_values(array_unique(array_filter(array_map('strval', (array) $models))));
         $defaultModel = trim((string) ($input['default_model'] ?? ''));
+        $modelPricing = [];
+        foreach ((array) ($input['model_pricing'] ?? []) as $model => $rate) {
+            $model = trim((string) $model);
+            if ($model === '' || !in_array($model, $models, true) || !is_array($rate)) continue;
+            $from = (string) ($rate['discount_from'] ?? '');
+            $to = (string) ($rate['discount_to'] ?? '');
+            $discount = null;
+            if (preg_match('/^\d{1,2}:\d{2}$/', $from) && preg_match('/^\d{1,2}:\d{2}$/', $to)) {
+                $discount = [
+                    'label' => mb_substr(trim((string) ($rate['discount_label'] ?? '折扣')), 0, 20, 'UTF-8') ?: '折扣',
+                    'from' => $from,
+                    'to' => $to,
+                    'ratio' => max(0.0, min(1.0, (float) ($rate['discount_ratio'] ?? 1))),
+                ];
+            }
+            $modelPricing[$model] = [
+                'input' => max(0, min(1000000, (float) ($rate['input'] ?? 0))),
+                'output' => max(0, min(1000000, (float) ($rate['output'] ?? 0))),
+                'discount' => $discount,
+            ];
+        }
         if ($name === '' || mb_strlen($name, 'UTF-8') > 80) throw new ApiError(422, 'invalid_provider', '供应商名称需为 1–80 字');
         if (!preg_match('#^https?://#i', $baseUrl)) throw new ApiError(422, 'invalid_provider', 'Base URL 需为 http/https');
         if ($models === []) throw new ApiError(422, 'invalid_provider', '至少填写一个模型');
@@ -317,6 +338,7 @@ final class AdminController
             $provider['base_url'] = $baseUrl;
             $provider['models'] = $models;
             $provider['default_model'] = $defaultModel;
+            $provider['model_pricing'] = $modelPricing;
             $provider['enabled'] = filter_var($input['enabled'] ?? true, FILTER_VALIDATE_BOOL);
             $provider['type'] = (string) ($input['type'] ?? 'openai-compatible');
             if (!empty($input['api_key'])) $provider['api_key_enc'] = Secret::encrypt((string) $input['api_key']);
@@ -331,6 +353,7 @@ final class AdminController
                 'base_url' => $baseUrl,
                 'models' => $models,
                 'default_model' => $defaultModel,
+                'model_pricing' => $modelPricing,
                 'enabled' => filter_var($input['enabled'] ?? true, FILTER_VALIDATE_BOOL),
                 'type' => (string) ($input['type'] ?? 'openai-compatible'),
                 'api_key_enc' => Secret::encrypt((string) $input['api_key']),
