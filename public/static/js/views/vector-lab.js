@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108z';
+const __asset = __isNode ? '' : '?v=20261108aa';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const LEADS = {
@@ -190,9 +190,10 @@ function drawProjectionCanvas(canvas, state, t) {
   const dot = (v) => v[0] * lead.vec[0] + v[1] * lead.vec[1] + v[2] * lead.vec[2];
   const loopAxes = state.axes || { P: 60, QRS: 60, T: 60 };
   const rot = (key, v) => { const d = ((loopAxes[key] ?? 60) - 60) * Math.PI / 180; return [v[0] * Math.cos(d) - v[1] * Math.sin(d), v[0] * Math.sin(d) + v[1] * Math.cos(d), v[2]]; };
-  const ampP = dot(rot('P', [0.28, 0.18, 0.05])) * 0.7;
-  const ampQ = dot(rot('QRS', [0.72, 0.32, 0.12])) * 1.5;
-  const ampT = dot(rot('T', [0.58, 0.3, 0.1])) * 0.9;
+  // 以“左下”为正方向：II/aVF 的主投影应明显为正，P/T 不能再被压成平线
+  const ampP = dot(rot('P', [0.28, -0.16, 0.05])) * 0.9;
+  const ampQ = dot(rot('QRS', [0.72, -0.32, 0.12])) * 1.4;
+  const ampT = dot(rot('T', [0.58, -0.3, 0.1])) * 0.95;
   const phase = state.phase ?? 0;
   const yAt = (x) => {
     const u = x / plotW;
@@ -297,6 +298,7 @@ function drawLimbCanvas(canvas, state, t) {
   ctx.globalAlpha = 1;
   const angleDeg = limbAngleDegrees(state, t);
   const angle = angleDeg * Math.PI / 180;
+  const magnitude = Number(state.magnitude) || 1;
   Object.entries(LEADS).forEach(([id, l]) => {
     const a = l.angle * Math.PI / 180;
     const x = cx + Math.cos(a) * r;
@@ -309,8 +311,8 @@ function drawLimbCanvas(canvas, state, t) {
     ctx.font = id === state.lead ? '700 11px ui-monospace, monospace' : '10px ui-monospace, monospace';
     ctx.fillText(id, x + 4, y - 4);
   });
-  const vx = cx + Math.cos(angle) * r * 0.9;
-  const vy = cy + Math.sin(angle) * r * 0.9;
+  const vx = cx + Math.cos(angle) * r * 0.9 * magnitude;
+  const vy = cy + Math.sin(angle) * r * 0.9 * magnitude;
   ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.4;
   ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(vx, vy); ctx.stroke();
   ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(vx, vy, 3.2, 0, Math.PI * 2); ctx.fill();
@@ -326,7 +328,7 @@ function drawLimbCanvas(canvas, state, t) {
   ctx.fill();
   const lead = LEADS[state.lead];
   const leadRad = lead.angle * Math.PI / 180;
-  const projected = Math.cos(angle - leadRad);
+  const projected = Math.cos(angle - leadRad) * magnitude;
   const px = cx + Math.cos(leadRad) * projected * r * 0.9;
   const py = cy + Math.sin(leadRad) * projected * r * 0.9;
   // 淡色三角形：向量尖端 → 选中导联轴上的投影点 → 原点
@@ -349,36 +351,37 @@ function drawLimbCanvas(canvas, state, t) {
   ctx.fillText(`投影 ${projected >= 0 ? '+' : ''}${projected.toFixed(2)}`, px + 5, py + 10);
   ctx.fillStyle = c.text; ctx.font = '600 11px ui-monospace, monospace';
   const signedAngle = Math.round(((angle * 180 / Math.PI + 180) % 360 + 360) % 360 - 180);
-  ctx.fillText(`主向量 ${signedAngle}° · ${lead.name} 投影 ${projected >= 0 ? '+' : ''}${projected.toFixed(2)}`, 12, 18);
+  ctx.fillText(`方向 ${signedAngle}° · |V| ${magnitude.toFixed(2)} · ${lead.name} 投影 ${projected >= 0 ? '+' : ''}${projected.toFixed(2)}`, 12, 18);
   ctx.fillStyle = c.muted; ctx.font = '10px ui-monospace, monospace';
   ctx.fillText('六轴系统：I/II/III + aVR/aVL/aVF', 12, height - 10);
 }
 
 function updateLimbReadout(host, state, t) {
   const angle = limbAngleDegrees(state, t);
-  const rad = angle * Math.PI / 180;
+    const rad = angle * Math.PI / 180;
+  const magnitude = Number(state.magnitude) || 1;
   const values = {
-    I: Math.cos(rad), II: Math.cos(rad - Math.PI / 3), III: Math.cos(rad - 2 * Math.PI / 3),
-    aVR: Math.cos(rad + 5 * Math.PI / 6), aVL: Math.cos(rad + Math.PI / 6), aVF: Math.sin(rad),
+    I: Math.cos(rad) * magnitude, II: Math.cos(rad - Math.PI / 3) * magnitude, III: Math.cos(rad - 2 * Math.PI / 3) * magnitude,
+    aVR: Math.cos(rad + 5 * Math.PI / 6) * magnitude, aVL: Math.cos(rad + Math.PI / 6) * magnitude, aVF: Math.sin(rad) * magnitude,
   };
   Object.entries(values).forEach(([id, value]) => {
     const node = host.querySelector(`[data-limb-value="${id}"]`);
     const bar = host.querySelector(`[data-limb-projection="${id}"] i`);
     if (node) node.textContent = `${value >= 0 ? '+' : ''}${value.toFixed(2)}`;
-    if (bar) { bar.style.width = `${Math.min(100, Math.abs(value) * 100)}%`; bar.classList.toggle('negative', value < 0); }
+    if (bar) { bar.style.width = `${Math.min(100, Math.abs(value) * 70)}%`; bar.classList.toggle('negative', value < 0); }
   });
   const signedAngle = (((Math.round(angle) + 180) % 360 + 360) % 360) - 180;
   const slider = host.querySelector('[data-limb-angle]');
   if (slider) slider.value = String(signedAngle);
   const angleLabel = host.querySelector('[data-limb-angle-value]');
   if (angleLabel) angleLabel.textContent = `${signedAngle >= 0 ? '+' : ''}${signedAngle}°`;
-  const signed = signedAngle;
-  let axis = '正常电轴';
-  if (signed < -30 && signed >= -90) axis = '电轴左偏';
-  else if (signed > 90) axis = '电轴右偏';
-  else if (signed < -90) axis = '极度右偏/不确定电轴';
+  const magnitudeLabel = host.querySelector('[data-limb-magnitude-value]');
+  if (magnitudeLabel) magnitudeLabel.textContent = `${magnitude.toFixed(1)}×`;
+  const lead = LEADS[state.lead];
+  const leadRad = lead.angle * Math.PI / 180;
+  const selectedProjection = Math.cos(rad - leadRad) * magnitude;
   const readout = host.querySelector('[data-limb-readout]');
-  if (readout) readout.innerHTML = `<b>${axis}</b><span>额面电轴 ${signed}° · I ${values.I >= 0 ? '正' : '负'} · aVF ${values.aVF >= 0 ? '正' : '负'} · II ${values.II >= 0 ? '正' : '负'}</span><small>快速法：I 正 + aVF 正 ≈ 正常；I 正 + aVF 负 + II 负 ≈ 左偏；I 负 + aVF 正 ≈ 右偏。</small>`;
+  if (readout) readout.innerHTML = `<b>投影量</b><span>向量方向 ${signedAngle}° · |V| ${magnitude.toFixed(2)} · 与 ${lead.name} 夹角 ${Math.round(((signedAngle - lead.angle + 540) % 360) - 180)}° · ${lead.name} 投影 ${selectedProjection >= 0 ? '+' : ''}${selectedProjection.toFixed(2)}</span><small>投影 = |V| × cosθ。正值表示朝向该导联，负值表示背离；改变方向或大小，观察六个导联振幅的变化。</small>`;
 }
 
 function drawLimbWaves(canvas, state, t) {
@@ -388,11 +391,12 @@ function drawLimbWaves(canvas, state, t) {
   const plotW = width - left - right;
   const rowH = (height - top - bottom) / 6;
   const angle = limbAngleDegrees(state, t);
+  const magnitude = Number(state.magnitude) || 1;
   ctx.clearRect(0, 0, width, height); ctx.fillStyle = c.bg; ctx.fillRect(0, 0, width, height);
   ctx.font = '9px ui-monospace, monospace';
   Object.entries(LEADS).forEach(([id, lead], index) => {
     const y = top + index * rowH + rowH * 0.58;
-    const projection = Math.cos((angle - lead.angle) * Math.PI / 180);
+    const projection = Math.cos((angle - lead.angle) * Math.PI / 180) * magnitude;
     if (id === state.lead) { ctx.fillStyle = 'rgba(255,255,255,.045)'; ctx.fillRect(left - 4, y - rowH * .45, plotW + 8, rowH * .9); }
     ctx.strokeStyle = id === state.lead ? c.brand : c.grid;
     ctx.globalAlpha = id === state.lead ? .45 : .25; ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(left + plotW, y); ctx.stroke(); ctx.globalAlpha = 1;
@@ -430,14 +434,14 @@ function limbPanel() {
       <div class="visual-controls">
         <button class="btn btn-primary btn-sm" type="button" data-limb-auto>${icon('pause', 13)} 暂停旋转</button>
         <div class="axis-scale" data-axis-scale>
-          <div class="axis-scale-head"><span>电轴方向</span><b data-limb-angle-value>60°</b></div>
-          <div class="axis-scale-zones" aria-hidden="true"><span class="zone-extreme">极度右偏 / 不确定</span><span class="zone-left">左偏</span><span class="zone-normal">正常</span><span class="zone-right">右偏</span></div>
-          <input class="axis-range" type="range" min="-180" max="180" step="1" value="60" data-limb-angle aria-label="额面电轴角度">
-          <div class="axis-scale-ticks" aria-hidden="true"><span>-180°</span><span>-90°</span><span>-30°</span><span>0°</span><span>+90°</span><span>+180°</span></div>
+          <div class="axis-scale-head"><span>向量方向（教学）</span><b data-limb-angle-value>60°</b></div>
+          <div class="axis-scale-note">只用于观察方向与投影，不作电轴诊断</div>
+          <input class="axis-range axis-range-neutral" type="range" min="-180" max="180" step="1" value="60" data-limb-angle aria-label="向量方向角度">
+          <div class="axis-scale-ticks" aria-hidden="true"><span>-180°</span><span>-90°</span><span>0°</span><span>+90°</span><span>+180°</span></div>
+          <label class="axis-magnitude"><span>向量大小</span><input type="range" min="0.3" max="1.6" step="0.05" value="1" data-limb-magnitude aria-label="向量大小"><b data-limb-magnitude-value>1.0×</b></label>
         </div>
         <select class="select" data-limb-lead>${Object.entries(LEADS).map(([id, l]) => `<option value="${id}" ${id === 'II' ? 'selected' : ''}>${l.name}</option>`).join('')}</select>
       </div>
-      <div class="axis-presets"><button type="button" class="chip" data-axis-preset="60">正常 +60°</button><button type="button" class="chip" data-axis-preset="-45">左偏 −45°</button><button type="button" class="chip" data-axis-preset="120">右偏 +120°</button><button type="button" class="chip" data-axis-preset="-120">极度 −120°</button></div>
       <div class="vector-projections axis-projections" data-limb-projections>${Object.entries(LEADS).map(([id, lead]) => `<div data-limb-projection="${id}"><b>${id}</b><div class="vector-projection-track"><i></i></div><span data-limb-value="${id}">+0.00</span></div>`).join('')}</div>
       <div class="axis-readout" data-limb-readout></div>
       <div class="limb-wave-panel"><div class="visual-sync-head"><span>各肢体导联投影波形</span><span>随电轴角度实时变化</span></div><canvas data-limb-waves data-height="245" aria-label="六个肢体导联投影波形"></canvas></div>
@@ -446,7 +450,7 @@ function limbPanel() {
       <h3>肢体导联是同一向量的不同投影</h3>
       <p>六个肢体导联位于额面，彼此相差固定角度。某个导联的振幅，等于心电向量在该导联轴上的投影：<b>投影 = |向量| × cos(夹角)</b>。下方的每个导联波形不是独立“偏转”，而是同一瞬时向量随时间投影到该导联轴的结果；要谈偏转，必须同时说明时间、导联和参考向量。</p>
       <div class="axis-table">${Object.entries(LEADS).map(([id, l]) => `<div><b>${l.name}</b><span>${l.angle}°</span><small>${l.note}</small></div>`).join('')}</div>
-      <div class="visual-tip">${icon('target', 14)} 电轴不是“猜”的：I 与 aVF 的净极性就能快速定位。拖动角度，观察 II 与 aVR 的投影如何相反。</div>
+      <div class="visual-tip">${icon('target', 14)} 本页只讲两件事：<b>投影</b>（向量在导联轴上的分量）和<b>量的大小</b>（向量越长，各导联振幅通常越大）。旋转方向或改变向量大小，观察六个导联的波形与数值。</div>
       <div class="vector-disclaimer"><b>教学示意，不是真实心电向量</b><p>图中的单一箭头只是为了说明“导联如何投影”的简化合成向量。真实心电向量是所有正在除极/复极的心肌细胞电偶向量在同一瞬间的空间叠加，会随激动部位、时间、胸壁阻抗、呼吸和导联位置持续变化，其方向和大小不能由一根固定箭头完全代表。本页用于建立方向与投影的直觉，不用于逐搏定量或临床诊断。</p></div>
     </aside>
   </div>`;
@@ -630,10 +634,10 @@ export async function vectorLabView() {
   let raf = 0;
   let cleanup = [];
   let start = performance.now();
-  const state = { rotate: 24, pitch: 18, playing: true, loop: 'all', lead: 'II', axes: { P: 60, QRS: 60, T: 60 }, axis: 60, angle: 60, auto: true, speed: 1, dragMode: 'view', phase: 0 };
+  const state = { rotate: 24, pitch: 18, playing: true, loop: 'all', lead: 'II', axes: { P: 60, QRS: 60, T: 60 }, axis: 60, angle: 60, magnitude: 1, auto: true, speed: 1, dragMode: 'view', phase: 0 };
   el.innerHTML = `<div class="page-eyebrow">${icon('compass', 14)} VECTOR & ELECTROPHYSIOLOGY</div>
     <div class="vector-head"><div><h1 class="page-title">心脏向量实验室</h1><p class="page-sub">把“背图形”变成“看方向”：P/QRS/T 环、肢体/胸导联投影、动作电位与解剖一次串起来。</p></div><a class="btn btn-secondary btn-sm" href="#/learn/ecg-calibration-paper">回到基础课程 ${icon('arrowRight', 13)}</a></div>
-    <div class="vector-safety-note">${icon('info', 14)} <span>电轴方向与导联投影仅供教学参考，用于理解电轴变化，<b>不代表任何患者实际情况</b>，不用于诊断或治疗。</span></div>
+    <div class="vector-safety-note">${icon('info', 14)} <span>向量方向与导联投影仅供教学参考，用于理解“投影”和“向量大小”，<b>不代表任何患者实际情况</b>，不用于诊断或治疗。</span></div>
     <div class="visual-tabs">${TABS.map(([id, label], i) => `<button class="chip ${i === 0 ? 'active' : ''}" type="button" data-visual-tab="${id}">${label}</button>`).join('')}</div>
     <div data-visual-content></div>
     <div class="visual-footnote">${icon('info', 13)} 图形为教学示意：向量方向与导联关系用于理解投影，不替代真实患者 12 导联诊断。</div>`;
@@ -790,14 +794,9 @@ export async function vectorLabView() {
     });
     content.querySelector('[data-limb-angle]')?.addEventListener('input', (e) => { state.auto = false; state.angle = Number(e.target.value); });
     content.querySelector('[data-limb-lead]')?.addEventListener('change', (e) => { state.lead = e.target.value; });
-    content.querySelectorAll('[data-axis-preset]').forEach((button) => button.addEventListener('click', () => {
-      state.auto = false;
-      state.angle = Number(button.dataset.axisPreset);
-      const slider = content.querySelector('[data-limb-angle]');
-      if (slider) slider.value = String(((state.angle + 180) % 360 + 360) % 360 - 180);
-      const auto = content.querySelector('[data-limb-auto]');
-      if (auto) auto.innerHTML = `${icon('rotate', 13)} 自动旋转`;
-    }));
+    content.querySelector('[data-limb-magnitude]')?.addEventListener('input', (e) => {
+      state.magnitude = Number(e.target.value) || 1;
+    });
     const limbCanvas = content.querySelector('[data-limb-canvas]');
     if (limbCanvas) {
       let dragging = false;

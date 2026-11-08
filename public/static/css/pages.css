@@ -691,3 +691,8 @@
 .limb-wave-panel { border-top:1px solid var(--line); background:var(--ecg-bg); }
 .limb-wave-panel canvas { display:block; width:100%; height:auto; }
 .limb-wave-panel .visual-sync-head { padding-bottom:3px; }
+.axis-range-neutral { background:linear-gradient(90deg,var(--bg-elev) 0%,var(--brand-soft) 50%,var(--bg-elev) 100%); }
+.axis-scale-note { margin:3px 0 2px; color:var(--faint); font-size:8.5px; }
+.axis-magnitude { display:flex; align-items:center; gap:6px; margin-top:4px; color:var(--muted); font-size:9px; }
+.axis-magnitude input { flex:1; accent-color:var(--accent); height:20px; }
+.axis-magnitude b { min-width:34px; text-align:right; color:var(--accent); font-family:var(--font-mono); font-size:9px; }
