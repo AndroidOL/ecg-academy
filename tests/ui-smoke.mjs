@@ -214,6 +214,14 @@ try {
   if (document.querySelector('#article-ecg-canvas canvas')) throw new Error('topic should not force an ECG canvas');
   ok('theory chapter renders sections without ECG');
 
+  await go('#/learn/ecg-vector-waveform-theory');
+  await waitFor(() => document.querySelector('.article-title'));
+  if (!document.querySelector('.article-title')?.textContent.includes('心电向量')) throw new Error('vector theory title wrong');
+  if (document.querySelectorAll('.article-figure').length < 4) throw new Error('vector theory figures missing');
+  if (document.querySelectorAll('.article-figure svg').length < 4) throw new Error('vector theory SVG missing');
+  if (!document.querySelector('#topic-references')) throw new Error('references section missing');
+  ok('vector theory article renders 4 SVG figures with legend and references');
+
   await go('#/practice');
   await waitFor(() => document.querySelector('[data-start]'));
   document.querySelector('[data-start]').click();
@@ -272,9 +280,9 @@ try {
   ok('simulation starts, quick IV visible, CPR shows compression-rate vitals, finish renders debrief');
 
   await go('#/admin');
-  await waitFor(() => document.querySelector('.admin-login'));
-  if (!document.querySelector('[data-admin-login]')) throw new Error('admin login form missing');
-  ok('admin route protects console with login form');
+  await waitFor(() => document.querySelector('[data-admin-login], [data-passkey-login]'));
+  if (!document.querySelector('[data-admin-login], [data-passkey-login]')) throw new Error('admin login form missing');
+  ok('admin route protects console with login form or passkey');
 
   const relevantErrors = errors.filter((line) => !line.includes('Not implemented'));
   if (relevantErrors.length) throw new Error(`console errors: ${relevantErrors.slice(0, 4).join(' | ')}`);

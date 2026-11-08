@@ -2,10 +2,11 @@ import { api } from '../api.js';
 import { store } from '../store.js';
 import { isFavorite, toggleFavorite } from '../study-store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108aq';
+const __asset = __isNode ? '' : '?v=20261108ar';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 import { createAiChat } from './ai-chat.js';
 const { icon, chapterColor, difficultyDots, escapeHtml, toast, medicalDisclaimer, setupMiniECG } = await import(`../ui.js${__asset}`);
+const { FIGURES } = await import(`../data/figures.js${__asset}`);
 
 const SECTIONS = [
   ['definition', '定义'],
@@ -165,14 +166,19 @@ export async function articleView({ params }) {
             <h2>学习目标</h2>
             ${list(detail.objectives || [])}
           </section>
-          ${(detail.sections || []).map((section, index) => `
+          ${(detail.sections || []).map((section, index) => {
+            const figure = section.figure ? FIGURES[section.figure] : null;
+            return `
             <section class="article-section" id="topic-section-${index}">
               <h2>${escapeHtml(section.title || '')}</h2>
               ${(section.body || []).map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')}
               ${section.list?.length ? list(section.list) : ''}
-            </section>`).join('')}
+              ${figure ? `<figure class="article-figure" id="topic-figure-${index}">${figure.svg}<figcaption><span class="article-figure-index">图 ${index + 1}</span> ${escapeHtml(section.figureCaption || figure.caption)}${(figure.legend || []).length ? `<span class="article-figure-legend">${figure.legend.map((item) => `<span><i style="background:${item.color}"></i>${escapeHtml(item.label)}</span>`).join('')}</span>` : ''}</figcaption></figure>` : ''}
+            </section>`;
+          }).join('')}
           ${(detail.keyPoints || []).length ? `<section class="article-section" id="topic-keypoints"><h2>必须记住</h2><div class="callout brand">${list(detail.keyPoints)}</div></section>` : ''}
           ${detail.clinicalPearl ? `<section class="article-section" id="topic-clinical"><h2>临床连接</h2><div class="callout">${icon('stethoscope', 13)} ${escapeHtml(detail.clinicalPearl)}</div></section>` : ''}
+          ${(detail.references || []).length ? `<section class="article-section" id="topic-references"><h2>参考资料</h2><ol class="article-references">${detail.references.map((ref) => `<li>${escapeHtml(ref)}</li>`).join('')}</ol><p class="muted article-references-note">以上为教学整理使用的公开教材与指南，具体表述以原文献与最新版本为准。</p></section>` : ''}
         ` : ''}
 
         <div class="article-nav">
@@ -187,7 +193,7 @@ export async function articleView({ params }) {
         <div class="toc">
           <div class="toc-title">ON THIS PAGE</div>
           ${isTopic
-            ? `<a class="toc-link" href="#topic-objectives" data-toc="topic-objectives">学习目标</a>${(detail.sections || []).map((section, index) => `<a class="toc-link" href="#topic-section-${index}" data-toc="topic-section-${index}">${escapeHtml(section.title || '')}</a>`).join('')}`
+            ? `<a class="toc-link" href="#topic-objectives" data-toc="topic-objectives">学习目标</a>${(detail.sections || []).map((section, index) => `<a class="toc-link" href="#topic-section-${index}" data-toc="topic-section-${index}">${escapeHtml(section.title || '')}</a>`).join('')}${(detail.references || []).length ? `<a class="toc-link" href="#topic-references" data-toc="topic-references">参考资料</a>` : ''}`
             : SECTIONS.map(([id, name]) => `<a class="toc-link" href="#ecg-viewer-section" data-toc="${id}">${name}</a>`).join('')}
         </div>
         <div class="article-side-card">

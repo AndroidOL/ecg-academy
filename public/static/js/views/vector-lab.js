@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108aq';
+const __asset = __isNode ? '' : '?v=20261108ar';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const LEADS = {
@@ -191,6 +191,20 @@ function drawVectorCanvas(canvas, state, t) {
     ctx.fillStyle = c.muted;
     ctx.fillText(axis.label, p[0] + 4, p[1] - 4);
   });
+  // 额面肢体导联轴：与向量环画在同一空间里，直接看出“环朝向哪个导联”
+  ctx.font = '600 9px ui-monospace, monospace';
+  Object.entries(LEADS).forEach(([id, lead]) => {
+    const rad = lead.angle * Math.PI / 180;
+    const tip = project([Math.cos(rad) * 1.12, -Math.sin(rad) * 1.12, 0]);
+    const selected = state.lead === id;
+    ctx.strokeStyle = selected ? c.brand : c.muted;
+    ctx.globalAlpha = selected ? 0.95 : 0.35;
+    ctx.lineWidth = selected ? 1.8 : 1;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(...tip); ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = selected ? c.brand : c.muted;
+    ctx.fillText(id, tip[0] + 3, tip[1] - 3);
+  });
   const loops = LOOPS;
   const loopColors = { P: c.brand, QRS: c.accent, T: c.gold };
   const loopAxes = state.axes || { P: 60, QRS: 60, T: 60 };
@@ -253,7 +267,7 @@ function drawVectorCanvas(canvas, state, t) {
   ctx.fillText(`${activeLabel}${movingLabel} · ${lead.name} 投影 ${dot >= 0 ? '+' : ''}${dot.toFixed(2)}`, 12, 18);
   ctx.fillStyle = c.muted;
   ctx.font = '10px ui-monospace, monospace';
-  ctx.fillText('P/QRS/T 只在各自时间窗内转动；正常 QRS 主向量总体指向左下、略向后', 12, height - 10);
+  ctx.fillText('细轴 = 额面肢体导联方向；P/QRS/T 只在各自时间窗内转动；正常 QRS 主向量总体指向左下、略向后', 12, height - 10);
 }
 
 function gaussianAt(u, center, width) {
@@ -323,50 +337,6 @@ function draw12LeadCanvas(canvas, state) {
   }));
   ctx.fillStyle = c.muted; ctx.font = '8px ui-monospace, monospace';
   ctx.fillText('V1–V6 为水平面近似示意；随三环电轴变化', left, height - 2);
-}
-
-function drawLimbCompassCanvas(canvas, state) {
-  const { ctx, width, height } = canvas2d(canvas);
-  const c = palette();
-  const cx = width / 2; const cy = height / 2 + 4;
-  const radius = Math.min(width, height) * 0.34;
-  ctx.clearRect(0, 0, width, height); ctx.fillStyle = c.bg; ctx.fillRect(0, 0, width, height);
-  ctx.fillStyle = c.text; ctx.font = '600 9px ui-monospace, monospace';
-  ctx.fillText('额面肢体导联方向', 10, 12);
-  ctx.strokeStyle = c.grid; ctx.globalAlpha = .6; ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
-  const axes = state.axes || { P: 60, QRS: 60, T: 60 };
-  const active = state.loop === 'all' ? (activeLoopAt(state.phase ?? 0) || 'QRS') : state.loop;
-  // P/QRS/T 环在额面的淡淡投影
-  ['P', 'QRS', 'T'].forEach((key) => {
-    ctx.strokeStyle = { P: c.brand, QRS: c.accent, T: c.gold }[key];
-    ctx.globalAlpha = key === active ? .65 : .18; ctx.lineWidth = key === active ? 1.6 : 1;
-    ctx.beginPath();
-    for (let i = 0; i <= 80; i += 1) {
-      const a = (i / 80) * Math.PI * 2;
-      const v = rotateForAxis(LOOPS[key](a), key, axes);
-      const px = cx + v[0] * radius * .72;
-      const py = cy - v[1] * radius * .72;
-      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-    }
-    ctx.stroke();
-  });
-  ctx.globalAlpha = 1;
-  Object.entries(LEADS_12).filter(([, lead]) => lead.angle !== null).forEach(([id, lead]) => {
-    const a = lead.angle * Math.PI / 180;
-    const x = cx + Math.cos(a) * radius;
-    const y = cy + Math.sin(a) * radius;
-    ctx.strokeStyle = c.muted; ctx.globalAlpha = .6; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x, y); ctx.stroke(); ctx.globalAlpha = 1;
-    ctx.fillStyle = c.muted; ctx.font = '700 9px ui-monospace, monospace';
-    ctx.fillText(id, x + (Math.cos(a) * 7), y + (Math.sin(a) * 7) + 3);
-  });
-  const phase = state.phase ?? 0;
-  const current = rotateForAxis(LOOPS[active](phase * Math.PI * 2), active, axes);
-  const vx = cx + current[0] * radius * .8; const vy = cy - current[1] * radius * .8;
-  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(vx, vy); ctx.stroke();
-  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(vx, vy, 3, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = c.muted; ctx.font = '8px ui-monospace, monospace';
-  ctx.fillText(`${active} 当前向量 · 六轴正向向外`, 10, height - 5);
 }
 
 function drawProjectionCanvas(canvas, state, t) {
@@ -487,16 +457,11 @@ function vectorLoopsPanel() {
       <div class="visual-tip">${icon('sparkles', 14)} 旋转模型，观察心电轴：正常 QRS 环主向量指向<b>左下、略向后</b>；电轴左偏 = 更朝上/左，电轴右偏 = 更朝下/右。把水平视角拖到 −180° 可从后方观察“向后”的分量。</div>
     </aside>
   </div>
-  <div class="vector-extra-grid">
+  <div class="vector-extra-grid vector-extra-single">
     <div class="visual-card visual-card-dark">
       <div class="visual-sync-head"><span>12 导联投影图</span><span>P/QRS/T 同源 · 随三环电轴变化</span></div>
       <div class="vector-12lead-scroll"><canvas data-vector-12lead data-height="390" aria-label="由 P、QRS、T 向量环投影生成的十二导联示意图"></canvas></div><div class="vector-12lead-hint">左右滑动查看 12 导联</div>
       <div class="vector-mini-note">同一瞬时的空间向量投影到 12 个导联轴：朝向某导联为正，背离为负。V1–V6 为水平面教学近似，不是诊断图。</div>
-    </div>
-    <div class="visual-card visual-card-dark">
-      <div class="visual-sync-head"><span>额面肢体导联方向</span><span>从中心向外为正</span></div>
-      <canvas data-vector-limb-compass data-height="390" aria-label="额面六个肢体导联方向与 P QRS T 环投影"></canvas>
-      <div class="vector-mini-note">I=0°、II=+60°、III=+120°、aVR=−150°、aVL=−30°、aVF=+90°；彩色细环为 P/QRS/T 在额面的投影。</div>
     </div>
   </div>`;
 }
@@ -1043,149 +1008,11 @@ function chestPanel() {
   </div>`;
 }
 
-function drawWaveCanvas(canvas, state, t) {
-  const { ctx, width, height } = canvas2d(canvas);
-  const c = palette();
-  const left = 44; const right = 18; const top = 22; const bottom = 26;
-  const plotW = width - left - right;
-  const half = (height - top - bottom) / 2;
-  ctx.clearRect(0, 0, width, height); ctx.fillStyle = c.bg; ctx.fillRect(0, 0, width, height);
-  ctx.strokeStyle = c.grid; ctx.globalAlpha = .4;
-  for (let i = 0; i <= 8; i += 1) {
-    const x = left + (i / 8) * plotW;
-    ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, height - bottom); ctx.stroke();
-  }
-  ctx.globalAlpha = 1;
-  const phase = (t / 5200) % 1;
-  const y1 = top + half * .55;
-  const y2 = top + half * 1.65;
-  // action potential
-  ctx.strokeStyle = c.trace; ctx.lineWidth = 2; ctx.beginPath();
-  for (let i = 0; i <= plotW; i += 1) {
-    const u = i / plotW;
-    let v;
-    if (u < .18) v = .02;
-    else if (u < .24) v = .02 + (u - .18) / .06 * .95;
-    else if (u < .38) v = .97 - (u - .24) / .14 * .35;
-    else if (u < .52) v = .62 - (u - .38) / .14 * .5;
-    else v = .12;
-    const y = y1 - v * half * .7;
-    if (i === 0) ctx.moveTo(left + i, y); else ctx.lineTo(left + i, y);
-  }
-  ctx.stroke();
-  // ECG trace
-  ctx.strokeStyle = c.brand; ctx.lineWidth = 1.8; ctx.beginPath();
-  for (let i = 0; i <= plotW; i += 1) {
-    const u = i / plotW;
-    let v = 0;
-    v += .10 * Math.exp(-Math.pow((u - .17) / .018, 2));
-    v += .08 * Math.exp(-Math.pow((u - .25) / .010, 2));
-    v -= 1.0 * Math.exp(-Math.pow((u - .34) / .012, 2));
-    v += .35 * Math.exp(-Math.pow((u - .37) / .010, 2));
-    v += .22 * Math.exp(-Math.pow((u - .52) / .040, 2));
-    const y = y2 - v * half * .48;
-    if (i === 0) ctx.moveTo(left + i, y); else ctx.lineTo(left + i, y);
-  }
-  ctx.stroke();
-  // cursor
-  const x = left + phase * plotW;
-  ctx.strokeStyle = '#fff'; ctx.globalAlpha = .65; ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, height - bottom); ctx.stroke(); ctx.globalAlpha = 1;
-  ctx.fillStyle = c.text; ctx.font = '600 10px ui-monospace, monospace';
-  ctx.fillText('动作电位：离子通道 → 膜电位', left, 14);
-  ctx.fillText('体表 ECG：所有向量 → 导联投影', left, y2 - half * .34);
-  ctx.fillStyle = c.muted; ctx.font = '9px ui-monospace, monospace';
-  ctx.fillText('0 相 Na⁺ 内流 · 2 相 Ca²⁺ 平台 · 3 相 K⁺ 外流 · 4 相泵/If', left, height - 8);
-}
-
-function waveformPanel() {
-  return `<div class="visual-grid">
-    <div class="visual-card visual-card-dark"><canvas data-wave-canvas data-height="350" aria-label="动作电位与体表心电图对应动画"></canvas></div>
-    <aside class="visual-explain">
-      <h3>波形不是“画出来的”，是电活动投影出来的</h3>
-      <div class="visual-steps">
-        <div><b>1. 离子通道</b><span>Na⁺ 快速内流 → 0 相；Ca²⁺ 内流/K⁺ 外流 → 2 相平台；K⁺ 外流 → 3 相复极。</span></div>
-        <div><b>2. 细胞动作电位</b><span>心肌细胞除极—复极产生局部电位；不同区域时相差异形成电流。</span></div>
-        <div><b>3. 空间向量</b><span>大量细胞电活动叠加为瞬时向量，向量环随心动周期变化。</span></div>
-        <div><b>4. 导联投影</b><span>每个体表导联记录向量在自身轴上的投影：P、QRS、T 波由此产生。</span></div>
-      </div>
-      <div class="visual-tip">${icon('activity', 14)} 看到 ST 段抬高时，问：损伤电流的方向指向哪个导联？相邻导联是否一致？</div>
-    </aside>
-  </div>`;
-}
-
-function ionsPanel() {
-  return `<div class="visual-grid">
-    <div class="visual-card">
-      <div class="ion-diagram">
-        <div class="ion-cell"><div class="ion-membrane"></div><b>心肌细胞膜</b><span>磷脂双层 + 离子通道</span></div>
-        <div class="ion-channel-row">
-          <div class="ion-channel na"><b>Na⁺</b><span>0 相快速内流</span><small>QRS 上升支；钠通道阻滞 → QRS 增宽</small></div>
-          <div class="ion-channel ca"><b>Ca²⁺</b><span>2 相平台 / 房室结传导</span><small>L 型钙通道；阻滞 → PR 延长、QT 缩短</small></div>
-          <div class="ion-channel k"><b>K⁺</b><span>3 相复极</span><small>高钾 → T 高尖/QRS 宽；低钾 → U 波/QT 长</small></div>
-        </div>
-      </div>
-    </div>
-    <aside class="visual-explain">
-      <h3>把“通道—电位—波形”串起来</h3>
-      <div class="phase-list">
-        <div><b>4 相</b><span>静息/自动除极：Na⁺/K⁺ 泵维持梯度，窦房结 If 缓慢内流。</span></div>
-        <div><b>0 相</b><span>Na⁺ 快速内流，膜电位迅速上升；对应 QRS。</span></div>
-        <div><b>1–2 相</b><span>K⁺ 短暂外流、Ca²⁺ 内流形成平台；对应 ST 段。</span></div>
-        <div><b>3 相</b><span>K⁺ 外流复极；对应 T 波。</span></div>
-        <div><b>4 相恢复</b><span>离子泵恢复梯度；下一次激动准备。</span></div>
-      </div>
-      <p class="muted">QT = 0 相到 3 相结束；血钾、钙、药物和心率都会改变这条曲线。</p>
-    </aside>
-  </div>`;
-}
-
-function anatomyPanel() {
-  return `<div class="visual-grid">
-    <div class="visual-card">
-      <div class="anatomy-svg-wrap">
-        <svg viewBox="0 0 380 320" class="anatomy-svg" role="img" aria-label="心脏四腔、瓣膜与传导系统示意图">
-          <path d="M190 34 C128 28 86 72 92 134 C98 218 160 270 190 292 C220 270 282 218 288 134 C294 72 252 28 190 34Z" fill="var(--bg-elev)" stroke="var(--line-strong)" stroke-width="2"/>
-          <path d="M190 48 L190 270" stroke="var(--line-strong)" stroke-width="1" opacity=".5"/>
-          <path d="M104 122 Q190 88 276 122" stroke="var(--line-strong)" fill="none" opacity=".6"/>
-          <path d="M112 130 Q142 180 168 232 M268 130 Q238 180 212 232" stroke="var(--line-strong)" fill="none" opacity=".4"/>
-          <text x="138" y="92" text-anchor="middle" font-size="12" font-weight="700" fill="var(--brand)">RA 右房</text>
-          <text x="244" y="92" text-anchor="middle" font-size="12" font-weight="700" fill="var(--brand)">LA 左房</text>
-          <text x="134" y="214" text-anchor="middle" font-size="12" font-weight="700" fill="var(--accent)">RV 右室</text>
-          <text x="246" y="214" text-anchor="middle" font-size="12" font-weight="700" fill="var(--accent)">LV 左室</text>
-          <g class="anatomy-label" data-anatomy="tricuspid"><circle cx="166" cy="137" r="9" fill="var(--surface)" stroke="var(--gold)"/><text x="166" y="140" text-anchor="middle" font-size="8" fill="var(--gold)">三尖瓣</text></g>
-          <g class="anatomy-label" data-anatomy="mitral"><circle cx="214" cy="137" r="9" fill="var(--surface)" stroke="var(--gold)"/><text x="214" y="140" text-anchor="middle" font-size="8" fill="var(--gold)">二尖瓣</text></g>
-          <g class="anatomy-label" data-anatomy="aortic"><circle cx="226" cy="112" r="8" fill="var(--surface)" stroke="var(--brand)"/><text x="226" y="115" text-anchor="middle" font-size="7" fill="var(--brand)">主A</text></g>
-          <g class="anatomy-label" data-anatomy="pulmonary"><circle cx="154" cy="108" r="8" fill="var(--surface)" stroke="var(--brand)"/><text x="154" y="111" text-anchor="middle" font-size="7" fill="var(--brand)">肺A</text></g>
-          <g class="anatomy-label" data-anatomy="sa"><circle cx="172" cy="72" r="7" fill="var(--ok)" opacity=".9"/><text x="172" y="75" text-anchor="middle" font-size="7" fill="#fff">SA</text></g>
-          <g class="anatomy-label" data-anatomy="av"><circle cx="190" cy="144" r="7" fill="var(--warn)" opacity=".9"/><text x="190" y="147" text-anchor="middle" font-size="7" fill="#fff">AV</text></g>
-          <path d="M172 72 Q186 100 190 144 Q196 174 190 196" fill="none" stroke="var(--ok)" stroke-width="2" stroke-dasharray="5 5" class="conduction-path"/>
-          <path d="M190 196 Q164 218 142 246 M190 196 Q216 218 238 246" fill="none" stroke="var(--ok)" stroke-width="2" stroke-dasharray="5 5" class="conduction-path"/>
-          <text x="190" y="308" text-anchor="middle" font-size="9" fill="var(--muted)">点击瓣膜/起搏点查看说明</text>
-        </svg>
-      </div>
-    </div>
-    <aside class="visual-explain" data-anatomy-detail>
-      <h3>心脏基础解剖：先找腔室，再看瓣膜与传导</h3>
-      <p>右房接受上下腔静脉，经三尖瓣到右室，再经肺动脉瓣入肺；左房接受肺静脉，经二尖瓣到左室，再经主动脉瓣泵入体循环。</p>
-      <div class="anatomy-facts">
-        <div><b>三尖瓣</b><span>右房-右室；右心容量/压力负荷与右室肥厚相关。</span></div>
-        <div><b>二尖瓣</b><span>左房-左室；左房增大、房颤、左室肥厚常见。</span></div>
-        <div><b>V1–V6</b><span>从右胸到左腋中线，观察室间隔→前壁→侧壁。</span></div>
-        <div><b>传导系统</b><span>窦房结 → 房室结 → 希氏束 → 左右束支 → 浦肯野纤维。</span></div>
-      </div>
-      <p class="muted">解剖位置决定导联“看到什么”：下壁 II/III/aVF，侧壁 I/aVL/V5/V6，前壁 V1–V4，右室 V3R–V4R，后壁 V7–V9。</p>
-    </aside>
-  </div>`;
-}
-
 const TABS = [
   ['loops', 'P/QRS/T 向量环'],
   ['limb', '肢体导联向量'],
   ['chest', '胸导联定位'],
   ['activation', '激活顺序'],
-  ['waveform', '波形成因'],
-  ['ions', '离子与动作电位'],
-  ['anatomy', '心脏解剖'],
 ];
 
 export async function vectorLabView() {
@@ -1197,7 +1024,7 @@ export async function vectorLabView() {
   let start = performance.now();
   const state = { rotate: 24, pitch: 18, playing: true, loop: 'all', lead: 'II', axes: { P: 60, QRS: 60, T: 60 }, axis: 60, angle: 60, magnitude: 1, auto: true, speed: 1, phase: 0, qrsPhase: 0, qrsPlaying: true };
   el.innerHTML = `<div class="page-eyebrow">${icon('compass', 14)} VECTOR & ELECTROPHYSIOLOGY</div>
-    <div class="vector-head"><div><h1 class="page-title">心脏向量实验室</h1><p class="page-sub">把“背图形”变成“看方向”：P/QRS/T 环、肢体/胸导联投影、动作电位与解剖一次串起来。</p></div><a class="btn btn-secondary btn-sm" href="#/learn/ecg-calibration-paper">回到基础课程 ${icon('arrowRight', 13)}</a></div>
+    <div class="vector-head"><div><h1 class="page-title">心脏向量实验室</h1><p class="page-sub">把“背图形”变成“看方向”：P/QRS/T 环、肢体/胸导联投影、激活顺序一次串起来。</p></div><div class="row-wrap"><a class="btn btn-secondary btn-sm" href="#/learn/ecg-vector-waveform-theory">理论阅读 ${icon('bookOpen', 13)}</a><a class="btn btn-ghost btn-sm" href="#/learn/ecg-calibration-paper">${icon('arrowRight', 13)} 基础课程</a></div></div>
     <div class="vector-safety-note">${icon('info', 14)} <span>向量方向与导联投影仅供教学参考，用于理解“投影”和“向量大小”，<b>不代表任何患者实际情况</b>，不用于诊断或治疗。</span></div>
     <div class="visual-tabs">${TABS.map(([id, label], i) => `<button class="chip ${i === 0 ? 'active' : ''}" type="button" data-visual-tab="${id}">${label}</button>`).join('')}</div>
     <div data-visual-content></div>
@@ -1214,8 +1041,6 @@ export async function vectorLabView() {
     if (projection) drawProjectionCanvas(projection, state, 0);
     const twelve = content.querySelector('[data-vector-12lead]');
     if (twelve) draw12LeadCanvas(twelve, state);
-    const compass = content.querySelector('[data-vector-limb-compass]');
-    if (compass) drawLimbCompassCanvas(compass, state);
     const syncLabel = content.querySelector('[data-vector-sync-label]');
     if (syncLabel) syncLabel.textContent = `${LEADS[state.lead].name} · 时间光标`;
     const bars = content.querySelector('[data-vector-projections]');
@@ -1273,12 +1098,6 @@ export async function vectorLabView() {
       updateChestVectorReadout(content, state);
     }
     raf = requestAnimationFrame(drawLimbFrame);
-  };
-  const drawWaveFrame = (now) => {
-    const canvas = content.querySelector('[data-wave-canvas]');
-    if (!canvas) return;
-    drawWaveCanvas(canvas, state, now);
-    raf = requestAnimationFrame(drawWaveFrame);
   };
   const drawActivationFrame = (now) => {
     const canvas = content.querySelector('[data-activation-canvas]');
@@ -1419,7 +1238,6 @@ export async function vectorLabView() {
     content.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { const target = event.target.closest('[data-chest-lead]'); if (target) { event.preventDefault(); select(target.dataset.chestLead); } } });
     select('V1');
   };
-  const bindWave = () => { raf = requestAnimationFrame(drawWaveFrame); };
   const bindActivation = () => {
     const play = content.querySelector('[data-activation-play]');
     const pauseAt = () => {
@@ -1464,25 +1282,6 @@ export async function vectorLabView() {
     });
     raf = requestAnimationFrame(drawActivationFrame);
   };
-  const bindAnatomy = () => {
-    const facts = {
-      tricuspid: '三尖瓣位于右房与右室之间；右心扩大、右室压力负荷时可出现右房增大/右室肥厚图形。',
-      mitral: '二尖瓣位于左房与左室之间；二尖瓣病变常伴左房增大、房颤与左室肥厚。',
-      aortic: '主动脉瓣位于左室与主动脉之间；主动脉瓣狭窄可致左室肥厚、劳损。',
-      pulmonary: '肺动脉瓣位于右室与肺动脉之间；肺动脉高压/右室负荷可致右室肥厚。',
-      sa: '窦房结位于上腔静脉与右房交界；正常起搏点，频率 60–100 次/分。',
-      av: '房室结位于 Koch 三角；延迟并过滤心房冲动，形成 PR 段。',
-    };
-    content.addEventListener('click', (event) => {
-      const target = event.target.closest('[data-anatomy]');
-      if (!target) return;
-      const id = target.dataset.anatomy;
-      const detail = content.querySelector('[data-anatomy-detail]');
-      if (!detail) return;
-      detail.querySelectorAll('.anatomy-selected').forEach((n) => n.remove());
-      detail.insertAdjacentHTML('afterbegin', `<div class="anatomy-selected"><b>${id.toUpperCase()}</b><p>${escapeHtml(facts[id] || '')}</p></div>`);
-    });
-  };
 
   const renderTab = (tab) => {
     stopAnim();
@@ -1491,16 +1290,11 @@ export async function vectorLabView() {
     content.innerHTML = tab === 'loops' ? vectorLoopsPanel()
       : tab === 'limb' ? limbPanel()
         : tab === 'chest' ? chestPanel()
-          : tab === 'activation' ? activationPanel()
-            : tab === 'waveform' ? waveformPanel()
-              : tab === 'ions' ? ionsPanel()
-                : anatomyPanel();
+          : activationPanel();
     if (tab === 'loops') bindLoops();
     else if (tab === 'limb') bindLimb();
     else if (tab === 'chest') bindChest();
-    else if (tab === 'activation') bindActivation();
-    else if (tab === 'waveform') bindWave();
-    else if (tab === 'anatomy') bindAnatomy();
+    else bindActivation();
   };
   el.querySelectorAll('[data-visual-tab]').forEach((button) => button.addEventListener('click', () => renderTab(button.dataset.visualTab)));
   renderTab(active);
