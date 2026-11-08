@@ -117,7 +117,7 @@ export class ECGViewer {
     let height;
     if (mini) height = 62;
     else if (mode === '12lead') {
-      if (this.options.twelveLayout === 'rows') height = 12 * 72 + 14;
+      if (this.options.twelveLayout === 'rows') height = 12 * (88 + 6) + 14;
       else height = 3 * 116 + (this.options.twelveRhythm === false ? 0 : 128) + 14;
     } else height = parentWidth < 560 ? 196 : 248;
     this.cssWidth = width;
@@ -1106,7 +1106,7 @@ export class ECGViewer {
     const progress = this.twelveProgress;
 
     if (this.options.twelveLayout === 'rows') {
-      const rowHeight = 66;
+      const rowHeight = 88;
       const rowGap = 6;
       LEAD_NAMES.forEach((lead, index) => {
         this.draw12Cell(lead, padLeft, top + index * (rowHeight + rowGap), plotW, rowHeight, 0, colors, progress, true);
@@ -1199,13 +1199,14 @@ export class ECGViewer {
   draw12Cell(lead, x, y, w, h, col, colors, progress = null, fullDuration = false) {
     const ctx = this.ctx;
     const segment = 2.5;
-    const pxPerMm = w / (segment * 25);
+    const duration = 10;
+    const pxPerMm = fullDuration ? w / (duration * 25) : w / (segment * 25);
     if (!this.twelveSession) {
       this.twelveSession = new ECGSession({ ...this.rhythmSession.spec, duration: 10, start: 0.08, annotations: [] });
     }
     const result = this.twelveSession.lead(lead);
-    const startT = col * segment;
-    const endT = startT + segment;
+    const startT = fullDuration ? 0 : col * segment;
+    const endT = fullDuration ? duration : startT + segment;
     const reveal = progress == null ? endT : Math.max(startT, Math.min(endT, progress));
     const baseline = y + h * 0.60;
     this.drawPaper(x, y, w, h, colors, pxPerMm);
@@ -1228,7 +1229,7 @@ export class ECGViewer {
     if (i1 > i0) {
       for (let i = i0; i <= i1; i += 1) {
         const t = i / result.sampleRate;
-        const px = x + (t - startT) * (w / segment);
+        const px = x + (t - startT) * (w / (endT - startT));
         const py = baseline - result.samples[i] * 10 * pxPerMm;
         if (i === i0) ctx.moveTo(px, py);
         else ctx.lineTo(px, py);
