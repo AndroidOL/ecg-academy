@@ -11,3 +11,4 @@ tests/artifacts/*
 !tests/artifacts/.gitkeep
 .ssh/
 docs/*.local.md
+node_modules/

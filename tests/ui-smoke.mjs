@@ -1,9 +1,7 @@
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-let JSDOM;
-try { ({ JSDOM } = require('jsdom')); }
-catch { ({ JSDOM } = require('/www/wwwroot/jbwy.wellin.ltd/node_modules/jsdom')); }
+const { JSDOM } = require('jsdom');
 const BASE = 'http://127.0.0.1:8791';
 
 const dom = new JSDOM(`<!doctype html><html lang="zh-CN" data-theme="light"><head></head><body>

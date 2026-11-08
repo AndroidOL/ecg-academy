@@ -1,8 +1,6 @@
 import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
-let JSDOM;
-try { ({ JSDOM } = require('jsdom')); }
-catch { ({ JSDOM } = require('/www/wwwroot/jbwy.wellin.ltd/node_modules/jsdom')); }
+const { JSDOM } = require('jsdom');
 
 const dom = new JSDOM('<!doctype html><html><body><div id="host"></div></body></html>', { url: 'http://127.0.0.1/', pretendToBeVisual: true });
 const { window } = dom;
