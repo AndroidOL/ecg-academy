@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ax';
+const __asset = __isNode ? '' : '?v=20261108ay';
 const { ECGSession, LEAD_NAMES } = await import(`./ecg-engine.js${__asset}`);
 
 const COLUMNS = [
@@ -547,13 +547,14 @@ export class ECGViewer {
 
     // 波形
     const progress = this.progress == null ? duration : this.progress;
-    const maxIndex = Math.min(result.samples.length - 1, Math.floor(progress * result.sampleRate));
+    const showFull = this.options.reveal === false;
+    const maxIndex = showFull ? result.samples.length - 1 : Math.min(result.samples.length - 1, Math.floor(progress * result.sampleRate));
     ctx.save();
     ctx.beginPath();
     ctx.rect(padLeft, padTop, plotW, plotH);
     ctx.clip();
     // 循环覆盖模式：保留上一轮完整波形作为淡影，当前扫描前沿逐点覆盖。
-    if (this.progress != null) {
+    if (this.progress != null && !showFull) {
       ctx.globalAlpha = 0.13;
       ctx.strokeStyle = colors.trace;
       ctx.lineWidth = 1.05;
@@ -1139,7 +1140,6 @@ export class ECGViewer {
     ctx.font = '500 9px "SF Mono", ui-monospace, monospace';
     ctx.fillText('rhythm strip', padLeft + 2, ry + 26);
     const pxPerSec = (plotW - 28) / duration;
-    const reveal = progress == null ? duration : Math.min(duration, progress);
     ctx.save();
     ctx.beginPath();
     ctx.rect(padLeft + 28, ry, plotW - 28, rhythmH - 22);
@@ -1147,7 +1147,7 @@ export class ECGViewer {
     ctx.strokeStyle = colors.trace;
     ctx.lineWidth = 1.25;
     ctx.beginPath();
-    const endIndex = Math.min(result.samples.length - 1, Math.ceil(reveal * result.sampleRate));
+    const endIndex = result.samples.length - 1;
     for (let i = 0; i <= endIndex; i += 1) {
       const x = padLeft + 28 + (i / result.sampleRate) * pxPerSec;
       const yy = baseline - result.samples[i] * 10 * pxPerMm;
@@ -1156,6 +1156,7 @@ export class ECGViewer {
     }
     if (endIndex > 0) ctx.stroke();
     if (progress != null) {
+      const reveal = Math.max(0, Math.min(duration, progress));
       const cursorX = padLeft + 28 + reveal * pxPerSec;
       const idx = Math.min(result.samples.length - 1, Math.round(reveal * result.sampleRate));
       const cursorY = baseline - result.samples[idx] * 10 * pxPerMm;
@@ -1207,7 +1208,6 @@ export class ECGViewer {
     const result = this.twelveSession.lead(lead);
     const startT = fullDuration ? 0 : col * segment;
     const endT = fullDuration ? duration : startT + segment;
-    const reveal = progress == null ? endT : Math.max(startT, Math.min(endT, progress));
     const baseline = y + h * 0.60;
     this.drawPaper(x, y, w, h, colors, pxPerMm);
     ctx.strokeStyle = colors.line;
@@ -1225,7 +1225,7 @@ export class ECGViewer {
     ctx.lineJoin = 'round';
     ctx.beginPath();
     const i0 = Math.floor(startT * result.sampleRate);
-    const i1 = Math.min(result.samples.length - 1, Math.ceil(reveal * result.sampleRate));
+    const i1 = Math.min(result.samples.length - 1, Math.ceil(endT * result.sampleRate));
     if (i1 > i0) {
       for (let i = i0; i <= i1; i += 1) {
         const t = i / result.sampleRate;
@@ -1237,7 +1237,7 @@ export class ECGViewer {
       ctx.stroke();
     }
     if (progress != null && progress >= startT && progress <= endT) {
-      const cursorX = x + (progress - startT) * (w / segment);
+      const cursorX = x + (progress - startT) * (w /(endT - startT));
       const idx = Math.min(result.samples.length - 1, Math.round(progress * result.sampleRate));
       const cursorY = baseline - result.samples[idx] * 10 * pxPerMm;
       ctx.fillStyle = colors.brand;

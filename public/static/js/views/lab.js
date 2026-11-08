@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ax';
+const __asset = __isNode ? '' : '?v=20261108ay';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
@@ -259,11 +259,11 @@ export async function labView() {
   const iiHost = el.querySelector('#lab-ecg-ii');
   const v3Host = el.querySelector('#lab-ecg-v3');
   const initialSpec = buildSpec(state.k, state.ca, state.mg);
-  viewerII = mountECG(iiHost, initialSpec, { mode: 'rhythm', lead: 'II', speed: 2, showAnnotations: true, autoPlay: false });
-  viewerV3 = mountECG(v3Host, initialSpec, { mode: 'rhythm', lead: 'V3', speed: 2, showAnnotations: true, autoPlay: false });
+  viewerII = mountECG(iiHost, initialSpec, { mode: 'rhythm', lead: 'II', speed: 2, showAnnotations: true, autoPlay: false, reveal: false });
+  viewerV3 = mountECG(v3Host, initialSpec, { mode: 'rhythm', lead: 'V3', speed: 2, showAnnotations: true, autoPlay: false, reveal: false });
   viewerV3.setLead('V3');
   const twelveHost = el.querySelector('#lab-ecg-12lead');
-  viewer12 = mountECG(twelveHost, initialSpec, { mode: '12lead', speed: 1, showAnnotations: false, showSummary: false, autoPlay: false, twelveLayout: 'grid', twelveRhythm: true });
+  viewer12 = mountECG(twelveHost, initialSpec, { mode: '12lead', speed: 1, showAnnotations: false, showSummary: false, autoPlay: false, twelveLayout: 'grid', twelveRhythm: true, reveal: false });
 
   kSlider.addEventListener('input', () => { state.k = Number(kSlider.value); render(); });
   caSlider.addEventListener('input', () => { state.ca = Number(caSlider.value); render(); });
