@@ -276,6 +276,7 @@ final class Quiz
             $options[] = [
                 'id' => $id,
                 'name' => $all[$id]['name'] ?? $id,
+                'nameEn' => $all[$id]['en'] ?? ($all[$id]['name'] ?? $id),
                 'chapter' => $all[$id]['chapter'] ?? '',
             ];
         }

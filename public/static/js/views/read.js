@@ -1,5 +1,6 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bg';
+const __asset = __isNode ? '' : '?v=20261108bh';
+const { localizedName, getLocale } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { recordAttempt } = await import(`../study-store.js${__asset}`);
@@ -275,7 +276,7 @@ export async function readView({ query } = {}) {
         ${quiz.options.map((option, index) => `<label class="option-card" data-diagnosis="${escapeHtml(option.id)}">
           <input type="${quiz.multiple ? 'checkbox' : 'radio'}" name="read-diagnosis" value="${escapeHtml(option.id)}">
           <span class="option-letter">${'ABCDE'[index] || index + 1}</span>
-          <span class="option-text">${escapeHtml(option.name)}</span>
+          <span class="option-text">${escapeHtml(localizedName(option))}</span>
           <span class="option-note">${escapeHtml(option.chapter || '')}</span>
         </label>`).join('')}
       </div>
@@ -311,6 +312,9 @@ export async function readView({ query } = {}) {
       setButtonLoading(submit, true, '判分中');
       try {
         const result = await api.quizAnswer(quiz.attemptId, [...selected], Math.round(performance.now() - state.startedAt));
+        const localized = (id) => localizedName((quiz.options || []).find((option) => option.id === id) || {});
+        result.correctNames = (result.correctIds || []).map(localized);
+        result.selectedNames = [...selected].map(localized);
         state.result = result;
         clearInterval(state.timerId);
         const names = Object.fromEntries((quiz.options || []).map((option) => [option.id, option.name]));
@@ -348,8 +352,8 @@ export async function readView({ query } = {}) {
     const stepIds = STEPS.map((step) => step.id);
     const stepCorrect = stepIds.filter((id) => state.results[id] === true).length;
     const stepDone = stepIds.filter((id) => state.results[id] !== undefined).length;
-    const answer = (result.correctIds || []).map((id) => quiz.options.find((option) => option.id === id)?.name).filter(Boolean).join('、');
-    const selectedNames = [...selected].map((id) => quiz.options.find((option) => option.id === id)?.name).filter(Boolean).join('、');
+    const answer = (result.correctIds || []).map((id) => localizedName(quiz.options.find((option) => option.id === id))).filter(Boolean).join('、');
+    const selectedNames = [...selected].map((id) => localizedName(quiz.options.find((option) => option.id === id))).filter(Boolean).join('、');
     feedbackHost.innerHTML = `<div class="quiz-feedback ${result.correct ? '' : 'is-bad'}">
       <div class="feedback-head"><span class="feedback-icon ${result.correct ? '' : 'bad'}">${icon(result.correct ? 'check' : 'x', 16)}</span><div><div class="feedback-title">${result.correct ? '结论正确' : '结论需要修正'}</div><div class="muted" style="font-size:10px">本题得分 ${result.score ?? '—'} · 用时 ${Math.round((result.timeMs || 0) / 1000)} 秒 · 经验 +${result.xp}${result.slow ? ' · 判读偏慢' : ''}</div></div></div>
       <div class="read-score-row">
@@ -360,7 +364,7 @@ export async function readView({ query } = {}) {
       <p class="feedback-text">你的选择：${escapeHtml(selectedNames || '—')}${answer ? ` · 正确答案：${escapeHtml(answer)}` : ''}</p>
       <p class="feedback-text">${escapeHtml(result.localExplanation || '')}</p>
       ${stepDone < stepIds.length ? '<p class="muted" style="font-size:11px">还有步骤未作答；下一例建议按 1→6 的顺序完整读图。</p>' : ''}
-      <div class="row-wrap" style="margin-top:4px">${(result.correctIds || []).map((id) => `<a class="btn btn-secondary btn-sm" href="#/learn/${encodeURIComponent(id)}">${icon('book', 13)} 学习「${escapeHtml(quiz.options.find((option) => option.id === id)?.name || id)}」</a>`).join('')}</div>
+      <div class="row-wrap" style="margin-top:4px">${(result.correctIds || []).map((id) => `<a class="btn btn-secondary btn-sm" href="#/learn/${encodeURIComponent(id)}">${icon('book', 13)} 学习「${escapeHtml(localizedName(quiz.options.find((option) => option.id === id) || {}) || id)}」</a>`).join('')}</div>
       <div class="quiz-actions"><button class="btn btn-primary" type="button" data-read-next>${icon('arrowRight', 14)} 下一例</button>${aiUiAvailable() ? `<button class="btn btn-secondary" type="button" data-read-ai>${icon('sparkles', 14)} AI 解释本例</button>` : ''}<a class="btn btn-ghost" href="#/review">${icon('bookOpen', 14)} 查看错题本</a></div>
       <div data-read-ai-panel></div>
     </div>`;

@@ -1,5 +1,6 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bg';
+const __asset = __isNode ? '' : '?v=20261108bh';
+const { localizedName, getLocale } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
@@ -95,7 +96,7 @@ export async function homeView() {
           const pct = chapter.total ? Math.round((chapter.read / chapter.total) * 100) : 0;
           return `<a class="chapter-card" href="${chapter.id === 'theory' ? '#/intro' : `#/learn?chapter=${chapter.id}`}" style="--chapter-color:${chapterColor(chapter.color)}">
             <span class="chapter-index">CH ${String(index + 1).padStart(2, '0')} · ${pct}%</span>
-            <span class="chapter-name">${escapeHtml(chapter.name)}</span>
+            <span class="chapter-name">${escapeHtml(localizedName(chapter))}</span>
             <span class="chapter-desc">${escapeHtml(chapter.description || '')}</span>
             <span class="chapter-foot"><span class="progress grow"><span class="progress-bar" style="width:${pct}%"></span></span><span class="mono">${chapter.read}/${chapter.total}</span></span>
           </a>`;
@@ -108,8 +109,8 @@ export async function homeView() {
       ${daily ? `<a class="daily-card" href="#/learn/${daily.id}">
         <div>
           <div class="row-wrap"><span class="badge badge-brand">${escapeHtml(daily.chapterName)}</span>${difficultyDots(daily.difficulty)}</div>
-          <h3 style="margin-top:10px;font-size:22px;letter-spacing:-.03em">${escapeHtml(daily.name)}</h3>
-          <div class="muted" style="margin-top:3px;font-family:var(--font-mono);font-size:9px">${escapeHtml(daily.en || '')}</div>
+          <h3 style="margin-top:10px;font-size:22px;letter-spacing:-.03em">${escapeHtml(localizedName(daily))}</h3>
+          ${getLocale() === 'zh' ? `<div class="muted" style="margin-top:3px;font-family:var(--font-mono);font-size:9px">${escapeHtml(daily.en || '')}</div>` : ''}
           <p class="muted" style="margin-top:8px;font-size:12.5px;max-width:480px">${escapeHtml(daily.oneLiner)}</p>
           <span class="feature-link">打开今日心电图 ${icon('arrowRight', 13)}</span>
         </div>

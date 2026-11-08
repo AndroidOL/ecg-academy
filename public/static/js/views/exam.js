@@ -1,5 +1,6 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bg';
+const __asset = __isNode ? '' : '?v=20261108bh';
+const { localizedName } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -28,7 +29,7 @@ function chapterCard(chapter) {
   const sample = Number(chapter.sample || 0);
   return `<article class="exam-chapter ${chapter.status}" data-chapter-card="${escapeHtml(chapter.id)}">
     <div class="exam-chapter-head"><span class="badge ${statusTone(chapter.status)}">${escapeHtml(chapter.statusLabel)}</span><span class="badge ${levelTone(chapter.level) ? 'badge-' + levelTone(chapter.level) : ''}">${escapeHtml(chapter.level)}</span></div>
-    <h3>${escapeHtml(chapter.name)}</h3>
+    <h3>${escapeHtml(localizedName(chapter))}</h3>
     <div class="exam-chapter-meta"><span>最近 ${sample} 题</span><span>正确率 ${chapter.accuracy}%</span></div>
     <div class="progress"><div class="progress-bar" style="width:${Math.min(100, chapter.accuracy)}%"></div></div>
     <div class="exam-chapter-foot"><span class="muted">${chapter.status === 'learned' ? '完成一次 10 题学习可刷新评级' : sample ? '继续完成 10 题学习关卡' : '尚未开始'}</span><button class="btn btn-xs ${chapter.status === 'learned' ? 'btn-secondary' : 'btn-primary'}" type="button" data-learn="${escapeHtml(chapter.id)}">${chapter.status === 'learned' ? '再学一次' : '开始学习'}</button></div>
@@ -89,7 +90,7 @@ function resultMarkup() {
       <p class="muted" style="font-size:12px;line-height:1.7">${result.mode === 'exam' ? '考试只对自己可见；各板块评级已按最近 50 题动态更新。' : result.passed ? '本板块已标记为“已学习”。继续完成至少 8 个板块即可解锁综合考试。' : '本板块暂未通过，建议先回到课程复习，再重新挑战 10 题。'}</p>
       <div class="row-wrap" style="justify-content:center;margin-top:16px"><button class="btn btn-primary" type="button" data-back>${icon('arrowLeft', 15)} 返回学习考试</button><a class="btn btn-secondary" href="#/review">${icon('bookOpen', 15)} 查看错题本</a></div>
     </div>
-    ${affectedChapters.length ? `<section class="card card-pad exam-rating-update"><h2 class="section-title" style="font-size:16px">章节评级更新</h2><div class="exam-rating-grid">${affectedChapters.map((chapter) => `<div><b>${escapeHtml(chapter.name)}</b><span>${escapeHtml(chapter.statusLabel)} · ${escapeHtml(chapter.level)}</span><small>最近 ${chapter.sample} 题 · ${chapter.accuracy}%</small></div>`).join('')}</div></section>` : ''}
+    ${affectedChapters.length ? `<section class="card card-pad exam-rating-update"><h2 class="section-title" style="font-size:16px">章节评级更新</h2><div class="exam-rating-grid">${affectedChapters.map((chapter) => `<div><b>${escapeHtml(localizedName(chapter))}</b><span>${escapeHtml(chapter.statusLabel)} · ${escapeHtml(chapter.level)}</span><small>最近 ${chapter.sample} 题 · ${chapter.accuracy}%</small></div>`).join('')}</div></section>` : ''}
     ${wrong.length ? `<section class="card card-pad exam-wrong-list"><h2 class="section-title" style="font-size:16px">本轮错题 ${wrong.length} 道</h2>${wrong.map((item) => `<div class="exam-wrong-item"><b>${escapeHtml(item.stem || '')}</b><p>你的选择：${escapeHtml(item.options[item.selected] || '未选')} · 正确：${escapeHtml(item.options[item.answer] || '')}</p><small>${escapeHtml(item.explanation || '')}</small></div>`).join('')}</section>` : ''}
     ${medicalDisclaimer()}`;
 }

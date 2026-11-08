@@ -1,5 +1,6 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bg';
+const __asset = __isNode ? '' : '?v=20261108bh';
+const { localizedName } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { isFavorite, toggleFavorite } = await import(`../study-store.js${__asset}`);
@@ -35,7 +36,7 @@ export async function articleView({ params }) {
   const el = document.createElement('div');
   el.className = 'page';
   const detail = await api.diagnosis(params.id);
-  document.title = `${detail.name} · 心迹 ECG Lab`;
+  document.title = `${localizedName(detail)} · ECG Lab`;
   const chapter = detail.chapterMeta || {};
   const color = chapterColor(chapter.color);
   const keyNumbers = detail.keyNumbers || [];
@@ -52,18 +53,18 @@ export async function articleView({ params }) {
   const review = detail.review || {};
 
   el.innerHTML = `
-    <div class="breadcrumb"><a href="#/learn">诊断图谱</a><span>/</span><a href="#/learn?chapter=${encodeURIComponent(detail.chapter)}">${escapeHtml(chapter.name || '')}</a><span>/</span><span>${escapeHtml(detail.name)}</span></div>
+    <div class="breadcrumb"><a href="#/learn">诊断图谱</a><span>/</span><a href="#/learn?chapter=${encodeURIComponent(detail.chapter)}">${escapeHtml(localizedName(chapter))}</a><span>/</span><span>${escapeHtml(localizedName(detail))}</span></div>
     <div class="article-layout">
       <article class="article-main">
         <header class="article-hero" style="--chapter-color:${color}">
           <div class="article-lead">
-            <span class="badge badge-brand">${escapeHtml(chapter.name || '')}</span>
+            <span class="badge badge-brand">${escapeHtml(localizedName(chapter))}</span>
             ${difficultyDots(detail.difficulty)}
             <span class="badge">${detail.difficulty >= 3 ? '挑战' : detail.difficulty === 2 ? '进阶' : '基础'}</span>
             <span class="badge ${urgency === 'critical' ? 'badge-danger' : urgency === 'urgent' ? 'badge-warn' : 'badge-brand'}">${urgencyLabel}</span>
             ${mastered ? `<span class="badge badge-ok">${icon('check', 11)} 已掌握</span>` : status ? '<span class="badge">已读</span>' : ''}
           </div>
-          <h1 class="article-title">${escapeHtml(detail.name)}</h1>
+          <h1 class="article-title">${escapeHtml(localizedName(detail))}</h1>
           <div class="article-en">${escapeHtml(detail.en || '')}</div>
           <p class="article-one">${escapeHtml(detail.oneLiner)}</p>
           <div class="article-tags">${(detail.tags || []).map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>
@@ -214,7 +215,7 @@ export async function articleView({ params }) {
         <div class="article-side-card">
           <h3>相关阅读</h3>
           <div class="article-side-meta">
-            ${(detail.related || []).slice(0, 4).map((item) => `<a href="#/learn/${encodeURIComponent(item.id)}" style="color:var(--ink-2);font-size:11px">${escapeHtml(item.name)} <span style="color:var(--muted)">→</span></a>`).join('') || '<span class="muted">暂无</span>'}
+            ${(detail.related || []).slice(0, 4).map((item) => `<a href="#/learn/${encodeURIComponent(item.id)}" style="color:var(--ink-2);font-size:11px">${escapeHtml(localizedName(item))} <span style="color:var(--muted)">→</span></a>`).join('') || '<span class="muted">暂无</span>'}
           </div>
         </div>
       </aside>
@@ -404,7 +405,7 @@ export async function articleView({ params }) {
   if (aiHost && (store.ai?.allowed !== false || store.ai?.byokEnabled)) {
     const chat = createAiChat({
       diagnosisId: detail.id,
-      welcome: `关于「${detail.name}」，你可以问我诊断标准、鉴别或处理。先记住这句话：${detail.oneLiner}`,
+      welcome: `关于「${localizedName(detail)}」，你可以问我诊断标准、鉴别或处理。先记住这句话：${detail.oneLiner}`,
       suggestions: ['最容易漏诊的点是什么？', '和相似诊断怎么鉴别？', '给我一个床旁记忆法'],
     });
     aiHost.appendChild(chat.el);

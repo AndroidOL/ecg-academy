@@ -1,7 +1,7 @@
 // Cache-busted dynamic imports: keep Node tests query-free while forcing
 // browsers with immutable 7-day static caching to load the current modules.
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bg';
+const __asset = __isNode ? '' : '?v=20261108bh';
 const { api } = await import(`./api.js${__asset}`);
 const { store, initTheme, applyTheme, toggleTheme } = await import(`./store.js${__asset}`);
 const { practiceView } = await import(`./views/practice.js${__asset}`);
@@ -140,12 +140,20 @@ function shell(activePath = '/') {
       </header>
       <main id="main"><div id="view-root"></div></main>
       <footer class="site-footer">
-        <div><b>心迹 ECG Lab</b><span>${escapeHtml(store.site?.copyright || '© 2026 Tianhao Wu 等')}</span></div>
-        <div class="site-footer-links">
-          ${store.site?.githubUrl ? `<a href="${escapeHtml(store.site.githubUrl)}" target="_blank" rel="noopener noreferrer">${icon('github', 13)} GitHub</a>` : ''}
-          ${store.site?.license ? (store.site?.githubUrl ? `<a href="${escapeHtml(store.site.githubUrl.replace(/\/$/, ''))}/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">${escapeHtml(store.site.license)}</a>` : `<span>${escapeHtml(store.site.license)}</span>`) : ''}
-          <a href="#/about">${t('footer.about', '关于 / 勘误')}</a>
-          ${store.site?.icp ? `<a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">${escapeHtml(store.site.icp)}</a>` : ''}
+        <div class="site-footer-inner">
+          <div class="site-footer-brand">
+            <b>心迹 ECG Lab</b>
+            <span>${escapeHtml(store.site?.copyright || '© 2026 Tianhao Wu 等')}</span>
+            <span class="site-footer-note">免费开源心电图教学 · 内容持续迭代</span>
+            <span class="site-footer-note">教学用途，不构成诊断或治疗建议。</span>
+            ${getLocale() === 'en' ? '<span class="site-footer-note">English translations are machine-assisted and pending clinical review.</span>' : ''}
+          </div>
+          <div class="site-footer-links">
+            ${store.site?.githubUrl ? `<a href="${escapeHtml(store.site.githubUrl)}" target="_blank" rel="noopener noreferrer">${icon('github', 13)} GitHub</a>` : ''}
+            ${store.site?.license ? (store.site?.githubUrl ? `<a href="${escapeHtml(store.site.githubUrl.replace(/\/$/, ''))}/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">${escapeHtml(store.site.license)}</a>` : `<span>${escapeHtml(store.site.license)}</span>`) : ''}
+            <a href="#/about">${t('footer.about', '关于 / 勘误')}</a>
+            ${store.site?.icp ? `<a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">${escapeHtml(store.site.icp)}</a>` : ''}
+          </div>
         </div>
       </footer>
       <nav class="bottom-nav" aria-label="底部导航">${bottomNav(activePath)}</nav>

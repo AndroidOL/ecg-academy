@@ -1,5 +1,6 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bg';
+const __asset = __isNode ? '' : '?v=20261108bh';
+const { localizedName } = await import(`../i18n.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, chapterColor, difficultyDots, escapeHtml, setupMiniECG, emptyState, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
@@ -65,7 +66,7 @@ export async function learnView({ query }) {
           <a class="chip" href="#/packs">${icon('book', 13)} 课程包</a>
           <span class="chip chip-soft">${icon('check', 13)} 已读 ${read} / ${items.length}</span>
           <span class="chip">${icon('target', 13)} 已掌握 ${mastered}</span>
-          ${continueItem ? `<a class="chip" href="#/learn/${continueItem.id}">继续：${escapeHtml(continueItem.name)} ${icon('arrowRight', 12)}</a>` : ''}
+          ${continueItem ? `<a class="chip" href="#/learn/${continueItem.id}">继续：${escapeHtml(localizedName(continueItem))} ${icon('arrowRight', 12)}</a>` : ''}
         </div>
       </div>
       <div class="learn-count">
@@ -84,7 +85,7 @@ export async function learnView({ query }) {
       </div>
       <div class="row-wrap" data-chapter-chips>
         <button class="chip ${state.chapter === 'all' ? 'active' : ''}" type="button" data-chapter="all">全部</button>
-        ${chapters.map((chapter) => `<button class="chip ${state.chapter === chapter.id ? 'active' : ''}" type="button" data-chapter="${escapeHtml(chapter.id)}">${escapeHtml(chapter.name)}</button>`).join('')}
+        ${chapters.map((chapter) => `<button class="chip ${state.chapter === chapter.id ? 'active' : ''}" type="button" data-chapter="${escapeHtml(chapter.id)}">${escapeHtml(localizedName(chapter))}</button>`).join('')}
       </div>
       <select class="select" style="flex:0 0 128px;min-height:36px" data-level aria-label="类型与难度筛选">
         <option value="all">全部类型</option>
@@ -164,16 +165,16 @@ export async function learnView({ query }) {
         : '';
     const u = urgencyMeta(item);
     const preview = item.hasEcg && item.preview?.rhythm
-      ? `<div class="mini-ecg"><canvas data-mini-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(item.name)} 心电图缩略图"></canvas></div>`
+      ? `<div class="mini-ecg"><canvas data-mini-id="${escapeHtml(item.id)}" aria-label="${escapeHtml(localizedName(item))} ECG thumbnail"></canvas></div>`
       : `<div class="topic-glyph">${icon('bookOpen', 18)}<span>理论章 · 无波形</span></div>`;
     return `<a class="diagnosis-card" href="#/learn/${item.id}" style="--chapter-color:${chapterColor(chapter?.color || item.chapterColor)}">
       <div class="diagnosis-strip"></div>
       <div class="diagnosis-card-body">
         <div class="row-wrap" style="justify-content:space-between">
-          <span class="badge">${escapeHtml(chapter?.name || item.chapterName || '')}</span>
+          <span class="badge">${escapeHtml(chapter ? localizedName(chapter) : (item.chapterName || ''))}</span>
           ${status}
         </div>
-        <div class="diagnosis-name">${escapeHtml(item.name)}</div>
+        <div class="diagnosis-name">${escapeHtml(localizedName(item))}</div>
         <div class="diagnosis-en">${escapeHtml(item.en || '')}</div>
         <div class="row-wrap" style="justify-content:space-between;gap:5px"><span class="badge ${u[1]}" style="font-size:8.5px">${u[0]}</span>${item.topic ? '<span class="badge" style="font-size:8.5px">理论</span>' : ''}</div>
         ${preview}

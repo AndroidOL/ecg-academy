@@ -117,6 +117,7 @@ final class Content
                 $related[$candidate['id']] = [
                     'id' => $candidate['id'],
                     'name' => $candidate['name'],
+                    'en' => $candidate['en'] ?? '',
                     'why' => $diff['why'] ?? '',
                 ];
             }
@@ -129,6 +130,7 @@ final class Content
                 $related[$candidate['id']] = [
                     'id' => $candidate['id'],
                     'name' => $candidate['name'],
+                    'en' => $candidate['en'] ?? '',
                     'why' => '同章节延伸阅读',
                 ];
             }

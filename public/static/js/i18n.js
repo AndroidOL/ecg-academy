@@ -1,4 +1,20 @@
 const KEY = 'ecg-locale';
+let GENERATED = {};
+let CONTENT = {};
+try {
+  if (typeof window !== 'undefined') {
+    const version = new URL(import.meta.url).searchParams.get('v');
+    const load = async (file) => {
+      const url = new URL(file, import.meta.url);
+      if (version) url.searchParams.set('v', version);
+      return (await import(url.href)).default || {};
+    };
+    GENERATED = await load('./i18n.map.js');
+    let stored = null;
+    try { stored = localStorage.getItem(KEY); } catch { /* private mode */ }
+    if (stored === 'en') CONTENT = await load('./i18n.content.js');
+  }
+} catch { /* generated catalogs are optional */ }
 
 export const LOCALES = [
   { id: 'zh', label: '中文', short: '中' },
@@ -79,6 +95,21 @@ const EN_TEXT = {
   '错题与复习': 'Wrong book & review', '打开错题本 →': 'Open wrong book →', '错题诊断': 'Wrong questions',
   '收藏章节': 'Saved chapters', '开始间隔复习': 'Start spaced review', '判读记录': 'Practice history', '去练习 →': 'Practice →',
   '还没有判读记录': 'No practice records yet', '开始练习': 'Start practice', '急救记录': 'ACLS history',
+  '请判读该心电图，选择最可能的诊断。': 'Interpret this ECG and choose the most likely diagnosis.',
+  '该心电图最符合哪项诊断？': 'Which diagnosis best fits this ECG?',
+  '该心电图包含哪些诊断？（多选）': 'Which diagnoses does this ECG show? (Select all)',
+  '诊断标准': 'Diagnostic criteria', '鉴别诊断': 'Differential diagnosis', '记忆锦囊': 'Memory pearls',
+  '该心电图最可能的诊断是？': 'What is the most likely diagnosis?',
+  '选择所有符合的诊断后再提交。': 'Select all matching diagnoses before submitting.',
+  '选择一个最可能的诊断。': 'Select the most likely diagnosis.',
+  '选择一个最可能的诊断。 · 键盘 1–5 / Enter': 'Select the most likely diagnosis. · Keys 1–5 / Enter',
+  '选择所有符合的诊断后再提交。 · 键盘 1–5 / Enter': 'Select all matching diagnoses before submitting. · Keys 1–5 / Enter',
+  '已提交，查看下方解析。': 'Submitted — see the explanation below.',
+  '退出本局': 'Exit round', '判分中': 'Scoring',
+  '出题中': 'Loading question', '多选': 'Multiple choice', '单选 · 服务端判分': 'Single choice · server-scored',
+  '本题得分': 'Score', '正确答案': 'Correct answer', '你的选择': 'Your selection',
+  '免费开源心电图教学 · 内容持续迭代': 'Free open-source ECG education · continuously updated',
+  '教学用途，不构成诊断或治疗建议。': 'For education only; not diagnostic or treatment advice.',
   '系统判读训练': 'Guided ECG reading', '频率': 'Rate', '节律': 'Rhythm', '电轴': 'Axis', '间期': 'Intervals', '结论': 'Conclusion',
   '1 · 频率': '1 · Rate', '2 · 节律': '2 · Rhythm', '3 · 电轴': '3 · Axis', '4 · 间期': '4 · Intervals', '5 · ST-T 与 U 波': '5 · ST-T & U wave', '6 · 结论': '6 · Conclusion',
   '结构化 5 步': '5 structured steps', '每题独立计分': 'Scored per case', '待作答': 'Pending', '需复习': 'Review',
@@ -92,9 +123,95 @@ const EN_TEXT = {
   'AI 分析薄弱项': 'AI weakness analysis', '按薄弱诊断组卷': 'Quiz by weak diagnoses', '今日复习已清空': 'Today’s review is clear',
 };
 
-const TEXT = { en: EN_TEXT };
+const OVERRIDES = {
+  '种判读诊断': 'diagnoses', '章系统课程': 'chapters', '个系统章节': 'chapters', '篇已读': 'read',
+  '篇课程': 'courses', '个章节': 'chapters', '个结果': 'results', '题': 'questions',
+  '种判读诊断。': 'diagnoses.', '条线索': 'clues',
+  '安静': 'Quiet', '专注': 'Focused', '好奇': 'Curious', '敏锐': 'Keen', '沉着': 'Calm',
+  '清醒': 'Clear', '笃定': 'Steady', '温和': 'Gentle', '坚定': 'Firm', '灵动': 'Agile',
+  '听诊器': 'Stethoscope', '心电笔': 'ECG Pen', '小示波器': 'Scope', '窦房结': 'SA Node',
+  '除颤仪': 'Defibrillator', '心电图纸': 'ECG Paper', '白大褂': 'White Coat', '叩诊锤': 'Reflex Hammer',
+  '等电位线 · 各环静止': 'Baseline · all loops idle',
+  'P 波 · P 环活动，其他环静止': 'P wave · P loop active, other loops idle',
+  'QRS 波 · QRS 环活动，其他环静止': 'QRS · QRS loop active, other loops idle',
+  'T 波 · T 环活动，其他环静止': 'T wave · T loop active, other loops idle',
+  '当前时间：T 波 · T 环活动，其他环静止': 'Current phase: T wave · T loop active, other loops still',
+  'II 导联 · 时间光标': 'Lead II · time cursor',
+  '心迹 ECG Lab': 'ECG Lab', '心迹 ECG Lab 首页': 'ECG Lab home',
+  '12 导联': '12-lead', '12 导联较宽，可左右滑动查看。': 'The 12-lead view is wider; scroll horizontally to inspect.',
+  'II 导联': 'Lead II', 'V1 导联': 'Lead V1', 'V5 导联': 'Lead V5',
+  'P-QRS-T 与间期对照': 'P-QRS-T and interval reference',
+  'PR 间期': 'PR interval', 'P 波': 'P wave', 'QRS 波群': 'QRS complex', 'QT 间期': 'QT interval', 'ST 段 / T 波': 'ST segment / T wave',
+  '上一篇': 'Previous', '下一篇': 'Next', '临床连接': 'Clinical links', '判读步骤': 'Reading steps',
+  '危险信号': 'Red flags', '参考来源': 'References', '参考资料': 'References', '发生机制': 'Mechanism',
+  '处理原则': 'Management', '学习目标': 'Objectives', '定义': 'Definition', '已读': 'Read',
+  '床旁速记': 'Bedside pearls', '异常标注': 'Annotations', '循环覆盖': 'Loop', '教科书': 'Textbook',
+  '教学心电图': 'Teaching ECG', '易错点': 'Pitfalls', '暂无': 'None', '本例 HR': 'Case HR', '次/分': 'bpm',
+  '正常对照': 'Normal reference', '波形解剖 · 间期测量 · 图文对应': 'Waveform anatomy · interval measurement · figure correlation',
+  '相关阅读': 'Related reading', '纸速 25 mm/s · 增益 10 mm/mV': 'Paper speed 25 mm/s · gain 10 mm/mV',
+  '节律条': 'Rhythm strip', '单周期放大 · 2.2 s 窗口': 'Single-cycle zoom · 2.2 s window',
+  '可播放 · 可测量 · 可切换 12 导联': 'Playable · measurable · switchable 12-lead', '心率': 'Heart rate',
+  '必须记住': 'Must remember', '窦性心律 · 72 次/分': 'Sinus rhythm · 72 bpm',
+  '从 P 波起点到 QRS 起点，代表房室传导时间；正常 0.12–0.20 s。': 'From P-wave onset to QRS onset, representing AV conduction time; normal 0.12–0.20 s.',
+  '从 QRS 起点到 T 波终点，反映电收缩总时间；需按心率校正为 QTc。': 'From QRS onset to T-wave end, reflecting total electrical systole; correct for heart rate as QTc.',
+  '心房除极产生，位于 QRS 之前；II 导联通常直立，宽度 <0.12 s。': 'Generated by atrial depolarization, preceding QRS; usually upright in lead II and <0.12 s wide.',
+  '心室除极产生，正常 <0.12 s；增宽提示束支阻滞、室性起源或电解质异常。': 'Generated by ventricular depolarization; normally <0.12 s. Widening suggests bundle branch block, ventricular origin, or electrolyte abnormality.',
+  '心室复极；T 波方向通常与 QRS 主波一致，ST 段偏移需结合相邻导联与临床。': 'Ventricular repolarization; T-wave direction usually follows the QRS main vector. Interpret ST deviation with adjacent leads and clinical context.',
+};
+const ADJ_EN = { '安静': 'Quiet', '专注': 'Focused', '好奇': 'Curious', '敏锐': 'Keen', '沉着': 'Calm', '清醒': 'Clear', '笃定': 'Steady', '温和': 'Gentle', '坚定': 'Firm', '灵动': 'Agile' };
+const NOUN_EN = { '听诊器': 'Stethoscope', '心电笔': 'ECG Pen', '小示波器': 'Scope', '窦房结': 'SA Node', '除颤仪': 'Defibrillator', '心电图纸': 'ECG Paper', '白大褂': 'White Coat', '叩诊锤': 'Reflex Hammer' };
+const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const RULES = [
+  [/^(\d+) 种判读诊断$/, (m) => `${m[1]} diagnoses`],
+  [/^(\d+) 章系统课程$/, (m) => `${m[1]} chapters`],
+  [/^(\d+) 个系统章节$/, (m) => `${m[1]} chapters`],
+  [/^(\d+) 篇已读$/, (m) => `${m[1]} read`],
+  [/^(\d+) 篇课程$/, (m) => `${m[1]} courses`],
+  [/^(\d+) 个章节$/, (m) => `${m[1]} chapters`],
+  [/^(\d+) 个结果$/, (m) => `${m[1]} results`],
+  [/^已读 (\d+) \/ (\d+)$/, (m) => `Read ${m[1]} / ${m[2]}`],
+  [/^已掌握 (\d+)$/, (m) => `Mastered ${m[1]}`],
+  [/^继续：(.+)$/, (m) => `Continue: ${translatePhrase(m[1])}`],
+  [/^第 (\d+) \/ (\d+) 题$/, (m) => `Question ${m[1]} / ${m[2]}`],
+  [/^第 (\d+) 题$/, (m) => `Question ${m[1]}`],
+  [/^(\d+) \/ (\d+) 页 · 共 (\d+) 章$/, (m) => `Page ${m[1]} / ${m[2]} · ${m[3]} chapters`],
+  [/^第 (\d+) 页$/, (m) => `Page ${m[1]}`],
+  [/^Lv\.(\d+) 解锁$/, (m) => `Unlocks at Lv.${m[1]}`],
+  [/^难度 (\d+) 级$/, (m) => `Difficulty ${m[1]}`],
+  [/^连续 (\d+) 天$/, (m) => `${m[1]}-day streak`],
+  [/^最佳 (\d+) 天$/, (m) => `Best ${m[1]} days`],
+  [/^累计 (\d+) 天$/, (m) => `Total ${m[1]} days`],
+  [/^(\d+) 个待复习$/, (m) => `${m[1]} due`],
+  [/^(\d+) 个错题$/, (m) => `${m[1]} wrong`],
+  [/^(\d+) 个收藏$/, (m) => `${m[1]} saved`],
+  [/^(\d+) 题$/, (m) => `${m[1]} questions`],
+  [/^(\d+) 次作答$/, (m) => `${m[1]} attempts`],
+  [/^正确率 (\d+)%$/, (m) => `Accuracy ${m[1]}%`],
+  [/^题库 (\d+) 道$/, (m) => `Bank ${m[1]}`],
+  [/^测试分 (-?\d+)$/, (m) => `Score ${m[1]}`],
+  [/^已学习 (\d+) \/ (\d+)$/, (m) => `Learned ${m[1]} / ${m[2]}`],
+  [/^(\d+) 道章节题$/, (m) => `${m[1]} section questions`],
+  [/^已学习 (\d+) \/ (\d+)$/, (m) => `Learned ${m[1]} / ${m[2]}`],
+  [/^当前时间：(.+)$/, (m) => `Current phase: ${translatePhrase(m[1]) || m[1]}`],
+  [/^II 导联 · 时间光标$/, () => 'Lead II · time cursor'],
+  [/^(\d+)月(\d+)日\s*(未完成|已完成)?$/, (m, text) => `${MONTHS_EN[(Number(m[1]) || 1) - 1]} ${Number(m[2])}${m[3] === '已完成' ? ' · Done' : m[3] === '未完成' ? ' · Missed' : ''}`, 'date'],
+];
+function translatePhrase(value) {
+  const text = TEXT[getLocale()];
+  if (!text) return value;
+  if (OVERRIDES[value] !== undefined) return OVERRIDES[value];
+  if (text[value] !== undefined) return text[value];
+  for (const [re, fn, kind] of RULES) {
+    const match = value.match(re);
+    if (match) return kind === 'date' ? fn(match, value) : fn(match);
+  }
+  const guest = value.match(/^(.+?)(听诊器|心电笔|小示波器|窦房结|除颤仪|心电图纸|白大褂|叩诊锤)·(\d+)$/);
+  if (guest && ADJ_EN[guest[1]] && NOUN_EN[guest[2]]) return `${ADJ_EN[guest[1]]} ${NOUN_EN[guest[2]]} · ${guest[3]}`;
+  return null;
+}
+const TEXT = { en: { ...EN_TEXT, ...GENERATED, ...CONTENT, ...OVERRIDES } };
 
-const SKIP = 'article, .article-main, .article-body, .ai-bubble, .ai-stream-text, .ai-answer, .quiz-question, .option-list, .quiz-stem, .feedback-text, .explain-block, .diagnosis-line, .glossary-item, .ai-quiz-panel, canvas, svg, script, style, [data-no-i18n]';
+const SKIP = '.ai-bubble, .ai-stream-text, .ai-answer, .ai-quiz-panel, canvas, svg, script, style, [data-no-i18n]';
 
 export function getLocale() {
   try {
@@ -115,6 +232,12 @@ export function setLocale(locale) {
 export function t(key, fallback = '') {
   const locale = getLocale();
   return DICT[locale]?.[key] || DICT.en?.[key] || DICT.zh[key] || fallback || key;
+}
+
+export function localizedName(item) {
+  if (!item) return '';
+  if (getLocale() === 'en') return item.nameEn || item.en || item.name || '';
+  return item.name || '';
 }
 
 export function localeLabel(id) {
@@ -147,7 +270,7 @@ export function applyLocale(root) {
     nodes.forEach((node) => {
       const raw = node.nodeValue;
       const trimmed = raw.trim();
-      const translated = text[trimmed];
+      const translated = translatePhrase(trimmed) || text[trimmed];
       if (translated) node.nodeValue = raw.replace(trimmed, translated);
     });
     host.querySelectorAll('[placeholder],[title],[aria-label]').forEach((el) => {
@@ -156,7 +279,8 @@ export function applyLocale(root) {
         const value = el.getAttribute(attr);
         if (!value) return;
         const trimmed = value.trim();
-        if (text[trimmed]) el.setAttribute(attr, value.replace(trimmed, text[trimmed]));
+        const translated = translatePhrase(trimmed) || text[trimmed];
+        if (translated) el.setAttribute(attr, value.replace(trimmed, translated));
       });
     });
   } finally {

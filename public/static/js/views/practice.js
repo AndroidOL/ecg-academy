@@ -1,5 +1,6 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bg';
+const __asset = __isNode ? '' : '?v=20261108bh';
+const { localizedName, getLocale } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -485,7 +486,7 @@ function renderQuestion(el) {
             ${quiz.options.map((option, i) => `<label class="option-card" data-option="${escapeHtml(option.id)}">
               <input type="${multiple ? 'checkbox' : 'radio'}" name="quiz-option" value="${escapeHtml(option.id)}" data-option-input>
               <span class="option-letter">${letters[i] || i + 1}</span>
-              <span class="option-text">${escapeHtml(option.name)}</span>
+              <span class="option-text">${escapeHtml(localizedName(option))}</span>
               <span class="option-note">${escapeHtml(option.chapter || '')}</span>
             </label>`).join('')}
           </div>
@@ -601,6 +602,11 @@ function renderQuestion(el) {
     setButtonLoading(submit, true, '判分中');
     try {
       const result = await api.quizAnswer(quiz.attemptId, [...state.selected], Math.round(performance.now() - state.questionStart));
+      if (getLocale() === 'en') {
+        const localized = (id) => localizedName((quiz.options || []).find((option) => option.id === id) || {});
+        result.correctNames = (result.correctIds || []).map(localized);
+        result.selectedNames = [...state.selected].map(localized);
+      }
       state.result = result;
       if (result.correct) {
         state.correct += 1;

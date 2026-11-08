@@ -161,7 +161,7 @@ final class Daily
                     'name' => $all[$optId]['name'] ?? $optId,
                     'oneLiner' => (string) ($all[$optId]['oneLiner'] ?? ''),
                 ], $correctIds),
-                'options' => array_map(static fn (array $option): array => ['id' => $option['id'], 'name' => $option['name']], $built['options']),
+                'options' => array_map(static fn (array $option): array => ['id' => $option['id'], 'name' => $option['name'], 'nameEn' => $option['nameEn'] ?? $option['name']], $built['options']),
                 'score' => $questionScore,
                 'timeMs' => $timeMs,
             ];

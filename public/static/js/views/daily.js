@@ -1,6 +1,7 @@
 
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bg';
+const __asset = __isNode ? '' : '?v=20261108bh';
+const { localizedName } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -147,7 +148,7 @@ function runnerMarkup() {
           ${question.options.map((option, i) => `<label class="option-card ${selected.has(option.id) ? 'selected' : ''}" data-option="${escapeHtml(option.id)}">
             <input type="${multiple ? 'checkbox' : 'radio'}" name="daily-option" value="${escapeHtml(option.id)}" ${selected.has(option.id) ? 'checked' : ''}>
             <span class="option-letter">${letters[i] || i + 1}</span>
-            <span class="option-text">${escapeHtml(option.name)}</span>
+            <span class="option-text">${escapeHtml(localizedName(option))}</span>
             <span class="option-note">${escapeHtml(option.chapter || '')}</span>
           </label>`).join('')}
         </div>

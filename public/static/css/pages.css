@@ -611,13 +611,21 @@
 .visual-sync canvas { display:block; width:100%; height:auto; }
 
 /* global open-source / ICP footer */
-.site-footer { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px 14px; margin:24px 0 0; padding:12px 2px 0; border-top:1px solid var(--line); color:var(--faint); font-size:10px; line-height:1.6; }
-.site-footer > div { display:flex; flex-wrap:wrap; align-items:center; gap:7px; }
-.site-footer b { color:var(--muted); font-size:10.5px; }
-.site-footer-links { gap:9px; }
-.site-footer a { display:inline-flex; align-items:center; gap:4px; color:var(--muted); }
-.site-footer a:hover { color:var(--brand); }
-@media (max-width:719px) { .site-footer { flex-direction:column; padding-bottom:6px; } }
+.site-footer { width:100%; max-width:var(--content-max); margin:32px auto 0; padding:18px 30px 22px; border-top:1px solid var(--line); color:var(--muted); font-size:11px; line-height:1.7; }
+.site-footer-inner { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-start; gap:12px 28px; }
+.site-footer-brand { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.site-footer-brand b { color:var(--ink-2); font-size:12.5px; letter-spacing:.01em; }
+.site-footer-note { color:var(--faint); font-size:10px; }
+.site-footer-links { display:flex; flex-wrap:wrap; align-items:center; gap:8px 18px; padding-top:2px; }
+.site-footer a { display:inline-flex; align-items:center; gap:4px; padding:2px 0; color:var(--muted); border-bottom:1px solid transparent; }
+.site-footer a:hover { color:var(--brand); border-bottom-color:currentColor; }
+@media (max-width:719px) {
+  .site-footer { margin-top:26px; padding:16px 16px calc(var(--bottomnav-h) + 24px + env(safe-area-inset-bottom)); font-size:10.5px; }
+  .site-footer-inner { flex-direction:column; gap:12px; }
+  .site-footer-brand { gap:3px; }
+  .site-footer-links { gap:6px 16px; }
+  .site-footer a { min-height:30px; }
+}
 .vector-projections { display:grid; grid-template-columns:1fr 1fr; gap:5px 12px; padding:9px 10px; background:var(--surface); border-top:1px solid var(--line); }
 .vector-projections > div { display:grid; grid-template-columns:24px minmax(0,1fr) 42px; gap:5px; align-items:center; color:var(--muted); font-family:var(--font-mono); font-size:9px; }
 .vector-projections b { color:var(--brand); font-size:9.5px; }
