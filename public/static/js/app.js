@@ -5,7 +5,7 @@ import { meView } from './views/me.js';
 // Cache-busted dynamic imports: keep Node tests query-free while forcing
 // browsers with immutable 7-day static caching to load the current modules.
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108h';
+const __asset = __isNode ? '' : '?v=20261108i';
 const { api } = await import(`./api.js${__asset}`);
 const { store, initTheme, applyTheme, toggleTheme } = await import(`./store.js${__asset}`);
 const { Router } = await import(`./router.js${__asset}`);
