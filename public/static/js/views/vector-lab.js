@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108x';
+const __asset = __isNode ? '' : '?v=20261108y';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const LEADS = {
@@ -139,7 +139,7 @@ function drawVectorCanvas(canvas, state, t) {
   const rotatedVec = selected === 'QRS' ? rotateAxis(vec) : vec;
   const p0 = project([0, 0, 0]);
   const p1 = project(rotatedVec);
-  if (state.loop === 'all' ? (active && active === selected) : (active === selected)) {
+  if (state.loop === 'all' ? (active && active === selected) : true) {
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(...p0); ctx.lineTo(...p1); ctx.stroke();
@@ -161,7 +161,7 @@ function drawVectorCanvas(canvas, state, t) {
   ctx.fillStyle = c.text;
   ctx.font = '600 11px ui-monospace, monospace';
   const activeLabel = state.loop === 'all' ? (active ? `当前 ${active} 波 · ` : '等电位线 · ') : `单环观察 · `;
-  const movingLabel = active === selected ? `${selected} 环在当前时间窗转动` : `${selected} 环静止（等待其时间窗）`;
+  const movingLabel = state.loop === 'all' ? (active === selected ? `${selected} 环在当前时间窗转动` : `${selected} 环静止（等待其时间窗）`) : `${selected} 环连续观察`;
   ctx.fillText(`${activeLabel}${movingLabel} · ${lead.name} 投影 ${dot >= 0 ? '+' : ''}${dot.toFixed(2)}`, 12, 18);
   ctx.fillStyle = c.muted;
   ctx.font = '10px ui-monospace, monospace';
