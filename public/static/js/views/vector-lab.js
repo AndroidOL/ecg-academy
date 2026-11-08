@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bi';
+const __asset = __isNode ? '' : '?v=20261108bj';
 const { getLocale } = await import(`../i18n.js${__asset}`);
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
@@ -1049,7 +1049,7 @@ export async function vectorLabView() {
     const twelve = content.querySelector('[data-vector-12lead]');
     if (twelve) draw12LeadCanvas(twelve, state);
     const syncLabel = content.querySelector('[data-vector-sync-label]');
-    if (syncLabel) syncLabel.textContent = `${LEADS[state.lead].name} · ${getLocale() === 'en' ? 'time cursor' : '时间光标'}`;
+    if (syncLabel) syncLabel.textContent = getLocale() === 'en' ? `Lead ${state.lead} · time cursor` : `${LEADS[state.lead].name} · 时间光标`;
     const bars = content.querySelector('[data-vector-projections]');
     if (bars) updateProjectionBars(bars, state, 0);
     const tc = state.phase ?? 0;

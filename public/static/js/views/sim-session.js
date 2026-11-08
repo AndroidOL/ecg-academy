@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bi';
+const __asset = __isNode ? '' : '?v=20261108bj';
 const { api } = await import(`../api.js${__asset}`);
 const { byokPayload, hasByok } = await import(`../byok.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
