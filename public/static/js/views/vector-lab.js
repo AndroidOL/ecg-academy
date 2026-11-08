@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ap';
+const __asset = __isNode ? '' : '?v=20261108aq';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const LEADS = {
@@ -84,6 +84,29 @@ function chestLeadProjection(id, v) {
   const norm = Math.hypot(lead.x, lead.z) || 1;
   const dot = (v.x * lead.x + v.z * lead.z) / norm;
   return dot / Math.pow(lead.dist, 1.25);
+}
+
+// 激活顺序：四个教学步骤，关键帧 u 取自 chestQrsVector 的三个高斯锚点附近。
+const ACTIVATION_STEPS = [
+  { u: 0.13, region: 'septum', label: '室间隔', dir: '向右前', detail: '室间隔自左向右除极，向量朝向 V1，形成小 r；V5/V6 背离向量，形成小 q。', leads: 'V1 小 r · V5/V6 小 q' },
+  { u: 0.30, region: 'apex', label: '心尖/前壁', dir: '向右前下', detail: '激动经浦肯野纤维快速扩布到心尖与前壁，向量仍偏向右前，V1 的 r 到达峰值后开始回落。', leads: 'V1 r 达峰后转折' },
+  { u: 0.47, region: 'freewall', label: '左室游离壁', dir: '向左后', detail: '左室游离壁自心内膜向心外膜除极，主向量指向左后，背离 V1、朝向 V5，形成深 S 与高 R。', leads: 'V5 高 R · V1 深 S' },
+  { u: 0.70, region: 'base', label: '基底部/流出道', dir: '向左后上', detail: '最后除极的是左室基底部与流出道，向量继续向左后上，V5/V6 的 R 波逐渐回到基线。', leads: 'V5/V6 R 回基线' },
+];
+
+function activationStepFor(u) {
+  let index = 0;
+  ACTIVATION_STEPS.forEach((step, i) => { if (u >= step.u - 0.09) index = i; });
+  return { index, step: ACTIVATION_STEPS[index] };
+}
+
+function activationHalos(cx, cy, rx, ry) {
+  return {
+    septum: [cx + rx * 0.02, cy - ry * 0.05, rx * 0.17],
+    apex: [cx + rx * 0.30, cy - ry * 0.20, rx * 0.16],
+    freewall: [cx + rx * 0.38, cy + ry * 0.10, rx * 0.21],
+    base: [cx + rx * 0.04, cy - ry * 0.24, rx * 0.15],
+  };
 }
 
 const LOOP_LABELS = {
@@ -650,7 +673,7 @@ function limbPanel() {
   ${chestVectorSection()}`;
 }
 
-function drawChestVectorCanvas(canvas, state) {
+function drawChestVectorCanvas(canvas, state, options = {}) {
   const { ctx, width, height } = canvas2d(canvas);
   const c = palette();
   const cx = width * 0.5;
@@ -681,6 +704,22 @@ function drawChestVectorCanvas(canvas, state) {
   ctx.fillStyle = c.muted; ctx.font = '9px ui-monospace, monospace';
   ctx.fillText('RV', cx - rx * .24, cy - ry * .42);
   ctx.fillText('LV', cx + rx * .18, cy + ry * .46);
+  // 激活区域高亮（仅激活顺序页启用）
+  if (options.highlight) {
+    const halo = activationHalos(cx, cy, rx, ry)[options.highlight];
+    if (halo) {
+      const [hx, hy, hr] = halo;
+      const grad = ctx.createRadialGradient(hx, hy, 0, hx, hy, hr);
+      grad.addColorStop(0, 'rgba(245,158,11,.42)');
+      grad.addColorStop(1, 'rgba(245,158,11,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(hx, hy, hr, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = c.gold; ctx.globalAlpha = .75; ctx.lineWidth = 1.2;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.arc(hx, hy, hr * .82, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha = 1;
+    }
+  }
   // 电极位置与连线
   const point = (id) => {
     const p = CHEST_VECTOR[id];
@@ -721,7 +760,7 @@ function drawChestVectorCanvas(canvas, state) {
   }
   ctx.fillStyle = c.text; ctx.font = '600 10px ui-monospace, monospace';
   const phase = state.qrsPhase ?? 0;
-  const phaseLabel = phase < .25 ? '室间隔除极：向右前（V1 小 r）' : phase < .62 ? '左室游离壁除极：向左后（V5 高 R）' : '基底部/流出道：向左后上';
+  const phaseLabel = options.caption ?? (phase < .25 ? '室间隔除极：向右前（V1 小 r）' : phase < .62 ? '左室游离壁除极：向左后（V5 高 R）' : '基底部/流出道：向左后上');
   ctx.fillText(phaseLabel, 12, 18);
   ctx.fillStyle = c.muted; ctx.font = '9px ui-monospace, monospace';
   ctx.fillText('白色箭头 = 当前瞬时 QRS 向量；金色虚线 = 正常 QRS 主向量（左下、略向后）', 12, height - 10);
@@ -814,6 +853,167 @@ function chestVectorSection() {
       <div><b>为什么 V5 的 R 常大于 V6？</b><span>V5 更靠近左室，导联轴与左室主向量夹角更小；V6 更远、更偏外侧，距离衰减和角度差使 R 波通常略低。个体胸壁、心脏位置和肥厚会改变这一规律。</span></div>
     </div>
   </section>`;
+}
+
+function activationPanel() {
+  return `<section class="chest-vector-section activation-section">
+    <div class="chest-vector-head">
+      <div><div class="page-eyebrow">${icon('activity', 13)} ACTIVATION SEQUENCE</div><h2>激活顺序：一次 QRS 从哪里开始，到哪里结束？</h2><p>QRS 不是一根固定的箭头，而是一串依次接力的瞬时向量：室间隔先向右前，随后左室游离壁向左后，最后基底部向左后上。拖动进度或点击下方步骤，观察每一步的向量方向与 V1/V5/V6 投影。</p></div>
+      <div class="chest-vector-controls">
+        <button class="btn btn-secondary btn-sm" type="button" data-activation-play>${icon('pause', 13)} 暂停</button>
+        <label class="visual-range">QRS 进度 <input type="range" min="0" max="1000" value="0" data-activation-phase aria-label="QRS 进度"></label>
+        <button class="btn btn-ghost btn-sm" type="button" data-activation-export>${icon('arrowUpRight', 13)} 导出 SVG</button>
+      </div>
+    </div>
+    <div class="chest-vector-grid">
+      <div class="visual-card visual-card-dark">
+        <canvas data-activation-canvas data-height="350" aria-label="QRS 激活顺序与瞬时向量动画"></canvas>
+        <div class="chest-vector-phase" data-activation-phase-label>室间隔：向右前</div>
+      </div>
+      <div class="visual-card visual-card-dark">
+        <div class="visual-sync-head"><span>V1 / V5 / V6 同步投影波形</span><span>同一向量，不同方向</span></div>
+        <canvas data-activation-waves data-height="210" aria-label="V1 V5 V6 激活顺序投影波形"></canvas>
+        <div class="chest-vector-values">
+          ${CHEST_VECTOR_KEYS.map((id) => `<div><b>${id}</b><span>${id === 'V1' ? 'rS' : 'qRs'}</span><i data-activation-value="${id}">+0.00</i></div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="activation-steps" role="tablist" aria-label="QRS 激活步骤">
+      ${ACTIVATION_STEPS.map((step, i) => `<button class="activation-step" type="button" role="tab" aria-selected="false" data-activation-step="${i}">
+        <span class="activation-step-index">0${i + 1}</span>
+        <b>${step.label}</b>
+        <span class="activation-step-dir">${step.dir}</span>
+        <small>${step.leads}</small>
+      </button>`).join('')}
+    </div>
+    <div class="activation-timeline" aria-hidden="true">
+      ${ACTIVATION_STEPS.map((step) => `<span>${step.label}</span>`).join('')}
+      <i data-activation-cursor></i>
+    </div>
+    <div class="activation-detail">
+      <b data-activation-title>室间隔</b>
+      <p data-activation-desc>室间隔自左向右除极，向量朝向 V1，形成小 r；V5/V6 背离向量，形成小 q。</p>
+      <span class="activation-detail-leads" data-activation-leads>V1 小 r · V5/V6 小 q</span>
+    </div>
+  </section>`;
+}
+
+function updateActivationUi(host, state) {
+  const u = state.qrsPhase ?? 0;
+  const { index, step } = activationStepFor(u);
+  host.querySelectorAll('[data-activation-step]').forEach((node, i) => {
+    node.classList.toggle('active', i === index);
+    node.setAttribute('aria-selected', i === index ? 'true' : 'false');
+  });
+  const cursor = host.querySelector('[data-activation-cursor]');
+  if (cursor) cursor.style.left = `${Math.max(0, Math.min(1, u)) * 100}%`;
+  const slider = host.querySelector('[data-activation-phase]');
+  if (slider && document.activeElement !== slider) slider.value = String(Math.round(u * 1000));
+  const title = host.querySelector('[data-activation-title]');
+  if (title) title.textContent = step.label;
+  const desc = host.querySelector('[data-activation-desc]');
+  if (desc) desc.textContent = step.detail;
+  const leads = host.querySelector('[data-activation-leads]');
+  if (leads) leads.textContent = step.leads;
+  const label = host.querySelector('[data-activation-phase-label]');
+  if (label) label.textContent = `${step.label}：${step.dir}`;
+  const v = chestQrsVector(u);
+  CHEST_VECTOR_KEYS.forEach((id) => {
+    const value = chestLeadProjection(id, v);
+    const node = host.querySelector(`[data-activation-value="${id}"]`);
+    if (node) {
+      node.textContent = `${value >= 0 ? '+' : ''}${value.toFixed(2)}`;
+      node.classList.toggle('negative', value < 0);
+      node.classList.toggle('positive', value > 0.15);
+    }
+  });
+}
+
+function activationSvgMarkup(state) {
+  const W = 760;
+  const H = 520;
+  const cx = W * 0.5;
+  const cy = H * 0.50;
+  const rx = W * 0.34;
+  const ry = H * 0.30;
+  const paper = '#fffaf5';
+  const ink = '#1f2430';
+  const muted = '#6b7280';
+  const line = '#d8d2cb';
+  const brand = '#0e766e';
+  const accent = '#c2410c';
+  const gold = '#b45309';
+  const u = state.qrsPhase ?? 0;
+  const { index, step } = activationStepFor(u);
+  const v = chestQrsVector(u);
+  const vx = cx + v.x * rx * 0.72;
+  const vy = cy - v.z * ry * 0.72;
+  const mag = Math.hypot(vx - cx, vy - cy);
+  const point = (id) => {
+    const q = CHEST_VECTOR[id];
+    return [cx + q.x * rx * 0.84, cy - q.z * ry * 0.84];
+  };
+  const halo = activationHalos(cx, cy, rx, ry)[step.region];
+  const electrodePath = Object.keys(CHEST_VECTOR).map((id) => {
+    const [x, y] = point(id);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  let arrow = '';
+  if (mag > 3) {
+    const ux = (vx - cx) / mag;
+    const uy = (vy - cy) / mag;
+    const bx = vx - ux * 12;
+    const by = vy - uy * 12;
+    arrow = `<line x1="${cx}" y1="${cy}" x2="${vx}" y2="${vy}" stroke="#111827" stroke-width="2.6" stroke-linecap="round"/>
+      <polygon points="${vx},${vy} ${bx - uy * 5},${by + ux * 5} ${bx + uy * 5},${by - ux * 5}" fill="#111827"/>`;
+  }
+  const electrodes = CHEST_VECTOR_KEYS.map((id) => {
+    const [x, y] = point(id);
+    const tone = id === 'V1' ? accent : id === 'V5' ? brand : gold;
+    return `<g><circle cx="${x}" cy="${y}" r="10" fill="${paper}" stroke="${tone}" stroke-width="2"/><text x="${x}" y="${y + 3.6}" text-anchor="middle" fill="${tone}" font-size="10" font-weight="700">${id}</text></g>`;
+  }).join('');
+  const values = CHEST_VECTOR_KEYS.map((id, i) => {
+    const value = chestLeadProjection(id, v);
+    const tone = id === 'V1' ? accent : id === 'V5' ? brand : gold;
+    const y = H - 118 + i * 24;
+    return `<text x="${W - 190}" y="${y}" fill="${muted}" font-size="12" font-family="ui-monospace, monospace">${id}</text>
+      <text x="${W - 150}" y="${y}" fill="${tone}" font-size="13" font-weight="700" font-family="ui-monospace, monospace">${(value >= 0 ? '+' : '') + value.toFixed(2)}</text>`;
+  }).join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="QRS 激活顺序教学示意">
+  <rect width="${W}" height="${H}" fill="${paper}"/>
+  <text x="24" y="32" fill="${ink}" font-size="16" font-weight="700">心迹 ECG Lab · QRS 激活顺序</text>
+  <text x="24" y="52" fill="${muted}" font-size="11">第 ${index + 1} 步：${step.label} · ${step.dir} · 教学示意，不用于临床诊断</text>
+  <ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#ffffff" stroke="${line}" stroke-width="1.6"/>
+  <line x1="${cx - rx * 0.92}" y1="${cy}" x2="${cx + rx * 0.92}" y2="${cy}" stroke="${line}" stroke-dasharray="4 4"/>
+  <line x1="${cx}" y1="${cy - ry * 0.92}" x2="${cx}" y2="${cy + ry * 0.92}" stroke="${line}" stroke-dasharray="4 4"/>
+  <ellipse cx="${cx - rx * 0.10}" cy="${cy - ry * 0.10}" rx="${rx * 0.20}" ry="${ry * 0.30}" transform="rotate(-14 ${cx - rx * 0.10} ${cy - ry * 0.10})" fill="#fde8e4" stroke="${accent}" stroke-width="1.2"/>
+  <ellipse cx="${cx + rx * 0.16}" cy="${cy + ry * 0.08}" rx="${rx * 0.25}" ry="${ry * 0.34}" transform="rotate(14 ${cx + rx * 0.16} ${cy + ry * 0.08})" fill="#dcf5f0" stroke="${brand}" stroke-width="1.2"/>
+  <circle cx="${halo[0]}" cy="${halo[1]}" r="${halo[2]}" fill="#f59e0b" fill-opacity="0.22" stroke="${gold}" stroke-dasharray="3 3"/>
+  <polyline points="${electrodePath}" fill="none" stroke="${brand}" stroke-opacity="0.3" stroke-dasharray="3 3"/>
+  ${electrodes}
+  <line x1="${cx}" y1="${cy}" x2="${cx + 0.82 * rx * 0.72}" y2="${cy + 0.65 * ry * 0.72}" stroke="${gold}" stroke-opacity="0.55" stroke-dasharray="5 4"/>
+  ${arrow}
+  <text x="24" y="${H - 112}" fill="${ink}" font-size="13" font-weight="700">${step.label}</text>
+  <text x="24" y="${H - 94}" fill="${muted}" font-size="11">${step.leads}</text>
+  <text x="24" y="${H - 72}" fill="${muted}" font-size="11">深色箭头 = 当前瞬时 QRS 向量（水平面）；金色虚线 = 正常 QRS 主向量（左下、略向后）</text>
+  ${values}
+  <text x="24" y="${H - 16}" fill="${muted}" font-size="10">向量方向与导联投影仅供教学理解，不代表任何患者实际情况。</text>
+</svg>`;
+}
+
+function downloadSvgFile(markup, filename) {
+  const blob = new Blob([markup], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function drawActivationCanvas(canvas, state) {
+  const { step } = activationStepFor(state.qrsPhase ?? 0);
+  drawChestVectorCanvas(canvas, state, { highlight: step.region, caption: `${step.label}：${step.dir}` });
 }
 
 function chestPanel() {
@@ -982,6 +1182,7 @@ const TABS = [
   ['loops', 'P/QRS/T 向量环'],
   ['limb', '肢体导联向量'],
   ['chest', '胸导联定位'],
+  ['activation', '激活顺序'],
   ['waveform', '波形成因'],
   ['ions', '离子与动作电位'],
   ['anatomy', '心脏解剖'],
@@ -1078,6 +1279,20 @@ export async function vectorLabView() {
     if (!canvas) return;
     drawWaveCanvas(canvas, state, now);
     raf = requestAnimationFrame(drawWaveFrame);
+  };
+  const drawActivationFrame = (now) => {
+    const canvas = content.querySelector('[data-activation-canvas]');
+    if (!canvas) return;
+    if (state.qrsPlaying) {
+      const dt = state.lastActivationAt ? Math.min(0.12, (now - state.lastActivationAt) / 1000) : 0;
+      state.qrsPhase = ((state.qrsPhase ?? 0) + dt / 5.5) % 1;
+    }
+    state.lastActivationAt = now;
+    drawActivationCanvas(canvas, state);
+    const waves = content.querySelector('[data-activation-waves]');
+    if (waves) drawChestVectorWaves(waves, state);
+    updateActivationUi(content, state);
+    raf = requestAnimationFrame(drawActivationFrame);
   };
   const bindLoops = () => {
     const play = content.querySelector('[data-vector-play]');
@@ -1205,6 +1420,50 @@ export async function vectorLabView() {
     select('V1');
   };
   const bindWave = () => { raf = requestAnimationFrame(drawWaveFrame); };
+  const bindActivation = () => {
+    const play = content.querySelector('[data-activation-play]');
+    const pauseAt = () => {
+      state.qrsPlaying = false;
+      state.lastActivationAt = 0;
+      if (play) play.innerHTML = `${icon('play', 13)} 播放`;
+    };
+    play?.addEventListener('click', () => {
+      state.qrsPlaying = !state.qrsPlaying;
+      state.lastActivationAt = 0;
+      play.innerHTML = state.qrsPlaying ? `${icon('pause', 13)} 暂停` : `${icon('play', 13)} 播放`;
+    });
+    content.querySelector('[data-activation-phase]')?.addEventListener('input', (e) => {
+      pauseAt();
+      state.qrsPhase = Math.max(0, Math.min(1, Number(e.target.value) / 1000));
+      updateActivationUi(content, state);
+      const canvas = content.querySelector('[data-activation-canvas]');
+      if (canvas) {
+        drawActivationCanvas(canvas, state);
+        const waves = content.querySelector('[data-activation-waves]');
+        if (waves) drawChestVectorWaves(waves, state);
+      }
+    });
+    content.querySelectorAll('[data-activation-step]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const step = ACTIVATION_STEPS[Number(button.dataset.activationStep)];
+        if (!step) return;
+        pauseAt();
+        state.qrsPhase = step.u;
+        updateActivationUi(content, state);
+        const canvas = content.querySelector('[data-activation-canvas]');
+        if (canvas) {
+          drawActivationCanvas(canvas, state);
+          const waves = content.querySelector('[data-activation-waves]');
+          if (waves) drawChestVectorWaves(waves, state);
+        }
+      });
+    });
+    content.querySelector('[data-activation-export]')?.addEventListener('click', () => {
+      const stamp = new Date().toISOString().slice(0, 10);
+      downloadSvgFile(activationSvgMarkup(state), `ecg-activation-${stamp}.svg`);
+    });
+    raf = requestAnimationFrame(drawActivationFrame);
+  };
   const bindAnatomy = () => {
     const facts = {
       tricuspid: '三尖瓣位于右房与右室之间；右心扩大、右室压力负荷时可出现右房增大/右室肥厚图形。',
@@ -1232,12 +1491,14 @@ export async function vectorLabView() {
     content.innerHTML = tab === 'loops' ? vectorLoopsPanel()
       : tab === 'limb' ? limbPanel()
         : tab === 'chest' ? chestPanel()
-          : tab === 'waveform' ? waveformPanel()
-            : tab === 'ions' ? ionsPanel()
-              : anatomyPanel();
+          : tab === 'activation' ? activationPanel()
+            : tab === 'waveform' ? waveformPanel()
+              : tab === 'ions' ? ionsPanel()
+                : anatomyPanel();
     if (tab === 'loops') bindLoops();
     else if (tab === 'limb') bindLimb();
     else if (tab === 'chest') bindChest();
+    else if (tab === 'activation') bindActivation();
     else if (tab === 'waveform') bindWave();
     else if (tab === 'anatomy') bindAnatomy();
   };

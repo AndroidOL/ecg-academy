@@ -35,6 +35,7 @@ class FakeContext {
   }
   measureText(text) { return { width: String(text).length * 6 }; }
   createLinearGradient() { return { addColorStop() {} }; }
+  createRadialGradient() { return { addColorStop() {} }; }
   setTransform() {}
   clearRect() {}
   fillRect() {}
@@ -51,6 +52,7 @@ class FakeContext {
   fill() {}
   arc() {}
   arcTo() {}
+  ellipse() {}
   fillText() {}
   setLineDash() {}
   translate() {}
@@ -222,6 +224,22 @@ try {
   await waitFor(() => document.querySelector('.quiz-feedback'), 15000);
   if (!document.querySelector('[data-next]')) throw new Error('next button missing after answer');
   ok('practice creates question, accepts selection, renders feedback');
+
+  await go('#/daily');
+  await waitFor(() => document.querySelector('.daily-hero'));
+  if (document.querySelectorAll('.day-cell').length !== 28) throw new Error('daily calendar should have 28 cells');
+  if (!document.querySelector('[data-start]') && !document.querySelector('[data-review]')) throw new Error('daily challenge action missing');
+  ok('daily challenge renders streak hero and 28-day calendar');
+
+  await go('#/vectors');
+  await waitFor(() => document.querySelector('[data-visual-tab="activation"]'));
+  document.querySelector('[data-visual-tab="activation"]').click();
+  await waitFor(() => document.querySelector('[data-activation-canvas]'));
+  if (document.querySelectorAll('[data-activation-step]').length !== 4) throw new Error('activation steps missing');
+  if (document.querySelectorAll('.activation-timeline span').length !== 4) throw new Error('activation timeline missing');
+  document.querySelector('[data-activation-step="2"]').click();
+  if (!document.querySelector('[data-activation-title]')?.textContent.includes('游离壁')) throw new Error('activation step did not update detail');
+  ok('vector lab renders activation sequence timeline with step selection');
 
   await go('#/lab');
   await waitFor(() => document.querySelector('[data-k-slider]'));
