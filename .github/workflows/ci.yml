@@ -41,6 +41,8 @@ jobs:
         run: php scripts/validate_review.php
       - name: Validate section question bank
         run: php scripts/validate_section_bank.php
+      - name: Audit section answer accuracy
+        run: php scripts/audit_section_bank.php
       - name: Prepare integration database
         run: |
           cat > app/config.local.php <<'PHP'

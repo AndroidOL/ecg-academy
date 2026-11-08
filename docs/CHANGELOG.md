@@ -8,6 +8,8 @@
 - 测试模块改为答对 +1、答错 -10；当日 ≤ -100 锁定次日；练习页新增今日/总榜（所有用户）。
 - 新增 `learning_events` / `learning_status` / `practice_daily_scores` 表与 `app/Learning.php`、`app/SectionBank.php`。
 - 管理员用户管理新增手动创建用户（用户名、显示名、初始密码、管理员、AI 额度）。
+- 修复章节题生成器把 `<40 次/分` 等比较符号误当 HTML 标签删除的问题。
+- 章节题改为跨章节/跨内容类别干扰项 + 相似度过滤 + 课程内容限定；新增 `scripts/audit_section_bank.php`，919 题审计 0 冲突。
 - 资源版本 `20261108aj`。
 
 ## 1.2.18 — 2026-11-08

@@ -23,6 +23,7 @@
 | 230 章课程体系 | `php scripts/validate_curriculum.php` | **230 章 / 19 章节，0 错误** |
 | 1920 道预生成题库 | `php scripts/validate_bank.php` | **1920 道，0 错误** |
 | 919 道章节题库 | `php scripts/validate_section_bank.php` | **919 道 / 19 板块，0 错误** |
+| 章节答案准确性 | `php scripts/audit_section_bank.php` | **919 道，0 冲突** |
 | ECG 波形引擎 | `node tests/engine.test.mjs` | **15/15 通过** |
 | ACLS 状态机 | `php tests/sim.test.php` | **14/14 通过** |
 | 本地复习/BYOK | `node tests/study.test.mjs` | **4/4 通过** |

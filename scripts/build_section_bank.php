@@ -11,17 +11,59 @@ $chapters = Content::chapters();
 $all = Content::all();
 $byChapter = [];
 foreach ($all as $item) $byChapter[$item['chapter']][] = $item;
-$chapterNames = [];
-foreach ($chapters as $chapter) $chapterNames[$chapter['id']] = $chapter['name'];
-
 $clean = static function (string $text): string {
-    $text = trim(preg_replace('/\s+/u', ' ', strip_tags($text)) ?? '');
+    $text = trim(preg_replace('/\s+/u', ' ', preg_replace('/<(?=[a-zA-Z\/!])[^>]*>/u', '', $text)) ?? '');
     return mb_substr($text, 0, 260, 'UTF-8');
 };
+$chapterNames = [];
+foreach ($chapters as $chapter) $chapterNames[$chapter['id']] = $chapter['name'];
+$sourceTextById = [];
+foreach ($all as $item) {
+    $texts = [];
+    foreach (['name', 'en', 'oneLiner', 'specificity', 'definition', 'clinicalPearl'] as $field) {
+        if (!empty($item[$field])) $texts[] = (string) $item[$field];
+    }
+    foreach (['criteria', 'reading', 'redFlags', 'management', 'pitfalls', 'pearls', 'keyPoints', 'objectives', 'mechanism'] as $field) {
+        foreach (($item[$field] ?? []) as $line) if (is_string($line)) $texts[] = $line;
+    }
+    foreach (($item['sections'] ?? []) as $section) {
+        if (!empty($section['title'])) $texts[] = (string) $section['title'];
+        foreach (($section['body'] ?? []) as $line) if (is_string($line)) $texts[] = $line;
+    }
+    foreach (($item['keyNumbers'] ?? []) as $number) {
+        if (is_array($number)) {
+            $value = trim((string) (($number['value'] ?? '') . ' ' . ($number['label'] ?? '') . ' ' . ($number['unit'] ?? '')));
+            if ($value !== '') $texts[] = $value;
+        }
+    }
+    foreach (($item['differential'] ?? []) as $diff) {
+        $target = $all[$diff['id'] ?? ''] ?? null;
+        if ($target) $texts[] = (string) $target['name'];
+    }
+    $sourceTextById[$item['id']] = array_values(array_unique(array_filter(array_map($clean, $texts))));
+}
+
 
 $stableShuffle = static function (array $values, string $salt): array {
     usort($values, static fn (string $a, string $b): int => crc32($salt . $a) <=> crc32($salt . $b));
     return $values;
+};
+$tooSimilar = static function (string $a, string $b) use ($clean): bool {
+    $a = strtolower(preg_replace('/[^\p{Han}a-z0-9]+/u', '', $clean($a)) ?? '');
+    $b = strtolower(preg_replace('/[^\p{Han}a-z0-9]+/u', '', $clean($b)) ?? '');
+    if ($a === '' || $b === '') return false;
+    if (str_contains($a, $b) || str_contains($b, $a)) return true;
+    $grams = static function (string $text): array {
+        $out = [];
+        $len = mb_strlen($text, 'UTF-8');
+        for ($i = 0; $i + 1 < $len; $i++) $out[mb_substr($text, $i, 2, 'UTF-8')] = true;
+        return $out;
+    };
+    $ga = $grams($a); $gb = $grams($b);
+    if ($ga === [] || $gb === []) return false;
+    $intersection = count(array_intersect_key($ga, $gb));
+    $union = count($ga) + count($gb) - $intersection;
+    return $union > 0 && ($intersection / $union) >= 0.4;
 };
 $out = [];
 $report = [];
@@ -29,6 +71,7 @@ $report = [];
 foreach ($chapters as $chapter) {
     $cid = (string) $chapter['id'];
     $items = $byChapter[$cid] ?? [];
+    $crossItems = array_values(array_filter($all, static fn (array $candidate): bool => $candidate['chapter'] !== $cid));
     $goal = $cid === 'theory' ? 30 : 50;
     $questions = [];
     $used = [];
@@ -46,20 +89,30 @@ foreach ($chapters as $chapter) {
         }
     }
     $globalPool = array_values(array_unique(array_filter($globalPool)));
+    $sectionBodyPool = [];
+    foreach ($crossItems as $candidate) {
+        foreach (($candidate['sections'] ?? []) as $candidateSection) {
+            foreach (($candidateSection['body'] ?? []) as $line) if (is_string($line)) $sectionBodyPool[] = $line;
+        }
+    }
+    $sectionBodyPool = array_values(array_unique(array_filter($sectionBodyPool)));
 
-    $add = static function (string $stem, string $correct, array $pool, string $sourceId, string $explanation, int $difficulty = 1) use (&$questions, &$used, $cid, $clean, $globalPool, $stableShuffle): void {
+    $add = static function (string $stem, string $correct, array $pool, string $sourceId, string $explanation, int $difficulty = 1) use (&$questions, &$used, $cid, $clean, $globalPool, $stableShuffle, $sourceTextById, $tooSimilar): void {
         $correct = $clean($correct);
         if ($correct === '' || isset($used[$stem])) return;
+        $positive = !str_contains($stem, '英文名称') && !str_contains($stem, '哪个学习板块') && !str_contains($stem, '需要与');
+        $forbidden = $positive ? ($sourceTextById[$sourceId] ?? []) : [];
+        $isForbidden = static fn (string $text): bool => in_array($clean($text), $forbidden, true);
         $options = [$correct];
         foreach ($pool as $candidate) {
             $text = $clean((string) $candidate);
-            if ($text !== '' && $text !== $correct && !in_array($text, $options, true)) $options[] = $text;
+            if ($text !== '' && $text !== $correct && !in_array($text, $options, true) && !$isForbidden($text) && !$tooSimilar($text, $correct)) $options[] = $text;
             if (count($options) >= 4) break;
         }
         foreach ($globalPool as $candidate) {
             if (count($options) >= 4) break;
             $text = $clean((string) $candidate);
-            if ($text !== '' && $text !== $correct && !in_array($text, $options, true)) $options[] = $text;
+            if ($text !== '' && $text !== $correct && !in_array($text, $options, true) && !$isForbidden($text) && !$tooSimilar($text, $correct)) $options[] = $text;
         }
         if (count($options) < 4) return;
         $options = $stableShuffle(array_slice($options, 0, 4), $cid . '|' . $stem);
@@ -76,9 +129,9 @@ foreach ($chapters as $chapter) {
         ];
     };
 
-    $poolFor = static function (string $field) use ($items, $clean): array {
+    $poolFor = static function (string $field) use ($crossItems, $clean): array {
         $pool = [];
-        foreach ($items as $item) {
+        foreach ($crossItems as $item) {
             $value = $item[$field] ?? null;
             if (is_string($value)) $pool[] = $clean($value);
             elseif (is_array($value)) {
@@ -88,6 +141,25 @@ foreach ($chapters as $chapter) {
                         foreach (['why', 'title', 'name'] as $key) if (!empty($entry[$key])) $pool[] = $clean((string) $entry[$key]);
                     }
                 }
+            }
+        }
+        return array_values(array_unique(array_filter($pool)));
+    };
+    $crossPoolFor = $poolFor;
+    $otherFieldPool = static function (string $excludeField) use ($crossItems, $clean): array {
+        $fields = ['oneLiner', 'specificity', 'definition', 'clinicalPearl', 'criteria', 'reading', 'redFlags', 'management', 'pitfalls', 'pearls', 'keyPoints', 'objectives', 'mechanism'];
+        $pool = [];
+        foreach ($crossItems as $item) {
+            foreach ($fields as $field) {
+                if ($field === $excludeField) continue;
+                $value = $item[$field] ?? null;
+                if (is_string($value)) $pool[] = $clean($value);
+                elseif (is_array($value)) {
+                    foreach ($value as $entry) if (is_string($entry)) $pool[] = $clean($entry);
+                }
+            }
+            foreach (($item['sections'] ?? []) as $section) {
+                foreach (($section['body'] ?? []) as $line) if (is_string($line)) $pool[] = $clean($line);
             }
         }
         return array_values(array_unique(array_filter($pool)));
@@ -102,7 +174,7 @@ foreach ($chapters as $chapter) {
             ['definition', '定义'],
         ] as [$field, $label]) {
             if (!empty($item[$field])) {
-                $add("关于《{$name}》，以下哪项是{$label}？", (string) $item[$field], $poolFor($field), $item['id'], "《{$name}》的{$label}：" . $clean((string) $item[$field]), $difficulty);
+                $add("按本站《{$name}》课程，以下哪项是{$label}？", (string) $item[$field], $poolFor($field), $item['id'], "《{$name}》的{$label}：" . $clean((string) $item[$field]), $difficulty);
             }
         }
         foreach ([
@@ -120,13 +192,13 @@ foreach ($chapters as $chapter) {
             if (is_string($lines)) $lines = [$lines];
             foreach ($lines as $line) {
                 if (!is_string($line) || trim($line) === '') continue;
-                $add("关于《{$name}》的{$label}，以下哪项正确？", $line, $poolFor($field), $item['id'], "《{$name}》{$label}：" . $clean($line), $difficulty);
+                $add("按本站《{$name}》课程，以下哪项属于其{$label}？", $line, $otherFieldPool($field), $item['id'], "《{$name}》{$label}：" . $clean($line), $difficulty);
             }
         }
         foreach (($item['sections'] ?? []) as $section) {
             foreach (($section['body'] ?? []) as $line) {
                 if (is_string($line) && trim($line) !== '') {
-                    $add("《{$name}》中，以下哪项描述正确？", $line, $poolFor('sections'), $item['id'], "《{$name}》教学要点：" . $clean($line), $difficulty);
+                    $add("按本站《{$name}》课程，以下哪项描述正确？", $line, $sectionBodyPool, $item['id'], "《{$name}》教学要点：" . $clean($line), $difficulty);
                 }
             }
         }
@@ -136,13 +208,13 @@ foreach ($chapters as $chapter) {
                 $targetName = $target['name'] ?? $diff['id'];
                 $correct = $targetName;
                 $options = ['id' => $diff['id']];
-                $add("《{$name}》需要与以下哪个诊断重点鉴别？", $correct, array_values(array_filter(array_map(static fn (array $d): string => $d['name'] ?? '', $items))), $item['id'], "《{$name}》需与《{$targetName}》鉴别：" . $clean((string) ($diff['why'] ?? '')), $difficulty);
+                $add("按本站课程，《{$name}》需要与以下哪个诊断重点鉴别？", $correct, array_values(array_filter(array_map(static fn (array $d): string => $d['name'] ?? '', $items))), $item['id'], "《{$name}》需与《{$targetName}》鉴别：" . $clean((string) ($diff['why'] ?? '')), $difficulty);
                 unset($options);
             }
         }
         if (!empty($item['en'])) {
             $correct = (string) $item['en'];
-            $add("《{$name}》的英文名称是？", $correct, array_values(array_filter(array_map(static fn (array $d): string => (string) ($d['en'] ?? ''), $items))), $item['id'], "{$name}：" . $clean($correct), 1);
+            $add("按本站课程，《{$name}》的英文名称是？", $correct, array_values(array_filter(array_map(static fn (array $d): string => (string) ($d['en'] ?? ''), $items))), $item['id'], "{$name}：" . $clean($correct), 1);
         }
     }
 
@@ -151,7 +223,7 @@ foreach ($chapters as $chapter) {
         $correct = $chapter['name'];
         $pool = array_values(array_filter(array_values($chapterNames), static fn (string $name): bool => $name !== $correct));
         $pool = $stableShuffle($pool, $cid . '|chapter');
-        $add("《{$item['name']}》属于哪个学习板块？", $correct, $pool, $item['id'], "《{$item['name']}》属于“{$correct}”板块。", 1);
+        $add("按本站课程，《{$item['name']}》属于哪个学习板块？", $correct, $pool, $item['id'], "《{$item['name']}》属于“{$correct}”板块。", 1);
     }
 
     $questions = array_slice($questions, 0, $goal);
