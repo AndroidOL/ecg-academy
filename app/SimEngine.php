@@ -369,9 +369,24 @@ final class SimEngine
                 self::event($state, 'VF 振幅逐渐降低，转为细颤；除颤成功率下降', 'bad');
             }
         }
-        if (!$state['cpr'] && $elapsed > 30 && !isset($state['flags']['vf_hypoxia'])) {
+        $lastCprEnd = (float) ($state['lastCprEnd'] ?? $state['startedAt']);
+        $noCprSeconds = $state['cpr'] ? 0 : max(0, $now - $lastCprEnd);
+        if (!$state['cpr'] && $noCprSeconds > 30 && !isset($state['flags']['vf_hypoxia'])) {
             $state['flags']['vf_hypoxia'] = true;
-            self::event($state, '长时间无胸外按压，组织缺氧与酸中毒加重', 'bad');
+            self::event($state, '已超过 30 秒未进行有效胸外按压，组织缺氧与酸中毒加重', 'bad');
+        }
+        if (!$state['cpr'] && $noCprSeconds > 60 && empty($state['flags']['patient_dead'])) {
+            $state['flags']['patient_dead'] = true;
+            $state['hr'] = 0;
+            $state['bpSys'] = 0;
+            $state['bpDia'] = 0;
+            $state['spo2'] = 0;
+            $state['etco2'] = 0;
+            $state['pulse'] = false;
+            $state['responsive'] = false;
+            $state['rhythm'] = 'asystole';
+            self::setPhase($state, 'arrest', '心脏骤停：无有效灌注');
+            self::event($state, '持续无有效按压，患者死亡（模拟终止）', 'bad');
         }
         $state['dirty'] = true;
     }
@@ -413,6 +428,26 @@ final class SimEngine
         }
 
         self::evolve($state, $scenario, $now);
+        if (!empty($state['flags']['patient_dead'])) {
+            return 'timeout';
+        }
+        if (in_array($algorithm, ['vf', 'hyperk'], true) && !$state['cpr']) {
+            $lastCpr = (float) ($state['lastCprEnd'] ?? $state['startedAt']);
+            if ($now - $lastCpr > 60 && empty($state['flags']['patient_dead'])) {
+                $state['flags']['patient_dead'] = true;
+                $state['hr'] = 0;
+                $state['bpSys'] = 0;
+                $state['bpDia'] = 0;
+                $state['spo2'] = 0;
+                $state['etco2'] = 0;
+                $state['pulse'] = false;
+                $state['responsive'] = false;
+                $state['rhythm'] = 'asystole';
+                self::setPhase($state, 'arrest', '心脏骤停：无有效灌注');
+                self::event($state, '持续无有效按压，患者死亡（模拟终止）', 'bad');
+                return 'timeout';
+            }
+        }
 
         if ($algorithm === 'vf' || $algorithm === 'hyperk') {
             $last = $state['lastCprEnd'] ?? $state['startedAt'];
@@ -477,7 +512,7 @@ final class SimEngine
         $state['cprEpisodes']++;
         if (!$state['firstCprAt']) $state['firstCprAt'] = $now;
         $state['lastCprEnd'] = null;
-        unset($state['flags']['no_cpr_10'], $state['flags']['no_cpr_30']);
+        unset($state['flags']['no_cpr_10'], $state['flags']['no_cpr_30'], $state['flags']['vf_hypoxia']);
         self::event($state, '开始高质量胸外按压（100–120 次/分）', 'good');
         $state['dirty'] = true;
     }
@@ -1146,10 +1181,10 @@ final class SimEngine
             ]);
         }
         return match ($state['rhythm']) {
-            'vf' => array_replace($base, ['rhythm' => 'vf', 'rate' => 0, 'p' => 'absent', 'extras' => ['fibrillatory'], 'vfAmplitude' => !empty($state['flags']['vf_fine']) ? 0.55 : 1, 'description' => !empty($state['flags']['vf_fine']) ? '细颤：振幅低、频率快，除颤成功率下降。' : '粗颤：振幅较高，立即 CPR 并尽快除颤。']),
+            'vf' => array_replace($base, ['rhythm' => 'vf', 'rate' => 0, 'p' => 'absent', 'extras' => ['fibrillatory'], 'seed' => 37 + intdiv((int) $elapsed, 2), 'vfAmplitude' => !empty($state['flags']['vf_fine']) ? 0.55 : 1, 'description' => !empty($state['flags']['vf_fine']) ? '细颤：振幅低、频率快，除颤成功率下降。' : '粗颤：振幅较高，立即 CPR 并尽快除颤。']),
             'pvt' => array_replace($base, ['rhythm' => 'vt', 'rate' => 200, 'qrs' => 0.17, 'morphology' => 'wide', 'p' => 'absent', 't' => ['shape' => 'discordant', 'amp' => 1.1], 'description' => '宽 QRS 心动过速，无脉。']),
-            'svt' => array_replace($base, ['rhythm' => 'svt', 'rate' => (int) ($state['hr'] ?? 190), 'atrialRate' => (int) ($state['hr'] ?? 190), 'p' => 'hidden', 'qrs' => 0.07, 'description' => '窄 QRS 规则心动过速。']),
-            'af_fast' => array_replace($base, ['rhythm' => 'af', 'rate' => (int) ($state['hr'] ?? 152), 'atrialRate' => 400, 'irregularity' => 0.24, 'p' => 'absent', 'extras' => ['fibrillatory'], 'description' => '快速心房颤动。']),
+            'svt' => array_replace($base, ['rhythm' => 'svt', 'rate' => (int) ($state['hr'] ?? 190), 'atrialRate' => (int) ($state['hr'] ?? 190), 'p' => 'hidden', 'qrs' => 0.07, 'seed' => 61 + intdiv((int) $elapsed, 4), 'description' => '窄 QRS 规则心动过速。']),
+            'af_fast' => array_replace($base, ['rhythm' => 'af', 'rate' => (int) ($state['hr'] ?? 152), 'atrialRate' => 400, 'irregularity' => 0.24, 'p' => 'absent', 'extras' => ['fibrillatory'], 'seed' => 71 + intdiv((int) $elapsed, 4), 'description' => '快速心房颤动。']),
             'post_shock' => array_replace($base, ['rhythm' => 'asystole', 'rate' => 0, 'p' => 'absent', 'description' => '电击后短暂心室静止（约 2 秒），观察心律。']),
             'brady' => array_replace($base, ['rate' => (int) ($state['hr'] ?? 32), 'atrialRate' => (int) ($state['hr'] ?? 32), 'qt' => 0.46, 'description' => '症状性心动过缓，心率约 ' . (int) ($state['hr'] ?? 32) . ' 次/分。']),
             'asystole' => array_replace($base, ['rhythm' => 'asystole', 'rate' => 0, 'p' => 'absent', 'qrs' => 0.16, 'description' => '心搏停止。']),

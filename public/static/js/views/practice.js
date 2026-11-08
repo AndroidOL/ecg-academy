@@ -1,7 +1,9 @@
 import { api } from '../api.js';
 import { store } from '../store.js';
 import { navigate } from '../router.js';
-import { mountECG } from '../ecg-renderer.js';
+const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
+const __asset = __isNode ? '' : '?v=20261108f';
+const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 import { icon, escapeHtml, toast, setButtonLoading, fmtDuration, medicalDisclaimer } from '../ui.js';
 
 const LEVELS = [

@@ -1,6 +1,8 @@
 import { api } from '../api.js';
 import { store } from '../store.js';
-import { mountECG } from '../ecg-renderer.js';
+const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
+const __asset = __isNode ? '' : '?v=20261108f';
+const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 import { icon, chapterColor, difficultyDots, escapeHtml, setupMiniECG, medicalDisclaimer } from '../ui.js';
 
 const FALLBACK_SPEC = {

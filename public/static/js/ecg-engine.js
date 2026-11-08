@@ -45,6 +45,7 @@ function clamp(value, min, max) {
 }
 
 export function normalizeSpec(spec = {}) {
+  if (!spec || typeof spec !== 'object' || Array.isArray(spec)) spec = {};
   const s = {
     rhythm: String(spec.rhythm || 'sinus'),
     rate: clamp(num(spec.rate, 72), 0, 320),

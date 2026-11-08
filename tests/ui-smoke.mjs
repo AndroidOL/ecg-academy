@@ -172,6 +172,7 @@ try {
 
   await go('#/learn');
   await waitFor(() => document.querySelectorAll('.diagnosis-card').length >= 20);
+  if (document.querySelector('[data-level]')?.value !== '1') throw new Error('learn should default to basic level');
   if (!document.querySelector('[data-pager]')?.textContent.includes('页')) throw new Error('pagination missing');
   if (document.querySelectorAll('.diagnosis-card').length > 24) throw new Error('pagination rendered too many cards');
   document.querySelector('[data-page-next]')?.click();

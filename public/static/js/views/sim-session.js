@@ -1,5 +1,7 @@
 import { api } from '../api.js';
-import { mountECG } from '../ecg-renderer.js';
+const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
+const __asset = __isNode ? '' : '?v=20261108f';
+const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 import { navigate } from '../router.js';
 import { icon, escapeHtml, toast, fmtDuration, confirmDialog, medicalDisclaimer, setButtonLoading } from '../ui.js';
 
@@ -187,7 +189,7 @@ export async function simSessionView({ params }) {
     if (!initial && actionsSig !== lastActionsSig) {
       renderActions();
     }
-    const monitorSigNew = JSON.stringify({ rhythm: state.monitor?.rhythm, rate: state.monitor?.rate, qrs: state.monitor?.qrs, morphology: state.monitor?.morphology, p: state.monitor?.p, description: state.monitor?.description });
+    const monitorSigNew = JSON.stringify({ rhythm: state.monitor?.rhythm, rate: state.monitor?.rate, qrs: state.monitor?.qrs, morphology: state.monitor?.morphology, p: state.monitor?.p, seed: state.monitor?.seed, vfAmplitude: state.monitor?.vfAmplitude, description: state.monitor?.description });
     if (monitorSigNew !== monitorSig) {
       monitorSig = monitorSigNew;
       mountMonitor();
@@ -203,10 +205,14 @@ export async function simSessionView({ params }) {
     if (!host || !state?.monitor) return;
     const sig = JSON.stringify(state.monitor);
     if (viewer && host.dataset.sig === sig) return;
-    destroyViewer();
+    const spec = { ...state.monitor, duration: 4, annotations: [], seed: state.monitor.seed ?? 19 };
+    if (viewer) {
+      viewer.refreshSpec(spec);
+      host.dataset.sig = sig;
+      return;
+    }
     host.innerHTML = '';
     host.dataset.sig = sig;
-    const spec = { ...state.monitor, duration: 4, annotations: [], seed: 19 };
     viewer = mountECG(host, spec, {
       mode: 'rhythm', lead: spec.primaryLead || 'II', speed: 1, showAnnotations: false, autoPlay: true,
       playbackMode: 'scroll', loop: true, scrollWindow: 4,

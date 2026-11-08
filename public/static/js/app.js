@@ -2,15 +2,20 @@ import { api } from './api.js';
 import { store, initTheme, applyTheme, toggleTheme } from './store.js';
 import { Router } from './router.js';
 import { NAV_ITEMS, icon, logo, initials, escapeHtml } from './ui.js';
-import { homeView } from './views/home.js';
-import { learnView } from './views/learn.js';
-import { articleView } from './views/article.js';
 import { practiceView } from './views/practice.js';
 import { simListView } from './views/sim-list.js';
-import { simSessionView } from './views/sim-session.js';
-import { labView } from './views/lab.js';
 import { meView } from './views/me.js';
-import { adminView } from './views/admin.js';
+
+// Cache-busted dynamic imports: keep Node tests query-free while forcing
+// browsers with immutable 7-day static caching to load the current modules.
+const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
+const __asset = __isNode ? '' : '?v=20261108f';
+const { homeView } = await import(`./views/home.js${__asset}`);
+const { learnView } = await import(`./views/learn.js${__asset}`);
+const { articleView } = await import(`./views/article.js${__asset}`);
+const { simSessionView } = await import(`./views/sim-session.js${__asset}`);
+const { labView } = await import(`./views/lab.js${__asset}`);
+const { adminView } = await import(`./views/admin.js${__asset}`);
 
 const routes = [
   { path: '/', handler: homeView },

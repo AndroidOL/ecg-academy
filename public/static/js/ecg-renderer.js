@@ -1,4 +1,6 @@
-import { ECGSession, LEAD_NAMES } from './ecg-engine.js';
+const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
+const __asset = __isNode ? '' : '?v=20261108f';
+const { ECGSession, LEAD_NAMES } = await import(`./ecg-engine.js${__asset}`);
 
 const COLUMNS = [
   ['I', 'II', 'III'],
@@ -19,6 +21,7 @@ function formatTime(t) {
 export class ECGViewer {
   constructor(root, spec, options = {}) {
     if (!(root instanceof HTMLElement)) throw new Error('ECGViewer root must be an element');
+    if (!spec || typeof spec !== 'object' || Array.isArray(spec)) spec = {};
     this.root = root;
     this.spec = spec;
     this.options = {
@@ -201,6 +204,25 @@ export class ECGViewer {
   setTextbook(show) {
     this.options.textbook = Boolean(show);
     this.draw();
+  }
+
+  refreshSpec(spec) {
+    if (!spec || typeof spec !== 'object') return;
+    const wasPlaying = this.playing;
+    if (wasPlaying) {
+      cancelAnimationFrame(this.raf);
+      this.playing = false;
+    }
+    this.spec = spec;
+    this.rhythmSession = new ECGSession(spec);
+    this.scrollSession = null;
+    this.twelveSession = null;
+    this.sweepLayer = null;
+    this.sweepLayerCtx = null;
+    this.sweepLayerKey = '';
+    this.canvas.setAttribute('aria-label', this.ariaLabel());
+    this.draw();
+    if (wasPlaying) this.play(this.options.speed);
   }
 
   setSpec(spec) {
@@ -1278,7 +1300,7 @@ export function mountECG(root, spec, options = {}) {
 }
 
 export function renderMiniECG(canvas, spec) {
-  if (!(canvas instanceof HTMLCanvasElement)) return null;
+  if (!(canvas instanceof HTMLCanvasElement) || !spec || typeof spec !== 'object') return null;
   const width = canvas.clientWidth || 240;
   const height = canvas.clientHeight || 62;
   const dpr = Math.min(2, window.devicePixelRatio || 1);

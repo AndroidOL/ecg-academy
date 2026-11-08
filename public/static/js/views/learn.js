@@ -9,16 +9,30 @@ export async function learnView({ query }) {
   const chapters = data.chapters?.length ? data.chapters : store.chapters;
   const chapterMap = new Map(chapters.map((chapter) => [chapter.id, chapter]));
   const itemMap = new Map(items.map((item) => [item.id, item]));
-  const initialChapter = query?.get('chapter') || 'all';
+  let saved = {};
+  try { saved = JSON.parse(sessionStorage.getItem('ecg-learn-state-v1') || '{}') || {}; } catch { saved = {}; }
+  const savedLevel = Number(localStorage.getItem('ecg-learn-level') || saved.level || 1);
+  const initialChapter = query?.get('chapter') || saved.chapter || 'all';
   const state = {
-    q: '',
+    q: String(saved.q || ''),
     chapter: chapterMap.has(initialChapter) ? initialChapter : 'all',
-    level: 0,
-    urgency: 'all',
-    sort: 'difficulty',
-    scope: 'common',
-    page: 1,
+    level: [1, 2, 3].includes(savedLevel) ? savedLevel : 1,
+    urgency: ['critical', 'urgent', 'core', 'advanced', 'all'].includes(saved.urgency) ? saved.urgency : 'all',
+    sort: ['curriculum', 'urgency', 'difficulty', 'difficulty-desc', 'weak'].includes(saved.sort) ? saved.sort : 'difficulty',
+    scope: ['common', 'uncommon', 'all'].includes(saved.scope) ? saved.scope : 'common',
+    page: Math.max(1, Number(saved.page) || 1),
     pageSize: 24,
+  };
+  const savedScroll = Number(saved.scroll || 0) || 0;
+  let firstRender = true;
+  const saveState = () => {
+    try {
+      sessionStorage.setItem('ecg-learn-state-v1', JSON.stringify({
+        q: state.q, chapter: state.chapter, level: state.level, urgency: state.urgency,
+        sort: state.sort, scope: state.scope, page: state.page, scroll: window.scrollY || 0,
+      }));
+      localStorage.setItem('ecg-learn-level', String(state.level));
+    } catch { /* storage unavailable */ }
   };
   const URGENCY = {
     critical: ['危急优先', 'badge-danger', 0],
@@ -51,15 +65,15 @@ export async function learnView({ query }) {
     </section>
 
     <div class="filter-bar" style="margin-top:18px">
-      <div class="search-box">${icon('search', 16)}<input class="input" type="search" placeholder="搜索诊断、英文名或关键词…" data-learn-search aria-label="搜索诊断"></div>
+      <div class="search-box">${icon('search', 16)}<input class="input" type="search" value="${escapeHtml(state.q)}" placeholder="搜索诊断、英文名或关键词…" data-learn-search aria-label="搜索诊断"></div>
       <div class="row-wrap" data-scope-chips style="flex:0 0 auto">
-        <button class="chip active" type="button" data-scope="common">常见核心</button>
-        <button class="chip" type="button" data-scope="uncommon">不常见 / 进阶</button>
-        <button class="chip" type="button" data-scope="all">全部</button>
+        <button class="chip ${state.scope === 'common' ? 'active' : ''}" type="button" data-scope="common">常见核心</button>
+        <button class="chip ${state.scope === 'uncommon' ? 'active' : ''}" type="button" data-scope="uncommon">不常见 / 进阶</button>
+        <button class="chip ${state.scope === 'all' ? 'active' : ''}" type="button" data-scope="all">全部</button>
       </div>
       <div class="row-wrap" data-chapter-chips>
-        <button class="chip active" type="button" data-chapter="all">全部</button>
-        ${chapters.map((chapter) => `<button class="chip" type="button" data-chapter="${escapeHtml(chapter.id)}">${escapeHtml(chapter.name)}</button>`).join('')}
+        <button class="chip ${state.chapter === 'all' ? 'active' : ''}" type="button" data-chapter="all">全部</button>
+        ${chapters.map((chapter) => `<button class="chip ${state.chapter === chapter.id ? 'active' : ''}" type="button" data-chapter="${escapeHtml(chapter.id)}">${escapeHtml(chapter.name)}</button>`).join('')}
       </div>
       <select class="select" style="flex:0 0 108px;min-height:36px" data-level aria-label="难度筛选">
         <option value="0">全部难度</option>
@@ -69,17 +83,17 @@ export async function learnView({ query }) {
       </select>
       <select class="select" style="flex:0 0 118px;min-height:36px" data-urgency aria-label="紧急程度筛选">
         <option value="all">全部优先级</option>
-        <option value="critical">危急优先</option>
-        <option value="urgent">急症相关</option>
-        <option value="core">核心课程</option>
-        <option value="advanced">进阶拓展</option>
+        <option value="critical" ${state.urgency === 'critical' ? 'selected' : ''}>危急优先</option>
+        <option value="urgent" ${state.urgency === 'urgent' ? 'selected' : ''}>急症相关</option>
+        <option value="core" ${state.urgency === 'core' ? 'selected' : ''}>核心课程</option>
+        <option value="advanced" ${state.urgency === 'advanced' ? 'selected' : ''}>进阶拓展</option>
       </select>
       <select class="select" style="flex:0 0 132px;min-height:36px" data-sort aria-label="排序方式">
-        <option value="curriculum">按课程顺序</option>
-        <option value="urgency">按紧急程度</option>
-        <option value="difficulty" selected>难度从低到高</option>
-        <option value="difficulty-desc">难度从高到低</option>
-        <option value="weak">薄弱优先</option>
+        <option value="curriculum" ${state.sort === 'curriculum' ? 'selected' : ''}>按课程顺序</option>
+        <option value="urgency" ${state.sort === 'urgency' ? 'selected' : ''}>按紧急程度</option>
+        <option value="difficulty" ${state.sort === 'difficulty' ? 'selected' : ''}>难度从低到高</option>
+        <option value="difficulty-desc" ${state.sort === 'difficulty-desc' ? 'selected' : ''}>难度从高到低</option>
+        <option value="weak" ${state.sort === 'weak' ? 'selected' : ''}>薄弱优先</option>
       </select>
     </div>
     <div class="filter-summary"><b data-learn-count>${items.length}</b> 个结果 <span>·</span> 每页 24 章，按难度排序；点击卡片查看完整解析</div>
@@ -92,6 +106,7 @@ export async function learnView({ query }) {
   const count = el.querySelector('[data-learn-count]');
   const search = el.querySelector('[data-learn-search]');
   const levelSelect = el.querySelector('[data-level]');
+  levelSelect.value = String(state.level);
   const urgencySelect = el.querySelector('[data-urgency]');
   const sortSelect = el.querySelector('[data-sort]');
   const chapterChips = el.querySelector('[data-chapter-chips]');
@@ -173,10 +188,15 @@ export async function learnView({ query }) {
       if (item && item.preview?.rhythm) setupMiniECG(canvas, item.preview);
     });
     pager.innerHTML = `<div class="pager-info">第 <b>${state.page}</b> / ${totalPages} 页 · 共 ${list.length} 章</div><div class="row-wrap" style="gap:6px"><button class="btn btn-ghost btn-sm" type="button" data-page-prev ${state.page <= 1 ? 'disabled' : ''}>上一页</button><button class="btn btn-ghost btn-sm" type="button" data-page-next ${state.page >= totalPages ? 'disabled' : ''}>下一页</button></div>`;
-    pager.querySelector('[data-page-prev]')?.addEventListener('click', () => { state.page -= 1; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
-    pager.querySelector('[data-page-next]')?.addEventListener('click', () => { state.page += 1; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+    pager.querySelector('[data-page-prev]')?.addEventListener('click', () => { state.page -= 1; saveState(); render(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+    pager.querySelector('[data-page-next]')?.addEventListener('click', () => { state.page += 1; saveState(); render(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+    saveState();
+    if (firstRender) {
+      firstRender = false;
+      if (savedScroll > 0) requestAnimationFrame(() => window.scrollTo({ top: savedScroll, behavior: 'auto' }));
+    }
   };
-  const resetPage = () => { state.page = 1; };
+  const resetPage = () => { state.page = 1; saveState(); };
 
   search.addEventListener('input', () => {
     state.q = search.value.trim();
@@ -185,6 +205,7 @@ export async function learnView({ query }) {
   });
   levelSelect.addEventListener('change', () => {
     state.level = Number(levelSelect.value) || 0;
+    try { localStorage.setItem('ecg-learn-level', String(state.level)); } catch { /* ignore */ }
     resetPage();
     render();
   });
@@ -220,6 +241,9 @@ export async function learnView({ query }) {
   });
   chapterChips.querySelectorAll('[data-chapter]').forEach((chip) => {
     chip.classList.toggle('active', chip.dataset.chapter === state.chapter);
+  });
+  grid.addEventListener('click', (event) => {
+    if (event.target.closest('a.diagnosis-card')) saveState();
   });
   render();
   return { el };

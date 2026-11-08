@@ -38,6 +38,7 @@ try {
         assert($view['monitor']['rhythm'] === 'vf');
         assert($view['vitals']['pulse'] === false);
         $GLOBALS['vfSession'] = $view['sessionId'];
+        $GLOBALS['vfSeed'] = $view['monitor']['seed'];
     });
 
     check('IV access takes time and blocks drugs while pending', function () use ($userId) {
@@ -52,6 +53,7 @@ try {
         pauseFor(6.5);
         $view = SimEngine::state($userId, $id);
         assert($view['flags']['iv'] === true, 'IV should become ready after ~6s');
+        assert($view['monitor']['seed'] !== $GLOBALS['vfSeed'], 'VF waveform seed should evolve over time');
         $GLOBALS['vfReady'] = true;
     });
 
@@ -171,6 +173,38 @@ try {
         $debrief = SimEngine::debrief($userId, (int) $view['runId']);
         assert($debrief['run']['score'] <= 35);
         assert($debrief['run']['grade'] === 'D');
+    });
+
+    check('a short pause for shock is not flagged as prolonged no-CPR', function () use ($userId) {
+        $view = SimEngine::start($userId, 'vf-arrest');
+        $id = $view['sessionId'];
+        SimEngine::action($userId, $id, 'cpr_start', []);
+        SimEngine::action($userId, $id, 'cpr_stop', []);
+        $view = SimEngine::state($userId, $id);
+        $labels = implode(' | ', array_column($view['events'], 'label'));
+        assert(!str_contains($labels, '超过 30 秒未进行有效胸外按压'), 'short pause must not trigger false no-CPR event');
+        assert(!str_contains($labels, '长时间未进行胸外按压'), 'short pause must not trigger no-CPR penalty');
+        SimEngine::action($userId, $id, 'finish', []);
+    });
+
+    check('prolonged pulseless arrest without CPR ends in death with SpO2 0', function () use ($userId) {
+        global $pdo;
+        $view = SimEngine::start($userId, 'vf-arrest');
+        $id = $view['sessionId'];
+        $stmt = $pdo->prepare('SELECT state FROM sim_sessions WHERE id = ?');
+        $stmt->execute([$id]);
+        $state = json_decode((string) $stmt->fetchColumn(), true);
+        $old = microtime(true) - 100;
+        $state['startedAt'] = $old;
+        $state['lastPhysiologyAt'] = $old;
+        $pdo->prepare('UPDATE sim_sessions SET state = ?, started_at = FROM_UNIXTIME(?) WHERE id = ?')
+            ->execute([json_encode($state, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR), $old, $id]);
+        $view = SimEngine::state($userId, $id);
+        assert($view['status'] === 'ended');
+        assert($view['outcome'] === 'timeout');
+        assert($view['rhythm'] === 'asystole');
+        assert($view['vitals']['spo2'] === 0);
+        assert($view['score'] <= 35);
     });
 
     check('shock on bradycardia is rejected with penalty event', function () use ($userId) {
