@@ -3,7 +3,7 @@ import { store } from '../store.js';
 import { navigate } from '../router.js';
 import { recordAttempt } from '../study-store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ai';
+const __asset = __isNode ? '' : '?v=20261108aj';
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
 const state = {
@@ -164,6 +164,7 @@ export async function examView() {
   const el = document.createElement('div');
   el.className = 'page exam-page';
   try {
+    try { await store.getDiagnoses(); } catch { /* offline: use IDs as fallback */ }
     state.status = await api.learningStatus();
     el.innerHTML = homeMarkup();
     bindHome(el);

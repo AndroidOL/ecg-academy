@@ -8,7 +8,7 @@
 - 测试模块改为答对 +1、答错 -10；当日 ≤ -100 锁定次日；练习页新增今日/总榜（所有用户）。
 - 新增 `learning_events` / `learning_status` / `practice_daily_scores` 表与 `app/Learning.php`、`app/SectionBank.php`。
 - 管理员用户管理新增手动创建用户（用户名、显示名、初始密码、管理员、AI 额度）。
-- 资源版本 `20261108ai`。
+- 资源版本 `20261108aj`。
 
 ## 1.2.18 — 2026-11-08
 
