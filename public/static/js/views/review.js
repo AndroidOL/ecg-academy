@@ -3,10 +3,12 @@ import {
   rateReview, toggleFavorite, exportStudyData, importStudyData, clearLocalStudyData,
 } from '../study-store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ax';
+const __asset = __isNode ? '' : '?v=20261108ay';
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
+const { streamAi } = await import(`../ai-stream.js${__asset}`);
+const { renderMarkdown } = await import(`../markdown.js${__asset}`);
 
 function dueLabel(entry) {
   const due = Number(entry.due || 0);
@@ -47,12 +49,13 @@ export async function reviewView() {
       </header>
       <div class="review-toolbar">
         <div class="segmented" role="tablist" aria-label="复习分类"><button class="segment ${tab === 'due' ? 'active' : ''}" type="button" data-review-tab="due">今日待复习</button><button class="segment ${tab === 'wrong' ? 'active' : ''}" type="button" data-review-tab="wrong">错题本</button><button class="segment ${tab === 'favorites' ? 'active' : ''}" type="button" data-review-tab="favorites">收藏</button></div>
-        <div class="row-wrap"><button class="btn btn-primary btn-sm" type="button" data-smart-quiz ${weak.length ? '' : 'disabled'}>${icon('sparkles', 14)} 按薄弱诊断组卷</button><button class="btn btn-secondary btn-sm" type="button" data-export>${icon('arrowUpRight', 13)} 导出本地记录</button><label class="btn btn-ghost btn-sm" for="review-import">导入</label><input id="review-import" type="file" accept="application/json" hidden></div>
+        <div class="row-wrap"><button class="btn btn-primary btn-sm" type="button" data-smart-quiz ${weak.length ? '' : 'disabled'}>${icon('sparkles', 14)} 按薄弱诊断组卷</button><button class="btn btn-secondary btn-sm" type="button" data-review-ai>${icon('sparkles', 14)} AI 分析薄弱项</button><button class="btn btn-secondary btn-sm" type="button" data-export>${icon('arrowUpRight', 13)} 导出本地记录</button><label class="btn btn-ghost btn-sm" for="review-import">导入</label><input id="review-import" type="file" accept="application/json" hidden></div>
       </div>
+      <div class="card card-pad ai-answer" data-review-ai-panel hidden></div>
       <div class="review-list">
         ${entries.length ? entries.map((entry) => entryCard(entry, tab)).join('') : `<div class="learn-empty"><b>${tab === 'favorites' ? '还没有收藏' : tab === 'due' ? '今日复习已清空' : '还没有错题'}</b><span>${tab === 'favorites' ? '在文章右侧点击“收藏”，把重要章节留在这里。' : tab === 'due' ? '完成一次错题自评或做一局练习，系统会安排下一次复习。' : '做一局判读练习，答错的诊断会自动进入错题本。'}</span><a class="btn btn-primary btn-sm" href="#/practice" style="margin-top:12px">开始练习</a></div>`}
       </div>
-      ${summary.total ? `<div class="review-footer"><span class="muted">复习记录仅存在当前浏览器；清除站点数据会丢失。</span><button class="btn btn-ghost btn-xs" type="button" data-clear>清空本地学习记录</button></div>` : ''}
+      ${summary.total ? `<div class="review-footer"><span class="muted">${store.user?.isGuest ? '复习记录仅存在当前浏览器；清除站点数据会丢失。' : '复习记录已同步到你的账号。'}</span><button class="btn btn-ghost btn-xs" type="button" data-clear>清空本地学习记录</button></div>` : ''}
       ${medicalDisclaimer()}`;
     el.querySelectorAll('[data-review-tab]').forEach((button) => button.addEventListener('click', () => { tab = button.dataset.reviewTab; render(); }));
     el.querySelectorAll('[data-rate]').forEach((button) => button.addEventListener('click', () => {
@@ -68,6 +71,37 @@ export async function reviewView() {
       const focus = weakDiagnosisIds(8);
       if (!focus.length) return toast('暂无可组卷的薄弱诊断', 'warn');
       navigate(`/practice?focus=${encodeURIComponent(focus.join(','))}&auto=1&level=2`);
+    });
+    el.querySelector('[data-review-ai]')?.addEventListener('click', async (event) => {
+      const button = event.currentTarget;
+      const panel = el.querySelector('[data-review-ai-panel]');
+      const entries = reviewEntries(50).filter((entry) => Number(entry.wrong || 0) > 0 || Number(entry.slow || 0) > 0);
+      if (!entries.length) return toast('还没有足够的错题记录，先做一局练习', 'warn');
+      panel.hidden = false;
+      panel.innerHTML = `<h4>AI 薄弱项分析</h4><div class="ai-context"><span>已附带 ${entries.length} 条错题统计</span></div><p class="ai-stream-text ai-thinking">正在生成…</p><div class="ai-meta"></div>`;
+      const streamHost = panel.querySelector('[data-ai-stream-text]') || panel.querySelector('.ai-stream-text');
+      const meta = panel.querySelector('.ai-meta');
+      button.disabled = true;
+      try {
+        await streamAi({
+          mode: 'review',
+          items: entries.map((entry) => ({ name: entry.name, chapter: entry.chapter, wrong: entry.wrong, slow: entry.slow || 0, lapses: entry.lapses || 0 })),
+        }, {
+          onDelta: (chunk, text) => { streamHost.classList.remove('ai-thinking'); streamHost.textContent = text; },
+          onDone: (done, text) => {
+            const heading = panel.querySelector('h4');
+            if (heading) heading.textContent = done?.fallback ? '本地薄弱项分析' : 'AI 薄弱项分析';
+            streamHost.remove();
+            panel.insertAdjacentHTML('beforeend', renderMarkdown(text));
+            if (done?.cost) meta.textContent = `${done.cost.model || ''} · ${done.cost.prompt || 0}→${done.cost.completion || 0} tokens`;
+          },
+        });
+      } catch (error) {
+        streamHost.classList.remove('ai-thinking');
+        streamHost.textContent = error.message || '分析失败';
+      } finally {
+        button.disabled = false;
+      }
     });
     el.querySelector('[data-export]')?.addEventListener('click', () => {
       const blob = new Blob([JSON.stringify(exportStudyData(), null, 2)], { type: 'application/json' });

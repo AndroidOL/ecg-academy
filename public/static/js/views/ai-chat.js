@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ax';
+const __asset = __isNode ? '' : '?v=20261108ay';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, escapeHtml, toast, openModal } = await import(`../ui.js${__asset}`);
@@ -131,5 +131,5 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
   el.querySelectorAll('[data-ai-suggestion]').forEach((button) => {
     button.addEventListener('click', () => submit(button.dataset.aiSuggestion));
   });
-  return { el, focus: () => input.focus() };
+  return { el, focus: () => input.focus(), ask: (text) => submit(String(text || '')) };
 }

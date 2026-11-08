@@ -465,6 +465,22 @@ final class Ai
         } elseif ($mode === 'explain') {
             $built = self::explainMessages($userId, (int) ($input['attemptId'] ?? 0), (string) ($input['question'] ?? ''));
             $context = $built['context'] ?? [];
+        } elseif ($mode === 'review') {
+            $items = [];
+            foreach (array_slice((array) ($input['items'] ?? []), 0, 50) as $item) {
+                if (!is_array($item)) continue;
+                $name = mb_substr(trim((string) ($item['name'] ?? '')), 0, 40, 'UTF-8');
+                if ($name === '') continue;
+                $items[] = [
+                    'name' => $name,
+                    'chapter' => mb_substr((string) ($item['chapter'] ?? ''), 0, 40, 'UTF-8'),
+                    'wrong' => max(0, (int) ($item['wrong'] ?? 0)),
+                    'slow' => max(0, (int) ($item['slow'] ?? 0)),
+                    'lapses' => max(0, (int) ($item['lapses'] ?? 0)),
+                ];
+            }
+            $built = self::reviewMessages($items);
+            $context = ['错题条目：' . count($items)];
         } else {
             throw new ApiError(422, 'invalid_mode', '不支持的 AI 模式');
         }
@@ -494,6 +510,28 @@ final class Ai
         $cost = self::recordUsage($userId, $mode, $result, $source);
         self::sse('done', ['source' => $source, 'fallback' => false, 'usage' => $result['usage'], 'cost' => $cost]);
         exit;
+    }
+
+    private static function reviewMessages(array $items): array
+    {
+        $lines = array_map(static fn (array $item): string => "- {$item['name']}（{$item['chapter']}）：错 {$item['wrong']} · 不熟练 {$item['slow']} · 遗忘 {$item['lapses']}", $items);
+        $summary = $lines !== [] ? implode("\n", $lines) : '暂无错题记录。';
+        return [
+            'messages' => [
+                ['role' => 'system', 'content' => self::systemPrompt()],
+                ['role' => 'user', 'content' => "学生错题本统计：\n{$summary}\n\n请用中文输出：1) 最需要优先巩固的 2–3 类问题；2) 每类对应的判读路径；3) 一个三天可执行的复习计划。不超过 500 字。"],
+            ],
+            'fallback' => self::localReviewAnalysis($items),
+        ];
+    }
+
+    private static function localReviewAnalysis(array $items): string
+    {
+        if ($items === []) return '还没有足够的错题记录。先完成一局判读练习，再回来分析。';
+        usort($items, static fn (array $a, array $b): int => (($b['wrong'] + $b['slow'] * 0.5 + $b['lapses']) <=> ($a['wrong'] + $a['slow'] * 0.5 + $a['lapses'])));
+        $top = array_slice($items, 0, 3);
+        $names = implode('、', array_column($top, 'name'));
+        return "本地统计（未配置 AI）：最需要巩固的是 {$names}。建议按“节律 → 频率 → 间期 → ST-T → 鉴别”逐项复述这些诊断的关键线索，并在 3 天内各完成一次重读 + 5 题复习；对标记为不熟练的题目，先把判读步骤写出来再作答。";
     }
 
     private static function streamProvider(array $messages, float $temperature, ?array $byok): array
@@ -614,9 +652,19 @@ final class Ai
         $completion = max(0, (int) ($usage['completion'] ?? 0));
         $model = (string) ($result['model'] ?? '');
         $provider = (string) ($result['provider'] ?? '');
-        $pricing = self::pricing();
-        $rate = $pricing[$model] ?? $pricing['*'] ?? ['input' => 0, 'output' => 0];
-        $discount = self::discountNow();
+        $providerConfig = null;
+        foreach (Settings::aiProviders() as $candidate) {
+            if ((string) ($candidate['name'] ?? '') === $provider) { $providerConfig = $candidate; break; }
+        }
+        $entry = is_array($providerConfig['model_pricing'][$model] ?? null) ? $providerConfig['model_pricing'][$model] : null;
+        if ($entry !== null) {
+            $rate = ['input' => (float) ($entry['input'] ?? 0), 'output' => (float) ($entry['output'] ?? 0)];
+            $discount = self::activeDiscountFor($entry['discount'] ?? null);
+        } else {
+            $pricing = self::pricing();
+            $rate = $pricing[$model] ?? $pricing['*'] ?? ['input' => 0, 'output' => 0];
+            $discount = self::discountNow();
+        }
         $ratio = $discount ? max(0.0, min(1.0, (float) ($discount['ratio'] ?? 1))) : 1.0;
         $cost = ((($prompt / 1000000) * (float) ($rate['input'] ?? 0)) + (($completion / 1000000) * (float) ($rate['output'] ?? 0))) * $ratio;
         $micro = (int) round($cost * 1000000);
@@ -643,6 +691,17 @@ final class Ai
     {
         $pricing = Settings::get('ai.pricing', []);
         return is_array($pricing) ? $pricing : [];
+    }
+
+    private static function activeDiscountFor(?array $discount): ?array
+    {
+        if (!is_array($discount)) return null;
+        $from = self::minutes((string) ($discount['from'] ?? ''));
+        $to = self::minutes((string) ($discount['to'] ?? ''));
+        if ($from === null || $to === null) return null;
+        $now = (int) date('G') * 60 + (int) date('i');
+        $match = $from <= $to ? ($now >= $from && $now < $to) : ($now >= $from || $now < $to);
+        return $match ? $discount : null;
     }
 
     private static function discountNow(): ?array
