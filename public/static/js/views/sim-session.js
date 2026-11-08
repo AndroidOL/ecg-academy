@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108az';
+const __asset = __isNode ? '' : '?v=20261108ba';
 const { api } = await import(`../api.js${__asset}`);
 const { byokPayload, hasByok } = await import(`../byok.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -227,7 +227,7 @@ export async function simSessionView({ params }) {
     if (!host.dataset.loopBound) {
       host.dataset.loopBound = '1';
       host.addEventListener('ecg:ended', () => {
-        if (!destroyed && viewer && state?.status === 'active') viewer.play(2);
+        if (!destroyed && viewer && state?.status === 'active') viewer.play(1);
       });
     }
   }

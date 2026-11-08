@@ -1,6 +1,6 @@
 
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108az';
+const __asset = __isNode ? '' : '?v=20261108ba';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -187,7 +187,7 @@ function mountQuestionViewer(el) {
   if (!question || !root) return;
   state.viewMode = 'rhythm';
   state.viewer = mountECG(root, question.spec, {
-    mode: 'rhythm', speed: 2, showAnnotations: false, showSummary: false, autoPlay: false,
+    mode: 'rhythm', speed: 1, showAnnotations: false, showSummary: false, autoPlay: false,
   });
   root.addEventListener('ecg:play', syncPlayControl);
   root.addEventListener('ecg:pause', syncPlayControl);
@@ -243,7 +243,7 @@ function bindRunner(el) {
   el.querySelector('[data-daily-play]')?.addEventListener('click', () => {
     if (!state.viewer) return;
     if (state.viewer.playing) state.viewer.pause();
-    else state.viewer.play(2);
+    else state.viewer.play(1);
   });
   el.querySelector('[data-daily-12lead]')?.addEventListener('click', (event) => {
     state.viewMode = state.viewMode === '12lead' ? 'rhythm' : '12lead';

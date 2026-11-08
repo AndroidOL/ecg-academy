@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108az';
+const __asset = __isNode ? '' : '?v=20261108ba';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, escapeHtml, toast, openModal } = await import(`../ui.js${__asset}`);
@@ -81,7 +81,7 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
     addBubble(message, 'user');
     const bubble = addBubble('', 'assistant', 'streaming');
     let contextHtml = contextLine(['已附带本页上下文']);
-    bubble.innerHTML = `<div class="ai-context">${contextHtml}</div><p class="ai-stream-text ai-thinking">正在生成…</p>`;
+    bubble.innerHTML = `<div class="ai-context">${contextHtml}</div><div class="ai-stream-text ai-thinking">正在生成…</div>`;
     busy = true;
     send.disabled = true;
     try {
@@ -94,7 +94,7 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
         },
         onDelta: (chunk, text) => {
           const host = bubble.querySelector('.ai-stream-text');
-          if (host) { host.classList.remove('ai-thinking'); host.textContent = text; }
+          if (host) { host.classList.remove('ai-thinking'); host.innerHTML = renderMarkdown(text); }
           messages.scrollTop = messages.scrollHeight;
         },
         onDone: (done, text) => {

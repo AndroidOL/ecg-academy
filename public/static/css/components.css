@@ -295,8 +295,8 @@
 .key-number-value small { margin-left: 2px; color: var(--muted); font-size: 10px; font-weight: 500; }
 .key-number-label { margin-top: 3px; color: var(--muted); font-size: 10.5px; }
 
-.progress { height: 7px; overflow: hidden; border-radius: var(--radius-pill); background: var(--surface-3); }
-.progress-bar { height: 100%; border-radius: inherit; background: var(--brand); transition: width var(--t-slow) var(--ease); }
+.progress { display: block; height: 7px; overflow: hidden; border-radius: var(--radius-pill); background: var(--surface-3); }
+.progress-bar { display: block; height: 100%; border-radius: inherit; background: var(--brand); transition: width var(--t-slow) var(--ease); }
 .progress-bar.accent { background: var(--accent); }
 
 /* ---------- form ---------- */

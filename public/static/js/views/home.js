@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108az';
+const __asset = __isNode ? '' : '?v=20261108ba';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
@@ -157,7 +157,7 @@ export async function homeView() {
   let viewer = null;
   if (viewerRoot) {
     viewer = mountECG(viewerRoot, { ...spec, duration: 8, annotations: spec.annotations || FALLBACK_SPEC.annotations }, {
-      mode: 'rhythm', speed: 2, showAnnotations: true, autoPlay: true,
+      mode: 'rhythm', speed: 1, showAnnotations: true, autoPlay: true,
       playbackMode: 'sweep', loop: true,
     });
     const playButton = el.querySelector('[data-hero-play]');
@@ -170,7 +170,7 @@ export async function homeView() {
     viewerRoot.addEventListener('ecg:ended', syncPlayButton);
     playButton?.addEventListener('click', () => {
       if (viewer.playing) viewer.pause();
-      else viewer.play(2);
+      else viewer.play(1);
       syncPlayButton();
     });
     el.querySelectorAll('[data-hero-playback]').forEach((button) => {

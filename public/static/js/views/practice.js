@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108az';
+const __asset = __isNode ? '' : '?v=20261108ba';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -418,7 +418,7 @@ function renderQuestion(el) {
     </div>`;
 
   const viewerRoot = el.querySelector('#quiz-ecg-canvas');
-  state.viewer = mountECG(viewerRoot, quiz.spec, { mode: 'rhythm', speed: 2, showAnnotations: false, showSummary: false, autoPlay: false });
+  state.viewer = mountECG(viewerRoot, quiz.spec, { mode: 'rhythm', speed: 1, showAnnotations: false, showSummary: false, autoPlay: false });
   const playControl = el.querySelector('[data-quiz-play]');
   const syncPlayControl = () => {
     if (playControl) playControl.textContent = state.viewer?.playing ? '暂停' : '播放';
@@ -429,7 +429,7 @@ function renderQuestion(el) {
   playControl?.addEventListener('click', () => {
     if (!state.viewer) return;
     if (state.viewer.playing) state.viewer.pause();
-    else state.viewer.play(2);
+    else state.viewer.play(1);
     syncPlayControl();
   });
   const feedback = el.querySelector('#quiz-feedback');
@@ -583,7 +583,7 @@ function renderQuestion(el) {
     const runAi = async (questionText, button, title) => {
       if (!aiUiAvailable() || !state.result?.attemptId) return;
       const panel = feedback.querySelector('[data-ai-explain-panel]');
-      panel.innerHTML = `<div class="explain-block ai-answer"><h4>${escapeHtml(title)}</h4>${questionText ? `<p class="ai-question">你的追问：${escapeHtml(questionText)}</p>` : ''}<div class="ai-context" data-ai-context></div><p class="ai-stream-text ai-thinking" data-ai-stream>正在生成…</p><div class="ai-meta" data-ai-cost></div></div>`;
+      panel.innerHTML = `<div class="explain-block ai-answer"><h4>${escapeHtml(title)}</h4>${questionText ? `<p class="ai-question">你的追问：${escapeHtml(questionText)}</p>` : ''}<div class="ai-context" data-ai-context></div><div class="ai-stream-text ai-thinking" data-ai-stream>正在生成…</div><div class="ai-meta" data-ai-cost></div></div>`;
       const streamHost = panel.querySelector('[data-ai-stream]');
       const contextHost = panel.querySelector('[data-ai-context]');
       const costHost = panel.querySelector('[data-ai-cost]');
@@ -595,7 +595,7 @@ function renderQuestion(el) {
           },
           onDelta: (chunk, text) => {
             streamHost.classList.remove('ai-thinking');
-            streamHost.textContent = text;
+            streamHost.innerHTML = renderMarkdown(text);
           },
           onDone: (done, text) => {
             const block = panel.querySelector('.explain-block');

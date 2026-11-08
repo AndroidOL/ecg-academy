@@ -3,7 +3,7 @@ import {
   rateReview, toggleFavorite, exportStudyData, importStudyData, clearLocalStudyData,
 } from '../study-store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108az';
+const __asset = __isNode ? '' : '?v=20261108ba';
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
@@ -78,7 +78,7 @@ export async function reviewView() {
       const entries = reviewEntries(50).filter((entry) => Number(entry.wrong || 0) > 0 || Number(entry.slow || 0) > 0);
       if (!entries.length) return toast('还没有足够的错题记录，先做一局练习', 'warn');
       panel.hidden = false;
-      panel.innerHTML = `<h4>AI 薄弱项分析</h4><div class="ai-context"><span>已附带 ${entries.length} 条错题统计</span></div><p class="ai-stream-text ai-thinking">正在生成…</p><div class="ai-meta"></div>`;
+      panel.innerHTML = `<h4>AI 薄弱项分析</h4><div class="ai-context"><span>已附带 ${entries.length} 条错题统计</span></div><div class="ai-stream-text ai-thinking">正在生成…</div><div class="ai-meta"></div>`;
       const streamHost = panel.querySelector('[data-ai-stream-text]') || panel.querySelector('.ai-stream-text');
       const meta = panel.querySelector('.ai-meta');
       button.disabled = true;
@@ -87,7 +87,7 @@ export async function reviewView() {
           mode: 'review',
           items: entries.map((entry) => ({ name: entry.name, chapter: entry.chapter, wrong: entry.wrong, slow: entry.slow || 0, lapses: entry.lapses || 0 })),
         }, {
-          onDelta: (chunk, text) => { streamHost.classList.remove('ai-thinking'); streamHost.textContent = text; },
+          onDelta: (chunk, text) => { streamHost.classList.remove('ai-thinking'); streamHost.innerHTML = renderMarkdown(text); },
           onDone: (done, text) => {
             const heading = panel.querySelector('h4');
             if (heading) heading.textContent = done?.fallback ? '本地薄弱项分析' : 'AI 薄弱项分析';

@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108az';
+const __asset = __isNode ? '' : '?v=20261108ba';
 const { ECGSession, LEAD_NAMES } = await import(`./ecg-engine.js${__asset}`);
 
 const COLUMNS = [
@@ -27,7 +27,7 @@ export class ECGViewer {
     this.options = {
       mode: 'rhythm',
       lead: spec.primaryLead || 'II',
-      speed: 2,
+      speed: 1,
       showAnnotations: true,
       showSummary: true,
       mini: false,
@@ -269,7 +269,7 @@ export class ECGViewer {
   }
 
   setSpeed(speed) {
-    this.options.speed = Math.max(0.5, Math.min(6, Number(speed) || 1));
+    this.options.speed = Math.max(0.25, Math.min(4, Number(speed) || 1));
     this.scrollLast = performance.now();
   }
 
@@ -303,7 +303,7 @@ export class ECGViewer {
 
   play(speed = this.options.speed) {
     if (this.options.mini) return;
-    this.options.speed = Math.max(0.5, Math.min(6, Number(speed) || this.options.speed || 1));
+    this.options.speed = Math.max(0.25, Math.min(4, Number(speed) || this.options.speed || 1));
     cancelAnimationFrame(this.raf);
     this.playing = true;
     this.scrollLast = performance.now();

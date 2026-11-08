@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108az';
+const __asset = __isNode ? '' : '?v=20261108ba';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
@@ -259,8 +259,8 @@ export async function labView() {
   const iiHost = el.querySelector('#lab-ecg-ii');
   const v3Host = el.querySelector('#lab-ecg-v3');
   const initialSpec = buildSpec(state.k, state.ca, state.mg);
-  viewerII = mountECG(iiHost, initialSpec, { mode: 'rhythm', lead: 'II', speed: 2, showAnnotations: true, autoPlay: false, reveal: false });
-  viewerV3 = mountECG(v3Host, initialSpec, { mode: 'rhythm', lead: 'V3', speed: 2, showAnnotations: true, autoPlay: false, reveal: false });
+  viewerII = mountECG(iiHost, initialSpec, { mode: 'rhythm', lead: 'II', speed: 1, showAnnotations: true, autoPlay: false, reveal: false });
+  viewerV3 = mountECG(v3Host, initialSpec, { mode: 'rhythm', lead: 'V3', speed: 1, showAnnotations: true, autoPlay: false, reveal: false });
   viewerV3.setLead('V3');
   const twelveHost = el.querySelector('#lab-ecg-12lead');
   viewer12 = mountECG(twelveHost, initialSpec, { mode: '12lead', speed: 1, showAnnotations: false, showSummary: false, autoPlay: false, twelveLayout: 'grid', twelveRhythm: true, reveal: false });
@@ -286,7 +286,7 @@ export async function labView() {
   playButton?.addEventListener('click', () => {
     const playing = viewerII?.playing;
     if (playing) { viewerII.pause(); viewerV3?.pause(); viewer12?.pause(); playButton.innerHTML = `${icon('play', 12)} 播放`; }
-    else { viewerII?.play(2); viewerV3?.play(2); viewer12?.play(2); playButton.innerHTML = `${icon('pause', 12)} 暂停`; }
+    else { viewerII?.play(1); viewerV3?.play(1); viewer12?.play(1); playButton.innerHTML = `${icon('pause', 12)} 暂停`; }
   });
   el.addEventListener('click', (event) => {
     const preset = event.target.closest('[data-preset]');
