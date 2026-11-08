@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108at';
+const __asset = __isNode ? '' : '?v=20261108au';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
@@ -150,8 +150,7 @@ export async function homeView() {
         <div class="row-wrap"><a class="btn btn-primary" href="#/practice">${icon('activity', 16)} 做一道题</a><a class="btn btn-secondary" href="#/me">${icon('user', 16)} ${store.user?.isGuest === false ? '查看我的进度' : '保存学习进度'}</a></div>
       </div>
     </section>
-    ${medicalDisclaimer()}
-    <footer class="page-footer"><strong>心迹 ECG Lab</strong> · 免费开源心电图教学项目 · 内容持续迭代 · ${new Date().getFullYear()}</footer>`;
+    ${medicalDisclaimer()}`;
 
   const spec = heroDiagnosis?.ecg || FALLBACK_SPEC;
   const viewerRoot = el.querySelector('#hero-ecg');

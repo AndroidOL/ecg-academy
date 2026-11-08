@@ -988,3 +988,23 @@
 .article-references li { margin: 4px 0; font-size: 12.5px; line-height: 1.7; color: var(--ink-2); }
 .article-references-note { margin-top: 8px; font-size: 10.5px; }
 .vector-extra-single { grid-template-columns: minmax(0, 1fr); }
+
+/* ---------- wide screens: use the available width ---------- */
+@media (min-width: 1440px) {
+  :root { --content-max: 1380px; }
+  .learn-hero-copy { max-width: 780px; }
+  .daily-page { max-width: 1280px; }
+  .vector-page { max-width: 1360px; }
+}
+@media (min-width: 1680px) {
+  :root { --content-max: 1540px; }
+  .daily-page { max-width: 1400px; }
+  .vector-page { max-width: 1500px; }
+  .visual-grid { grid-template-columns: minmax(0, 1fr) 390px; }
+  .article-layout { grid-template-columns: minmax(0, 1fr) 330px; }
+}
+@media (min-width: 1920px) {
+  :root { --content-max: 1680px; }
+  .vector-page { max-width: 1620px; }
+  .article-layout { grid-template-columns: minmax(0, 1fr) 360px; }
+}
