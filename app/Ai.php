@@ -136,7 +136,7 @@ final class Ai
         return ['text' => $text, 'source' => 'ai', 'fallback' => false];
     }
 
-    public static function explain(int $userId, int $attemptId): array
+    public static function explain(int $userId, int $attemptId, string $userQuestion = ''): array
     {
         if (!self::allowedForUser($userId)) throw new ApiError(403, 'ai_guest_disabled', '当前站点未开放未登录用户使用 AI');
         $stmt = Db::pdo()->prepare('SELECT * FROM quiz_attempts WHERE id = ? AND user_id = ? AND status = "answered" LIMIT 1');
@@ -176,7 +176,8 @@ final class Ai
             . '正确答案：' . implode('、', $correctNames) . "\n"
             . '是否完全正确：' . ($attempt['is_correct'] ? '是' : '否') . "\n"
             . "心电图摘要：{$ecgSummary}\n"
-            . "题目解析上下文：\n" . implode("\n---\n", $context);
+            . "题目解析上下文：\n" . implode("\n---\n", $context)
+            . ($userQuestion !== '' ? "\n学生追问：" . mb_substr(trim($userQuestion), 0, 300, 'UTF-8') : '');
         $messages = [
             ['role' => 'system', 'content' => self::systemPrompt() . "\n你会收到题目、选项、学生选择和心电图摘要。先判断学生错在哪一步，再解释；不要只复述正确答案。"],
             ['role' => 'user', 'content' => $userText . "\n\n请针对学生的选择解释错因或确认正确思路；必须指出最关键的心电图线索，给出下一次识别的动作；不超过 450 字。"],

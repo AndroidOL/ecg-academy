@@ -114,7 +114,7 @@ export const api = {
   adminAudit: () => request('/api/admin/audit'),
   aiStatus: () => request('/api/ai/status'),
   aiChat: (message, diagnosisId) => request('/api/ai/chat', { method: 'POST', body: { message, diagnosisId } }),
-  aiExplain: (attemptId) => request('/api/ai/explain', { method: 'POST', body: { attemptId } }),
+  aiExplain: (attemptId, question = '') => request('/api/ai/explain', { method: 'POST', body: { attemptId, question } }),
   aiStudyPlan: () => request('/api/ai/study-plan', { method: 'POST', body: {} }),
   aiSimReview: (runId) => request('/api/ai/sim-review', { method: 'POST', body: { runId } }),
 };

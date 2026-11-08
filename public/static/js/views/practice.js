@@ -2,7 +2,7 @@ import { api } from '../api.js';
 import { store } from '../store.js';
 import { navigate } from '../router.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108o';
+const __asset = __isNode ? '' : '?v=20261108p';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, toast, setButtonLoading, fmtDuration, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
@@ -384,6 +384,24 @@ function renderQuestion(el) {
         setButtonLoading(next, false);
       }
     });
+    const ask = async (questionText) => {
+      if (store.ai?.allowed === false) return;
+      const panel = feedback.querySelector('[data-ai-explain-panel]');
+      try {
+        const result = await api.aiExplain(state.result.attemptId, questionText);
+        panel.innerHTML = `<div class="explain-block"><h4>${result.source === 'ai' ? 'AI 回答' : '本地解析'}</h4><p data-ai-text></p></div>`;
+        panel.querySelector('[data-ai-text]').textContent = result.text;
+      } catch (error) {
+        panel.innerHTML = `<div class="explain-block"><p style="color:var(--danger)">${escapeHtml(error.message || 'AI 解析失败')}</p></div>`;
+      }
+    };
+    feedback.querySelector('[data-ai-ask]')?.addEventListener('click', async (event) => {
+      const button = event.currentTarget;
+      if (store.ai?.allowed === false) return;
+      setButtonLoading(button, true, 'AI 分析中');
+      await ask(feedback.querySelector('[data-ai-question]')?.value || '');
+      setButtonLoading(button, false);
+    });
     feedback.querySelector('[data-ai-explain]')?.addEventListener('click', async (event) => { if (store.ai?.allowed === false) return;
       const btn = event.currentTarget;
       const panel = feedback.querySelector('[data-ai-explain-panel]');
@@ -411,6 +429,7 @@ function feedbackHtml(result, multiple) {
     <div class="feedback-head"><span class="feedback-icon ${tone === 'bad' ? 'bad' : ''}">${icon(result.correct ? 'check' : 'x', 16)}</span><div><div class="feedback-title">${title}</div><div class="muted" style="font-size:10px">得分 ${result.score} · 经验 +${result.xp}${answer ? ` · 正确答案：${escapeHtml(answer)}` : ''}</div></div></div>
     <p class="feedback-text">${escapeHtml(result.localExplanation || '')}</p>
     ${(result.explanation || []).map((item) => `<div class="explain-block"><h4>${escapeHtml(item.name)}</h4><p>${escapeHtml(item.specificity || item.oneLiner || '')}</p><ul>${(item.criteria || []).map((c) => `<li>${escapeHtml(c)}</li>`).join('')}</ul></div>`).join('')}
+    ${store.ai?.allowed !== false ? `<div class="ai-ask-row"><input class="input" data-ai-question maxlength="300" placeholder="追问 AI：为什么排除某个选项？"><button class="btn btn-secondary btn-sm" type="button" data-ai-ask>${icon('sparkles', 14)} 问 AI</button></div>` : ''}
     <div class="row-wrap" style="margin-top:12px">${store.ai?.allowed !== false ? `<button class="btn btn-secondary btn-sm" type="button" data-ai-explain>${icon('sparkles', 14)} AI 解释错因</button>` : ''}<button class="btn btn-primary btn-sm" type="button" data-next>${icon('arrowRight', 14)} 下一题</button></div>
     <div data-ai-explain-panel></div>
   </div>`;

@@ -245,7 +245,7 @@ final class ApiController
     {
         $user = self::user();
         $input = Http::input();
-        Http::ok(Ai::explain((int) $user['id'], (int) ($input['attemptId'] ?? 0)));
+        Http::ok(Ai::explain((int) $user['id'], (int) ($input['attemptId'] ?? 0), (string) ($input['question'] ?? '')));
     }
 
     public static function aiStudyPlan(array $params = []): void
