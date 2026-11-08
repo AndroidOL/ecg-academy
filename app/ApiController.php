@@ -313,6 +313,26 @@ final class ApiController
         Http::ok(Ai::simReview((int) $user['id'], (int) ($input['runId'] ?? 0), $byok));
     }
 
+    public static function dailyStatus(array $params = []): void
+    {
+        $user = self::user();
+        Http::ok(Daily::status((int) $user['id']));
+    }
+
+    public static function dailyStart(array $params = []): void
+    {
+        $user = self::user();
+        Http::ok(Daily::start((int) $user['id']));
+    }
+
+    public static function dailyComplete(array $params = []): void
+    {
+        $user = self::user();
+        $input = Http::input();
+        $answers = is_array($input['answers'] ?? null) ? $input['answers'] : [];
+        Http::ok(Daily::complete((int) $user['id'], (string) ($input['token'] ?? ''), $answers));
+    }
+
     private static function user(): array
     {
         $user = Auth::user(false);

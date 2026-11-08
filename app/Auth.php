@@ -294,19 +294,26 @@ final class Auth
         $stmt = Db::pdo()->prepare('SELECT diagnosis_id, status, read_at, mastered_at FROM user_progress WHERE user_id = ?');
         $stmt->execute([$guestId]);
         $rows = $stmt->fetchAll();
-        if ($rows === []) {
-            return;
+        if ($rows !== []) {
+            $upsert = Db::pdo()->prepare(
+                'INSERT INTO user_progress (user_id, diagnosis_id, status, read_at, mastered_at)
+                 VALUES (?, ?, ?, ?, ?)
+                 ON DUPLICATE KEY UPDATE
+                   status = IF(VALUES(status) = "mastered" OR status = "mastered", "mastered", "read"),
+                   read_at = COALESCE(read_at, VALUES(read_at)),
+                   mastered_at = COALESCE(mastered_at, VALUES(mastered_at))'
+            );
+            foreach ($rows as $row) {
+                $upsert->execute([$accountId, $row['diagnosis_id'], $row['status'], $row['read_at'], $row['mastered_at']]);
+            }
         }
-        $upsert = Db::pdo()->prepare(
-            'INSERT INTO user_progress (user_id, diagnosis_id, status, read_at, mastered_at)
-             VALUES (?, ?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE
-               status = IF(VALUES(status) = "mastered" OR status = "mastered", "mastered", "read"),
-               read_at = COALESCE(read_at, VALUES(read_at)),
-               mastered_at = COALESCE(mastered_at, VALUES(mastered_at))'
-        );
-        foreach ($rows as $row) {
-            $upsert->execute([$accountId, $row['diagnosis_id'], $row['status'], $row['read_at'], $row['mastered_at']]);
+        try {
+            Db::pdo()->prepare(
+                'INSERT IGNORE INTO daily_results (user_id, day, correct, total, score, xp, time_ms, details, created_at)
+                 SELECT ?, day, correct, total, score, xp, time_ms, details, created_at FROM daily_results WHERE user_id = ?'
+            )->execute([$accountId, $guestId]);
+        } catch (\Throwable $e) {
+            error_log('[auth] daily merge failed: ' . $e->getMessage());
         }
     }
 }

@@ -228,7 +228,7 @@ final class Quiz
         }
     }
 
-    private static function buildOptions(array $primary, ?array $secondary, bool $multiple): array
+    public static function buildOptions(array $primary, ?array $secondary, bool $multiple, string $salt = ''): array
     {
         $all = Content::all();
         $correct = [$primary];
@@ -252,7 +252,12 @@ final class Quiz
             }
         }
         $candidates = array_values(array_unique($candidates));
-        shuffle($candidates);
+        if ($salt !== '') {
+            $rank = static fn (string $id): string => hash('sha256', $salt . '|c|' . $id);
+            usort($candidates, static fn (string $a, string $b): int => strcmp($rank($a), $rank($b)));
+        } else {
+            shuffle($candidates);
+        }
         foreach ($candidates as $id) {
             if (count($ids) >= $wanted) break;
             if (!in_array($id, $ids, true)) $ids[] = $id;
@@ -266,7 +271,12 @@ final class Quiz
                 'chapter' => $all[$id]['chapter'] ?? '',
             ];
         }
-        shuffle($options);
+        if ($salt !== '') {
+            $optRank = static fn (array $option): string => hash('sha256', $salt . '|o|' . $option['id']);
+            usort($options, static fn (array $a, array $b): int => strcmp($optRank($a), $optRank($b)));
+        } else {
+            shuffle($options);
+        }
         return $options;
     }
 

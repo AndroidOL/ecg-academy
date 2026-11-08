@@ -167,6 +167,22 @@ final class Schema
                 CONSTRAINT fk_practice_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
+            "CREATE TABLE IF NOT EXISTS daily_results (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                user_id BIGINT UNSIGNED NOT NULL,
+                day DATE NOT NULL,
+                correct INT NOT NULL DEFAULT 0,
+                total INT NOT NULL DEFAULT 0,
+                score INT NOT NULL DEFAULT 0,
+                xp INT NOT NULL DEFAULT 0,
+                time_ms INT NOT NULL DEFAULT 0,
+                details JSON NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY uk_daily_user_day (user_id, day),
+                KEY idx_daily_day (day),
+                CONSTRAINT fk_daily_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
             "CREATE TABLE IF NOT EXISTS assignments (
                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
                 code VARCHAR(16) NOT NULL,
