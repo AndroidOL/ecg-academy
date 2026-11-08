@@ -398,6 +398,23 @@ final class Quiz
         ];
     }
 
+    private static function consumeGuestToken(string $token): void
+    {
+        $pdo = Db::pdo();
+        try {
+            $pdo->prepare('INSERT INTO consumed_tokens (token_hash, expires_at) VALUES (?, DATE_ADD(NOW(), INTERVAL 2 HOUR))')
+                ->execute([hash('sha256', $token)]);
+        } catch (\PDOException $e) {
+            if ((string) $e->getCode() === '23000') {
+                throw new ApiError(409, 'attempt_already_answered', '该题已作答，请重新出题');
+            }
+            throw $e;
+        }
+        if (random_int(1, 20) === 1) {
+            $pdo->exec('DELETE FROM consumed_tokens WHERE expires_at < NOW() - INTERVAL 1 DAY');
+        }
+    }
+
     private static function answerGuest(int $userId, string $token, array $selectedIds, int $timeMs): array
     {
         $data = Secret::open(substr($token, 2));
@@ -412,6 +429,7 @@ final class Quiz
             if (!in_array($id, $optionIds, true)) throw new ApiError(422, 'invalid_option', '包含无效选项');
         }
         if ($selectedIds === []) throw new ApiError(422, 'empty_answer', '请至少选择一个诊断');
+        self::consumeGuestToken($token);
         $sortedCorrect = $correctIds; $sortedSelected = $selectedIds;
         sort($sortedCorrect); sort($sortedSelected);
         $isCorrect = $sortedCorrect === $sortedSelected;

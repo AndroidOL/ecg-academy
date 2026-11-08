@@ -12,7 +12,7 @@ final class ApiController
 
     public static function bootstrap(array $params = []): void
     {
-        $user = self::user();
+        $user = Auth::user(true);
         Auth::touch();
         $stats = Stats::forUser((int) $user['id']);
         Http::ok([
@@ -315,7 +315,7 @@ final class ApiController
 
     private static function user(): array
     {
-        $user = Auth::user();
+        $user = Auth::user(false);
         if (!$user) throw new ApiError(401, 'unauthorized', '请先建立会话');
         return $user;
     }

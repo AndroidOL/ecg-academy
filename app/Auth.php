@@ -39,7 +39,7 @@ final class Auth
         }
     }
 
-    public static function user(bool $createGuest = true): ?array
+    public static function user(bool $createGuest = false): ?array
     {
         self::start();
         if (self::$user !== null) {
@@ -64,6 +64,8 @@ final class Auth
 
     private static function createGuest(): array
     {
+        $ip = Http::clientIp();
+        self::throttleCheck('guest-create:' . $ip, 60, 600);
         $adjectives = ['安静', '专注', '好奇', '敏锐', '沉着', '清醒', '笃定', '温和', '坚定', '灵动'];
         $nouns = ['听诊器', '心电笔', '小示波器', '窦房结', '除颤仪', '心电图纸', '白大褂', '叩诊锤'];
         $name = $adjectives[array_rand($adjectives)] . $nouns[array_rand($nouns)] . '·' . random_int(100, 999);
@@ -73,6 +75,7 @@ final class Auth
         );
         $stmt->execute([$publicId, $name]);
         $id = (int) Db::pdo()->lastInsertId();
+        self::recordFailure('guest-create:' . $ip);
         $_SESSION['uid'] = $id;
         $stmt = Db::pdo()->prepare('SELECT * FROM users WHERE id = ?');
         $stmt->execute([$id]);
@@ -106,7 +109,7 @@ final class Auth
         if (!Settings::bool('auth.registration_enabled', true)) {
             throw new ApiError(403, 'registration_disabled', '当前站点已关闭新用户注册');
         }
-        $current = self::user();
+        $current = self::user(true);
         if (!$current || (int) $current['is_guest'] !== 1) {
             throw new ApiError(409, 'already_registered', '当前账号已注册，请直接登录');
         }
@@ -226,7 +229,7 @@ final class Auth
         if (!in_array($theme, ['auto', 'light', 'dark'], true)) {
             throw new ApiError(422, 'invalid_theme', '主题参数无效');
         }
-        $user = self::user();
+        $user = self::user(true);
         Db::pdo()->prepare('UPDATE users SET theme = ? WHERE id = ?')->execute([$theme, (int) $user['id']]);
     }
 

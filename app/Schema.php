@@ -93,6 +93,12 @@ final class Schema
                 fail_count INT UNSIGNED NOT NULL DEFAULT 0
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
+            "CREATE TABLE IF NOT EXISTS consumed_tokens (
+                token_hash CHAR(64) NOT NULL PRIMARY KEY,
+                expires_at DATETIME NOT NULL,
+                KEY idx_consumed_expires (expires_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
             "CREATE TABLE IF NOT EXISTS ai_usage (
                 user_id BIGINT UNSIGNED NOT NULL,
                 usage_day DATE NOT NULL,
