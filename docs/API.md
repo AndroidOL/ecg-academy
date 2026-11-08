@@ -57,6 +57,9 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 | GET | `/api/exam/start` | 从已学习板块随机组卷；不足 8 个板块返回 403 `exam_locked` |
 | GET | `/api/practice/status` | 今日测试分、正确/错误数、锁定时间、今日排行榜/个人名次 |
 | GET | `/api/practice/leaderboard?scope=today\|week\|all` | 排行榜：`items`（前 50）、`me`（当前用户）、`total`、`updatedAt`；只含公开昵称/分数 |
+| GET | `/api/daily/status` | `day/done/result/count/streak/bestStreak/totalDays/history`（28 天） |
+| GET | `/api/daily/start` | 今日 10 题（全站同题、确定性选项顺序）与签名 token；已完成时返回 `done:true` 与结果 |
+| POST | `/api/daily/complete` | `{token, answers:[{id,selected,timeMs}]}`；判分、写 `daily_results`、token 一次性核销；不进入测试分/排行榜 |
 | GET | `/api/assignment?code=` | 公开作业元数据（标题/班级/难度/章节），不返回答案；停用即 404 |
 | GET | `/api/stats?scope=week|all` | 进度、章节正确率、最近答题/急救、排行榜 |
 | GET | `/api/leaderboard?scope=week|all` | 排行榜 |

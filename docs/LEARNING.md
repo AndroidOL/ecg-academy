@@ -94,6 +94,9 @@
 | GET | `/api/exam/start` | 已学习板块随机综合考试 |
 | GET | `/api/practice/status` | 今日测试分、锁定、排行榜 |
 | GET | `/api/practice/leaderboard?scope=today\|week\|all` | 测试排行榜（今日/本周/总榜） |
+| GET | `/api/daily/status` | 每日挑战状态、28 天日历、连续/最佳/累计天数 |
+| GET | `/api/daily/start` | 今日 10 题（签名 token，全站同题） |
+| POST | `/api/daily/complete` | `{token, answers}` 判分并记录打卡；每日一次 |
 | POST | `/api/admin/user/create` | 管理员手动创建用户 |
 
 ## 隐私与边界

@@ -3,11 +3,17 @@
 测试日期：2026-11-07 ～ 2026-11-08
 环境：PHP 8.4.27 · MySQL 8.4.13 · nginx 1.30.6 · Node 22.23.4 · 内存 3.5 GB
 
+## 2026-11-08 v2.0.0 回归（20261108aq）
+
+- PHP：每日挑战 9/9、学习考试 7/7、排行榜 2/2、班级作业 3/3、急救 14/14。
+- Node：引擎 15/15、播放器 13/13、本地复习/BYOK 4/4。
+- jsdom UI 13 组 0 控制台错误；浏览器 390×844：每日挑战全流程 12/12、激活顺序时间轴与 SVG 下载 10/10；三视口审计 0 横向溢出、0 控制台错误。
+
 ## 2026-11-08 最终回归（1.6.1 / 20261108ao）
 
 - 内容校验：230 章 / 19 章节 / 184 主题 / 46 篇 ECG 文章，0 错误。
 - 题库校验：诊断库 1920 道 + 章节库 1735 道，0 错误；诊断难度 1/2/3 = 320/880/720。
-- 引擎 15/15；播放器 13/13；急救状态机 14/14；本地复习/BYOK 4/4；班级作业 3/3；学习考试 7/7；排行榜 2/2；jsdom UI 11 组 0 控制台错误。
+- 引擎 15/15；播放器 13/13；急救状态机 14/14；本地复习/BYOK 4/4；班级作业 3/3；学习考试 7/7；排行榜 2/2；每日挑战 9/9；jsdom UI 13 组 0 控制台错误。
 - 浏览器：320×720、390×844、1280×900 共 42 个页面组合，0 横向溢出、0 控制台错误；复习/术语/关于/指南差异/学习考试/排行榜/10 场景/三行电轴/胸导联无回归。
 - 12 导联截图确认底边 1 mV 校准标记与 `25 mm/s · 10 mm/mV` 标注。
 - 班级作业：管理员创建→学生链接自动出题→提交后匿名统计 1 人/1 次；停用/删除生效；
@@ -30,8 +36,9 @@
 | 班级作业 | `php tests/assignment.test.php` | **3/3 通过** |
 | 学习考试/评级/锁定 | `php tests/learning.test.php` | **7/7 通过** |
 | 排行榜排序/当前名次 | `php tests/leaderboard.test.php` | **2/2 通过** |
+| 每日挑战/连续打卡 | `php tests/daily.test.php` | **9/9 通过** |
 | 播放器/12 导联/标注 | `node tests/playback.test.mjs` | **13/13 通过** |
-| 全链路 UI 冒烟 | `node tests/ui-smoke.mjs   # 11 组` | **11/11 组通过，0 控制台错误** |
+| 全链路 UI 冒烟 | `node tests/ui-smoke.mjs   # 13 组` | **13/13 组通过，0 控制台错误** |
 | 生产 API | curl + 独立 Cookie/CSRF | **通过**（见下） |
 | 静态资源 | 逐文件 HTTP 检查 | **全部 200** |
 | 无头截图 | Chrome 150 headless | 受环境 SwiftShader 卡死限制，未完成像素级截图 |
@@ -156,7 +163,7 @@ Playback tests passed: 13
 11. 管理后台路由对访客显示登录保护表单。
 
 ```text
-UI smoke passed: 11 groups, 0 console errors
+UI smoke passed: 13 groups, 0 console errors
 ```
 
 ## 5.1 管理后台验证
@@ -215,7 +222,7 @@ php scripts/validate_bank.php
 node tests/engine.test.mjs
 node tests/playback.test.mjs
 php tests/sim.test.php
-node tests/ui-smoke.mjs   # 11 组
+node tests/ui-smoke.mjs   # 13 组
 
 # 静态资源
 for f in $(cd public && find static -type f); do

@@ -84,6 +84,7 @@ hash 路由，便于任意静态托管与无重写部署：
 - `#/learn` 课程库
 - `#/learn/:id` 诊断详情
 - `#/practice` 测试模块 / 排行榜
+- `#/daily` 每日挑战 / 连续打卡
 - `#/exam` 学习关卡 / 综合考试
 - `#/leaderboard` 测试排行榜（今日/本周/总榜）
 - `#/sim` 急救场景
@@ -116,6 +117,12 @@ hash 路由，便于任意静态托管与无重写部署：
 1. 练习答题后 `Learning::recordPracticeAnswer()`：答对 +1，答错 -10，写入 `practice_daily_scores` 与练习事件。
 2. 当日分数 ≤ -100 时写 `locked_until=次日 00:00`；`Quiz::newAttempt` 拒绝新的测试请求（班级作业链接不受影响）。
 3. 排行榜按今日/总榜查询所有用户的公开昵称与分数，不展示答案、IP 或患者信息。
+
+## 数据流：每日挑战
+
+1. `GET /api/daily/status|start`：`app/Daily.php` 按 `sha256(日期 + 题库 ID)` 排序选 10 题（难度配额 4/4/2），选项顺序同样确定性；签名 token 只保存题目 ID、用户与日期。
+2. `POST /api/daily/complete`：服务端重算题面与答案、逐题判分（多选部分分），写 `daily_results`（`UNIQUE(user_id, day)`）并一次性核销 token；重复提交返回 409。
+3. 每日挑战不写 `quiz_attempts` / `practice_daily_scores` / `learning_events`，因此不进入测试分与排行榜；连续天数由 `daily_results.day` 计算。游客登录时 `Auth::mergeGuestProgress()` 按天并入账号。
 
 ## 数据流：急救
 

@@ -1,6 +1,6 @@
 import { store } from '../store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ap';
+const __asset = __isNode ? '' : '?v=20261108aq';
 const { icon, chapterColor, difficultyDots, escapeHtml, setupMiniECG, emptyState, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
 export async function learnView({ query }) {

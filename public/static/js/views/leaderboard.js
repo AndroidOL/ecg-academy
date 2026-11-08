@@ -1,7 +1,7 @@
 import { api } from '../api.js';
 import { store } from '../store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ap';
+const __asset = __isNode ? '' : '?v=20261108aq';
 const { icon, escapeHtml, toast } = await import(`../ui.js${__asset}`);
 
 const SCOPES = [
