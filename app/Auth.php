@@ -190,6 +190,58 @@ final class Auth
         return self::user() ?? [];
     }
 
+    public static function passkeyLoginOptions(string $username): array
+    {
+        self::start();
+        if (!Settings::bool('auth.user_login_enabled', true)) {
+            throw new ApiError(403, 'user_login_disabled', '当前站点已关闭普通用户登录');
+        }
+        $username = strtolower(trim($username));
+        if ($username === '') throw new ApiError(422, 'missing_credentials', '请输入用户名');
+        $stmt = Db::pdo()->prepare(
+            'SELECT p.credential_id FROM admin_passkeys p JOIN users u ON u.id = p.user_id
+             WHERE u.username = ? AND u.is_guest = 0 AND u.is_active = 1 ORDER BY p.id ASC LIMIT 20'
+        );
+        $stmt->execute([$username]);
+        $rows = $stmt->fetchAll();
+        if ($rows === []) throw new ApiError(404, 'passkey_not_found', '该账号尚未注册 Passkey');
+        return WebAuthn::loginOptions($rows);
+    }
+
+    public static function passkeyLogin(array $credential): array
+    {
+        self::requireCsrf();
+        if (!Settings::bool('auth.user_login_enabled', true)) {
+            throw new ApiError(403, 'user_login_disabled', '当前站点已关闭普通用户登录');
+        }
+        $throttleKey = 'passkey_login:' . Http::clientIp();
+        self::throttleCheck($throttleKey, 10, 600);
+        try {
+            $userId = WebAuthn::verifyAssertion($credential);
+        } catch (ApiError $e) {
+            self::recordFailure($throttleKey);
+            throw $e;
+        }
+        $stmt = Db::pdo()->prepare('SELECT * FROM users WHERE id = ? AND is_guest = 0 LIMIT 1');
+        $stmt->execute([$userId]);
+        $account = $stmt->fetch();
+        if (!$account || (int) ($account['is_active'] ?? 1) !== 1) {
+            self::recordFailure($throttleKey);
+            throw new ApiError(401, 'invalid_credentials', '账号不可用');
+        }
+        $guest = self::user();
+        if ($guest && (int) $guest['is_guest'] === 1 && (int) $guest['id'] !== (int) $account['id']) {
+            self::mergeGuestProgress((int) $guest['id'], (int) $account['id']);
+            Db::pdo()->prepare('DELETE FROM users WHERE id = ? AND is_guest = 1')->execute([(int) $guest['id']]);
+        }
+        self::clearFailures($throttleKey);
+        session_regenerate_id(true);
+        $_SESSION['uid'] = (int) $account['id'];
+        Db::pdo()->prepare('UPDATE users SET last_seen_at = NOW() WHERE id = ?')->execute([(int) $account['id']]);
+        self::$user = null;
+        return self::user() ?? [];
+    }
+
     public static function logout(): void
     {
         self::start();
@@ -247,7 +299,7 @@ final class Auth
         ];
     }
 
-    private static function cleanDisplayName(string $name): string
+    public static function cleanDisplayName(string $name): string
     {
         $name = trim(preg_replace('/[\x00-\x1F\x7F]/u', '', $name) ?? '');
         if ($name === '') {

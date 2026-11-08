@@ -1,8 +1,9 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108au';
+const __asset = __isNode ? '' : '?v=20261108av';
 const { api } = await import(`./api.js${__asset}`);
 const { store } = await import(`./store.js${__asset}`);
 const { openModal, icon, escapeHtml, setButtonLoading, toast } = await import(`./ui.js${__asset}`);
+const { getPasskey } = await import(`./webauthn.js${__asset}`);
 
 export function openAuth(mode = 'register') {
   if (store.user && !store.user.isGuest) {
@@ -29,6 +30,7 @@ export function openAuth(mode = 'register') {
       ${isRegister ? `<div class="field"><label for="auth-password2">确认密码</label><input class="input" id="auth-password2" type="password" maxlength="72" autocomplete="new-password" placeholder="再次输入密码"></div>` : ''}
       <div class="auth-note" id="auth-error" style="display:none;background:var(--danger-soft);color:var(--danger)"></div>
       <button class="btn btn-primary btn-block" type="button" id="auth-submit">${icon(isRegister ? 'lock' : 'arrowRight', 16)}${isRegister ? '保存进度并注册' : '登录'}</button>
+      ${isRegister ? '' : `<button class="btn btn-secondary btn-block" type="button" id="auth-passkey">${icon('fingerprint', 16)} 使用 Passkey 登录</button>`}
       <div class="auth-switch">${isRegister ? '已有账号？' : '还没有账号？'}<button type="button" id="auth-toggle">${isRegister ? '去登录' : '注册并保存进度'}</button></div>
     </div>`;
   let modal;
@@ -68,6 +70,25 @@ export function openAuth(mode = 'register') {
     }
   };
   submit?.addEventListener('click', doSubmit);
+  form.querySelector('#auth-passkey')?.addEventListener('click', async () => {
+    const username = form.querySelector('#auth-username').value.trim().toLowerCase();
+    if (!username) return showError('请先输入用户名，再使用 Passkey 登录');
+    errorBox.style.display = 'none';
+    const button = form.querySelector('#auth-passkey');
+    setButtonLoading(button, true, '等待验证');
+    try {
+      const options = await api.passkeyLoginOptions(username);
+      const credential = await getPasskey(options);
+      await api.passkeyLogin(credential);
+      await store.refresh();
+      window.dispatchEvent(new CustomEvent('auth:changed'));
+      toast('登录成功', 'info');
+      modal.close();
+    } catch (error) {
+      showError(error.message || 'Passkey 登录失败');
+      setButtonLoading(button, false);
+    }
+  });
   form.querySelectorAll('input').forEach((input) => {
     input.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') doSubmit();

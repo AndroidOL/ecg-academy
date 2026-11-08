@@ -10,7 +10,7 @@ final class AdminController
         Http::ok([
             'passwordLogin' => Settings::bool('admin.password_login_enabled', true),
             'passkeyLogin' => Settings::bool('admin.passkey_login_enabled', true),
-            'hasPasskey' => (int) Db::pdo()->query('SELECT COUNT(*) FROM admin_passkeys')->fetchColumn() > 0,
+            'hasPasskey' => (int) Db::pdo()->query('SELECT COUNT(*) FROM admin_passkeys p JOIN users u ON u.id = p.user_id WHERE u.is_admin = 1')->fetchColumn() > 0,
             'registrationEnabled' => Settings::bool('auth.registration_enabled', true),
         ]);
     }
@@ -42,13 +42,15 @@ final class AdminController
         $admin = AdminAuth::requireAdmin();
         $userCount = (int) Db::pdo()->query('SELECT COUNT(*) FROM users')->fetchColumn();
         $guestCount = (int) Db::pdo()->query('SELECT COUNT(*) FROM users WHERE is_guest = 1')->fetchColumn();
-        $passkeys = Db::pdo()->query('SELECT id, label, created_at, last_used_at, sign_count FROM admin_passkeys ORDER BY id ASC')->fetchAll();
+        $passkeys = Db::pdo()->prepare('SELECT id, label, created_at, last_used_at, sign_count FROM admin_passkeys WHERE user_id = ? ORDER BY id ASC');
+        $passkeys->execute([(int) $admin['id']]);
+        $passkeyRows = $passkeys->fetchAll();
         $audit = Db::pdo()->query('SELECT action, detail, ip, created_at FROM admin_audit ORDER BY id DESC LIMIT 20')->fetchAll();
         foreach ($audit as &$row) $row['detail'] = json_decode((string) ($row['detail'] ?? '{}'), true) ?: [];
         Http::ok([
             'admin' => AdminAuth::publicUser($admin),
             'settings' => AdminAuth::settingsPayload(),
-            'passkeys' => $passkeys,
+            'passkeys' => $passkeyRows,
             'audit' => $audit,
             'stats' => [
                 'users' => $userCount,
@@ -167,8 +169,9 @@ final class AdminController
         $stmt->execute([$id, (int) $admin['id']]);
         if ($stmt->rowCount() === 0) throw new ApiError(404, 'passkey_not_found', 'Passkey 不存在');
         if (!Settings::bool('admin.password_login_enabled', true)) {
-            $count = (int) Db::pdo()->query('SELECT COUNT(*) FROM admin_passkeys')->fetchColumn();
-            if ($count === 0) throw new ApiError(422, 'passkey_required', '密码登录已关闭，不能删除最后一个 Passkey');
+            $countStmt = Db::pdo()->prepare('SELECT COUNT(*) FROM admin_passkeys WHERE user_id = ?');
+            $countStmt->execute([(int) $admin['id']]);
+            if ((int) $countStmt->fetchColumn() === 0) throw new ApiError(422, 'passkey_required', '密码登录已关闭，不能删除最后一个 Passkey');
         }
         AdminAuth::audit((int) $admin['id'], 'admin.passkey.delete', ['id' => $id]);
         Http::ok(['ok' => true]);

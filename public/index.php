@@ -64,7 +64,15 @@ if (str_starts_with($path, '/api/')) {
         $router->get('/api/leaderboard', [ApiController::class, 'leaderboard']);
         $router->post('/api/auth/register', [ApiController::class, 'register']);
         $router->post('/api/auth/login', [ApiController::class, 'login']);
+        $router->get('/api/auth/passkey/options', [ApiController::class, 'passkeyLoginOptions']);
+        $router->post('/api/auth/passkey/login', [ApiController::class, 'passkeyLogin']);
         $router->post('/api/auth/logout', [ApiController::class, 'logout']);
+        $router->post('/api/me/profile', [ApiController::class, 'meProfile']);
+        $router->post('/api/me/password', [ApiController::class, 'mePassword']);
+        $router->get('/api/me/passkeys', [ApiController::class, 'mePasskeys']);
+        $router->get('/api/me/passkey/options', [ApiController::class, 'mePasskeyOptions']);
+        $router->post('/api/me/passkey/register', [ApiController::class, 'mePasskeyRegister']);
+        $router->post('/api/me/passkey/delete', [ApiController::class, 'mePasskeyDelete']);
         $router->post('/api/theme', [ApiController::class, 'theme']);
         $router->get('/api/sim/scenarios', [ApiController::class, 'simScenarios']);
         $router->post('/api/sim/start', [ApiController::class, 'simStart']);

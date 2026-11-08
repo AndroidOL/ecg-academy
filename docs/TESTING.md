@@ -37,6 +37,7 @@
 | 学习考试/评级/锁定 | `php tests/learning.test.php` | **7/7 通过** |
 | 排行榜排序/当前名次 | `php tests/leaderboard.test.php` | **2/2 通过** |
 | 每日挑战/连续打卡 | `php tests/daily.test.php` | **9/9 通过** |
+| 账号资料/Passkey 参数 | `php tests/profile.test.php` | **8/8 通过** |
 | 播放器/12 导联/标注 | `node tests/playback.test.mjs` | **13/13 通过** |
 | 全链路 UI 冒烟 | `node tests/ui-smoke.mjs   # 15 组` | **15/15 组通过，0 控制台错误** |
 | 生产 API | curl + 独立 Cookie/CSRF | **通过**（见下） |

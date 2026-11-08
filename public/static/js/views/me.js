@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108au';
+const __asset = __isNode ? '' : '?v=20261108av';
 const { api } = await import(`../api.js${__asset}`);
 const { store, applyTheme, getThemeMode } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -8,6 +8,25 @@ const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${_
 const { reviewSummary } = await import(`../study-store.js${__asset}`);
 const { isLowBandwidth, setLowBandwidth, installPrompt, clearInstallPrompt } = await import(`../bandwidth.js${__asset}`);
 const { getLocale, setLocale } = await import(`../i18n.js${__asset}`);
+const { createPasskey } = await import(`../webauthn.js${__asset}`);
+
+function accountCard(user) {
+  return `<section class="card card-pad account-card">
+    <div class="section-head"><h2 class="section-title">账号与安全</h2><span class="badge badge-brand">@${escapeHtml(user.username || '')}${user.isAdmin ? ' · 管理员' : ''}</span></div>
+    <div class="field"><label for="profile-name">昵称</label><div class="row-wrap"><input class="input" id="profile-name" data-profile-name maxlength="20" value="${escapeHtml(user.displayName || '')}" autocomplete="nickname"><button class="btn btn-secondary btn-sm" type="button" data-profile-save>保存昵称</button></div></div>
+    <details class="account-details">
+      <summary>修改密码</summary>
+      <div class="form-grid" style="margin-top:8px">
+        <div class="field"><label for="pw-current">当前密码</label><input class="input" id="pw-current" type="password" data-pw-current autocomplete="current-password"></div>
+        <div class="field"><label for="pw-new">新密码（至少 8 位）</label><input class="input" id="pw-new" type="password" data-pw-new autocomplete="new-password"></div>
+        <button class="btn btn-secondary btn-sm" type="button" data-pw-save>更新密码</button>
+      </div>
+    </details>
+    <div class="account-passkey-head"><b>Passkey</b><span class="muted">免密码登录；管理员账号同样可用</span></div>
+    <div class="account-passkeys" data-passkeys><p class="muted" style="font-size:11px">加载中…</p></div>
+    <button class="btn btn-primary btn-sm" type="button" data-passkey-add style="margin-top:8px">${icon('fingerprint', 14)} 添加本机 Passkey</button>
+  </section>`;
+}
 
 export async function meView() {
   const el = document.createElement('div');
@@ -50,6 +69,7 @@ export async function meView() {
     </div>
     <div class="me-grid">
       <div class="stack-lg">
+        ${user.isGuest ? '' : accountCard(user)}
         <section class="card card-pad">
           <div class="section-head"><h2 class="section-title">学习进度</h2><span class="badge">${read} / ${total} 篇</span></div>
           <div class="me-chart">
@@ -62,7 +82,7 @@ export async function meView() {
         <section class="card card-pad">
           <div class="section-head"><h2 class="section-title">错题与复习</h2><a class="section-kicker" href="#/review">打开错题本 →</a></div>
           <div class="review-me-grid"><div><b>${localReview.due}</b><span>今日待复习</span></div><div><b>${localReview.wrong}</b><span>错题诊断</span></div><div><b>${localReview.favorites}</b><span>收藏章节</span></div></div>
-          <p class="muted" style="font-size:11px;line-height:1.7;margin-top:8px">答错的诊断会自动进入错题本；按 1 → 3 → 7 → 14 天间隔重现，记录只保存在本设备。</p>
+          <p class="muted" style="font-size:11px;line-height:1.7;margin-top:8px">答错的诊断会自动进入错题本；按 1 → 3 → 8 → 20 天自适应间隔重现（封顶 90 天），记录只保存在本设备。</p>
           <a class="btn btn-secondary btn-sm" href="#/review" style="margin-top:9px">${icon('target', 14)} 开始间隔复习</a>
         </section>
         <section class="card card-pad">
@@ -114,6 +134,64 @@ export async function meView() {
     await logout();
     navigate('/me');
   });
+  if (!user.isGuest) {
+    const loadPasskeys = async () => {
+      const host = el.querySelector('[data-passkeys]');
+      if (!host) return;
+      try {
+        const data = await api.mePasskeys();
+        const items = data.items || [];
+        host.innerHTML = items.length
+          ? items.map((item) => `<div class="passkey-row"><div><b>${escapeHtml(item.label)}</b><span>注册 ${escapeHtml(String(item.created_at || '').slice(0, 10))} · 最近使用 ${escapeHtml(item.last_used_at || '—')}</span></div><button class="btn btn-xs btn-ghost" type="button" data-passkey-del="${item.id}">删除</button></div>`).join('')
+          : '<p class="muted" style="font-size:11px">尚未添加 Passkey。</p>';
+        host.querySelectorAll('[data-passkey-del]').forEach((button) => button.addEventListener('click', async () => {
+          if (!window.confirm('删除这个 Passkey？删除后需用密码或其他 Passkey 登录。')) return;
+          try {
+            await api.mePasskeyDelete(Number(button.dataset.passkeyDel));
+            toast('Passkey 已删除', 'success');
+            await loadPasskeys();
+          } catch (error) { toast(error.message || '删除失败', 'error'); }
+        }));
+      } catch (error) {
+        host.innerHTML = `<p class="muted" style="font-size:11px">${escapeHtml(error.message || 'Passkey 加载失败')}</p>`;
+      }
+    };
+    el.querySelector('[data-profile-save]')?.addEventListener('click', async () => {
+      const input = el.querySelector('[data-profile-name]');
+      const name = String(input?.value || '').trim();
+      if (!name) return toast('昵称不能为空', 'warn');
+      try {
+        const updated = await api.meProfile(name);
+        store.setUser({ ...(store.user || {}), displayName: updated.displayName });
+        window.dispatchEvent(new CustomEvent('auth:changed'));
+        toast('昵称已保存', 'success');
+      } catch (error) { toast(error.message || '保存失败', 'error'); }
+    });
+    el.querySelector('[data-pw-save]')?.addEventListener('click', async () => {
+      const current = String(el.querySelector('[data-pw-current]')?.value || '');
+      const next = String(el.querySelector('[data-pw-new]')?.value || '');
+      if (!current || next.length < 8) return toast('请输入当前密码，新密码至少 8 位', 'warn');
+      try {
+        await api.mePassword(current, next);
+        el.querySelectorAll('[data-pw-current], [data-pw-new]').forEach((input) => { input.value = ''; });
+        toast('密码已更新', 'success');
+      } catch (error) { toast(error.message || '更新失败', 'error'); }
+    });
+    el.querySelector('[data-passkey-add]')?.addEventListener('click', async (event) => {
+      const button = event.currentTarget;
+      button.disabled = true;
+      try {
+        const options = await api.mePasskeyOptions();
+        const credential = await createPasskey(options);
+        const label = window.prompt('给这个 Passkey 起个名字：', '本机') || '本机';
+        await api.mePasskeyRegister({ credential, label });
+        toast('Passkey 已添加', 'success');
+        await loadPasskeys();
+      } catch (error) { toast(error.message || '添加失败', 'error'); }
+      finally { button.disabled = false; }
+    });
+    loadPasskeys();
+  }
   el.querySelectorAll('[data-locale]').forEach((button) => button.addEventListener('click', () => {
     setLocale(button.dataset.locale);
     toast(button.dataset.locale === 'en' ? 'English shell enabled. Course content remains Chinese with bilingual glossary.' : '已切换为中文界面', 'success');

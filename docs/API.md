@@ -134,8 +134,21 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 |---|---|---|
 | POST | `/api/auth/register` | `{username,password,displayName}`；用户名 3–24 位字母数字下划线；密码 ≥8 位 |
 | POST | `/api/auth/login` | `{username,password}`；限流 6 次/10 分钟/IP+用户名 |
+| GET | `/api/auth/passkey/options?username=` | 普通账号 Passkey 登录参数；无凭证 404 |
+| POST | `/api/auth/passkey/login` | `{credential}`；验证断言后建立用户会话并合并游客进度 |
 | POST | `/api/auth/logout` | 销毁会话；下一次 bootstrap 创建新访客 |
 | POST | `/api/theme` | `{theme:"auto"|"light"|"dark"}` |
+
+## 个人资料与 Passkey（需正式账号会话）
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| POST | `/api/me/profile` | `{displayName}`；1–20 字符 |
+| POST | `/api/me/password` | `{currentPassword,newPassword}`；新密码 8–72 位 |
+| GET | `/api/me/passkeys` | 当前账号的 Passkey 列表（不含公钥） |
+| GET | `/api/me/passkey/options` | 注册参数（challenge/rp/user） |
+| POST | `/api/me/passkey/register` | `{credential,label}`；重复凭证返回 409 |
+| POST | `/api/me/passkey/delete` | `{id}`；仅能删除本人 Passkey |
 
 ## 错误码
 

@@ -3,6 +3,16 @@ declare(strict_types=1);
 
 return [
     [
+        'version' => '2.1.0',
+        'date' => '2026-11-08',
+        'title' => '账号资料与自助 Passkey',
+        'items' => [
+            '正式账号可修改昵称与密码，并添加/删除本机 Passkey。',
+            '登录支持用户名 + Passkey 免密方式；管理员账号与普通账号同一套体系。',
+            '后台 Passkey 列表仅显示本人凭证。',
+        ],
+    ],
+    [
         'version' => '2.0.4',
         'date' => '2026-11-08',
         'title' => '宽屏布局与页脚修正',

@@ -225,6 +225,57 @@ final class ApiController
         Http::ok(['user' => Auth::publicUser($user), 'csrf' => Auth::csrf()]);
     }
 
+    public static function passkeyLoginOptions(array $params = []): void
+    {
+        Http::ok(Auth::passkeyLoginOptions((string) ($_GET['username'] ?? '')));
+    }
+
+    public static function passkeyLogin(array $params = []): void
+    {
+        $credential = Http::input()['credential'] ?? [];
+        $user = Auth::passkeyLogin(is_array($credential) ? $credential : []);
+        Http::ok(['user' => Auth::publicUser($user), 'csrf' => Auth::csrf()]);
+    }
+
+    public static function meProfile(array $params = []): void
+    {
+        $user = self::user();
+        Http::ok(Profile::update((int) $user['id'], Http::input()));
+    }
+
+    public static function mePassword(array $params = []): void
+    {
+        $user = self::user();
+        Profile::changePassword((int) $user['id'], Http::input());
+        Http::ok(['saved' => true]);
+    }
+
+    public static function mePasskeys(array $params = []): void
+    {
+        $user = self::user();
+        Http::ok(['items' => Profile::passkeys((int) $user['id'])]);
+    }
+
+    public static function mePasskeyOptions(array $params = []): void
+    {
+        $user = self::user();
+        Http::ok(Profile::passkeyOptions((int) $user['id']));
+    }
+
+    public static function mePasskeyRegister(array $params = []): void
+    {
+        $user = self::user();
+        Profile::registerPasskey((int) $user['id'], Http::input());
+        Http::ok(['registered' => true]);
+    }
+
+    public static function mePasskeyDelete(array $params = []): void
+    {
+        $user = self::user();
+        Profile::deletePasskey((int) $user['id'], (int) (Http::input()['id'] ?? 0));
+        Http::ok(['deleted' => true]);
+    }
+
     public static function logout(array $params = []): void
     {
         Auth::logout();
