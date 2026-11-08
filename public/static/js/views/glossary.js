@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ad';
+const __asset = __isNode ? '' : '?v=20261108af';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const TERMS = [
@@ -80,7 +80,7 @@ export async function glossaryView() {
     el.innerHTML = `
       <header class="page-head">
         <div><div class="page-eyebrow">${icon('compass', 14)} BILINGUAL GLOSSARY</div><h1 class="page-title">心电图双语术语表</h1><p class="page-sub">中文—English 对照，覆盖基础波形、导联向量、节律、缺血/结构、急救与方法学。英文界面为外壳级 beta，课程正文以中文为主。</p></div>
-        <span class="badge badge-brand">${TERMS.length} 个术语</span>
+        <div class="row-wrap"><a class="btn btn-secondary btn-sm" href="#/guidelines">${icon('compass', 13)} 区域指南差异</a><span class="badge badge-brand">${TERMS.length} 个术语</span></div>
       </header>
       <div class="glossary-toolbar">
         <input class="input" type="search" data-glossary-search placeholder="搜索中文 / English / 定义…" aria-label="搜索术语">

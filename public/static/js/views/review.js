@@ -5,7 +5,7 @@ import {
   rateReview, toggleFavorite, exportStudyData, importStudyData, clearLocalStudyData,
 } from '../study-store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ad';
+const __asset = __isNode ? '' : '?v=20261108af';
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
 function dueLabel(entry) {

@@ -1,7 +1,7 @@
 // Cache-busted dynamic imports: keep Node tests query-free while forcing
 // browsers with immutable 7-day static caching to load the current modules.
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ad';
+const __asset = __isNode ? '' : '?v=20261108af';
 const { api } = await import(`./api.js${__asset}`);
 const { store, initTheme, applyTheme, toggleTheme } = await import(`./store.js${__asset}`);
 const { practiceView } = await import(`./views/practice.js${__asset}`);
@@ -19,6 +19,7 @@ const { vectorLabView } = await import(`./views/vector-lab.js${__asset}`);
 const { reviewView } = await import(`./views/review.js${__asset}`);
 const { aboutView } = await import(`./views/about.js${__asset}`);
 const { glossaryView } = await import(`./views/glossary.js${__asset}`);
+const { guidelinesView } = await import(`./views/guidelines.js${__asset}`);
 const { applyLowBandwidth } = await import(`./bandwidth.js${__asset}`);
 const { t, navKey, getLocale } = await import(`./i18n.js${__asset}`);
 
@@ -35,6 +36,7 @@ const routes = [
   { path: '/me', handler: meView },
   { path: '/about', handler: aboutView },
   { path: '/glossary', handler: glossaryView },
+  { path: '/guidelines', handler: guidelinesView },
   { path: '/admin', handler: adminView },
 ];
 
@@ -43,7 +45,7 @@ document.documentElement.lang = getLocale() === 'en' ? 'en' : 'zh-CN';
 if (typeof window !== 'undefined') {
   window.addEventListener('beforeinstallprompt', (event) => { event.preventDefault(); window.__ecgInstallPrompt = event; window.dispatchEvent(new CustomEvent('ecg-install-ready')); });
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
-    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
   }
 }
 

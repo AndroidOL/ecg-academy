@@ -782,3 +782,13 @@
 .glossary-item > .badge { position:absolute; top:9px; right:9px; font-size:8px; }
 .glossary-item p { margin:5px 0 0; color:var(--muted); font-size:10.5px; line-height:1.65; }
 @media (max-width:760px) { .glossary-list { grid-template-columns:minmax(0,1fr); } }
+.guidelines-page { max-width:1080px; }
+.guideline-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:12px; }
+.guideline-card h2 { margin:2px 0 10px; font-size:16px; }
+.guideline-sides { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.guideline-sides > div { padding:8px 9px; border:1px solid var(--line); border-radius:8px; background:var(--bg-elev); }
+.guideline-sides b { display:block; margin-bottom:4px; color:var(--brand); font-size:9px; letter-spacing:.03em; }
+.guideline-sides p { margin:0; color:var(--muted); font-size:10px; line-height:1.65; }
+.guideline-card .callout { margin-top:10px; font-size:10.5px; line-height:1.65; }
+@media (max-width:820px) { .guideline-grid { grid-template-columns:minmax(0,1fr); } }
+@media (max-width:520px) { .guideline-sides { grid-template-columns:minmax(0,1fr); } }

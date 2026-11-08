@@ -34,3 +34,5 @@ jobs:
         run: npm run test:engine
       - name: Playback and annotation tests
         run: npm run test:playback
+      - name: Local review and BYOK tests
+        run: npm run test:study

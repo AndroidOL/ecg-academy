@@ -56,7 +56,7 @@
 | 进阶与前沿 | 8 | AI ECG、高密度标测、遗传学、数字孪生、学习路线 |
 | **合计** | **230 章** | **40 种判读诊断 + 184 个理论/病例专题** |
 
-辅助模块：62 个双语术语、10 个急救场景、230 章审阅台账、版本化勘误页、6 个向量/电生理子模块。
+辅助模块：62 个双语术语、10 个急救场景、230 章审阅台账、版本化勘误页、区域指南差异页、6 个向量/电生理子模块。
 
 题库与练习仍以 40 种判读诊断 + 8 组组合为核心；理论学习不强制生成波形。
 
@@ -136,11 +136,15 @@ node tests/engine.test.mjs
 node tests/playback.test.mjs
 
 # 4. ACLS 状态机测试（14 项，含新场景回归）
-# 5. 审阅台账校验
-php scripts/validate_review.php
 php tests/sim.test.php
 
-# 6. jsdom 全链路 UI 冒烟（11 组）
+# 5. 审阅台账校验
+php scripts/validate_review.php
+
+# 6. 本地复习与 BYOK 测试
+node tests/study.test.mjs
+
+# 7. jsdom 全链路 UI 冒烟（11 组）
 node tests/ui-smoke.mjs
 ```
 
@@ -187,7 +191,7 @@ storage/             独立 session、日志、缓存（Web 不可达）
 - [部署与运维](docs/DEPLOYMENT.md)
 - [进度与断点清单](docs/PROGRESS.md)
 - [调研记录](docs/RESEARCH.md)
-- [v2.0 研究](docs/V2_RESEARCH.md) / [指南差异](docs/GUIDELINES.md)
+- [v2.0 研究](docs/V2_RESEARCH.md) / [指南差异](docs/GUIDELINES.md) / 站内 `#/guidelines`
 - [内容审阅](docs/REVIEW.md) / [勘误流程](docs/CORRECTIONS.md) / [贡献者协议](docs/CONTRIBUTOR_AGREEMENT.md)
 - [医学顾问名单](docs/MEDICAL_ADVISORS.md) / [无障碍](docs/A11Y.md) / [i18n](docs/I18N.md)
 

@@ -33,5 +33,5 @@ export function t(key, fallback = '') {
 }
 
 export function navKey(path) {
-  return `nav.${({ '/': 'home', '/learn': 'learn', '/practice': 'practice', '/sim': 'sim', '/lab': 'lab', '/me': 'me', '/review': 'review', '/glossary': 'glossary' })[path] || 'home'}`;
+  return `nav.${({ '/': 'home', '/learn': 'learn', '/practice': 'practice', '/sim': 'sim', '/lab': 'lab', '/me': 'me', '/review': 'review', '/glossary': 'glossary', '/guidelines': 'guidelines' })[path] || 'home'}`;
 }

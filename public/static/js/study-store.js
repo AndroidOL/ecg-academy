@@ -65,7 +65,7 @@ export function recordAttempt({ correct, correctIds = [], selectedIds = [], name
     entry.name = names[id] || entry.name;
     entry.chapter = chapters[id] || entry.chapter;
     entry.lastSeen = now;
-    if (correctSet.has(id)) {
+    if (correct && correctSet.has(id)) {
       entry.correct += 1;
       entry.interval = entry.interval > 0 ? Math.min(90, Math.max(1, Math.round(entry.interval * (entry.ease || 2.5)))) : 1;
       entry.due = now + entry.interval * DAY;

@@ -97,7 +97,8 @@ for ($i = 0; $i < $count; $i += 1) {
     $samples[] = round($span > 0 ? $v0 + (($t - $t0) / $span) * ($v1 - $v0) : $v0, 4);
 }
 $out = $out ?: ('data/imports/' . preg_replace('/[^a-zA-Z0-9._-]+/', '-', pathinfo($input, PATHINFO_FILENAME)) . '.json');
-$dir = dirname(BASE_PATH . '/' . ltrim($out, '/'));
+$outPath = str_starts_with($out, '/') ? $out : BASE_PATH . '/' . ltrim($out, '/');
+$dir = dirname($outPath);
 if (!is_dir($dir)) mkdir($dir, 0750, true);
 $payload = [
     'schemaVersion' => 1,
@@ -117,6 +118,6 @@ $payload = [
     'review' => ['status' => 'unreviewed', 'note' => '教学研究导入；使用前需人工核对导联、定标与临床背景。'],
 ];
 $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
-file_put_contents(BASE_PATH . '/' . ltrim($out, '/'), $json, LOCK_EX);
-echo "imported: {$out}\n";
+file_put_contents($outPath, $json, LOCK_EX);
+echo "imported: {$outPath}\n";
 echo "lead={$lead} rate={$rate}Hz duration={$duration}s samples=" . count($samples) . " sha256=" . substr($payload['source']['sha256'], 0, 12) . "\n";

@@ -1,7 +1,7 @@
 import { store } from '../store.js';
 import { CORRECTIONS } from '../data/corrections.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ad';
+const __asset = __isNode ? '' : '?v=20261108af';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 function parseCorrections() {
@@ -38,7 +38,7 @@ export async function aboutView() {
           <a class="quick-action" href="${escapeHtml((site.githubUrl || 'https://github.com/AndroidOL/ecg-academy').replace(/\/$/, ''))}/blob/main/docs/CONTRIBUTOR_AGREEMENT.md" target="_blank" rel="noopener noreferrer">${icon('bookOpen', 15)} 贡献者协议</a>
           <a class="quick-action" href="${escapeHtml((site.githubUrl || 'https://github.com/AndroidOL/ecg-academy').replace(/\/$/, ''))}/blob/main/docs/MEDICAL_ADVISORS.md" target="_blank" rel="noopener noreferrer">${icon('stethoscope', 15)} 医学顾问名单</a>
           <a class="quick-action" href="#/glossary">${icon('compass', 15)} 双语术语表</a>
-          <a class="quick-action" href="${escapeHtml((site.githubUrl || 'https://github.com/AndroidOL/ecg-academy').replace(/\/$/, ''))}/blob/main/docs/GUIDELINES.md" target="_blank" rel="noopener noreferrer">${icon('compass', 15)} 区域指南差异</a>
+          <a class="quick-action" href="#/guidelines">${icon('compass', 15)} 区域指南差异</a>
           <a class="quick-action" href="${escapeHtml((site.githubUrl || 'https://github.com/AndroidOL/ecg-academy').replace(/\/$/, ''))}/blob/main/docs/A11Y.md" target="_blank" rel="noopener noreferrer">${icon('users', 15)} 无障碍说明</a>
         </div>
         <h2 class="section-title" style="margin-top:18px">医学顾问</h2>

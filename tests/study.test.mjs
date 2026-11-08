@@ -1,0 +1,62 @@
+import assert from 'node:assert/strict';
+
+class MemoryStorage {
+  constructor() { this.map = new Map(); }
+  getItem(key) { return this.map.has(key) ? this.map.get(key) : null; }
+  setItem(key, value) { this.map.set(key, String(value)); }
+  removeItem(key) { this.map.delete(key); }
+  clear() { this.map.clear(); }
+}
+
+const local = new MemoryStorage();
+const session = new MemoryStorage();
+globalThis.localStorage = local;
+globalThis.sessionStorage = session;
+globalThis.window = { dispatchEvent() {}, addEventListener() {}, removeEventListener() {} };
+globalThis.CustomEvent = class CustomEvent { constructor(type, init = {}) { this.type = type; this.detail = init.detail; } };
+
+const study = await import('../public/static/js/study-store.js');
+const byok = await import('../public/static/js/byok.js');
+
+let passed = 0;
+function check(name, fn) {
+  try { fn(); passed += 1; console.log('  ok  ' + name); }
+  catch (error) { console.error('FAIL  ' + name + ': ' + error.message); process.exitCode = 1; }
+}
+
+check('wrong answer enters review queue and schedules immediately', () => {
+  study.recordAttempt({ correct: false, correctIds: ['afib'], selectedIds: ['svt'], names: { afib: '心房颤动', svt: '室上速' }, chapters: { afib: 'tachy', svt: 'tachy' } });
+  const summary = study.reviewSummary();
+  assert.equal(summary.wrong, 2);
+  assert.equal(summary.due, 2);
+  assert.ok(study.weakDiagnosisIds(5).includes('afib'));
+});
+
+check('self rating moves entry into the future and increases interval', () => {
+  const entry = study.rateReview('afib', 2);
+  assert.ok(entry.interval >= 1);
+  assert.ok(entry.due > Date.now());
+  const due = study.dueReviews(10).map((item) => item.id);
+  assert.ok(!due.includes('afib'));
+});
+
+check('favorites toggle and export/import round-trip', () => {
+  assert.equal(study.toggleFavorite({ id: 'afib', name: '心房颤动', chapter: 'tachy' }), true);
+  assert.equal(study.isFavorite('afib'), true);
+  const data = study.exportStudyData();
+  assert.ok(data.reviews.afib);
+  local.clear();
+  assert.equal(study.importStudyData(data), true);
+  assert.equal(study.isFavorite('afib'), true);
+});
+
+check('BYOK stores only in sessionStorage and clears', () => {
+  assert.equal(byok.setByok({ baseUrl: 'https://api.example.com/v1', model: 'demo', apiKey: 'sk-test-1234' }), true);
+  assert.equal(byok.hasByok(), true);
+  assert.equal(local.getItem('ecg-byok-v1'), null);
+  assert.ok(session.getItem('ecg-byok-v1'));
+  byok.clearByok();
+  assert.equal(byok.hasByok(), false);
+});
+
+console.log(`\nStudy/BYOK tests passed: ${passed}`);

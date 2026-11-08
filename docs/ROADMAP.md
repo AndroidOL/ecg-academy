@@ -32,7 +32,7 @@
 - [x] 课程包 JSON 规范与校验器 `scripts/validate_course_pack.php`。
 - [x] CSV 脱敏波形导入器 `scripts/import_ecg_csv.php`（单导联、500 Hz、审阅状态）。
 - [x] 胸廓横截面 QRS 向量与 V1/V5/V6 投影教学。
-- [x] 区域指南差异文档 [`GUIDELINES.md`](GUIDELINES.md)。
+- [x] 区域指南差异文档 [`GUIDELINES.md`](GUIDELINES.md) 与站内 `#/guidelines` 页面。
 
 ## v2.0（长期）
 
