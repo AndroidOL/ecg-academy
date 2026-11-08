@@ -1,233 +1,207 @@
+<div align="center">
+
 # 心迹 · ECG Lab
 
-[![CI](https://github.com/AndroidOL/ecg-academy/actions/workflows/ci.yml/badge.svg)](https://github.com/AndroidOL/ecg-academy/actions/workflows/ci.yml)
+**读懂每一次心跳。**
 
-> **读懂每一次心跳。** 面向医学生、住院医师与急救培训者的免费开源心电图学习站。
+面向医学生、住院医师与心电图爱好者的开源学习平台：可交互心电波形、结构化课程、判读训练、ACLS 推演与心脏向量实验室。
 
-**Demo 站：** <https://ecg.tianhao.me/>（仅静态内容预览；不提供公开登录和 AI 服务；会按服务器负载调整可用状态）
-**GitHub：** <https://github.com/AndroidOL/ecg-academy>
-**项目目录：** `/www/wwwroot/ecg-academy`（独立新目录，未触碰任何既有生产站点）
-**数据库：** MySQL 8.4 `ecg_academy`（连接信息见 [`docs/DATABASE.md`](docs/DATABASE.md)）
-**后台：** `/#/admin`（部署与恢复见 [`docs/ADMIN.md`](docs/ADMIN.md)；本地凭据不进入仓库）
+[在线体验](https://ecg.tianhao.me) · [功能](#功能) · [截图](#截图) · [快速开始](#快速开始) · [自托管部署](#自托管部署) · [参与贡献](#参与贡献)
 
----
+代码 [MIT](LICENSE) · 教学内容 [CC BY-SA 4.0](LICENSE)
 
-## 为什么做这个站
+</div>
 
-传统心电图学习往往停留在静态图片 + 长文：手机上看不清网格、不能逐搏测量、练习与学习割裂、急救流程只靠视频记忆。心迹把 **可交互波形、结构化课程、服务端判分和服务端 ACLS 状态机**放进同一个站点：
+![首页](docs/screenshots/home.jpg)
 
-- **学习**：231 章系统课程，19 个章节；覆盖电生理/导联/向量、肥厚、40 种判读诊断、起搏与电生理、特殊检查、综合征、临床危急值、儿科、节律竞争与伪差。诊断篇含机制、标准、判读步骤、危险信号、处理、易错点、鉴别与记忆锦囊；理论篇含学习目标、核心概念、判读应用与边界。
-- **导论**：理论章节独立入口 `/#/intro`，覆盖动作电位、离子通道、传导系统、向量与导联、伪差与正常变异；支持搜索、排序与分页，学习页只保留诊断课程。
-- **可交互 ECG**：Canvas 生成 500 Hz 波形；支持节律条/12 导联、**循环覆盖**与**连续滚动**两种播放、12 导联录播放、标注开关、悬停测量、导联切换。移动端自适应网格疏密。
-- **心脏向量实验室**：三维 P/QRS/T 向量环（三行独立电轴、全周视角拖动）、肢体/胸导联投影、12 导联投影图、额面肢体导联方向罗盘、胸廓横截面 QRS 向量（解释 V1 rS、V5 qRs、V5 R > V6 R）、**激活顺序时间轴**（室间隔 → 心尖 → 游离壁 → 基底部，区域高亮与投影联动）、当前相位 **SVG 导出**、V1–V6 电极定位、动作电位/离子通道动画与四腔瓣膜解剖；入口 `/#/vectors`。
-- **教科书模式**：在真实心电图上直接标注 P 波、PR、QRS、T 波、QT，并附正常值、机制说明与正常窦性心律对照图。
-- **练习**：内置 **1920 道确定性预生成病例**（40 种诊断 × 40 个种子变体 + 8 组组合 × 40），难度 1–3，支持章节筛选、单诊断与组合诊断多选；答案由服务端判定，记录 XP、正确率与错题解析。新增**本地错题本、收藏、自适应间隔重复（首答 1 天，之后 ×ease≈2.5 增长：1→3→8→20 天，封顶 90 天，忘记归零）、按薄弱诊断组卷**与只读组卷分享链接；教师可在后台生成匿名班级作业链接，服务端只记录随机设备哈希、得分与用时。游客答题不写 `quiz_attempts`。测试模块答对 +1、答错 -10，≤ -100 分锁定次日；支持**经典判读、极速 60 秒、连击生存（3 条命）**三种玩法，并提供今日/本周/总榜与个人名次。
-- **每日挑战**：`/#/daily` 每天 10 道全站同题（按日期确定性选卷、选项顺序固定，难度配额 4/4/2），每天只能完成一次、独立计分（不进入测试分与排行榜）；28 天打卡日历、连续/最佳/累计天数，游客记录在登录后并入账号。
-- **急救推演**：10 个 ACLS 场景（含 PEA 低血容量、低温室颤、局麻药中毒、妊娠心脏骤停），服务端权威状态机；CPR 质量、6 秒 IV/IO 建立、3 秒充电、停止按压后放电、电击后短暂静止；未处理时心率/血压/SpO₂/ETCO₂ 持续恶化并进入代偿—失代偿—濒危阶段；超时/死亡强制封顶评分并按时间线复盘。新增可逆病因/特殊处理操作与场景专属提示。
-- **排行榜**：独立 `/#/leaderboard`，前三名领奖台、前 50 名表格、当前用户名次、今日/本周/总榜切换；只显示公开昵称与分数，不展示答题内容。
-- **学习考试**：19 个板块共 1735 道章节题，答案经来源绑定、跨章节干扰项与相似度审计（0 冲突）；每板块 10 题学习关卡，≥8 题标记“已学习”；完成 8 个板块解锁综合考试；最近 50 题动态评级（生疏/掌握/熟练/精通），连续错误会退回“重新学习”。入口 `/#/exam`；每篇文章也直接提供“本章测试”。
-- **电解质实验室**：K⁺/Ca²⁺/Mg²⁺ 滑杆与实时 ECG；标准 12 导联/单图/单导联/横向排列四种模式、9 组预设、5 个临床病例、5 题自测；观察 T/U 波、QT、PR/QRS 的改变与处理原则。
-- **AI 导师（可选）**：兼容 OpenAI 的 API；支持错因解析、专项组卷、急救复盘与文章问答。回答采用 **SSE 流式输出**、支持 Markdown，并显示本次附带的题目上下文；练习追问限 120 字（回车即发送），复杂问题引导到文章页 AI 导师。未配置站点密钥时降级到本地知识库；管理员可开启 **BYOK 演示**（用户自带密钥，仅存当前标签页 sessionStorage、不落库/不写日志、仅允许 HTTPS 公网端点）。后台 **AI 成本中心** 支持按模型设置每百万 tokens 输入/输出价格、折扣时间段与比例，并统计每次调用的 tokens 与费用。
-- **双主题与响应式**：日光/监护两套主题；竖屏手机、平板/横屏折叠屏、桌面三档布局；移动端重排为满宽单列、44px+ 触控、16px 输入字号与安全区适配。新增 **PWA 离线外壳、低带宽模式、双语术语表与英文界面外壳 beta**。
-- **账号与安全**：正式账号可在「我的」页修改昵称、修改密码（验证当前密码），并添加/删除本机 Passkey；登录弹窗支持“用户名 + Passkey”免密登录。管理员账号与普通账号共用同一套会话体系，仅额外可以进入后台。
-- **开放学习**：当前关闭普通用户注册/登录，游客进度、掌握状态、错题/收藏与主题保存在本设备浏览器；页脚展示 GitHub、开源许可证、版权（Tianhao Wu 等）、关于/勘误与 ICP 备案信息。
-- **内容治理**：每章显示编辑核对状态、最后核对日期、整理者与参考来源；公开版本化勘误页与贡献者协议，明确“待临床同行审阅”，不冒充已审阅指南。
-- **管理后台**：仅通过 `/#/admin` URL 进入，前台不再显示后台按钮；数据库驱动配置、管理员密码 + Passkey、AI 供应商与多模型、每日额度、匿名班级作业、手动创建用户、用户启停/密码重置、ICP 与站点信息、审计日志、**流量统计**（PV/UV、热门页面、来源站点与来源 IP、最近访问）与**游客清理**。API Key 使用 AES-256-GCM 加密存储；访客统计仅管理员可见并保留 90 天。
-- **课程导航**：常见核心 / 不常见进阶分离，默认按难度排序，每页 24 章分页；避免一次性渲染数百张卡片。
-- **免费开源**：代码 MIT；教学内容 CC BY-SA 4.0（见 `LICENSE` 与文末说明）。
+## 这是什么
 
-## 内容覆盖
+传统心电图学习往往停留在静态图片与长文：手机上看不清网格、不能逐搏测量、练习与学习割裂、急救流程只能靠视频记忆。心迹把 **可交互波形、结构化课程、服务端判分与服务端 ACLS 状态机** 放进同一个站点，并且不依赖任何前端构建工具。
 
-| 章节 | 章数 | 代表内容 |
-|---|---:|---|
-| 心电理论（独立） | 21 | 传导解剖、动作电位、离子通道、向量、12/18 导联、正常变异、伪差 |
-| 窦性心律与基础 | 5 | 正常窦性、窦缓、窦速、心律不齐、窦性停搏 |
-| 心房与心室肥大 | 14 | 左/右房增大、LVH、RVH、劳损、HCM、V1 高 R 鉴别 |
-| 期前收缩 | 4 | 房早、交界性早搏、室早、二联律 |
-| 快速性心律失常 | 7 | 房速、房扑、房颤、PSVT、室速、室颤、尖端扭转 |
-| 逸搏与缓慢性心律 | 3 | 交界性逸搏、室性逸搏、AIVR |
-| 房室与束支传导阻滞 | 7 | 一度/二度 I/二度 II/三度、RBBB、LBBB、LAFB |
-| 缺血、梗死与 ST-T | 4 | 前壁/下壁 STEMI、缺血性 ST 压低、心包炎 |
-| 电解质、药物与 QT | 6 | 高/低钾、高/低钙、洋地黄、长 QT |
-| 结构异常与综合征 | 4 | LVH、WPW、Brugada、肺栓塞 S1Q3T3 |
-| 起搏与电生理 | 19 | NBG、VVI/AAI/DDD/CRT、夺获/感知、PMT、ICD、电生理标测 |
-| 特殊心电图检查 | 14 | Holter、负荷试验、事件记录器、食管导联、倾斜试验、可穿戴 |
-| 综合征与离子通道病 | 19 | SSS、慢快、LGL、Mahaim、WPW 风险、短/长 QT、ARVC、CPVT |
-| 临床整合与危急值 | 48 | 十步判读、危急值、胸痛/晕厥/心悸/低血压、儿科病例、药物中毒 |
-| 小儿与新生儿心电图 | 15 | 新生儿右室优势、年龄间期、先天性 AVB、川崎病、小儿 SVT |
-| 节律竞争与复杂现象 | 15 | 逸搏-夺获、并行心律、游走起搏点、干扰性分离、Ashman |
-| 伪差、干扰与导联问题 | 12 | CPR/除颤伪差、震颤、电极脱落、导联错接、可穿戴伪差 |
-| 判读基本功与速查 | 6 | 测量、电轴、宽 QRS 鉴别、STEMI 定位、ACLS、钾钙速查 |
-| 进阶与前沿 | 8 | AI ECG、高密度标测、遗传学、数字孪生、学习路线 |
-| **合计** | **231 章** | **40 种判读诊断 + 185 个理论/病例专题** |
+- 无需登录即可完整学习；账号仅在需要跨设备同步时使用。
+- 前后端零构建：原生 ES Modules + Canvas/SVG，PHP 8.4 + MySQL。
+- 教学优先：每个波形、向量与结论都标注“教学示意”，不提供针对真实患者的诊疗指令。
 
-辅助模块：62 个双语术语、10 个急救场景、231 章审阅台账、版本化勘误页、区域指南差异页、6 个向量/电生理子模块。
+## 功能
 
-题库与练习仍以 40 种判读诊断 + 8 组组合为核心；理论学习不强制生成波形。
+### 学
 
-组合题库（8 组）示例：房颤 + RBBB、房颤 + LBBB、前壁 STEMI + RBBB、三度阻滞 + 室性逸搏、预激 + 房颤、长 QT + PVC、房扑 + RBBB、高钾 + 窦缓。
+- **230+ 章系统课程**：电生理、导联与向量、心房/心室肥大、缺血与梗死、电解质与药物、起搏与电生理、特殊检查、综合征、儿科、伪差与进阶。
+- **导论**：动作电位、传导系统、向量环与导联投影独立成章，配自绘 SVG 示意图、图例与参考资料。
+- **可交互 ECG**：500 Hz 波形生成；节律条 / 12 导联、循环覆盖 / 连续滚动、标注、悬停测量、纸速与增益校准。
 
-练习题库由 `scripts/build_question_bank.php` 确定性生成 1920 道预生成病例，写入 `data/question_bank.php`；`scripts/validate_bank.php` 校验总数、诊断引用、ID、种子、题面与 rate 完整性。每次作答仍由服务端重新生成 ECG 与判分。
+### 练
 
-## 路线图与版本
+- **判读练习**：1920 道确定性病例（40 种诊断 × 40 个种子变体 + 组合诊断），支持章节筛选与多选。
+- **三种玩法**：经典判读、极速 60 秒、连击生存。
+- **自适应间隔复习**：错题本、收藏、1→3→8→20 天间隔（封顶 90 天），按薄弱诊断组卷。
+- **每日挑战**：全站同题 10 题、每天一次、连续打卡日历；独立计分，不影响测试分。
+- **学习考试**：板块学习关卡、综合考试、最近 50 题动态评级。
+- **排行榜**：今日 / 本周 / 总榜，只展示昵称与分数。
 
-- 路线图：[`docs/ROADMAP.md`](docs/ROADMAP.md)
-- 版本记录：[`docs/CHANGELOG.md`](docs/CHANGELOG.md)
-- 管理后台：[`docs/ADMIN.md`](docs/ADMIN.md)
+### 推演
 
-## 技术栈
+- **ACLS 急救模拟**：10 个服务端状态机场景，CPR 质量、除颤/复律、药物时序、可逆病因处理，按时间线复盘评分。
 
-- **前端**：原生 ES Modules + CSS 变量，零构建；Canvas ECG 引擎；hash 路由。
-- **后端**：PHP 8.4 + PDO MySQL；独立 session；CSRF；登录限流；AI 服务端代理。
-- **数据库**：MySQL 8.4；`users` / `user_progress` / `quiz_attempts` / `sim_sessions` / `sim_runs` / `auth_throttle` / `ai_usage` / `app_settings` / `admin_passkeys` / `admin_audit` / `assignments` / `assignment_attempts` / `learning_events` / `learning_status` / `practice_daily_scores` / `daily_results` / `consumed_tokens`。
-- **Web 服务器**：nginx（新增独立 vhost，按 IP 精确匹配）。
-- **测试**：Node 22（ECG 引擎 / jsdom UI 冒烟 / Playwright 真实浏览器回归）+ PHP CLI（急救状态机 / 内容校验 / 231 章课程校验 / 1920 题库校验 / 课程包与导入校验）。
+### 工具
+
+- **心脏向量实验室**：P/QRS/T 三维向量环、六轴与肢体导联投影、胸导联定位、四步激活顺序、向量图 SVG 导出。
+- **电解质实验室**：K⁺ / Ca²⁺ / Mg²⁺ 滑杆与实时波形变化。
+- **AI 导师（可选）**：兼容 OpenAI 接口；流式回答、错因解析、专项计划、急救复盘；支持 BYOK 与本地知识库降级。
+
+### 体验
+
+- 深浅双主题、PWA 离线外壳、低带宽模式、移动端 320px 起适配、44px+ 触控与 16px+ 表单字号。
+- 管理员后台：用户与权限、课程作业、AI 供应商与成本中心、访问统计、游客清理、审计日志。
+
+## 截图
+
+| 判读练习 | 向量实验室 |
+| --- | --- |
+| ![练习](docs/screenshots/practice.jpg) | ![向量实验室](docs/screenshots/vectors.jpg) |
 
 ## 快速开始
 
-### 生产（当前已部署）
+环境要求：
+
+- PHP 8.2+（推荐 8.4，需 `pdo_mysql`、`openssl`、`curl`、`mbstring`）
+- MySQL 8+
+- Node.js 22（仅用于运行测试，站点本身零构建）
 
 ```bash
-# 站点地址由部署环境提供
-# 数据库
-mysql -u<local-user> -p ecg_academy
+git clone <repository-url> ecg-lab
+cd ecg-lab
+
+# 1. 本地数据库配置（不会被提交）
+cat > app/config.local.php <<'PHP'
+<?php
+return ['db' => [
+  'host' => '127.0.0.1',
+  'port' => 3306,
+  'database' => 'ecg_academy',
+  'user' => 'ecg_app',
+  'password' => 'your-password',
+  'charset' => 'utf8mb4',
+]];
+PHP
+
+# 2. 建库并创建表（需要具有建表权限的数据库账号）
+mysql -uroot -p -e "CREATE DATABASE ecg_academy CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
+# 临时将 config.local.php 指向管理员账号后执行：
+php scripts/migrate.php
+php scripts/create_admin.php
+
+# 3. 本地启动（内置服务器）
+php -S 127.0.0.1:8799 -t public scripts/dev-router.php
 ```
 
-nginx vhost：`/www/server/panel/vhost/nginx/ecg-academy.conf`（新增文件）。
-PHP-FPM：`unix:/tmp/php-cgi-84.sock`；Web 根：`/www/wwwroot/ecg-academy/public`。
+打开 <http://127.0.0.1:8799>，管理员入口为 `/#/admin`。
 
-### 本地开发
+> 运行期建议使用只具备 `SELECT / INSERT / UPDATE / DELETE` 的最小权限数据库账号；建表与迁移再临时使用管理员账号。
 
-```bash
-cd /www/wwwroot/ecg-academy
-php scripts/migrate.php                 # 建表（可重复执行）
-php -S 127.0.0.1:8791 -t public scripts/dev-router.php
-# 浏览器打开 http://127.0.0.1:8791/
+## 自托管部署
+
+站点入口在 `public/`，`app/`、`data/`、`storage/` 均位于 Web 根目录之外。一个可用的 nginx 示例：
+
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name your-domain.example;
+    root /var/www/ecg-lab/public;
+    index index.php;
+
+    client_max_body_size 1m;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    location / { try_files $uri $uri/ /index.php?$query_string; }
+
+    location ~ \.php$ {
+        include fastcgi.conf;
+        fastcgi_pass unix:/run/php/php8.4-fpm.sock;
+        fastcgi_read_timeout 60s;
+        # API 的 404 需要原样返回 JSON
+        fastcgi_intercept_errors off;
+    }
+
+    location ~ \.(js|css)$ {
+        add_header Cache-Control "public, max-age=43200";
+        expires off;
+    }
+}
 ```
 
-> 本机 Chrome 无头渲染在当前低配环境会卡在 SwiftShader，视觉验收使用 jsdom DOM 冒烟 + 静态检查；详见 `docs/TESTING.md`。
+说明：
 
-## AI 接入
+- 带 `?v=` 的静态资源可长缓存；无版本号请求应使用 `no-cache` 重新验证。
+- AI 流式接口返回 `X-Accel-Buffering: no`，如前置代理仍缓冲，请关闭对应 location 的 buffering。
+- 备份 `app/config.local.php`、`storage/master.key` 与数据库即可完整恢复。
 
-复制 `app/config.local.example.php` 为 `app/config.local.php`，填写 OpenAI 兼容端点/密钥/模型；或使用环境变量：
+## 配置
 
-```bash
-ECG_AI_ENABLED=1
-ECG_AI_BASE_URL=https://api.deepseek.com/v1   # 或 OpenAI/Ollama/其他兼容服务
-ECG_AI_API_KEY=sk-...
-ECG_AI_MODEL=deepseek-chat
+所有运营配置都在管理后台 `/#/admin`：
+
+- **站点**：名称、版权、许可证、ICP 备案、GitHub 链接。
+- **登录**：是否开放注册与普通用户登录、管理员密码 / Passkey 登录。
+- **AI**：多供应商与模型、每日额度、系统提示词、BYOK 开关；成本中心可设置每个模型的输入/输出单价（每百万 tokens）、折扣时间段与比例。
+- **班级作业**：生成匿名设备链接，统计人数、次数、平均分与正确率。
+
+## 技术栈
+
+- 后端：PHP 8.4（无框架）、PDO MySQL、AES-256-GCM 令牌、WebAuthn Passkey。
+- 前端：原生 ES Modules、Canvas / SVG、Service Worker（PWA）。
+- 数据：确定性题库与课程 JSON/PHP 数据文件，无需 CMS。
+
+## 项目结构
+
+```text
+app/               后端：路由、控制器、领域逻辑、数据库、鉴权
+data/              课程、题库、诊断、场景、勘误等内容数据
+docs/              架构、API、数据库、测试、部署、设计、无障碍文档
+public/            Web 根目录：SPA 入口、静态资源、Service Worker
+scripts/           迁移、校验、导入、运维脚本
+tests/             PHP 与 Node 测试
+storage/           会话、日志、缓存、备份（Web 不可达）
 ```
-
-- 密钥只在服务端，不下发浏览器。
-- AI 只做选择、解释、复盘与对话，不生成 ECG 波形或判分答案。
-- 超时/限流/失败自动降级到本地知识库。
-- 每日配额 `ai_usage`，默认 30 次/人/天。
-
-详见 [`docs/AI.md`](docs/AI.md)。
 
 ## 测试
 
 ```bash
-# Node 22；本机若 node 不在 PATH，请使用部署环境中的 Node 22 绝对路径。
-cd /www/wwwroot/ecg-academy
+# PHP：学习/考试、排行榜、作业、急救、每日挑战、账号、流量、AI 成本
+for t in assignment leaderboard learning sim daily profile traffic ai-cost; do php tests/$t.test.php; done
 
-# 1. 内容结构与引用校验（40 种判读诊断 + 231 章课程）
-php scripts/validate_content.php
+# Node：波形引擎、播放器、本地复习
+node --test tests/engine.test.mjs tests/playback.test.mjs tests/study.test.mjs
 
-# 2. 章节题库校验
-php scripts/validate_section_bank.php
-php scripts/audit_section_bank.php
-
-# 3. 波形引擎单测（15 项）
-node tests/engine.test.mjs
-
-# 4. 播放器/12 导联/标注测试（13 项）
-node tests/playback.test.mjs
-
-# 5. ACLS 状态机测试（14 项，含新场景回归）
-php tests/sim.test.php
-
-# 6. 审阅台账校验
-php scripts/validate_review.php
-
-# 7. 班级作业与学习考试集成测试
-php tests/assignment.test.php
-php tests/learning.test.php
-php tests/leaderboard.test.php
-
-# 8. 本地复习与 BYOK 测试
-node tests/study.test.mjs
-
-# 9. jsdom 全链路 UI 冒烟（15 组）
+# jsdom 全链路 UI 冒烟（需先启动本地服务）
+php -S 127.0.0.1:8791 -t public scripts/dev-router.php &
 node tests/ui-smoke.mjs
+
+# 内容与题库校验
+php scripts/validate_content.php
+php scripts/validate_curriculum.php
+php scripts/validate_bank.php
+php scripts/validate_section_bank.php
 ```
 
-最新结果见 [`docs/TESTING.md`](docs/TESTING.md)。新增课程包校验 `php scripts/validate_course_pack.php <pack.json>` 与 CSV 脱敏导入 `php scripts/import_ecg_csv.php <file.csv> --lead=II`。
+## 路线图
 
-## 目录
+见 [`docs/ROADMAP.md`](docs/ROADMAP.md)：课程包导入、波形标注器、WFDB/SCP 适配、英文化与 CME 评估等。
 
-```text
-app/                 PHP 后端（Web 根之外）
-  Auth.php           会话、游客注册升级、CSRF、限流
-  Quiz.php           出题、选项、服务端判分
-  SimEngine.php      ACLS 服务端状态机与评分
-  Ai.php             OpenAI 兼容代理 + 本地降级
-  Content.php        231 章内容加载（诊断 + 理论/病例）
-data/
-  chapters.php       19 个章节
-  diagnoses/*.php    46 篇判读课程 + ECG 规格；topics/*.json 184 个理论/病例专题
-  combos.php         8 组组合题
-  section_bank.php   19 板块 1735 道章节题（生成）
-  scenarios.php      10 个急救场景
-public/
-  index.php          SPA 入口 + API 路由
-  static/js/         ECG 引擎、渲染器、路由、页面、学习考试、排行榜、本地复习、i18n、BYOK
-  sw.js              PWA 离线缓存（仅 HTTPS）
-  offline.html       离线回退页
-  static/css/        双主题设计系统与响应式
-docs/                医学手册、架构、API、测试、部署、数据库、AI
-scripts/             迁移、导出、开发路由
-tests/               引擎/状态机/UI 冒烟
-storage/             独立 session、日志、缓存（Web 不可达）
-```
+## 参与贡献
 
-## 文档索引
+欢迎内容勘误、题目审阅、翻译与工程改进：
 
-- [医学手册（判读诊断完整内容 + ACLS）](docs/MEDICAL.md)
-- [路线图](docs/ROADMAP.md) / [版本记录](docs/CHANGELOG.md) / [管理后台](docs/ADMIN.md)
-- [项目说明](docs/PROJECT.md)
-- [架构设计](docs/ARCHITECTURE.md)
-- [设计规范](docs/DESIGN.md)
-- [API 文档](docs/API.md)
-- [数据库与凭据](docs/DATABASE.md)
-- [AI 接入](docs/AI.md)
-- [测试报告](docs/TESTING.md)
-- [Git 与 GitHub](docs/GIT.md)
-- [部署与运维](docs/DEPLOYMENT.md)
-- [进度与断点清单](docs/PROGRESS.md)
-- [调研记录](docs/RESEARCH.md)
-- [学习考试、玩法与测试积分](docs/LEARNING.md)
-- [v2.0 研究](docs/V2_RESEARCH.md) / [指南差异](docs/GUIDELINES.md) / 站内 `#/guidelines`
-- [内容审阅](docs/REVIEW.md) / [勘误流程](docs/CORRECTIONS.md) / [贡献者协议](docs/CONTRIBUTOR_AGREEMENT.md)
-- [医学顾问名单](docs/MEDICAL_ADVISORS.md) / [无障碍](docs/A11Y.md) / [i18n](docs/I18N.md)
+1. 先阅读 [`docs/CORRECTIONS.md`](docs/CORRECTIONS.md) 与贡献者协议。
+2. 医学内容需注明来源；未完成的审阅不要写成已完成。
+3. 提交前运行相关校验与测试；静态资源变更需同步 `asset_version` 与 Service Worker 缓存版本。
 
-## 医学与安全声明
+## 许可证
 
-- 本站为**教学用途**，不构成诊断或治疗建议；不替代临床判断与当地急救流程。
-- 波形为教学用途的形态学近似，关键间期与节律关系经过设计，但不等同于真实电生理记录。
-- 急救评分基于 ACLS 教学流程；真实患者用药剂量、能量与操作需由具备资质的临床人员按指南执行。
-- 数据库凭据仅用于本站独立库；不要把 `app/config.php`、`storage/` 或数据库密码暴露到公网。
-- 建议正式长期运行时更换为仅授权 `ecg_academy` 的专用数据库账号。
+- 代码：[MIT](LICENSE)
+- 教学内容：[CC BY-SA 4.0](LICENSE)
 
-## 开源协作
+## 免责声明
 
-- 仓库：<https://github.com/AndroidOL/ecg-academy>
-- 欢迎提交诊断内容修订、ECG 形态改进、移动端适配与测试。
-- 医学内容需给出依据；禁止提交真实患者信息、数据库密码、API Key。
-- 详细贡献流程见 [`CONTRIBUTING.md`](CONTRIBUTING.md)，安全问题见 [`SECURITY.md`](SECURITY.md)。
-
-## 许可
-
-- 代码：MIT License。
-- 教学内容（`data/diagnoses`、`docs/MEDICAL.md`）：CC BY-SA 4.0。
-- 引用与参考见 `docs/RESEARCH.md`；发现内容错误欢迎提交修订。
+本项目用于医学教育与学习，不构成诊疗建议，不能替代临床判断。心电图波形与向量为教学示意；真实患者请遵循所在机构与地区的临床流程。
