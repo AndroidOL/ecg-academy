@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108y';
+const __asset = __isNode ? '' : '?v=20261108z';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const LEADS = {
@@ -109,10 +109,14 @@ function drawVectorCanvas(canvas, state, t) {
     T: (a) => [0.3 + 0.5 * Math.cos(a) + 0.03 * Math.cos(4 * a), -0.18 + 0.28 * Math.sin(a), -0.08 + 0.1 * Math.sin(a + 1.4)],
   };
   const loopColors = { P: c.brand, QRS: c.accent, T: c.gold };
-  const axisDelta = ((state.axis ?? 60) - 60) * Math.PI / 180;
-  const rotateAxis = ([x, y, z]) => [x * Math.cos(axisDelta) - y * Math.sin(axisDelta), x * Math.sin(axisDelta) + y * Math.cos(axisDelta), z];
-  const loopPoint = (key, a) => (key === 'QRS' ? rotateAxis(loops.QRS(a)) : loops[key](a));
-  const cycle = (t / 1800) % 1;
+  const loopAxes = state.axes || { P: 60, QRS: 60, T: 60 };
+  const axisDelta = (key) => ((loopAxes[key] ?? 60) - 60) * Math.PI / 180;
+  const rotateAxis = (key, [x, y, z]) => {
+    const d = axisDelta(key);
+    return [x * Math.cos(d) - y * Math.sin(d), x * Math.sin(d) + y * Math.cos(d), z];
+  };
+  const loopPoint = (key, a) => rotateAxis(key, loops[key](a));
+  const cycle = state.phase ?? 0;
   const windows = { P: [0, 0.16], QRS: [0.2, 0.42], T: [0.55, 0.8] };
   let active = null;
   Object.entries(windows).forEach(([key, [start, end]]) => { if (cycle >= start && cycle < end) active = key; });
@@ -136,7 +140,7 @@ function drawVectorCanvas(canvas, state, t) {
   const selected = state.loop === 'all' ? (active || 'QRS') : state.loop;
   const phase = active === selected ? (cycle - windows[selected][0]) / (windows[selected][1] - windows[selected][0]) : 0;
   const vec = loops[selected](Math.max(0, Math.min(1, phase)) * Math.PI * 2);
-  const rotatedVec = selected === 'QRS' ? rotateAxis(vec) : vec;
+  const rotatedVec = rotateAxis(selected, vec);
   const p0 = project([0, 0, 0]);
   const p1 = project(rotatedVec);
   if (state.loop === 'all' ? (active && active === selected) : true) {
@@ -146,7 +150,7 @@ function drawVectorCanvas(canvas, state, t) {
     ctx.fillStyle = '#ffffff';
     ctx.beginPath(); ctx.arc(...p1, 3.5, 0, Math.PI * 2); ctx.fill();
   }
-  const main = selected === 'QRS' ? rotateAxis(loops.QRS(0.8)) : loops[selected](0.8);
+  const main = rotateAxis(selected, loops[selected](0.8));
   const pm = project(main);
   ctx.strokeStyle = c.gold;
   ctx.setLineDash([5, 4]);
@@ -184,11 +188,11 @@ function drawProjectionCanvas(canvas, state, t) {
   ctx.globalAlpha = 1;
   const lead = LEADS[state.lead];
   const dot = (v) => v[0] * lead.vec[0] + v[1] * lead.vec[1] + v[2] * lead.vec[2];
-  const axisDelta = ((state.axis ?? 60) - 60) * Math.PI / 180;
-  const qVec = [0.72 * Math.cos(axisDelta) - 0.32 * Math.sin(axisDelta), 0.72 * Math.sin(axisDelta) + 0.32 * Math.cos(axisDelta), 0.12];
-  const ampP = dot([0.28, 0.18, 0.05]) * 0.7;
-  const ampQ = dot(qVec) * 1.5;
-  const ampT = dot([0.58, 0.3, 0.1]) * 0.9;
+  const loopAxes = state.axes || { P: 60, QRS: 60, T: 60 };
+  const rot = (key, v) => { const d = ((loopAxes[key] ?? 60) - 60) * Math.PI / 180; return [v[0] * Math.cos(d) - v[1] * Math.sin(d), v[0] * Math.sin(d) + v[1] * Math.cos(d), v[2]]; };
+  const ampP = dot(rot('P', [0.28, 0.18, 0.05])) * 0.7;
+  const ampQ = dot(rot('QRS', [0.72, 0.32, 0.12])) * 1.5;
+  const ampT = dot(rot('T', [0.58, 0.3, 0.1])) * 0.9;
   const phase = state.phase ?? 0;
   const yAt = (x) => {
     const u = x / plotW;
@@ -228,10 +232,9 @@ function updateProjectionBars(host, state, t) {
     : loop === 'T'
       ? [0.3 + 0.5 * Math.cos(a), -0.18 + 0.28 * Math.sin(a), -0.08 + 0.1 * Math.sin(a + 1.4)]
       : [0.34 + 0.62 * Math.cos(a) + 0.1 * Math.cos(3 * a), -0.22 + 0.34 * Math.sin(a) + 0.09 * Math.sin(3 * a), -0.12 + 0.18 * Math.sin(a + 0.7)];
-  if (loop === 'QRS') {
-    const d = ((state.axis ?? 60) - 60) * Math.PI / 180;
-    point = [point[0] * Math.cos(d) - point[1] * Math.sin(d), point[0] * Math.sin(d) + point[1] * Math.cos(d), point[2]];
-  }
+  const loopAxes = state.axes || { P: 60, QRS: 60, T: 60 };
+  const d = ((loopAxes[loop] ?? 60) - 60) * Math.PI / 180;
+  point = [point[0] * Math.cos(d) - point[1] * Math.sin(d), point[0] * Math.sin(d) + point[1] * Math.cos(d), point[2]];
   Object.entries(LEADS).forEach(([id, lead]) => {
     const value = point[0] * lead.vec[0] + point[1] * lead.vec[1] + point[2] * lead.vec[2];
     const valueNode = host.querySelector(`[data-projection-value="${id}"]`);
@@ -262,7 +265,12 @@ function vectorLoopsPanel() {
         <select class="select" data-vector-loop aria-label="选择向量环"><option value="all" selected>P + QRS + T 全部</option><option value="P">P 环</option><option value="QRS">QRS 环</option><option value="T">T 环</option></select>
         <select class="select" data-vector-lead aria-label="选择投影导联">${Object.entries(LEADS).map(([id, l]) => `<option value="${id}" ${id === 'II' ? 'selected' : ''}>${l.name}</option>`).join('')}</select>
       </div>
-      <div class="visual-controls vector-axis-controls"><label class="visual-range">主方向 <input type="range" min="-180" max="180" value="60" data-vector-axis><span data-vector-axis-value>+60°</span></label><button class="chip" type="button" data-drag-mode>拖动：视角</button></div>
+      <div class="visual-controls vector-axis-controls vector-axis-three">
+        <label class="visual-range">P 环电轴 <input type="range" min="-180" max="180" value="60" data-vector-axis="P"><span data-vector-axis-value="P">+60°</span></label>
+        <label class="visual-range">QRS 电轴 <input type="range" min="-180" max="180" value="60" data-vector-axis="QRS"><span data-vector-axis-value="QRS">+60°</span></label>
+        <label class="visual-range">T 环电轴 <input type="range" min="-180" max="180" value="60" data-vector-axis="T"><span data-vector-axis-value="T">+60°</span></label>
+        <button class="chip" type="button" data-drag-mode>拖动：视角</button>
+      </div>
       <div class="axis-presets vector-axis-presets"><span class="muted" style="font-size:9px">快速主方向</span><button type="button" class="chip" data-qrs-axis="60">正常 +60°</button><button type="button" class="chip" data-qrs-axis="-45">左偏 −45°</button><button type="button" class="chip" data-qrs-axis="120">右偏 +120°</button><button type="button" class="chip" data-qrs-axis="-120">极度 −120°</button><button type="button" class="chip" data-qrs-axis="90">垂直 +90°</button></div>
     </div>
     <aside class="visual-explain">
@@ -270,6 +278,7 @@ function vectorLoopsPanel() {
       <p>心室除极不是一根箭头，而是随时间变化的瞬时向量。把所有瞬时向量的尖端连起来，就得到 <b>QRS 向量环</b>；P 环和 T 环分别代表心房除极、心室复极。</p>
       <div class="visual-legend"><span><i style="background:var(--brand)"></i>P 环</span><span><i style="background:var(--accent)"></i>QRS 环</span><span><i style="background:var(--gold)"></i>T 环</span></div>
       <p class="muted">体表每个导联只记录该环在自身导联轴上的投影：投影为正，波形向上；投影为负，波形向下。向量环越“朝向”某个导联，该导联的波幅越大。</p>
+      <p class="muted"><b>关于 P/T 电轴：</b>临床上说“电轴偏转”通常指 QRS 额面电轴，正常约 −30° 至 +90°；P 波电轴也可测量（正常约 0° 至 +75°，异常提示异位房律等），T 波电轴通常与 QRS 主向量大致一致，缺血、电解质紊乱、肥厚/劳损时可改变。本页三个环可分别调节，仅用于理解向量方向与投影，不把 P/T 偏转直接等同于 QRS 电轴诊断。</p>
       <div class="visual-tip">${icon('sparkles', 14)} 旋转模型，观察心电轴：电轴左偏 = QRS 主向量更朝上/左；电轴右偏 = 更朝下/右。</div>
     </aside>
   </div>`;
@@ -372,6 +381,47 @@ function updateLimbReadout(host, state, t) {
   if (readout) readout.innerHTML = `<b>${axis}</b><span>额面电轴 ${signed}° · I ${values.I >= 0 ? '正' : '负'} · aVF ${values.aVF >= 0 ? '正' : '负'} · II ${values.II >= 0 ? '正' : '负'}</span><small>快速法：I 正 + aVF 正 ≈ 正常；I 正 + aVF 负 + II 负 ≈ 左偏；I 负 + aVF 正 ≈ 右偏。</small>`;
 }
 
+function drawLimbWaves(canvas, state, t) {
+  const { ctx, width, height } = canvas2d(canvas);
+  const c = palette();
+  const left = 34; const right = 44; const top = 12; const bottom = 8;
+  const plotW = width - left - right;
+  const rowH = (height - top - bottom) / 6;
+  const angle = limbAngleDegrees(state, t);
+  ctx.clearRect(0, 0, width, height); ctx.fillStyle = c.bg; ctx.fillRect(0, 0, width, height);
+  ctx.font = '9px ui-monospace, monospace';
+  Object.entries(LEADS).forEach(([id, lead], index) => {
+    const y = top + index * rowH + rowH * 0.58;
+    const projection = Math.cos((angle - lead.angle) * Math.PI / 180);
+    if (id === state.lead) { ctx.fillStyle = 'rgba(255,255,255,.045)'; ctx.fillRect(left - 4, y - rowH * .45, plotW + 8, rowH * .9); }
+    ctx.strokeStyle = id === state.lead ? c.brand : c.grid;
+    ctx.globalAlpha = id === state.lead ? .45 : .25; ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(left + plotW, y); ctx.stroke(); ctx.globalAlpha = 1;
+    ctx.strokeStyle = id === state.lead ? c.brand : c.muted;
+    ctx.lineWidth = id === state.lead ? 1.5 : 1;
+    ctx.beginPath();
+    for (let i = 0; i <= plotW; i += 1) {
+      const u = i / plotW;
+      let v = 0.08 * Math.exp(-Math.pow((u - .17) / .018, 2));
+      v += 0.95 * Math.exp(-Math.pow((u - .34) / .012, 2));
+      v -= 0.22 * Math.exp(-Math.pow((u - .365) / .010, 2));
+      v += 0.2 * Math.exp(-Math.pow((u - .62) / .045, 2));
+      const yy = y - v * projection * rowH * 0.45;
+      if (i === 0) ctx.moveTo(left + i, yy); else ctx.lineTo(left + i, yy);
+    }
+    ctx.stroke();
+    ctx.fillStyle = id === state.lead ? c.brand : c.muted;
+    ctx.font = id === state.lead ? '700 9px ui-monospace, monospace' : '9px ui-monospace, monospace';
+    ctx.fillText(id, 8, y + 3);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = projection >= 0 ? c.brand : c.accent;
+    ctx.font = '9px ui-monospace, monospace';
+    ctx.fillText(`${projection >= 0 ? '+' : ''}${projection.toFixed(2)}`, width - 6, y + 3);
+    ctx.textAlign = 'left';
+  });
+  ctx.fillStyle = c.muted; ctx.font = '8px ui-monospace, monospace';
+  ctx.fillText('同一瞬时向量 → 六导联投影；角度改变时振幅与极性随之改变', left, height - 1);
+}
+
 function limbPanel() {
   return `<div class="visual-grid">
     <div class="visual-card visual-card-dark">
@@ -390,10 +440,11 @@ function limbPanel() {
       <div class="axis-presets"><button type="button" class="chip" data-axis-preset="60">正常 +60°</button><button type="button" class="chip" data-axis-preset="-45">左偏 −45°</button><button type="button" class="chip" data-axis-preset="120">右偏 +120°</button><button type="button" class="chip" data-axis-preset="-120">极度 −120°</button></div>
       <div class="vector-projections axis-projections" data-limb-projections>${Object.entries(LEADS).map(([id, lead]) => `<div data-limb-projection="${id}"><b>${id}</b><div class="vector-projection-track"><i></i></div><span data-limb-value="${id}">+0.00</span></div>`).join('')}</div>
       <div class="axis-readout" data-limb-readout></div>
+      <div class="limb-wave-panel"><div class="visual-sync-head"><span>各肢体导联投影波形</span><span>随电轴角度实时变化</span></div><canvas data-limb-waves data-height="245" aria-label="六个肢体导联投影波形"></canvas></div>
     </div>
     <aside class="visual-explain">
       <h3>肢体导联是同一向量的不同投影</h3>
-      <p>六个肢体导联位于额面，彼此相差固定角度。某个导联的振幅，等于心电向量在该导联轴上的投影：<b>投影 = |向量| × cos(夹角)</b>。</p>
+      <p>六个肢体导联位于额面，彼此相差固定角度。某个导联的振幅，等于心电向量在该导联轴上的投影：<b>投影 = |向量| × cos(夹角)</b>。下方的每个导联波形不是独立“偏转”，而是同一瞬时向量随时间投影到该导联轴的结果；要谈偏转，必须同时说明时间、导联和参考向量。</p>
       <div class="axis-table">${Object.entries(LEADS).map(([id, l]) => `<div><b>${l.name}</b><span>${l.angle}°</span><small>${l.note}</small></div>`).join('')}</div>
       <div class="visual-tip">${icon('target', 14)} 电轴不是“猜”的：I 与 aVF 的净极性就能快速定位。拖动角度，观察 II 与 aVR 的投影如何相反。</div>
       <div class="vector-disclaimer"><b>教学示意，不是真实心电向量</b><p>图中的单一箭头只是为了说明“导联如何投影”的简化合成向量。真实心电向量是所有正在除极/复极的心肌细胞电偶向量在同一瞬间的空间叠加，会随激动部位、时间、胸壁阻抗、呼吸和导联位置持续变化，其方向和大小不能由一根固定箭头完全代表。本页用于建立方向与投影的直觉，不用于逐搏定量或临床诊断。</p></div>
@@ -579,7 +630,7 @@ export async function vectorLabView() {
   let raf = 0;
   let cleanup = [];
   let start = performance.now();
-  const state = { rotate: 24, pitch: 18, playing: true, loop: 'all', lead: 'II', axis: 60, angle: 60, auto: true, speed: 1, dragMode: 'view', phase: 0 };
+  const state = { rotate: 24, pitch: 18, playing: true, loop: 'all', lead: 'II', axes: { P: 60, QRS: 60, T: 60 }, axis: 60, angle: 60, auto: true, speed: 1, dragMode: 'view', phase: 0 };
   el.innerHTML = `<div class="page-eyebrow">${icon('compass', 14)} VECTOR & ELECTROPHYSIOLOGY</div>
     <div class="vector-head"><div><h1 class="page-title">心脏向量实验室</h1><p class="page-sub">把“背图形”变成“看方向”：P/QRS/T 环、肢体/胸导联投影、动作电位与解剖一次串起来。</p></div><a class="btn btn-secondary btn-sm" href="#/learn/ecg-calibration-paper">回到基础课程 ${icon('arrowRight', 13)}</a></div>
     <div class="vector-safety-note">${icon('info', 14)} <span>电轴方向与导联投影仅供教学参考，用于理解电轴变化，<b>不代表任何患者实际情况</b>，不用于诊断或治疗。</span></div>
@@ -638,6 +689,8 @@ export async function vectorLabView() {
     state.lastLimbAt = now;
     drawLimbCanvas(canvas, state, now);
     updateLimbReadout(content, state, now);
+    const waves = content.querySelector('[data-limb-waves]');
+    if (waves) drawLimbWaves(waves, state, now);
     raf = requestAnimationFrame(drawLimbFrame);
   };
   const drawWaveFrame = (now) => {
@@ -666,25 +719,31 @@ export async function vectorLabView() {
       stopAnim();
       renderLoopState();
     });
-    const axisSlider = content.querySelector('[data-vector-axis]');
-    const axisLabel = content.querySelector('[data-vector-axis-value]');
-    const setAxis = (value) => {
-      state.axis = Math.max(-180, Math.min(180, Number(value) || 0));
-      if (axisSlider) axisSlider.value = String(state.axis);
-      if (axisLabel) axisLabel.textContent = `${state.axis >= 0 ? '+' : ''}${Math.round(state.axis)}°`;
+    const axisSlider = content.querySelector('[data-vector-axis="QRS"]');
+    const setAxis = (key, value) => {
+      const v = Math.max(-180, Math.min(180, Number(value) || 0));
+      state.axes = { P: 60, QRS: 60, T: 60, ...(state.axes || {}), [key]: v };
+      const slider = content.querySelector(`[data-vector-axis="${key}"]`);
+      const label = content.querySelector(`[data-vector-axis-value="${key}"]`);
+      if (slider) slider.value = String(v);
+      if (label) label.textContent = `${v >= 0 ? '+' : ''}${Math.round(v)}°`;
       renderLoopState();
     };
-    axisSlider?.addEventListener('input', (e) => setAxis(e.target.value));
+    content.querySelectorAll('[data-vector-axis]').forEach((slider) => {
+      slider.addEventListener('input', (e) => setAxis(e.target.dataset.vectorAxis, e.target.value));
+    });
     const dragMode = content.querySelector('[data-drag-mode]');
     dragMode?.addEventListener('click', () => {
       state.dragMode = state.dragMode === 'axis' ? 'view' : 'axis';
       dragMode.textContent = state.dragMode === 'axis' ? '拖动：主方向' : '拖动：视角';
     });
     content.querySelectorAll('[data-qrs-axis]').forEach((button) => button.addEventListener('click', () => {
-      setAxis(Number(button.dataset.qrsAxis));
-      state.loop = 'QRS';
-      const select = content.querySelector('[data-vector-loop]');
-      if (select) select.value = 'QRS';
+      const key = state.loop === 'all' ? 'QRS' : state.loop;
+      setAxis(key, Number(button.dataset.qrsAxis));
+      if (state.loop === 'all') {
+        const select = content.querySelector('[data-vector-loop]');
+        if (select) select.value = state.loop;
+      }
     }));
     content.querySelector('[data-vector-loop]')?.addEventListener('change', (e) => { state.loop = e.target.value; });
     content.querySelector('[data-vector-lead]')?.addEventListener('change', (e) => { state.lead = e.target.value; });
@@ -699,7 +758,7 @@ export async function vectorLabView() {
       const normalize180 = (value) => ((value + 180) % 360 + 360) % 360 - 180;
       canvas.addEventListener('pointerdown', (e) => {
         const rect = canvas.getBoundingClientRect();
-        dragStart = { x: e.clientX, y: e.clientY, rotate: state.rotate, pitch: state.pitch, axis: state.axis, angle: pointerAngle(e, rect) };
+        dragStart = { x: e.clientX, y: e.clientY, rotate: state.rotate, pitch: state.pitch, axis: state.axes?.[state.loop === 'all' ? 'QRS' : state.loop] ?? 60, angle: pointerAngle(e, rect) };
         dragging = true;
         canvas.setPointerCapture(e.pointerId);
       });
@@ -708,7 +767,7 @@ export async function vectorLabView() {
         if (!dragging || !dragStart) return;
         const rect = canvas.getBoundingClientRect();
         if (state.dragMode === 'axis') {
-          setAxis(Math.round(normalize180(dragStart.axis + pointerAngle(e, rect) - dragStart.angle)));
+          setAxis(state.loop === 'all' ? 'QRS' : state.loop, Math.round(normalize180((state.axes?.[state.loop === 'all' ? 'QRS' : state.loop] ?? 60) + pointerAngle(e, rect) - dragStart.angle)));
           return;
         }
         const rx = content.querySelector('[data-vector-rotate]');
