@@ -50,6 +50,28 @@ check('favorites toggle and export/import round-trip', () => {
   assert.equal(study.isFavorite('afib'), true);
 });
 
+check('merge keeps newer reviews and unions favorites', () => {
+  local.clear();
+  study.toggleFavorite({ id: 'keep', name: '保留收藏', chapter: 'tachy' });
+  study.recordAttempt({ correct: true, correctIds: ['x'], names: { x: '本地记录' }, chapters: { x: 'tachy' } });
+  const base = study.snapshotStudy().reviews.x;
+  study.mergeStudyData({
+    reviews: {
+      x: { ...base, name: '远程旧记录', lastSeen: (base.lastSeen || 0) - 5000 },
+      y: { id: 'y', name: '远程新增', chapter: 'tachy', lastSeen: 10 },
+    },
+    favorites: { f: { id: 'f', name: '远程收藏', chapter: 'tachy', addedAt: 10 } },
+  });
+  let snap = study.snapshotStudy();
+  assert.equal(snap.reviews.x.name, '本地记录');
+  assert.ok(snap.reviews.y);
+  assert.ok(snap.favorites.f);
+  assert.ok(snap.favorites.keep);
+  study.mergeStudyData({ reviews: { x: { ...base, name: '远程新记录', lastSeen: (base.lastSeen || 0) + 5000 } }, favorites: {} });
+  snap = study.snapshotStudy();
+  assert.equal(snap.reviews.x.name, '远程新记录');
+});
+
 check('BYOK stores only in sessionStorage and clears', () => {
   assert.equal(byok.setByok({ baseUrl: 'https://api.example.com/v1', model: 'demo', apiKey: 'sk-test-1234' }), true);
   assert.equal(byok.hasByok(), true);

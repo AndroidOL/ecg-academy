@@ -26,6 +26,7 @@ const { dailyView } = await import(`./views/daily.js${__asset}`);
 const { introView } = await import(`./views/intro.js${__asset}`);
 const { applyLowBandwidth } = await import(`./bandwidth.js${__asset}`);
 const { t, navKey, getLocale } = await import(`./i18n.js${__asset}`);
+const { pullStudy, scheduleStudyPush } = await import(`./study-sync.js${__asset}`);
 
 const routes = [
   { path: '/', handler: homeView },
@@ -247,7 +248,10 @@ async function boot() {
     window.addEventListener('auth:changed', () => {
       updateShell();
       router?.render();
+      pullStudy();
     });
+    window.addEventListener('ecg-study-change', scheduleStudyPush);
+    pullStudy();
   } catch (error) {
     console.error(error);
     app.innerHTML = `<div class="boot-splash" style="padding:20px;text-align:center">

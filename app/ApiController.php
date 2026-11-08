@@ -270,6 +270,18 @@ final class ApiController
         Http::ok(['registered' => true]);
     }
 
+    public static function meStudy(array $params = []): void
+    {
+        $user = self::user();
+        Http::ok(Study::get((int) $user['id']));
+    }
+
+    public static function meStudySave(array $params = []): void
+    {
+        $user = self::user();
+        Http::ok(Study::save((int) $user['id'], Http::input()));
+    }
+
     public static function mePasskeyDelete(array $params = []): void
     {
         $user = self::user();

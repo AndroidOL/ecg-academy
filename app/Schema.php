@@ -127,6 +127,14 @@ final class Schema
                 KEY idx_ai_log_model (model)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
+            "CREATE TABLE IF NOT EXISTS user_study (
+                user_id BIGINT UNSIGNED NOT NULL PRIMARY KEY,
+                reviews JSON NOT NULL,
+                favorites JSON NOT NULL,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                CONSTRAINT fk_study_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
             "CREATE TABLE IF NOT EXISTS app_settings (
                 setting_key VARCHAR(64) NOT NULL PRIMARY KEY,
                 setting_value LONGTEXT NOT NULL,

@@ -179,7 +179,7 @@ export async function practiceView({ query } = {}) {
         </div>
         <div class="practice-side-card">
           <h3>${icon('target', 14)} 错题与间隔复习</h3>
-          <p>${summary.due} 个诊断到期待复习，${summary.wrong} 个错题已记录。错题本保存在本设备，可自我评分安排下一次复习。</p>
+          <p>${summary.due} 个诊断到期待复习，${summary.wrong} 个错题已记录。错题本${store.user?.isGuest ? '保存在本设备' : '已同步到你的账号'}，可自我评分安排下一次复习。</p>
           <div class="row-wrap" style="margin-top:10px"><a class="btn btn-secondary btn-block btn-sm" href="#/review">${icon('bookOpen', 14)} 打开错题本</a><a class="btn btn-secondary btn-block btn-sm" href="#/exam">${icon('trophy', 14)} 学习考试</a></div>
         </div>
         <div class="practice-side-card">

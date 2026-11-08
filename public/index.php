@@ -73,6 +73,8 @@ if (str_starts_with($path, '/api/')) {
         $router->post('/api/auth/logout', [ApiController::class, 'logout']);
         $router->post('/api/me/profile', [ApiController::class, 'meProfile']);
         $router->post('/api/me/password', [ApiController::class, 'mePassword']);
+        $router->get('/api/me/study', [ApiController::class, 'meStudy']);
+        $router->post('/api/me/study', [ApiController::class, 'meStudySave']);
         $router->get('/api/me/passkeys', [ApiController::class, 'mePasskeys']);
         $router->get('/api/me/passkey/options', [ApiController::class, 'mePasskeyOptions']);
         $router->post('/api/me/passkey/register', [ApiController::class, 'mePasskeyRegister']);

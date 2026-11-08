@@ -62,7 +62,7 @@ export async function meView() {
 
   el.innerHTML = `
     <header class="page-head">
-      <div><div class="page-eyebrow">${icon('user', 14)} MY LAB</div><h1 class="page-title">我的学习</h1><p class="page-sub">${user.isGuest ? '当前为游客模式：学习进度保存在本设备浏览器；本站暂不开放注册与普通用户登录。' : '进度、答题与急救记录保存在当前账号。'}</p></div>
+      <div><div class="page-eyebrow">${icon('user', 14)} MY LAB</div><h1 class="page-title">我的学习</h1><p class="page-sub">${user.isGuest ? `当前为游客模式：学习进度保存在本设备浏览器。${canRegister || canLogin ? '注册或登录后可在服务器保存进度。' : ''}` : '进度、答题与急救记录保存在当前账号，错题与收藏会跨设备同步。'}</p></div>
       <span class="badge badge-brand">${user.isGuest ? '访客模式' : '已登录'} · Lv.${level.level} · ${user.xp || 0} XP</span>
     </header>
     <div class="me-header" style="margin-bottom:14px">
@@ -86,7 +86,7 @@ export async function meView() {
         <section class="card card-pad">
           <div class="section-head"><h2 class="section-title">错题与复习</h2><a class="section-kicker" href="#/review">打开错题本 →</a></div>
           <div class="review-me-grid"><div><b>${localReview.due}</b><span>今日待复习</span></div><div><b>${localReview.wrong}</b><span>错题诊断</span></div><div><b>${localReview.favorites}</b><span>收藏章节</span></div></div>
-          <p class="muted" style="font-size:11px;line-height:1.7;margin-top:8px">答错的诊断会自动进入错题本；按 1 → 3 → 8 → 20 天自适应间隔重现（封顶 90 天），记录只保存在本设备。</p>
+          <p class="muted" style="font-size:11px;line-height:1.7;margin-top:8px">答错的诊断会自动进入错题本；按 1 → 3 → 8 → 20 天自适应间隔重现（封顶 90 天），记录${user.isGuest ? '只保存在本设备' : '已同步到你的账号'}。</p>
           <a class="btn btn-secondary btn-sm" href="#/review" style="margin-top:9px">${icon('target', 14)} 开始间隔复习</a>
         </section>
         <section class="card card-pad">

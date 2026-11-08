@@ -176,6 +176,33 @@ export function clearLocalStudyData() {
   if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('ecg-study-change'));
 }
 
+export function snapshotStudy() {
+  return { reviews: readReviews(), favorites: readFavorites() };
+}
+
+export function mergeStudyData(remote = {}) {
+  const local = snapshotStudy();
+  const reviews = { ...local.reviews };
+  Object.entries(remote.reviews || {}).forEach(([id, entry]) => {
+    if (!entry || typeof entry !== 'object') return;
+    const existing = reviews[id];
+    if (!existing || Number(entry.lastSeen || 0) > Number(existing.lastSeen || 0)) {
+      reviews[id] = { ...entry, id };
+    }
+  });
+  const favorites = { ...local.favorites };
+  Object.entries(remote.favorites || {}).forEach(([id, entry]) => {
+    if (!entry || typeof entry !== 'object') return;
+    const existing = favorites[id];
+    if (!existing || Number(entry.addedAt || 0) > Number(existing.addedAt || 0)) {
+      favorites[id] = { ...entry, id };
+    }
+  });
+  safeWrite(REVIEW_KEY, reviews);
+  safeWrite(FAVORITE_KEY, favorites);
+  return { reviews, favorites };
+}
+
 export function exportStudyData() {
   return {
     version: 1,
