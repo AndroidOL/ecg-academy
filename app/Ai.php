@@ -319,12 +319,22 @@ final class Ai
         if ($host === 'localhost' || str_ends_with($host, '.local') || str_ends_with($host, '.internal')) {
             throw new ApiError(422, 'byok_url_invalid', '不允许访问本地或内网地址');
         }
-        $ip = gethostbyname($host);
-        if (filter_var($ip, FILTER_VALIDATE_IP) && !filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
-            throw new ApiError(422, 'byok_url_invalid', '不允许访问私网或保留地址');
-        }
         $port = (int) ($parts['port'] ?? 443);
+        if ($port < 1 || $port > 65535) {
+            throw new ApiError(422, 'byok_url_invalid', 'BYOK Base URL 端口无效');
+        }
+        $ip = self::resolvePublicHost($host);
         return ['base_url' => $base, 'api_key' => $key, 'model' => $model, 'resolve' => $host . ':' . $port . ':' . $ip];
+    }
+
+    private static function resolvePublicHost(string $host): string
+    {
+        $literal = filter_var($host, FILTER_VALIDATE_IP);
+        $ip = $literal !== false ? $literal : gethostbyname($host);
+        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            throw new ApiError(422, 'byok_url_invalid', '不允许访问私网、保留或无法解析的地址');
+        }
+        return $ip;
     }
 
     private static function consume(int $userId): bool
