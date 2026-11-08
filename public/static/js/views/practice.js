@@ -2,7 +2,7 @@ import { api } from '../api.js';
 import { store } from '../store.js';
 import { navigate } from '../router.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108l';
+const __asset = __isNode ? '' : '?v=20261108n';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, toast, setButtonLoading, fmtDuration, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
@@ -61,9 +61,9 @@ export async function practiceView() {
       <div>
         <div class="page-eyebrow">${icon('target', 14)} READ & DECIDE</div>
         <h1 class="page-title">判读练习</h1>
-        <p class="page-sub">题库已预置 1200 道确定性病例：由 40 种诊断 × 25 个种子、8 组组合 × 25 个种子组成；答案与解析来自策展知识库，服务端校验。</p>
+        <p class="page-sub">题库已预置 1920 道确定性病例：由 40 种诊断 × 40 个种子、8 组组合 × 40 个种子组成；答案与解析来自策展知识库，服务端校验。</p>
       </div>
-      <div class="row-wrap"><span class="badge badge-brand">${icon('activity', 11)} 正确率 ${store.quiz?.accuracy || 0}%</span><span class="badge">${store.quiz?.attempts || 0} 次作答</span><span class="badge">题库 ${store.bank?.total || 1200} 道</span></div>
+      <div class="row-wrap"><span class="badge badge-brand">${icon('activity', 11)} 正确率 ${store.quiz?.accuracy || 0}%</span><span class="badge">${store.quiz?.attempts || 0} 次作答</span><span class="badge">题库 ${store.bank?.total || 1920} 道</span></div>
     </header>
     <div class="practice-setup">
       <section class="quiz-card">
@@ -383,7 +383,7 @@ function renderQuestion(el) {
         setButtonLoading(next, false);
       }
     });
-    feedback.querySelector('[data-ai-explain]')?.addEventListener('click', async (event) => {
+    feedback.querySelector('[data-ai-explain]')?.addEventListener('click', async (event) => { if (store.ai?.allowed === false) return;
       const btn = event.currentTarget;
       const panel = feedback.querySelector('[data-ai-explain-panel]');
       setButtonLoading(btn, true, 'AI 分析中');
@@ -410,7 +410,7 @@ function feedbackHtml(result, multiple) {
     <div class="feedback-head"><span class="feedback-icon ${tone === 'bad' ? 'bad' : ''}">${icon(result.correct ? 'check' : 'x', 16)}</span><div><div class="feedback-title">${title}</div><div class="muted" style="font-size:10px">得分 ${result.score} · 经验 +${result.xp}${answer ? ` · 正确答案：${escapeHtml(answer)}` : ''}</div></div></div>
     <p class="feedback-text">${escapeHtml(result.localExplanation || '')}</p>
     ${(result.explanation || []).map((item) => `<div class="explain-block"><h4>${escapeHtml(item.name)}</h4><p>${escapeHtml(item.specificity || item.oneLiner || '')}</p><ul>${(item.criteria || []).map((c) => `<li>${escapeHtml(c)}</li>`).join('')}</ul></div>`).join('')}
-    <div class="row-wrap" style="margin-top:12px"><button class="btn btn-secondary btn-sm" type="button" data-ai-explain>${icon('sparkles', 14)} AI 解释错因</button><button class="btn btn-primary btn-sm" type="button" data-next>${icon('arrowRight', 14)} 下一题</button></div>
+    <div class="row-wrap" style="margin-top:12px">${store.ai?.allowed !== false ? `<button class="btn btn-secondary btn-sm" type="button" data-ai-explain>${icon('sparkles', 14)} AI 解释错因</button>` : ''}<button class="btn btn-primary btn-sm" type="button" data-next>${icon('arrowRight', 14)} 下一题</button></div>
     <div data-ai-explain-panel></div>
   </div>`;
 }

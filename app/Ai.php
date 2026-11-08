@@ -5,6 +5,14 @@ namespace App;
 
 final class Ai
 {
+    public static function allowedForUser(int $userId): bool
+    {
+        $stmt = Db::pdo()->prepare('SELECT is_guest FROM users WHERE id = ? LIMIT 1');
+        $stmt->execute([$userId]);
+        $isGuest = (int) ($stmt->fetchColumn() ?: 0) === 1;
+        return !$isGuest || Settings::bool('ai.allow_guest', false);
+    }
+
     public static function configured(): bool
     {
         if (!Settings::bool('ai.enabled', (bool) Config::get('ai.enabled', false))) return false;
@@ -17,16 +25,19 @@ final class Ai
     {
         $limit = self::limitFor($userId);
         $used = self::usedToday($userId);
+        $allowed = self::allowedForUser($userId);
         $provider = self::provider();
         $model = $provider['default_model'] ?? ($provider['models'][0] ?? null);
         return [
-            'configured' => self::configured(),
-            'model' => self::configured() ? (string) ($model ?: Config::get('ai.model', '')) : null,
-            'provider' => self::configured() ? ($provider['name'] ?? '内置兼容接口') : null,
+            'configured' => self::configured() && $allowed,
+            'allowed' => $allowed,
+            'guestAllowed' => Settings::bool('ai.allow_guest', false),
+            'model' => self::configured() && $allowed ? (string) ($model ?: Config::get('ai.model', '')) : null,
+            'provider' => self::configured() && $allowed ? ($provider['name'] ?? '内置兼容接口') : null,
             'dailyLimit' => $limit,
             'used' => $used,
             'remaining' => max(0, $limit - $used),
-            'mode' => self::configured() ? 'ai' : 'local',
+            'mode' => self::configured() && $allowed ? 'ai' : 'local',
         ];
     }
 
@@ -100,6 +111,7 @@ final class Ai
 
     public static function chat(int $userId, string $message, ?string $diagnosisId = null): array
     {
+        if (!self::allowedForUser($userId)) throw new ApiError(403, 'ai_guest_disabled', '当前站点未开放未登录用户使用 AI');
         $message = trim($message);
         if ($message === '' || mb_strlen($message, 'UTF-8') > 600) {
             throw new ApiError(422, 'invalid_message', '问题需为 1–600 字');
@@ -126,6 +138,7 @@ final class Ai
 
     public static function explain(int $userId, int $attemptId): array
     {
+        if (!self::allowedForUser($userId)) throw new ApiError(403, 'ai_guest_disabled', '当前站点未开放未登录用户使用 AI');
         $stmt = Db::pdo()->prepare('SELECT * FROM quiz_attempts WHERE id = ? AND user_id = ? AND status = "answered" LIMIT 1');
         $stmt->execute([$attemptId, $userId]);
         $attempt = $stmt->fetch();
@@ -148,12 +161,24 @@ final class Ai
         foreach ($correct as $d) {
             $context[] = self::diagnosisContext($d);
         }
-        $userText = '学生选择：' . ($selectedNames ? implode('、', $selectedNames) : '未选') . "\n"
+        $question = (string) ($payload['question'] ?? '该心电图最可能的诊断是？');
+        $stem = (string) ($payload['stem'] ?? '');
+        $optionIds = is_array($payload['optionIds'] ?? null) ? $payload['optionIds'] : [];
+        $optionNames = array_map(static fn (string $id): string => $all[$id]['name'] ?? $id, $optionIds);
+        $spec = is_array($payload['spec'] ?? null) ? $payload['spec'] : [];
+        $ecgSummary = sprintf('节律 %s，心率 %s 次/分，QRS %s s，电轴 %s，ST 抬高 %s，ST 压低 %s，T 波 %s。',
+            (string) ($spec['rhythm'] ?? '—'), (string) ($spec['rate'] ?? '—'), (string) ($spec['qrs'] ?? '—'), (string) ($spec['axis'] ?? '—'),
+            json_encode($spec['st']['elevation'] ?? [], JSON_UNESCAPED_UNICODE), json_encode($spec['st']['depression'] ?? [], JSON_UNESCAPED_UNICODE), (string) ($spec['t']['shape'] ?? '—'));
+        $userText = "当前心电图题目：{$question}\n"
+            . ($stem !== '' ? "题干：{$stem}\n" : '')
+            . '选项：' . implode('、', $optionNames) . "\n"
+            . '学生选择：' . ($selectedNames ? implode('、', $selectedNames) : '未选') . "\n"
             . '正确答案：' . implode('、', $correctNames) . "\n"
             . '是否完全正确：' . ($attempt['is_correct'] ? '是' : '否') . "\n"
+            . "心电图摘要：{$ecgSummary}\n"
             . "题目解析上下文：\n" . implode("\n---\n", $context);
         $messages = [
-            ['role' => 'system', 'content' => self::systemPrompt()],
+            ['role' => 'system', 'content' => self::systemPrompt() . "\n你会收到题目、选项、学生选择和心电图摘要。先判断学生错在哪一步，再解释；不要只复述正确答案。"],
             ['role' => 'user', 'content' => $userText . "\n\n请针对学生的选择解释错因或确认正确思路；必须指出最关键的心电图线索，给出下一次识别的动作；不超过 450 字。"],
         ];
         $text = self::call($messages, 0.3);
@@ -165,6 +190,7 @@ final class Ai
 
     public static function studyPlan(int $userId): array
     {
+        if (!self::allowedForUser($userId)) throw new ApiError(403, 'ai_guest_disabled', '当前站点未开放未登录用户使用 AI');
         $local = Quiz::localStudyPlan($userId);
         if (!self::configured()) {
             return ['plan' => $local, 'text' => implode(' ', $local['reasons']), 'source' => 'local', 'fallback' => true];
@@ -189,6 +215,7 @@ final class Ai
 
     public static function simReview(int $userId, int $runId): array
     {
+        if (!self::allowedForUser($userId)) throw new ApiError(403, 'ai_guest_disabled', '当前站点未开放未登录用户使用 AI');
         $stmt = Db::pdo()->prepare('SELECT * FROM sim_runs WHERE id = ? AND user_id = ? LIMIT 1');
         $stmt->execute([$runId, $userId]);
         $run = $stmt->fetch();

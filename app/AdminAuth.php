@@ -119,6 +119,7 @@ final class AdminAuth
                 'daily_limit' => (int) $settings['ai.daily_limit'],
                 'default_provider' => (string) $settings['ai.default_provider'],
                 'system_prompt_append' => (string) $settings['ai.system_prompt_append'],
+                'allow_guest' => (bool) $settings['ai.allow_guest'],
             ],
             'site' => [
                 'github_url' => (string) $settings['site.github_url'],
@@ -136,14 +137,14 @@ final class AdminAuth
         $allowed = [
             'auth.registration_enabled', 'auth.user_login_enabled',
             'admin.password_login_enabled', 'admin.passkey_login_enabled',
-            'ai.enabled', 'ai.daily_limit', 'ai.default_provider', 'ai.system_prompt_append',
+            'ai.enabled', 'ai.daily_limit', 'ai.default_provider', 'ai.system_prompt_append', 'ai.allow_guest',
             'site.github_url', 'site.license', 'site.copyright', 'site.icp',
         ];
         $updates = [];
         foreach ($allowed as $key) {
             if (!array_key_exists($key, $input)) continue;
             $value = $input[$key];
-            if (in_array($key, ['auth.registration_enabled','auth.user_login_enabled','admin.password_login_enabled','admin.passkey_login_enabled','ai.enabled'], true)) {
+            if (in_array($key, ['auth.registration_enabled','auth.user_login_enabled','admin.password_login_enabled','admin.passkey_login_enabled','ai.enabled','ai.allow_guest'], true)) {
                 $value = filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
                 if ($value === null) throw new ApiError(422, 'invalid_setting', $key . ' 需为布尔值');
             } elseif ($key === 'ai.daily_limit') {

@@ -1,14 +1,14 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108l';
+const __asset = __isNode ? '' : '?v=20261108n';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const LEADS = {
   I:   { angle: 0,   vec: [1, 0, 0],     name: 'I 导联',   note: '左臂-右臂，观察左右方向' },
-  II:  { angle: 60,  vec: [0.5, 0.866, 0], name: 'II 导联',  note: '左腿-右臂，下壁/节律常用' },
-  III: { angle: 120, vec: [-0.5, 0.866, 0], name: 'III 导联', note: '左腿-左臂，下壁' },
-  aVR: { angle: -150, vec: [-0.866, -0.5, 0], name: 'aVR 导联', note: '右上，正常 P/QRS/T 多倒置' },
-  aVL: { angle: -30, vec: [0.866, -0.5, 0], name: 'aVL 导联', note: '左上，侧壁' },
-  aVF: { angle: 90,  vec: [0, 1, 0],     name: 'aVF 导联', note: '正下，下壁' },
+  II:  { angle: 60,  vec: [0.5, -0.866, 0], name: 'II 导联',  note: '左腿-右臂，下壁/节律常用' },
+  III: { angle: 120, vec: [-0.5, -0.866, 0], name: 'III 导联', note: '左腿-左臂，下壁' },
+  aVR: { angle: -150, vec: [-0.866, 0.5, 0], name: 'aVR 导联', note: '右上，正常 P/QRS/T 多倒置' },
+  aVL: { angle: -30, vec: [0.866, 0.5, 0], name: 'aVL 导联', note: '左上，侧壁' },
+  aVF: { angle: 90,  vec: [0, -1, 0],     name: 'aVF 导联', note: '正下，下壁' },
 };
 
 const CHEST = {
@@ -60,10 +60,13 @@ function drawVectorCanvas(canvas, state, t) {
   const cy = height / 2 + 6;
   const scale = Math.min(width, height) * 0.23;
   const yaw = state.rotate * Math.PI / 180;
+  const pitch = (state.pitch || 0) * Math.PI / 180;
   const project = ([x, y, z]) => {
-    const rx = x * Math.cos(yaw) - z * Math.sin(yaw);
-    const rz = x * Math.sin(yaw) + z * Math.cos(yaw);
-    return [cx + rx * scale, cy - y * scale + rz * scale * 0.28];
+    const y1 = y * Math.cos(pitch) - z * Math.sin(pitch);
+    const z1 = y * Math.sin(pitch) + z * Math.cos(pitch);
+    const rx = x * Math.cos(yaw) - z1 * Math.sin(yaw);
+    const rz = x * Math.sin(yaw) + z1 * Math.cos(yaw);
+    return [cx + rx * scale, cy - y1 * scale + rz * scale * 0.28];
   };
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = c.bg;
@@ -96,9 +99,10 @@ function drawVectorCanvas(canvas, state, t) {
     ctx.fillText(axis.label, p[0] + 4, p[1] - 4);
   });
   const loops = {
-    P: (a) => [0.28 * Math.cos(a), 0.18 * Math.sin(a), 0.1 * Math.sin(a * 2)],
-    QRS: (a) => [0.82 * Math.cos(a) + 0.18 * Math.cos(3 * a), 0.48 * Math.sin(a) + 0.12 * Math.sin(3 * a), 0.25 * Math.sin(a + 0.8)],
-    T: (a) => [0.6 * Math.cos(a) + 0.04 * Math.cos(4 * a), 0.38 * Math.sin(a), 0.14 * Math.sin(a + 1.6)],
+    // x = 左，y = 上，z = 前。正常心室除极的主向量总体指向左下、略向后。
+    P: (a) => [0.18 + 0.24 * Math.cos(a), -0.1 + 0.16 * Math.sin(a), 0.04 * Math.sin(a * 2)],
+    QRS: (a) => [0.34 + 0.62 * Math.cos(a) + 0.1 * Math.cos(3 * a), -0.22 + 0.34 * Math.sin(a) + 0.09 * Math.sin(3 * a), -0.12 + 0.18 * Math.sin(a + 0.7)],
+    T: (a) => [0.3 + 0.5 * Math.cos(a) + 0.03 * Math.cos(4 * a), -0.18 + 0.28 * Math.sin(a), -0.08 + 0.1 * Math.sin(a + 1.4)],
   };
   const loopColors = { P: c.brand, QRS: c.accent, T: c.gold };
   Object.entries(loops).forEach(([key, fn]) => {
@@ -116,24 +120,42 @@ function drawVectorCanvas(canvas, state, t) {
     ctx.stroke();
     ctx.globalAlpha = 1;
   });
-  const selected = state.loop === 'all' ? 'QRS' : state.loop;
-  const phase = (t / (state.playing ? 1800 : 100000)) % 1;
-  const vec = loops[selected](phase * Math.PI * 2);
+  const cycle = (t / 1800) % 1;
+  const windows = { P: [0, 0.16], QRS: [0.2, 0.42], T: [0.55, 0.8] };
+  let active = null;
+  Object.entries(windows).forEach(([key, [start, end]]) => { if (cycle >= start && cycle < end) active = key; });
+  const selected = state.loop === 'all' ? (active || 'QRS') : state.loop;
+  const phase = active === selected ? (cycle - windows[selected][0]) / (windows[selected][1] - windows[selected][0]) : 0;
+  const vec = loops[selected](Math.max(0, Math.min(1, phase)) * Math.PI * 2);
   const p0 = project([0, 0, 0]);
   const p1 = project(vec);
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(...p0); ctx.lineTo(...p1); ctx.stroke();
-  ctx.fillStyle = '#ffffff';
-  ctx.beginPath(); ctx.arc(...p1, 3.5, 0, Math.PI * 2); ctx.fill();
+  if (active && (state.loop === 'all' || state.loop === active)) {
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(...p0); ctx.lineTo(...p1); ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.arc(...p1, 3.5, 0, Math.PI * 2); ctx.fill();
+  }
+  const main = loops[selected](0.8);
+  const pm = project(main);
+  ctx.strokeStyle = c.gold;
+  ctx.setLineDash([5, 4]);
+  ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(...p0); ctx.lineTo(...pm); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = c.gold;
+  ctx.font = '600 9.5px ui-monospace, monospace';
+  ctx.fillText('主方向', pm[0] + 5, pm[1] - 4);
   const lead = LEADS[state.lead];
   const dot = vec[0] * lead.vec[0] + vec[1] * lead.vec[1] + vec[2] * lead.vec[2];
   ctx.fillStyle = c.text;
   ctx.font = '600 11px ui-monospace, monospace';
-  ctx.fillText(`${selected} 向量 · ${lead.name} 投影 ${dot >= 0 ? '+' : ''}${dot.toFixed(2)}`, 12, 18);
+  const activeLabel = active ? `当前 ${active} 波 · ` : '等电位线 · ';
+  const movingLabel = active === selected ? `${selected} 环在转动` : `${selected} 环静止`;
+  ctx.fillText(`${activeLabel}${movingLabel} · ${lead.name} 投影 ${dot >= 0 ? '+' : ''}${dot.toFixed(2)}`, 12, 18);
   ctx.fillStyle = c.muted;
   ctx.font = '10px ui-monospace, monospace';
-  ctx.fillText('拖拽/旋转 = 从不同角度理解空间向量', 12, height - 10);
+  ctx.fillText('P/QRS/T 只在各自时间窗内转动；主向量总体指向左下', 12, height - 10);
 }
 
 function drawProjectionCanvas(canvas, state, t) {
@@ -182,14 +204,36 @@ function drawProjectionCanvas(canvas, state, t) {
   ctx.fillText('时间光标同步显示：同一瞬时向量 → 同一导联波形', padL, height - 5);
 }
 
+function updateProjectionBars(host, state, t) {
+  const loop = state.loop === 'all' ? 'QRS' : state.loop;
+  const a = (((t / 1800) % 1) * Math.PI * 2);
+  const point = loop === 'P'
+    ? [0.18 + 0.24 * Math.cos(a), -0.1 + 0.16 * Math.sin(a), 0.04 * Math.sin(2 * a)]
+    : loop === 'T'
+      ? [0.3 + 0.5 * Math.cos(a), -0.18 + 0.28 * Math.sin(a), -0.08 + 0.1 * Math.sin(a + 1.4)]
+      : [0.34 + 0.62 * Math.cos(a) + 0.1 * Math.cos(3 * a), -0.22 + 0.34 * Math.sin(a) + 0.09 * Math.sin(3 * a), -0.12 + 0.18 * Math.sin(a + 0.7)];
+  Object.entries(LEADS).forEach(([id, lead]) => {
+    const value = point[0] * lead.vec[0] + point[1] * lead.vec[1] + point[2] * lead.vec[2];
+    const valueNode = host.querySelector(`[data-projection-value="${id}"]`);
+    const bar = host.querySelector(`[data-projection-row="${id}"] i`);
+    if (valueNode) valueNode.textContent = `${value >= 0 ? '+' : ''}${value.toFixed(2)}`;
+    if (bar) {
+      bar.style.width = `${Math.min(100, Math.abs(value) * 100)}%`;
+      bar.classList.toggle('negative', value < 0);
+    }
+  });
+}
+
 function vectorLoopsPanel() {
   return `<div class="visual-grid">
     <div class="visual-card visual-card-dark">
       <canvas data-vector-canvas data-height="360" aria-label="心电向量环三维投影动画"></canvas>
       <div class="visual-sync"><div class="visual-sync-head"><span>同步导联波形</span><span data-vector-sync-label>II 导联 · 时间光标</span></div><canvas data-vector-ecg data-height="112" aria-label="向量环同步导联波形"></canvas></div>
+      <div class="vector-projections" data-vector-projections>${Object.entries(LEADS).map(([id, lead]) => `<div data-projection-row="${id}"><b>${id}</b><div class="vector-projection-track"><i></i></div><span data-projection-value="${id}">+0.00</span></div>`).join('')}</div>
       <div class="visual-controls">
         <button class="btn btn-primary btn-sm" type="button" data-vector-play>${icon('pause', 13)} 暂停</button>
         <label class="visual-range">旋转 <input type="range" min="-80" max="80" value="24" data-vector-rotate></label>
+        <label class="visual-range">俯仰 <input type="range" min="-50" max="50" value="18" data-vector-pitch></label>
         <select class="select" data-vector-loop aria-label="选择向量环"><option value="all">P + QRS + T 全部</option><option value="P">P 环</option><option value="QRS" selected>QRS 环</option><option value="T">T 环</option></select>
         <select class="select" data-vector-lead aria-label="选择投影导联">${Object.entries(LEADS).map(([id, l]) => `<option value="${id}" ${id === 'II' ? 'selected' : ''}>${l.name}</option>`).join('')}</select>
       </div>
@@ -217,7 +261,7 @@ function drawLimbCanvas(canvas, state, t) {
   ctx.globalAlpha = 1;
   const angle = (state.auto ? t / 35 : state.angle) * Math.PI / 180;
   Object.entries(LEADS).forEach(([id, l]) => {
-    const a = (l.angle - 90) * Math.PI / 180;
+    const a = l.angle * Math.PI / 180;
     const x = cx + Math.cos(a) * r;
     const y = cy + Math.sin(a) * r;
     ctx.strokeStyle = id === state.lead ? c.brand : c.muted;
@@ -236,9 +280,33 @@ function drawLimbCanvas(canvas, state, t) {
   const lead = LEADS[state.lead];
   const projected = Math.cos(angle - (lead.angle * Math.PI / 180));
   ctx.fillStyle = c.text; ctx.font = '600 11px ui-monospace, monospace';
-  ctx.fillText(`主向量 ${Math.round((angle * 180 / Math.PI + 360) % 360)}° · ${lead.name} 投影 ${projected >= 0 ? '+' : ''}${projected.toFixed(2)}`, 12, 18);
+  const signedAngle = Math.round(((angle * 180 / Math.PI + 180) % 360 + 360) % 360 - 180);
+  ctx.fillText(`主向量 ${signedAngle}° · ${lead.name} 投影 ${projected >= 0 ? '+' : ''}${projected.toFixed(2)}`, 12, 18);
   ctx.fillStyle = c.muted; ctx.font = '10px ui-monospace, monospace';
   ctx.fillText('六轴系统：I/II/III + aVR/aVL/aVF', 12, height - 10);
+}
+
+function updateLimbReadout(host, state, t) {
+  const angle = state.auto ? (t / 35) % 360 : state.angle;
+  const rad = angle * Math.PI / 180;
+  const values = {
+    I: Math.cos(rad), II: Math.cos(rad - Math.PI / 3), III: Math.cos(rad - 2 * Math.PI / 3),
+    aVR: Math.cos(rad + 5 * Math.PI / 6), aVL: Math.cos(rad + Math.PI / 6), aVF: Math.sin(rad),
+  };
+  Object.entries(values).forEach(([id, value]) => {
+    const node = host.querySelector(`[data-limb-value="${id}"]`);
+    const bar = host.querySelector(`[data-limb-projection="${id}"] i`);
+    if (node) node.textContent = `${value >= 0 ? '+' : ''}${value.toFixed(2)}`;
+    if (bar) { bar.style.width = `${Math.min(100, Math.abs(value) * 100)}%`; bar.classList.toggle('negative', value < 0); }
+  });
+  const deg = ((Math.round(angle) % 360) + 360) % 360;
+  const signed = deg > 180 ? deg - 360 : deg;
+  let axis = '正常电轴';
+  if (signed < -30 && signed >= -90) axis = '电轴左偏';
+  else if (signed > 90) axis = '电轴右偏';
+  else if (signed < -90) axis = '极度右偏/不确定电轴';
+  const readout = host.querySelector('[data-limb-readout]');
+  if (readout) readout.innerHTML = `<b>${axis}</b><span>额面电轴 ${signed}° · I ${values.I >= 0 ? '正' : '负'} · aVF ${values.aVF >= 0 ? '正' : '负'} · II ${values.II >= 0 ? '正' : '负'}</span><small>快速法：I 正 + aVF 正 ≈ 正常；I 正 + aVF 负 + II 负 ≈ 左偏；I 负 + aVF 正 ≈ 右偏。</small>`;
 }
 
 function limbPanel() {
@@ -250,6 +318,9 @@ function limbPanel() {
         <label class="visual-range">角度 <input type="range" min="0" max="359" value="60" data-limb-angle></label>
         <select class="select" data-limb-lead>${Object.entries(LEADS).map(([id, l]) => `<option value="${id}" ${id === 'II' ? 'selected' : ''}>${l.name}</option>`).join('')}</select>
       </div>
+      <div class="axis-presets"><button type="button" class="chip" data-axis-preset="60">正常 +60°</button><button type="button" class="chip" data-axis-preset="-45">左偏 −45°</button><button type="button" class="chip" data-axis-preset="120">右偏 +120°</button><button type="button" class="chip" data-axis-preset="-120">极度 −120°</button></div>
+      <div class="vector-projections axis-projections" data-limb-projections>${Object.entries(LEADS).map(([id, lead]) => `<div data-limb-projection="${id}"><b>${id}</b><div class="vector-projection-track"><i></i></div><span data-limb-value="${id}">+0.00</span></div>`).join('')}</div>
+      <div class="axis-readout" data-limb-readout></div>
     </div>
     <aside class="visual-explain">
       <h3>肢体导联是同一向量的不同投影</h3>
@@ -438,7 +509,7 @@ export async function vectorLabView() {
   let raf = 0;
   let cleanup = [];
   let start = performance.now();
-  const state = { rotate: 24, playing: true, loop: 'QRS', lead: 'II', angle: 60, auto: true };
+  const state = { rotate: 24, pitch: 18, playing: true, loop: 'QRS', lead: 'II', angle: 60, auto: true };
   el.innerHTML = `<div class="page-eyebrow">${icon('compass', 14)} VECTOR & ELECTROPHYSIOLOGY</div>
     <div class="vector-head"><div><h1 class="page-title">心脏向量实验室</h1><p class="page-sub">把“背图形”变成“看方向”：P/QRS/T 环、肢体/胸导联投影、动作电位与解剖一次串起来。</p></div><a class="btn btn-secondary btn-sm" href="#/learn/ecg-calibration-paper">回到基础课程 ${icon('arrowRight', 13)}</a></div>
     <div class="visual-tabs">${TABS.map(([id, label], i) => `<button class="chip ${i === 0 ? 'active' : ''}" type="button" data-visual-tab="${id}">${label}</button>`).join('')}</div>
@@ -455,12 +526,15 @@ export async function vectorLabView() {
     if (projection) drawProjectionCanvas(projection, state, now);
     const syncLabel = content.querySelector('[data-vector-sync-label]');
     if (syncLabel) syncLabel.textContent = `${LEADS[state.lead].name} · 时间光标`;
+    const bars = content.querySelector('[data-vector-projections]');
+    if (bars) updateProjectionBars(bars, state, now);
     if (state.playing) raf = requestAnimationFrame(drawLoopFrame);
   };
   const drawLimbFrame = (now) => {
     const canvas = content.querySelector('[data-limb-canvas]');
     if (!canvas) return;
     drawLimbCanvas(canvas, state, now);
+    updateLimbReadout(content, state, now);
     raf = requestAnimationFrame(drawLimbFrame);
   };
   const drawWaveFrame = (now) => {
@@ -477,6 +551,7 @@ export async function vectorLabView() {
       if (state.playing) { stopAnim(); raf = requestAnimationFrame(drawLoopFrame); } else stopAnim();
     });
     content.querySelector('[data-vector-rotate]')?.addEventListener('input', (e) => { state.rotate = Number(e.target.value); });
+    content.querySelector('[data-vector-pitch]')?.addEventListener('input', (e) => { state.pitch = Number(e.target.value); });
     content.querySelector('[data-vector-loop]')?.addEventListener('change', (e) => { state.loop = e.target.value; });
     content.querySelector('[data-vector-lead]')?.addEventListener('change', (e) => { state.lead = e.target.value; });
     const canvas = content.querySelector('[data-vector-canvas]');
@@ -484,7 +559,14 @@ export async function vectorLabView() {
       let dragging = false;
       canvas.addEventListener('pointerdown', (e) => { dragging = true; canvas.setPointerCapture(e.pointerId); });
       canvas.addEventListener('pointerup', () => { dragging = false; });
-      canvas.addEventListener('pointermove', (e) => { if (!dragging) return; const rect = canvas.getBoundingClientRect(); const p = content.querySelector('[data-vector-rotate]'); if (p) { const val = Math.max(-80, Math.min(80, (e.clientX - rect.left - rect.width / 2) / 2)); p.value = String(val); state.rotate = val; } });
+      canvas.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const rect = canvas.getBoundingClientRect();
+        const rx = content.querySelector('[data-vector-rotate]');
+        const py = content.querySelector('[data-vector-pitch]');
+        if (rx) { const val = Math.max(-80, Math.min(80, (e.clientX - rect.left - rect.width / 2) / 2)); rx.value = String(val); state.rotate = val; }
+        if (py) { const val = Math.max(-50, Math.min(50, (e.clientY - rect.top - rect.height / 2) / 2)); py.value = String(val); state.pitch = val; }
+      });
     }
     raf = requestAnimationFrame(drawLoopFrame);
   };
@@ -493,6 +575,30 @@ export async function vectorLabView() {
     auto?.addEventListener('click', () => { state.auto = !state.auto; auto.innerHTML = state.auto ? `${icon('pause', 13)} 暂停旋转` : `${icon('rotate', 13)} 自动旋转`; });
     content.querySelector('[data-limb-angle]')?.addEventListener('input', (e) => { state.auto = false; state.angle = Number(e.target.value); });
     content.querySelector('[data-limb-lead]')?.addEventListener('change', (e) => { state.lead = e.target.value; });
+    content.querySelectorAll('[data-axis-preset]').forEach((button) => button.addEventListener('click', () => {
+      state.auto = false;
+      state.angle = Number(button.dataset.axisPreset);
+      const slider = content.querySelector('[data-limb-angle]');
+      if (slider) slider.value = String(((state.angle % 360) + 360) % 360);
+      const auto = content.querySelector('[data-limb-auto]');
+      if (auto) auto.innerHTML = `${icon('rotate', 13)} 自动旋转`;
+    }));
+    const limbCanvas = content.querySelector('[data-limb-canvas]');
+    if (limbCanvas) {
+      let dragging = false;
+      const setFromPointer = (e) => {
+        const rect = limbCanvas.getBoundingClientRect();
+        const cx = rect.width / 2; const cy = rect.height / 2 - 18;
+        const deg = (Math.atan2(cy - (e.clientY - rect.top), e.clientX - rect.left - cx) * 180 / Math.PI + 360) % 360;
+        state.auto = false;
+        state.angle = deg;
+        const slider = content.querySelector('[data-limb-angle]');
+        if (slider) slider.value = String(Math.round(deg));
+      };
+      limbCanvas.addEventListener('pointerdown', (e) => { dragging = true; limbCanvas.setPointerCapture(e.pointerId); setFromPointer(e); });
+      limbCanvas.addEventListener('pointermove', (e) => { if (dragging) setFromPointer(e); });
+      limbCanvas.addEventListener('pointerup', () => { dragging = false; });
+    }
     raf = requestAnimationFrame(drawLimbFrame);
   };
   const bindChest = () => {

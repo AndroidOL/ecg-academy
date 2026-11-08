@@ -16,6 +16,7 @@ final class Settings
         'ai.daily_limit' => 30,
         'ai.default_provider' => '',
         'ai.system_prompt_append' => '',
+        'ai.allow_guest' => false,
         'site.github_url' => 'https://github.com/AndroidOL/ecg-academy',
         'site.license' => 'MIT（代码）· CC BY-SA 4.0（教学内容）',
         'site.copyright' => '© 2026 Tianhao Wu 等',

@@ -82,6 +82,7 @@ export function normalizeSpec(spec = {}) {
     vfAmplitude: clamp(num(spec.vfAmplitude, 1), 0.35, 1.4),
     cprArtifact: Boolean(spec.cprArtifact),
     conduction: String(spec.conduction || ''),
+    start: clamp(num(spec.start, 0.58), 0.02, 1.5),
   };
   if (s.rhythm === 'sinus' && s.rate === 0) s.rate = 72;
   if (!s.rate && !['vf', 'vflutter', 'torsades', 'asystole'].includes(s.rhythm)) {
@@ -119,7 +120,7 @@ function buildSchedule(spec) {
     return { spec: s, beats, pWaves, special, rng };
   }
 
-  const start = 0.58;
+  const start = s.start;
   const rr = s.rate > 0 ? 60 / s.rate : 1;
   const atrialRR = s.atrialRate > 0 ? 60 / s.atrialRate : rr;
 

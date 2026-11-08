@@ -1,7 +1,7 @@
 import { api } from '../api.js';
 import { store } from '../store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108l';
+const __asset = __isNode ? '' : '?v=20261108n';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, chapterColor, difficultyDots, escapeHtml, setupMiniECG, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
@@ -134,15 +134,15 @@ export async function homeView() {
         <a class="feature-card" href="#/lab">
           <div class="feature-icon" style="background:var(--info-soft);color:var(--info)">${icon('flask', 20)}</div><h3>电解质实验室</h3><p>拖动钾、钙滑杆，实时观察 T 波、QT、QRS 与 U 波如何变化，并同步看到处理原则。</p><span class="feature-link">打开实验室 ${icon('arrowRight', 13)}</span>
         </a>
-        <div class="feature-card" style="cursor:default">
+        ${store.ai?.allowed !== false ? `<div class="feature-card" style="cursor:default">
           <div class="feature-icon" style="background:var(--gold);color:#fff8f4">${icon('sparkles', 20)}</div><h3>AI 导师</h3><p>可接入 OpenAI 兼容 API；没有密钥时自动使用本地知识库回答，不影响学习与判分。支持错因解析、专项组卷与急救复盘。</p><span class="feature-link" style="color:var(--muted)">${store.ai?.configured ? 'AI 已接入' : '当前为本地模式'}</span>
-        </div>
+        </div>` : ''}
       </div>
     </section>
 
     <section class="section">
       <div class="card card-pad" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;background:linear-gradient(120deg,var(--surface),var(--brand-soft))">
-        <div><div class="page-eyebrow">NEXT STEP</div><h2 class="section-title">先读一张，再判一张。</h2><p class="muted" style="margin-top:4px;font-size:12.5px">学习进度已为你保留在本地访客账号；注册后可跨设备继续。</p></div>
+        <div><div class="page-eyebrow">NEXT STEP</div><h2 class="section-title">先读一张，再判一张。</h2><p class="muted" style="margin-top:4px;font-size:12.5px">学习进度保存在当前设备浏览器；本站暂不开放注册与普通用户登录。</p></div>
         <div class="row-wrap"><a class="btn btn-primary" href="#/practice">${icon('activity', 16)} 做一道题</a><a class="btn btn-secondary" href="#/me">${icon('user', 16)} ${store.user?.isGuest === false ? '查看我的进度' : '保存学习进度'}</a></div>
       </div>
     </section>

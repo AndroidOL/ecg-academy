@@ -8,8 +8,8 @@
 | 套件 | 命令 | 结果 |
 |---|---|---|
 | 内容结构与引用 | `php scripts/validate_content.php` | **46 篇诊断内容，0 错误，0 警告** |
-| 229 章课程体系 | `php scripts/validate_curriculum.php` | **229 章 / 19 章节，0 错误** |
-| 1200 道预生成题库 | `php scripts/validate_bank.php` | **1200 道，0 错误** |
+| 230 章课程体系 | `php scripts/validate_curriculum.php` | **230 章 / 19 章节，0 错误** |
+| 1920 道预生成题库 | `php scripts/validate_bank.php` | **1920 道，0 错误** |
 | ECG 波形引擎 | `node tests/engine.test.mjs` | **15/15 通过** |
 | ACLS 状态机 | `php tests/sim.test.php` | **12/12 通过** |
 | 播放器/12 导联/标注 | `node tests/playback.test.mjs` | **13/13 通过** |
@@ -80,7 +80,7 @@
 
 ## 3.1 题库校验
 
-`data/question_bank.php` 为 1200 道确定性病例（200 道 level 1、550 道 level 2、450 道 level 3；按章节 125–275 道）。校验项：
+`data/question_bank.php` 为 1920 道确定性病例（320 道 level 1、880 道 level 2、720 道 level 3；按章节 120–440 道）。校验项：
 
 - 总数 ≥1000；
 - 诊断/组合引用均存在于判读课程；
@@ -88,20 +88,20 @@
 - 题库统计与按章节计数一致。
 
 ```text
-Question bank: 1200 cases
+Question bank: 1920 cases
 Errors: 0
 ```
 
 ## 3.2 课程体系与导航
 
-- 19 个章节、229 章；常见核心 139 章、不常见/进阶 90 章；
+- 19 个章节、230 章；常见核心 139 章、不常见/进阶 91 章；
 - 默认按难度排序；每页 24 章，分页避免一次渲染数百张卡片；
 - 理论章无 ECG 时仍渲染学习目标、核心概念、判读应用、边界与必须记住；
 - 校验脚本检查 ID 唯一、章节引用、难度、urgency、sections 内容、keyPoints。
 
 ```text
-Curriculum: 229 chapters / 19 sections
-Theory topics: 183 · ECG articles: 46
+Curriculum: 230 chapters / 19 sections
+Theory topics: 184 · ECG articles: 46
 Errors: 0
 ```
 

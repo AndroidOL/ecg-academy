@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108l';
+const __asset = __isNode ? '' : '?v=20261108n';
 const { ECGSession, LEAD_NAMES } = await import(`./ecg-engine.js${__asset}`);
 
 const COLUMNS = [
@@ -117,7 +117,7 @@ export class ECGViewer {
     let height;
     if (mini) height = 62;
     else if (mode === '12lead') {
-      if (this.options.twelveLayout === 'rows') height = 12 * 58 + 14;
+      if (this.options.twelveLayout === 'rows') height = 12 * 72 + 14;
       else height = 3 * 116 + (this.options.twelveRhythm === false ? 0 : 128) + 14;
     } else height = parentWidth < 560 ? 196 : 248;
     this.cssWidth = width;
@@ -1106,10 +1106,10 @@ export class ECGViewer {
     const progress = this.twelveProgress;
 
     if (this.options.twelveLayout === 'rows') {
-      const rowHeight = 52;
+      const rowHeight = 66;
       const rowGap = 6;
       LEAD_NAMES.forEach((lead, index) => {
-        this.draw12Cell(lead, padLeft, top + index * (rowHeight + rowGap), plotW, rowHeight, 0, colors, progress);
+        this.draw12Cell(lead, padLeft, top + index * (rowHeight + rowGap), plotW, rowHeight, 0, colors, progress, true);
       });
       return;
     }
@@ -1126,7 +1126,7 @@ export class ECGViewer {
     if (this.options.twelveRhythm === false) return;
     const ry = top + rows * (rowH + gap) + 6;
     if (!this.twelveSession) {
-      this.twelveSession = new ECGSession({ ...this.rhythmSession.spec, duration: 10, annotations: [] });
+      this.twelveSession = new ECGSession({ ...this.rhythmSession.spec, duration: 10, start: 0.08, annotations: [] });
     }
     const result = this.twelveSession.lead('II');
     const pxPerMm = (plotW - 30) / (duration * 25);
@@ -1180,12 +1180,12 @@ export class ECGViewer {
     ctx.textAlign = 'left';
   }
 
-  draw12Cell(lead, x, y, w, h, col, colors, progress = null) {
+  draw12Cell(lead, x, y, w, h, col, colors, progress = null, fullDuration = false) {
     const ctx = this.ctx;
     const segment = 2.5;
     const pxPerMm = w / (segment * 25);
     if (!this.twelveSession) {
-      this.twelveSession = new ECGSession({ ...this.rhythmSession.spec, duration: 10, annotations: [] });
+      this.twelveSession = new ECGSession({ ...this.rhythmSession.spec, duration: 10, start: 0.08, annotations: [] });
     }
     const result = this.twelveSession.lead(lead);
     const startT = col * segment;

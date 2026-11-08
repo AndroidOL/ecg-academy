@@ -5,8 +5,8 @@ require dirname(__DIR__) . '/app/bootstrap.php';
 
 use App\Content;
 
-$variantsPerDiagnosis = 25;
-$variantsPerCombo = 25;
+$variantsPerDiagnosis = 40;
+$variantsPerCombo = 40;
 $entries = [];
 $questionForms = [
     '该心电图最可能的诊断是？',

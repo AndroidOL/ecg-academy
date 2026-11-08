@@ -1,6 +1,6 @@
 import { store } from '../store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108l';
+const __asset = __isNode ? '' : '?v=20261108n';
 const { icon, chapterColor, difficultyDots, escapeHtml, setupMiniECG, emptyState, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
 export async function learnView({ query }) {
@@ -18,7 +18,7 @@ export async function learnView({ query }) {
   const state = {
     q: String(saved.q || ''),
     chapter: chapterMap.has(initialChapter) ? initialChapter : 'all',
-    level: [1, 2, 3].includes(savedLevel) ? savedLevel : 1,
+    level: [1, 2, 3, 4].includes(savedLevel) ? savedLevel : 1,
     urgency: ['critical', 'urgent', 'core', 'advanced', 'all'].includes(saved.urgency) ? saved.urgency : 'all',
     sort: ['curriculum', 'urgency', 'difficulty', 'difficulty-desc', 'weak'].includes(saved.sort) ? saved.sort : 'difficulty',
     scope: ['common', 'uncommon', 'all'].includes(saved.scope) ? saved.scope : 'common',
@@ -83,6 +83,7 @@ export async function learnView({ query }) {
         <option value="1">基础</option>
         <option value="2">进阶</option>
         <option value="3">挑战</option>
+        <option value="4">理论</option>
       </select>
       <select class="select" style="flex:0 0 118px;min-height:36px" data-urgency aria-label="紧急程度筛选">
         <option value="all">全部优先级</option>
@@ -121,7 +122,11 @@ export async function learnView({ query }) {
     const list = items.filter((item) => {
       if (state.scope !== 'all' && (item.rarity || 'common') !== state.scope) return false;
       if (state.chapter !== 'all' && item.chapter !== state.chapter) return false;
-      if (state.level && Number(item.difficulty) !== state.level) return false;
+      if (state.level === 4) {
+        if (!item.topic) return false;
+      } else if (state.level && (item.topic || Number(item.difficulty) !== state.level)) {
+        return false;
+      }
       if (state.urgency !== 'all' && (item.urgency || 'core') !== state.urgency) return false;
       if (q) {
         const haystack = `${item.name} ${item.en} ${(item.tags || []).join(' ')} ${item.oneLiner}`.toLowerCase();
@@ -166,7 +171,7 @@ export async function learnView({ query }) {
         ${preview}
         <div class="diagnosis-line">${escapeHtml(item.oneLiner)}</div>
         <div class="diagnosis-foot">
-          <span class="badge">${difficultyDots(item.difficulty)} <span style="margin-left:4px">${item.difficulty >= 3 ? '挑战' : item.difficulty === 2 ? '进阶' : '基础'}</span></span>
+          <span class="badge">${item.topic ? '理论' : `${difficultyDots(item.difficulty)} <span style="margin-left:4px">${item.difficulty >= 3 ? '挑战' : item.difficulty === 2 ? '进阶' : '基础'}</span>`}</span>
           <span class="feature-link">阅读 ${icon('arrowRight', 12)}</span>
         </div>
       </div>

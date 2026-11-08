@@ -1,7 +1,8 @@
 import { api } from '../api.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108l';
+const __asset = __isNode ? '' : '?v=20261108n';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
+const { store } = await import(`../store.js${__asset}`);
 import { navigate } from '../router.js';
 const { icon, escapeHtml, toast, fmtDuration, confirmDialog, medicalDisclaimer, setButtonLoading } = await import(`../ui.js${__asset}`);
 
@@ -384,7 +385,7 @@ export async function simSessionView({ params }) {
         <section class="card card-pad">
           <div class="section-head"><h2 class="section-title" style="font-size:18px">复盘要点</h2><span class="badge">${review.length} 条</span></div>
           ${review.map((item) => `<div class="review-item ${item.tone || ''}"><span class="review-dot"></span><div><b>${escapeHtml(item.title)}</b><div class="muted">${escapeHtml(item.detail)}</div></div></div>`).join('') || '<p class="muted">暂无复盘要点。</p>'}
-          <div class="row-wrap" style="margin-top:16px"><button class="btn btn-secondary btn-sm" type="button" data-ai-review>${icon('sparkles', 14)} AI 复盘</button><a class="btn btn-primary btn-sm" href="#/sim">${icon('rotate', 14)} 再来一次</a></div>
+          <div class="row-wrap" style="margin-top:16px">${store.ai?.allowed !== false ? `<button class="btn btn-secondary btn-sm" type="button" data-ai-review>${icon('sparkles', 14)} AI 复盘</button>` : ''}<a class="btn btn-primary btn-sm" href="#/sim">${icon('rotate', 14)} 再来一次</a></div>
           <div data-ai-review-panel></div>
         </section>
         <aside class="card card-pad">

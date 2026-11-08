@@ -20,7 +20,7 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/bootstrap` | 当前用户、CSRF、内容统计、1200 题库统计、进度、AI 状态、本周排行榜、场景数、`features`（注册/登录开关）、`site`（GitHub/许可证/版权/ICP） |
+| GET | `/api/bootstrap` | 当前用户、CSRF、内容统计、1920 题库统计、进度、AI 状态、本周排行榜、场景数、`features`（注册/登录开关）、`site`（GitHub/许可证/版权/ICP） |
 | GET | `/api/admin/auth-config` | 管理后台登录方式与 Passkey 是否存在（公开只读） |
 | POST | `/api/admin/login` | 管理员密码登录（受 `admin.password_login_enabled` 控制） |
 | GET | `/api/admin/passkey/login/options` | 生成 WebAuthn 登录 challenge |
@@ -35,7 +35,7 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 | POST | `/api/admin/ai/test` | 测试供应商连接 |
 | GET | `/api/admin/audit` | 最近管理审计 |
 | GET | `/api/health` | 健康检查 |
-| GET | `/api/diagnoses?q=&chapter=` | 229 章课程摘要、章节、统计；支持搜索/章节过滤 |
+| GET | `/api/diagnoses?q=&chapter=` | 230 章课程摘要、章节、统计；支持搜索/章节过滤 |
 | GET | `/api/diagnoses/{id}` | 诊断详情、完整文章、ECG 规格、上下篇、相关阅读、当前进度 |
 | POST | `/api/progress` | `{diagnosisId, status:"read"|"mastered"}` |
 
@@ -43,7 +43,7 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/quiz/new?level=1|2|3&chapter=&focus=a,b` | 从 1200 道预生成病例中出题；level 3 为组合诊断；返回剥离答案的 ECG 规格、选项、attemptId、bankId |
+| GET | `/api/quiz/new?level=1|2|3&chapter=&focus=a,b` | 从 1920 道预生成病例中出题；level 3 为组合诊断；返回剥离答案的 ECG 规格、选项、attemptId、bankId |
 | POST | `/api/quiz/answer` | `{attemptId, selected:["id"], timeMs}`；服务端判分并返回解析 |
 | GET | `/api/quiz/history` | 最近答题记录 |
 | GET | `/api/stats?scope=week|all` | 进度、章节正确率、最近答题/急救、排行榜 |

@@ -618,3 +618,28 @@
 .site-footer a { display:inline-flex; align-items:center; gap:4px; color:var(--muted); }
 .site-footer a:hover { color:var(--brand); }
 @media (max-width:719px) { .site-footer { flex-direction:column; padding-bottom:6px; } }
+.vector-projections { display:grid; grid-template-columns:1fr 1fr; gap:5px 12px; padding:9px 10px; background:var(--surface); border-top:1px solid var(--line); }
+.vector-projections > div { display:grid; grid-template-columns:24px minmax(0,1fr) 42px; gap:5px; align-items:center; color:var(--muted); font-family:var(--font-mono); font-size:9px; }
+.vector-projections b { color:var(--brand); font-size:9.5px; }
+.vector-projections span { text-align:right; color:var(--ink-2); }
+.vector-projection-track { height:6px; border-radius:4px; background:var(--bg-elev); overflow:hidden; }
+.vector-projection-track i { display:block; height:100%; width:0%; border-radius:4px; background:var(--brand); transition:width .12s linear; }
+.vector-projection-track i.negative { background:var(--accent); }
+.axis-presets { display:flex; flex-wrap:wrap; gap:4px; padding:7px 10px; background:var(--surface); border-top:1px solid var(--line); }
+.axis-presets .chip { font-size:9px; padding:4px 7px; }
+.axis-readout { display:flex; flex-direction:column; gap:2px; padding:8px 10px; border-top:1px solid var(--line); background:var(--bg-elev); font-size:9.5px; line-height:1.5; }
+.axis-readout b { color:var(--ink); font-size:11px; }
+.axis-readout span { color:var(--muted); }
+.axis-readout small { color:var(--faint); font-size:8.5px; }
+.axis-projections { border-top:1px solid var(--line); }
+@media (max-width:719px) { .vector-projections { grid-template-columns:1fr 1fr; } }
+/* tablet / foldable portrait and landscape: content below the ECG should use the full main width */
+@media (max-width: 1299px) {
+  .article-layout,
+  .lab-grid,
+  .me-grid,
+  .sim-layout,
+  .practice-setup { grid-template-columns: minmax(0, 1fr); }
+  .sim-side { position: static; }
+  .article-aside { display: grid; grid-template-columns: minmax(0,1fr); }
+}

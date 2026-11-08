@@ -73,11 +73,11 @@ export async function meView() {
           <div class="segmented" style="margin-top:8px;width:100%"><button class="segment ${getThemeMode() === 'auto' ? 'active' : ''}" type="button" data-theme-set="auto">跟随系统</button><button class="segment ${getThemeMode() === 'light' ? 'active' : ''}" type="button" data-theme-set="light">浅色</button><button class="segment ${getThemeMode() === 'dark' ? 'active' : ''}" type="button" data-theme-set="dark">深色</button></div>
           <p class="muted" style="font-size:10.5px;margin-top:8px">主题会保存在本机；登录后同步到账号。</p>
         </section>
-        <section class="card card-pad">
+        ${store.ai?.allowed !== false ? `<section class="card card-pad">
           <h2 class="section-title" style="font-size:16px">${icon('sparkles', 14)} AI 导师</h2>
           <p class="muted" style="font-size:11px;line-height:1.7;margin-top:5px">${store.ai?.configured ? `已接入 ${escapeHtml(store.ai.model || '外部模型')}，今日剩余 ${store.ai.remaining} 次。` : '当前为本地知识库模式。管理员配置 OpenAI 兼容 API 后，可获得个性化组卷、错因解析与急救复盘。'}</p>
           <div class="row-wrap" style="margin-top:8px"><span class="badge ${store.ai?.configured ? 'badge-brand' : ''}">${store.ai?.configured ? 'ONLINE' : 'LOCAL'}</span><span class="badge">每日 ${store.ai?.dailyLimit || 30} 次</span></div>
-        </section>
+        </section>` : ''}
         <section class="card card-pad">
           <h2 class="section-title" style="font-size:16px">快速开始</h2>
           <div class="quick-actions" style="margin-top:8px">

@@ -1,7 +1,7 @@
 import { api } from '../api.js';
 import { store } from '../store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108l';
+const __asset = __isNode ? '' : '?v=20261108n';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 import { createAiChat } from './ai-chat.js';
 const { icon, chapterColor, difficultyDots, escapeHtml, toast, medicalDisclaimer, setupMiniECG } = await import(`../ui.js${__asset}`);
@@ -377,7 +377,7 @@ export async function articleView({ params }) {
   }
 
   const aiHost = el.querySelector('#article-ai');
-  if (aiHost) {
+  if (aiHost && store.ai?.allowed !== false) {
     const chat = createAiChat({
       diagnosisId: detail.id,
       welcome: `关于「${detail.name}」，你可以问我诊断标准、鉴别或处理。先记住这句话：${detail.oneLiner}`,
