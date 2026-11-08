@@ -235,22 +235,23 @@ try {
   await waitFor(() => document.querySelector('[data-start]'));
   document.querySelector('[data-start]').click();
   await waitFor(() => document.querySelector('.quiz-question'), 15000);
-  document.querySelector('.option-card')?.click();
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: '1', bubbles: true }));
+  await waitFor(() => document.querySelector('.option-card.selected'));
   await waitFor(() => !document.querySelector('[data-submit]')?.disabled);
-  document.querySelector('[data-submit]')?.click();
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
   await waitFor(() => document.querySelector('.quiz-feedback'), 15000);
   if (!document.querySelector('[data-next]')) throw new Error('next button missing after answer');
-  ok('practice creates question, accepts selection, renders feedback');
+  ok('practice creates question, keyboard selection and submit render feedback');
 
   await go('#/read');
   await waitFor(() => document.querySelector('[data-step-card="rate"]'), 15000);
   if (document.querySelectorAll('[data-step-card]').length !== 5) throw new Error('guided reading should render 5 steps');
   if (document.querySelectorAll('[data-diagnosis]').length < 4) throw new Error('guided reading diagnosis options missing');
-  document.querySelector('[data-step-card="rate"] .read-option')?.click();
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: '1', bubbles: true }));
   await waitFor(() => document.querySelector('[data-step-note="rate"].show'));
   document.querySelector('[data-diagnosis]')?.click();
   await waitFor(() => !document.querySelector('[data-read-submit]')?.disabled);
-  document.querySelector('[data-read-submit]')?.click();
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
   await waitFor(() => document.querySelector('.read-feedback .feedback-title'), 15000);
   if (!document.querySelector('[data-read-next]')) throw new Error('next case button missing');
   if (document.querySelectorAll('.read-score').length !== 3) throw new Error('guided reading score summary missing');
