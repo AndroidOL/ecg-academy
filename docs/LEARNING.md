@@ -93,7 +93,7 @@
 | POST | `/api/learning/complete` | `{token, answers}` 结算、记录、标记已学习 |
 | GET | `/api/exam/start` | 已学习板块随机综合考试 |
 | GET | `/api/practice/status` | 今日测试分、锁定、排行榜 |
-| GET | `/api/practice/leaderboard?scope=today\|all` | 测试排行榜 |
+| GET | `/api/practice/leaderboard?scope=today\|week\|all` | 测试排行榜（今日/本周/总榜） |
 | POST | `/api/admin/user/create` | 管理员手动创建用户 |
 
 ## 隐私与边界

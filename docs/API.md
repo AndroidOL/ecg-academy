@@ -122,7 +122,7 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 ## 前端本地数据与离线
 
 - 错题、收藏、间隔重复、游客进度/XP 在 localStorage；导入/导出 JSON 仅在浏览器执行。
-- `/sw.js` 为 PWA 缓存入口，`/offline.html` 为离线回退页；API GET 采用网络优先+缓存回退，静态资源采用缓存优先+后台刷新。
+- `/sw.js` 为 PWA 缓存入口，`/offline.html` 为离线回退页；自 1.6.1 起 `/api/*` 完全绕过 Service Worker（始终直接走网络，避免读到过期判分），静态资源采用缓存优先+后台刷新。
 - `#/review`、`#/glossary`、`#/about` 为纯前端视图，不新增服务端接口。
 
 ## 认证

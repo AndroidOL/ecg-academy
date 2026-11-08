@@ -5,7 +5,7 @@ import {
   rateReview, toggleFavorite, exportStudyData, importStudyData, clearLocalStudyData,
 } from '../study-store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ao';
+const __asset = __isNode ? '' : '?v=20261108ap';
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
 function dueLabel(entry) {
@@ -42,7 +42,7 @@ export async function reviewView() {
     const weak = weakDiagnosisIds(8);
     el.innerHTML = `
       <header class="page-head">
-        <div><div class="page-eyebrow">${icon('target', 14)} SPACED REVIEW</div><h1 class="page-title">错题本与间隔复习</h1><p class="page-sub">错题按 1 → 3 → 7 → 14 天的间隔重现；忘记会立即回到复习队列。记录保存在本设备，不上传服务器。</p></div>
+        <div><div class="page-eyebrow">${icon('target', 14)} SPACED REVIEW</div><h1 class="page-title">错题本与间隔复习</h1><p class="page-sub">错题按自适应间隔重现（首答 1 天，之后 1 → 3 → 8 → 20 天，封顶 90 天）；忘记会立即回到复习队列。记录保存在本设备，不上传服务器。</p></div>
         <div class="row-wrap"><span class="badge badge-brand">${summary.due} 个待复习</span><span class="badge">${summary.wrong} 个错题</span><span class="badge">${summary.favorites} 个收藏</span></div>
       </header>
       <div class="review-toolbar">
