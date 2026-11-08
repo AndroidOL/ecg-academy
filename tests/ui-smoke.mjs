@@ -225,8 +225,8 @@ try {
   ok(`simulation list renders ${document.querySelectorAll('.scenario-card').length} scenarios`);
 
   document.querySelector('[data-start-scenario]').click();
-  await waitFor(() => document.querySelector('[data-action="cpr_start"]'), 15000);
-  document.querySelector('[data-action="cpr_start"]').click();
+  await waitFor(() => document.querySelector('[data-cpr-toggle]'), 15000);
+  document.querySelector('[data-cpr-toggle]').click();
   await waitFor(() => document.querySelector('[data-cpr-label]')?.textContent.includes('按压中'), 8000);
   document.querySelector('[data-action="finish"]').click();
   await waitFor(() => document.querySelector('.modal [data-ok]'), 4000);

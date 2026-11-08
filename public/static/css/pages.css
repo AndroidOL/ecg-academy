@@ -429,3 +429,25 @@
   .textbook-zoom { margin: 8px 9px 0; }
   .textbook-zoom-head { font-size: 8px; padding: 6px 8px; }
 }
+
+@media (max-width: 719px) {
+  .page { animation: none; }
+  .sim-layout { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+  .cpr-dock:not([hidden]) {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(var(--bottomnav-h) + 10px + env(safe-area-inset-bottom));
+    z-index: 44;
+    box-shadow: var(--shadow-2);
+  }
+  .cpr-dock { padding: 10px; gap: 8px; border-radius: 13px; }
+  .cpr-dock-info strong { font-size: 15px; }
+  .cpr-dock-info > span:last-child { font-size: 10px; }
+  .cpr-dock .btn { min-width: 105px; min-height: 46px; padding: 8px; font-size: 12px; }
+  .iv-status { font-size: 10px; }
+}
+
+@media (max-width: 719px) {
+  .charge-row .btn { min-height: 44px; font-size: 11px; }
+}

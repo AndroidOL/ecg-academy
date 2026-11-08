@@ -77,7 +77,7 @@ hash 路由，便于任意静态托管与无重写部署：
 
 ## 数据流：练习
 
-1. `GET /api/quiz/new?level=&chapter=&focus=`：服务端从策展题库选中诊断组合，生成种子与选项，写入 `quiz_attempts`（pending），返回剥离答案的 ECG 规格、题面、选项。
+1. `GET /api/quiz/new?level=&chapter=&focus=`：服务端通过 `QuestionBank` 从 1200 道预生成病例中选择一条（按难度/章节/专项过滤，带兜底），以该条目的 seed、diagnosis、rate 重建 ECG 规格与选项，写入 `quiz_attempts`（pending），返回剥离答案的 ECG 规格、题面、选项。
 2. 前端 `ECGEngine.generate(spec)` → Canvas。
 3. 用户提交 → `POST /api/quiz/answer`：服务端对比 `correct_ids`，计算得分、更新 XP 与进度，返回逐项解析。
 4. “AI 解释错因” → `POST /api/ai/explain {attemptId}`：仅基于该题快照、知识库要点与用户选择生成，禁止凭空新增诊断标准；AI 不可用时返回本地规则解析。
@@ -85,8 +85,8 @@ hash 路由，便于任意静态托管与无重写部署：
 ## 数据流：急救
 
 1. `POST /api/sim/start {scenarioId}`：创建 `sim_sessions`，初始化状态机。
-2. 前端每 1 s `GET /api/sim/state`：服务端按真实时间推进恶化/灌注模型，返回心律、生命体征、事件、可执行操作及提示计时。
-3. `POST /api/sim/action`：CPR 开始/暂停、除颤（能量/同步）、电复律、肾上腺素、胺碘酮、阿托品、起搏、镇静、补钙等；服务端校验适应证、能量、时序并写入事件流。
+2. 前端每 1 s `GET /api/sim/state`：服务端 `evolve()` 按真实时间推进动态生理（代偿→失代偿→濒危、粗颤→细颤、高钾 QRS 增宽→正弦波），返回实时 HR/BP/SpO₂/ETCO₂、阶段徽标、事件、可执行操作及提示计时。监护仪频率与形态跟随状态，不是静态播放。
+3. `POST /api/sim/action`：CPR 开始/暂停、充电、除颤/同步复律、肾上腺素、胺碘酮、阿托品、起搏、镇静、补钙等；服务端校验适应证、能量、同步模式与操作时序（IV 约 6 秒、充电约 3 秒、放电前必须停止按压），写入事件流。
 4. 结束（ROSC/稳定/失败/超时）→ `sim_runs` 持久化；本地规则复盘立即展示；“AI 复盘”可选。
 
 ## 安全

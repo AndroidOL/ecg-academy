@@ -20,7 +20,7 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/bootstrap` | 当前用户、CSRF、内容统计、进度、AI 状态、本周排行榜、场景数 |
+| GET | `/api/bootstrap` | 当前用户、CSRF、内容统计、1200 题库统计、进度、AI 状态、本周排行榜、场景数 |
 | GET | `/api/health` | 健康检查 |
 | GET | `/api/diagnoses?q=&chapter=` | 46 篇课程摘要、章节、统计；支持搜索/章节过滤 |
 | GET | `/api/diagnoses/{id}` | 诊断详情、完整文章、ECG 规格、上下篇、相关阅读、当前进度 |
@@ -30,7 +30,7 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/quiz/new?level=1|2|3&chapter=&focus=a,b` | 创建题目；level 3 为组合诊断；返回剥离答案的 ECG 规格、选项、attemptId |
+| GET | `/api/quiz/new?level=1|2|3&chapter=&focus=a,b` | 从 1200 道预生成病例中出题；level 3 为组合诊断；返回剥离答案的 ECG 规格、选项、attemptId、bankId |
 | POST | `/api/quiz/answer` | `{attemptId, selected:["id"], timeMs}`；服务端判分并返回解析 |
 | GET | `/api/quiz/history` | 最近答题记录 |
 | GET | `/api/stats?scope=week|all` | 进度、章节正确率、最近答题/急救、排行榜 |
@@ -58,7 +58,7 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 |---|---|---|
 | GET | `/api/sim/scenarios` | 6 个场景列表 |
 | POST | `/api/sim/start` | `{scenarioId}`，创建 `sim_sessions`，返回监护状态 |
-| GET | `/api/sim/state?id=` | 读取状态；服务端按真实时间推进恶化/超时 |
+| GET | `/api/sim/state?id=` | 读取状态；服务端按真实时间推进动态生理、阶段、恶化与超时 |
 | POST | `/api/sim/action` | `{sessionId, action, payload}` |
 | GET | `/api/sim/debrief?runId=` | 评分、事件时间线、规则复盘 |
 

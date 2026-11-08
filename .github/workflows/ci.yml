@@ -20,6 +20,8 @@ jobs:
           node-version: '22'
       - name: Validate content
         run: php scripts/validate_content.php
+      - name: Validate 1200-case question bank
+        run: php scripts/validate_bank.php
       - name: Lint PHP
         run: find app scripts tests -name '*.php' -print0 | xargs -0 -n1 php -l >/dev/null
       - name: Install test DOM

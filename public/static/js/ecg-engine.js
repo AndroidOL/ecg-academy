@@ -78,6 +78,7 @@ export function normalizeSpec(spec = {}) {
     show12Lead: Boolean(spec.show12Lead),
     primaryLead: String(spec.primaryLead || (spec.morphology === 'brugada' ? 'V1' : 'II')),
     sineWave: Boolean(spec.sineWave),
+    vfAmplitude: clamp(num(spec.vfAmplitude, 1), 0.35, 1.4),
     conduction: String(spec.conduction || ''),
   };
   if (s.rhythm === 'sinus' && s.rate === 0) s.rate = 72;
@@ -111,7 +112,7 @@ function buildSchedule(spec) {
   const extras = new Set(s.extras);
   const rhythm = s.rhythm;
   const duration = s.duration;
-  const special = ['vf', 'vflutter', 'torsades', 'asystole'].includes(rhythm) ? rhythm : null;
+  const special = ['vf', 'vflutter', 'torsades', 'asystole', 'paced'].includes(rhythm) ? rhythm : null;
   if (special) {
     return { spec: s, beats, pWaves, special, rng };
   }
@@ -561,6 +562,7 @@ function addSpecialRhythm(samples, sampleRate, spec, lead, rng) {
   if (spec.rhythm === 'vf') {
     const freqs = [3.2, 4.4, 5.6, 6.9, 8.1, 9.4];
     const phases = freqs.map(() => rng() * Math.PI * 2);
+    const amp = clamp(Number(spec.vfAmplitude ?? 1), 0.35, 1.4);
     for (let i = 0; i < n; i += 1) {
       const t = i / sampleRate;
       let v = 0;
@@ -568,7 +570,7 @@ function addSpecialRhythm(samples, sampleRate, spec, lead, rng) {
         const mod = 1 + 0.18 * Math.sin(2 * Math.PI * (0.23 + k * 0.07) * t + phases[k]);
         v += 0.1 * mod * Math.sin(2 * Math.PI * freqs[k] * t + phases[k] + 0.4 * Math.sin(2 * Math.PI * 0.31 * t));
       }
-      samples[i] = v * leadFactor + 0.02 * Math.sin(2 * Math.PI * 0.08 * t + 0.7) + (rng() - 0.5) * 0.01;
+      samples[i] = (v * leadFactor) * amp + 0.02 * Math.sin(2 * Math.PI * 0.08 * t + 0.7) + (rng() - 0.5) * 0.01;
     }
     return;
   }
@@ -594,6 +596,27 @@ function addSpecialRhythm(samples, sampleRate, spec, lead, rng) {
       const t = i / sampleRate;
       samples[i] = 0.012 * Math.sin(2 * Math.PI * 0.09 * t) + (rng() - 0.5) * 0.006;
     }
+    return;
+  }
+  if (spec.rhythm === 'paced') {
+    const rr = 60 / clamp(spec.rate || 70, 40, 120);
+    const polarity = ['III', 'aVF'].includes(lead) ? 0.8 : 1;
+    for (let i = 0; i < n; i += 1) {
+      const t = i / sampleRate;
+      let local = (t - 0.45) % rr;
+      if (local < 0) local += rr;
+      const spike = Math.exp(-Math.pow((local - 0.004) / 0.0016, 2));
+      const q = local - 0.022;
+      let v = 0.9 * spike;
+      if (q >= 0 && q < 0.18) {
+        v += -0.62 * Math.exp(-Math.pow((q - 0.06) / 0.026, 2));
+        v += 0.5 * Math.exp(-Math.pow((q - 0.125) / 0.032, 2));
+      }
+      const tw = local - 0.31;
+      if (tw > -0.16 && tw < 0.16) v += 0.24 * Math.exp(-Math.pow(tw / 0.055, 2));
+      samples[i] = v * leadFactor * polarity;
+    }
+    return;
   }
 }
 

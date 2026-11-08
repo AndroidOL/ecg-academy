@@ -306,6 +306,7 @@ export class ECGViewer {
         const previous = this.progress ?? 0;
         this.progress = (previous + dt * speedNow) % duration;
         this.paintSweepSegment(previous, this.progress);
+        this.clearSweepGap(this.progress);
       }
       this.draw();
       this.raf = requestAnimationFrame(tick);
@@ -471,6 +472,7 @@ export class ECGViewer {
     // 覆盖模式：波形绘制在持久层上，旧迹不擦除，扫描点向右覆盖。
     if (this.playing && this.progress != null) {
       this.ensureSweepLayer();
+      this.clearSweepGap(this.progress);
       if (this.sweepLayer) {
         ctx.drawImage(this.sweepLayer, 0, 0, this.cssWidth, this.cssHeight);
       }
@@ -688,6 +690,26 @@ export class ECGViewer {
     this.sweepLayerKey = '';
   }
 
+  sampleInterpolated(result, seconds) {
+    const duration = result.duration || result.samples.length / result.sampleRate;
+    const wrapped = ((seconds % duration) + duration) % duration;
+    const position = wrapped * result.sampleRate;
+    const i0 = Math.max(0, Math.min(result.samples.length - 1, Math.floor(position)));
+    const i1 = Math.min(result.samples.length - 1, i0 + 1);
+    const fraction = position - i0;
+    return result.samples[i0] * (1 - fraction) + result.samples[i1] * fraction;
+  }
+
+  clearSweepGap(progress) {
+    if (!this.sweepLayerCtx || !Number.isFinite(progress)) return;
+    const g = this.sweepGeometry();
+    const x = g.padLeft + progress * g.pxPerSec;
+    const gap = Math.max(12, Math.min(26, Math.round(g.pxPerSec * 0.12)));
+    const start = Math.max(g.padLeft, Math.min(g.padLeft + g.plotW, x + 1));
+    const width = Math.min(gap, g.padLeft + g.plotW - start);
+    if (width > 0) this.sweepLayerCtx.clearRect(start, g.padTop, width, g.plotH);
+  }
+
   drawScroll(colors) {
     const ctx = this.ctx;
     const padLeft = 38;
@@ -736,13 +758,11 @@ export class ECGViewer {
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     ctx.beginPath();
-    const steps = Math.max(2, Math.ceil(plotW));
+    const steps = Math.max(2, Math.ceil(plotW * 2));
     for (let i = 0; i <= steps; i += 1) {
       const t = offset + (i / steps) * windowSeconds;
-      const wrapped = ((t % bufferDuration) + bufferDuration) % bufferDuration;
-      const idx = Math.max(0, Math.min(result.samples.length - 1, Math.round(wrapped * result.sampleRate)));
-      const x = padLeft + i;
-      const y = yFor(result.samples[idx]);
+      const x = padLeft + (i / steps) * plotW;
+      const y = yFor(this.sampleInterpolated(result, t));
       if (i === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     }

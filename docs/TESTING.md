@@ -8,8 +8,9 @@
 | 套件 | 命令 | 结果 |
 |---|---|---|
 | 内容结构与引用 | `php scripts/validate_content.php` | **46 篇，0 错误，0 警告** |
+| 1200 道预生成题库 | `php scripts/validate_bank.php` | **1200 道，0 错误** |
 | ECG 波形引擎 | `node tests/engine.test.mjs` | **15/15 通过** |
-| ACLS 状态机 | `php tests/sim.test.php` | **6/6 通过** |
+| ACLS 状态机 | `php tests/sim.test.php` | **9/9 通过** |
 | 播放器/12 导联/标注 | `node tests/playback.test.mjs` | **13/13 通过** |
 | 全链路 UI 冒烟 | `node tests/ui-smoke.mjs` | **9/9 组通过，0 控制台错误** |
 | 生产 API | curl + 独立 Cookie/CSRF | **通过**（见下） |
@@ -62,14 +63,31 @@
 `tests/sim.test.php` 覆盖：
 
 - 启动 VF 场景与监护状态；
-- IV → CPR → 除颤流程；
-- 复盘评分/事件读取；
-- 症状性心动过缓：阿托品、起搏；
+- IV 建立需约 6 秒，建立完成前静脉药被拒绝；
+- CPR → 充电 3 秒 → 停止按压 → 非同步放电的完整链路；
+- 电击后短暂心室静止、观察期与复盘评分/事件读取；
+- 症状性心动过缓：阿托品、经皮起搏夺获（监护转为 paced）、阶段转为“已稳定”；
 - 高钾：IV、CPR、肾上腺素、钙剂；
-- 心动过缓场景电击被拒绝并扣分。
+- 心动过缓场景电击被拒绝并扣分；
+- **长时间未处理**：心率与血压随时间下降，监护频率跟随实时生命体征；
+- **超时/死亡评分封顶**：timeout 结局分数 ≤35、Grade D，复盘分数一致。
 
 ```text
-6 passed, 0 failed
+9 passed, 0 failed
+```
+
+## 3.1 题库校验
+
+`data/question_bank.php` 为 1200 道确定性病例（200 道 level 1、550 道 level 2、450 道 level 3；按章节 125–275 道）。校验项：
+
+- 总数 ≥1000；
+- 诊断/组合引用均存在于 46 篇课程；
+- ID 唯一、seed 为整数、题面与字段非空；
+- 题库统计与按章节计数一致。
+
+```text
+Question bank: 1200 cases
+Errors: 0
 ```
 
 ## 4. 播放器 / 12 导联 / 标注测试
@@ -122,16 +140,18 @@ UI smoke passed: 9 groups, 0 console errors
 | 静态 CSS/JS/图标/manifest | 全部 200 |
 | HTML 安全头 | CSP / X-Frame-Options / nosniff / Referrer-Policy 均存在 |
 
-## 7. 浏览器像素验收说明
+## 7. 浏览器像素验收
 
-当前服务器上 Chrome 150 的 headless 截图/DOM 模式在渲染进程卡在 `SwiftShader`（进程处于 `D` 状态），连简单 `data:` 页面截图也会挂起；这是运行环境限制，不是站点 JS 错误。为避免拖垮同机生产站点，没有继续运行浏览器；改用：
+Chrome 命令行 `--screenshot` 在当前低配环境会卡在 SwiftShader；改用仅安装在 `/tmp/ecg-qa` 的 `playwright-core` + 系统 Chrome，按需启动、用完关闭，避免常驻占用内存。
 
-- jsdom 执行真实应用模块与 API（覆盖页面渲染和交互）；
-- 逐文件 HTTP 200 检查；
-- CSS 断点静态审查（390 px / 768 px / 1024 px / 1440 px）；
-- 无内联脚本、无外部 CDN、无字体外链，降低真机差异。
+已完成的截图/布局检查：
 
-**仍建议在真实手机/桌面浏览器做一次人工视觉走查**，重点：12 导联横向滚动、长文章 TOC、模拟器监护仪高度、iOS 安全区底部导航。
+- 320 / 375 / 768 / 1440 × 首页、学习、文章、练习、实验室、我的、急救列表：横向溢出均为 **0**；
+- 1440×900 与 390×844 急救会话截图：监护仪、阶段徽标、生命体征、IV/充电/CPR 控件布局正常；
+- 移动端 CPR dock 固定于底部导航上方，随时可开始/停止按压；
+- 12 导联与教科书模式截图（P/PR/QRS/T/QT 标注与对照）。
+
+**仍建议在真实手机/桌面浏览器做一次人工视觉走查**，重点：iOS 安全区、长文章 TOC、低端机 Canvas 帧率。
 
 ## 8. 已知限制
 
@@ -147,6 +167,7 @@ UI smoke passed: 9 groups, 0 console errors
 cd /www/wwwroot/ecg-academy
 
 php scripts/validate_content.php
+php scripts/validate_bank.php
 node tests/engine.test.mjs
 node tests/playback.test.mjs
 php tests/sim.test.php

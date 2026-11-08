@@ -59,9 +59,9 @@ export async function practiceView() {
       <div>
         <div class="page-eyebrow">${icon('target', 14)} READ & DECIDE</div>
         <h1 class="page-title">判读练习</h1>
-        <p class="page-sub">题目由策展诊断库随机生成，答案在服务端校验。先从单诊断建立顺序，再挑战组合病例。</p>
+        <p class="page-sub">题库已预置 1200 道确定性病例：由 40 种诊断 × 25 个种子、8 组组合 × 25 个种子组成；答案与解析来自策展知识库，服务端校验。</p>
       </div>
-      <div class="row-wrap"><span class="badge badge-brand">${icon('activity', 11)} 正确率 ${store.quiz?.accuracy || 0}%</span><span class="badge">${store.quiz?.attempts || 0} 次作答</span></div>
+      <div class="row-wrap"><span class="badge badge-brand">${icon('activity', 11)} 正确率 ${store.quiz?.accuracy || 0}%</span><span class="badge">${store.quiz?.attempts || 0} 次作答</span><span class="badge">题库 ${store.bank?.total || 1200} 道</span></div>
     </header>
     <div class="practice-setup">
       <section class="quiz-card">
@@ -76,7 +76,7 @@ export async function practiceView() {
         </div>
         <div class="row-wrap" style="margin-top:18px">
           <button class="btn btn-primary btn-lg" type="button" data-start>${icon('play', 17)} 开始判读</button>
-          <span class="muted" style="font-size:11px">答案提交后立即解析，不消耗 AI 配额即可查看本地解析。</span>
+          <span class="muted" style="font-size:11px">答案提交后立即解析；每题都有服务端答案与知识库解释。</span>
         </div>
         <div id="ai-plan-result" style="margin-top:16px"></div>
       </section>

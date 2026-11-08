@@ -31,6 +31,7 @@ final class ApiController
             'sim' => $stats['sim'],
             'leaderboard' => Stats::leaderboard('week'),
             'scenarioCount' => count(SimEngine::scenarios()),
+            'bank' => QuestionBank::stats(),
         ]);
     }
 

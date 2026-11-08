@@ -13,6 +13,7 @@ export const store = {
   sim: { runs: 0, best: 0 },
   leaderboard: [],
   scenarioCount: 0,
+  bank: { total: 0, byLevel: { 1: 0, 2: 0, 3: 0 }, byChapter: {} },
   diagnosesCache: null,
   scenariosCache: null,
 
@@ -28,6 +29,7 @@ export const store = {
     this.sim = data.sim || this.sim;
     this.leaderboard = data.leaderboard || this.leaderboard;
     this.scenarioCount = data.scenarioCount || 0;
+    this.bank = data.bank || this.bank;
     this.emit('bootstrap', data);
   },
 

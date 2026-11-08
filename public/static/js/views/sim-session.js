@@ -5,7 +5,7 @@ import { icon, escapeHtml, toast, fmtDuration, confirmDialog, medicalDisclaimer,
 
 const RHYTHM_LABELS = {
   vf: '心室颤动', pvt: '无脉性室速', svt: '室上性心动过速', af_fast: '快速心房颤动',
-  brady: '严重心动过缓', asystole: '心搏停止', pea: '无脉电活动（PEA）', rosc: '自主循环恢复',
+  brady: '严重心动过缓', paced: '起搏心律', asystole: '心搏停止', pea: '无脉电活动（PEA）', rosc: '自主循环恢复', post_shock: '电击后短暂心室静止',
 };
 
 function outcomeText(outcome) {
@@ -52,6 +52,8 @@ export async function simSessionView({ params }) {
       }
       if (state.status === 'ended') {
         clearPoll();
+        updateDynamic();
+        await new Promise((resolve) => setTimeout(resolve, 700));
         if (state.runId) await showDebrief();
       }
     } catch (error) {
@@ -86,7 +88,7 @@ export async function simSessionView({ params }) {
             </div>
             <div class="monitor-ecg ecg-dark-paper" id="monitor-ecg"></div>
             <div class="monitor-body">
-              <div class="row-wrap" style="justify-content:space-between"><span class="badge badge-danger">${escapeHtml(RHYTHM_LABELS[state.rhythm] || state.rhythm)}</span><span class="badge" data-pulse>${state.vitals?.pulse ? '有脉' : '无脉'}</span></div>
+              <div class="row-wrap" style="justify-content:space-between"><span class="badge badge-danger">${escapeHtml(RHYTHM_LABELS[state.rhythm] || state.rhythm)}</span><span class="badge" data-phase>${escapeHtml(state.phaseLabel || '就诊评估')}</span><span class="badge" data-pulse>${state.vitals?.pulse ? '有脉' : '无脉'}</span></div>
               <div class="vitals-grid" data-vitals></div>
               <div class="monitor-foot"><span class="cpr-flag ${state.cpr ? '' : 'off'}">${icon('activity', 11)} <span data-cpr-label>${state.cpr ? '按压中' : '未按压'}</span></span><span>ETCO₂ <b data-etco2>${state.vitals?.etco2 ?? '—'}</b> mmHg</span><span>目标：${escapeHtml(scenario.success || '稳定患者')}</span></div>
             </div>
@@ -98,6 +100,7 @@ export async function simSessionView({ params }) {
           </div>
         </div>
         <aside class="sim-side">
+          <div class="cpr-dock" data-cpr-dock hidden></div>
           <div class="action-panel" data-actions></div>
           <div class="card card-pad" style="font-size:11px">
             <div class="row" style="gap:6px;margin-bottom:5px">${icon('info', 14)}<b>场景提示</b></div>
@@ -146,11 +149,20 @@ export async function simSessionView({ params }) {
         <div class="vital ${v.spo2 && v.spo2 < 90 ? 'warn' : ''}"><div class="vital-label">SpO₂</div><div class="vital-value">${escapeHtml(spo2)}</div></div>
         <div class="vital"><div class="vital-label">ETCO₂</div><div class="vital-value">${escapeHtml(String(etco2))} <small>mmHg</small></div></div>`;
     }
+    const phase = el.querySelector('[data-phase]');
+    if (phase) {
+      phase.textContent = state.phaseLabel || '就诊评估';
+      phase.className = `badge ${['critical','arrest','peri-arrest','post-shock'].includes(state.phase) ? 'badge-danger' : ['decompensated','cpr','unstable'].includes(state.phase) ? 'badge-warn' : 'badge-ok'}`;
+    }
     const pulse = el.querySelector('[data-pulse]');
-    if (pulse) pulse.textContent = state.vitals?.pulse ? '有脉' : '无脉';
+    if (pulse) {
+      pulse.textContent = state.vitals?.pulse ? '有脉' : '无脉';
+      pulse.className = `badge ${state.vitals?.pulse ? 'badge-ok' : 'badge-danger'}`;
+    }
     const cprLabel = el.querySelector('[data-cpr-label]');
     if (cprLabel) cprLabel.textContent = state.cpr ? '按压中' : '未按压';
     el.querySelector('.cpr-flag')?.classList.toggle('off', !state.cpr);
+    renderCprDock();
     const etco2 = el.querySelector('[data-etco2]');
     if (etco2) etco2.textContent = String(state.vitals?.etco2 ?? '—');
     const hint = el.querySelector('[data-hint]');
@@ -195,6 +207,22 @@ export async function simSessionView({ params }) {
     }
   }
 
+  function renderCprDock() {
+    const host = el.querySelector('[data-cpr-dock]');
+    if (!host || !state) return;
+    const hasCpr = state.actions?.some((group) => (group.actions || []).some((a) => a.id === 'cpr_start'));
+    if (!hasCpr) {
+      host.hidden = true;
+      host.innerHTML = '';
+      return;
+    }
+    host.hidden = false;
+    host.classList.toggle('active', Boolean(state.cpr));
+    const disabled = state.status !== 'active' ? 'disabled' : '';
+    host.innerHTML = `<div class="cpr-dock-info"><span class="cpr-kicker"><i class="cpr-pulse"></i> HIGH-QUALITY CPR</span><strong>${state.cpr ? '按压进行中' : 'CPR 未开始'}</strong><span>${state.cpr ? '保持 100–120 次/分，深度 5–6 cm，完全回弹；除颤前先停止。' : '患者无脉？点击开始胸外按压；除颤前必须先停止。'}</span></div><button class="btn ${state.cpr ? 'btn-secondary' : 'btn-secondary'}" type="button" data-cpr-toggle ${disabled}>${state.cpr ? '停止 CPR' : '开始 CPR'}</button>`;
+    host.querySelector('[data-cpr-toggle]')?.addEventListener('click', () => act(state.cpr ? 'cpr_stop' : 'cpr_start', {}));
+  }
+
   function renderActions() {
     const host = el.querySelector('[data-actions]');
     if (!host || !state) return;
@@ -202,20 +230,56 @@ export async function simSessionView({ params }) {
     if (shockAction && !shockSyncTouched) shockSync = Boolean(shockAction.sync);
     const energies = state.rhythm === 'svt' ? [50, 100, 150, 200] : [120, 150, 200];
     if (!energies.includes(shockEnergy)) shockEnergy = energies[0];
+    const flags = state.flags || {};
+    const ivClass = flags.iv ? 'ready' : flags.ivPending ? 'pending' : 'off';
+    const ivText = flags.iv ? 'IV/IO 已建立' : flags.ivPending ? `IV/IO 建立中 · ${flags.ivReadyIn ?? 0}s` : 'IV/IO 未建立';
+    const ivStatus = `<div class="iv-status ${ivClass}"><span class="iv-dot"></span><span>${ivText}</span>${!flags.iv ? '<small>建立通路需要约 6 秒；完成前不能给静脉药</small>' : ''}</div>`;
     const groups = (state.actions || []).map((group) => {
       if (group.actions?.some((a) => a.id === 'shock')) {
+        const chargeReady = Boolean(flags.chargeReady);
+        const chargeProgress = Boolean(flags.chargeInProgress);
+        const chargeLocked = chargeReady || chargeProgress;
+        const blocked = Boolean(state.cpr) || Boolean(flags.postShock) || state.status !== 'active';
+        const shockBlocked = blocked || !chargeReady;
+        const reason = state.cpr
+          ? '先停止按压，再放电'
+          : flags.postShock
+            ? '电击后观察期，约 2 秒'
+            : chargeProgress
+              ? `充电中 · 约 ${flags.chargeReadyIn ?? 0}s`
+              : chargeReady
+                ? '已充电：确认无人接触患者后放电'
+                : '先选择能量并充电';
+        const chargeText = chargeReady ? `已充电 ${flags.chargeEnergy ?? shockEnergy} J` : chargeProgress ? `充电中 ${flags.chargeReadyIn ?? 0}s` : '充电';
         return `<div class="action-group"><div class="action-group-title">${escapeHtml(group.label)}</div>
           <div class="shock-controls">
-            <div class="row"><span class="muted" style="font-size:10px">能量</span><select class="select" data-shock-energy>${energies.map((e) => `<option value="${e}" ${e === shockEnergy ? 'selected' : ''}>${e} J</option>`).join('')}</select></div>
-            <div class="row" style="justify-content:space-between"><span class="muted" style="font-size:10px">模式</span><div class="sync-switch"><button type="button" class="${shockSync ? 'active' : ''}" data-sync="1">同步</button><button type="button" class="${!shockSync ? 'active danger' : ''}" data-sync="0">非同步</button></div></div>
-            <button class="btn btn-danger btn-block btn-sm" type="button" data-action="shock" style="margin-top:7px">${icon('zap', 14)} 电击（${shockSync ? '同步' : '非同步'}）</button>
-            <div class="hint" style="margin-top:4px">${shockSync ? '有脉、不稳定 → 同步电复律' : '无脉、可除颤 → 非同步除颤'}</div>
+            <div class="row"><span class="muted" style="font-size:10px">能量</span><select class="select" data-shock-energy ${chargeLocked || state.status !== 'active' ? 'disabled' : ''}>${energies.map((e) => `<option value="${e}" ${e === (flags.chargeEnergy ?? shockEnergy) ? 'selected' : ''}>${e} J</option>`).join('')}</select></div>
+            <div class="row" style="justify-content:space-between"><span class="muted" style="font-size:10px">模式</span><div class="sync-switch"><button type="button" class="${(flags.chargeSync ?? shockSync) ? 'active' : ''}" data-sync="1" ${chargeLocked ? 'disabled' : ''}>同步</button><button type="button" class="${!(flags.chargeSync ?? shockSync) ? 'active danger' : ''}" data-sync="0" ${chargeLocked ? 'disabled' : ''}>非同步</button></div></div>
+            <div class="charge-row">
+              <button class="btn btn-secondary btn-sm" type="button" data-action="charge" ${chargeLocked || flags.postShock || state.status !== 'active' ? 'disabled' : ''}>${icon('bolt', 13)} ${chargeText}</button>
+              <button class="btn btn-danger btn-sm" type="button" data-action="shock" ${shockBlocked ? 'disabled' : ''}>${icon('zap', 14)} 放电</button>
+            </div>
+            <div class="charge-meter ${chargeReady ? 'ready' : chargeProgress ? 'pending' : ''}"><span></span></div>
+            <div class="hint" style="margin-top:4px">${reason}</div>
           </div>
         </div>`;
       }
-      return `<div class="action-group"><div class="action-group-title">${escapeHtml(group.label)}</div><div class="action-grid">${(group.actions || []).map((action) => `<button class="action-btn ${action.tone === 'primary' ? 'primary' : action.tone === 'danger' ? 'danger' : ''}" type="button" data-action="${escapeHtml(action.id)}">${escapeHtml(action.label)}</button>`).join('')}</div></div>`;
+      const actions = (group.actions || []).filter((action) => !['cpr_start', 'cpr_stop'].includes(action.id));
+      if (actions.length === 0) return '';
+      return `<div class="action-group"><div class="action-group-title">${escapeHtml(group.label)}</div><div class="action-grid">${actions.map((action) => {
+        const needsIv = Boolean(action.requiresIv) && !flags.iv;
+        const ivPending = Boolean(action.requiresIv) && Boolean(flags.ivPending);
+        const ivActionPending = action.id === 'iv' && flags.ivPending;
+        const ivDone = action.id === 'iv' && flags.iv;
+        const disabled = state.status !== 'active' || needsIv || ivPending || ivActionPending || ivDone;
+        const suffix = ivDone ? '已建立' : ivActionPending ? '建立中' : '';
+        const reasonAttr = needsIv ? ' title="请先完成 IV/IO 通路"' : '';
+        const toneClass = action.tone === 'primary' ? 'primary' : action.tone === 'danger' ? 'danger' : action.tone === 'warn' ? 'warn' : '';
+        return `<button class="action-btn ${toneClass}" type="button" data-action="${escapeHtml(action.id)}" ${disabled ? 'disabled' : ''}${reasonAttr}>${escapeHtml(action.label)}${suffix ? ` · ${suffix}` : ''}</button>`;
+      }).join('')}</div></div>`;
     }).join('');
-    host.innerHTML = groups;
+    host.innerHTML = ivStatus + groups;
+    renderCprDock();
     host.querySelectorAll('[data-sync]').forEach((button) => {
       button.addEventListener('click', () => {
         shockSync = button.dataset.sync === '1';
@@ -233,7 +297,11 @@ export async function simSessionView({ params }) {
           const ok = await confirmDialog({ title: '结束并复盘？', message: '将按当前时间线生成评分与复盘，之后不能继续操作。', confirmText: '结束并复盘' });
           if (!ok) return;
         }
-        await act(action, action === 'shock' ? { energy: shockEnergy, sync: shockSync } : {});
+        if (action === 'shock') {
+          const ok = await confirmDialog({ title: '确认放电？', message: '确认所有人员已离开患者与病床，无人接触患者、导线或床沿；氧气源远离。', confirmText: '确认放电', danger: true });
+          if (!ok) return;
+        }
+        await act(action, (action === 'shock' || action === 'charge') ? { energy: shockEnergy, sync: shockSync } : {});
       });
     });
   }
@@ -244,8 +312,15 @@ export async function simSessionView({ params }) {
     try {
       state = await api.simAction(sessionId, action, payload);
       lastActionsSig = '';
+      if (action === 'shock') {
+        const panel = el.querySelector('.monitor-panel');
+        panel?.classList.add('shock-flash');
+        window.setTimeout(() => panel?.classList.remove('shock-flash'), 650);
+      }
       if (state.status === 'ended') {
         clearPoll();
+        updateDynamic();
+        await new Promise((resolve) => setTimeout(resolve, 700));
         if (state.runId) await showDebrief();
       } else {
         updateDynamic();

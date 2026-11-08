@@ -62,6 +62,15 @@ final class SimEngine
             'lastAtropineAt' => null,
             'epiErrors' => 0,
             'iv' => false,
+            'ivPendingUntil' => null,
+            'postShockUntil' => null,
+            'postShockOutcome' => null,
+            'postShockRhythm' => null,
+            'chargeStartedAt' => null,
+            'chargeReadyAt' => null,
+            'chargeEnergy' => null,
+            'chargeSync' => null,
+            'chargeAnnounced' => false,
             'oxygen' => false,
             'sedated' => false,
             'pacing' => false,
@@ -72,8 +81,15 @@ final class SimEngine
             'penalties' => [],
             'flags' => [],
             'rng' => random_int(100000, 2000000000),
+            'hr' => 0, 'bpSys' => 0, 'bpDia' => 0, 'spo2' => 0, 'etco2' => 0,
+            'responsive' => false, 'pulse' => false,
+            'lastPhysiologyAt' => $now, 'phase' => 'arrival', 'stage' => 0, 'lastStageAt' => $now,
             'dirty' => false,
         ];
+        foreach (self::initialVitals($scenario) as $key => $value) $state[$key] = $value;
+        $state['lastPhysiologyAt'] = $now;
+        $state['phase'] = 'arrival';
+        $state['lastStageAt'] = $now;
         self::event($state, '场景开始：' . $scenario['name'], 'neutral');
         $pdo = Db::pdo();
         $stmt = $pdo->prepare(
@@ -120,6 +136,7 @@ final class SimEngine
         match ($action) {
             'cpr_start' => self::cprStart($state, $now),
             'cpr_stop' => self::cprStop($state, $payload, $now),
+            'charge' => self::charge($state, $scenario, $payload, $now),
             'shock' => self::shock($state, $scenario, $payload, $now),
             'epi' => self::epi($state, $scenario, $now),
             'amio' => self::amio($state, $scenario, $now),
@@ -205,12 +222,197 @@ final class SimEngine
         return $state;
     }
 
+    private static function initialVitals(array $scenario): array
+    {
+        return match ($scenario['algorithm']) {
+            'vf' => ['hr' => 0, 'bpSys' => 0, 'bpDia' => 0, 'spo2' => 62, 'etco2' => 0, 'responsive' => false, 'pulse' => false],
+            'tachy' => $scenario['initialRhythm'] === 'af_fast'
+                ? ['hr' => 152, 'bpSys' => 82, 'bpDia' => 48, 'spo2' => 93, 'etco2' => 30, 'responsive' => true, 'pulse' => true]
+                : ['hr' => 190, 'bpSys' => 82, 'bpDia' => 48, 'spo2' => 93, 'etco2' => 30, 'responsive' => true, 'pulse' => true],
+            'brady' => ['hr' => 32, 'bpSys' => 76, 'bpDia' => 40, 'spo2' => 94, 'etco2' => 32, 'responsive' => false, 'pulse' => true],
+            'hyperk' => ['hr' => 70, 'bpSys' => 0, 'bpDia' => 0, 'spo2' => 55, 'etco2' => 0, 'responsive' => false, 'pulse' => false],
+            default => ['hr' => 0, 'bpSys' => 0, 'bpDia' => 0, 'spo2' => 70, 'etco2' => 0, 'responsive' => false, 'pulse' => false],
+        };
+    }
+
+    private static function setPhase(array &$state, string $phase, string $label): void
+    {
+        if (($state['phase'] ?? '') === $phase) return;
+        $state['phase'] = $phase;
+        $state['dirty'] = true;
+        self::event($state, '病情阶段：' . $label, in_array($phase, ['critical', 'arrest'], true) ? 'bad' : 'warn');
+    }
+
+    private static function evolve(array &$state, array $scenario, float $now): void
+    {
+        if (($state['status'] ?? '') !== 'active') return;
+        $last = (float) ($state['lastPhysiologyAt'] ?? $state['startedAt']);
+        if ($now <= $last) return;
+        $state['lastPhysiologyAt'] = $now;
+        $elapsed = max(0, $now - (float) $state['startedAt']);
+        $algorithm = $scenario['algorithm'];
+
+        if ($state['rhythm'] === 'post_shock') {
+            $state['hr'] = 0;
+            $state['bpSys'] = 0;
+            $state['bpDia'] = 0;
+            $state['spo2'] = 45;
+            $state['etco2'] = 0;
+            $state['responsive'] = false;
+            $state['pulse'] = false;
+            self::setPhase($state, 'post-shock', '电击后观察');
+            $state['dirty'] = true;
+            return;
+        }
+
+        if ($algorithm === 'brady') {
+            if ($state['pacing']) {
+                $state['hr'] = 70;
+                $state['bpSys'] = 105;
+                $state['bpDia'] = 65;
+                $state['spo2'] = 96;
+                $state['etco2'] = 35;
+                $state['responsive'] = true;
+                $state['pulse'] = true;
+                self::setPhase($state, 'stabilized', '起搏后稳定');
+            } elseif (!empty($state['epiInfusionAt'])) {
+                $state['hr'] = 68;
+                $state['bpSys'] = 102;
+                $state['bpDia'] = 62;
+                $state['spo2'] = 96;
+                $state['etco2'] = 34;
+                $state['responsive'] = true;
+                $state['pulse'] = true;
+                self::setPhase($state, 'stabilized', '药物支持后稳定');
+            } else {
+                $boost = 0;
+                if (!empty($state['lastAtropineAt'])) {
+                    $decay = max(0, 1 - ($now - (float) $state['lastAtropineAt']) / 90);
+                    $boost = $state['atropine'] * 10 * $decay;
+                }
+                $state['hr'] = max(12, (int) round(32 - $elapsed * 0.18 + $boost));
+                $state['bpSys'] = max(38, (int) round(76 - $elapsed * 0.35 + $boost * 0.8));
+                $state['bpDia'] = max(24, (int) round(40 - $elapsed * 0.2 + $boost * 0.4));
+                $state['spo2'] = max(70, (int) round(94 - max(0, $elapsed - 20) * 0.12));
+                $state['etco2'] = max(16, (int) round(32 - $elapsed * 0.08));
+                $state['responsive'] = $state['hr'] >= 45 && $state['bpSys'] >= 70;
+                $state['pulse'] = true;
+                if ($elapsed < 30) self::setPhase($state, 'compensated', '代偿期');
+                elseif ($elapsed < 90) self::setPhase($state, 'decompensated', '失代偿：心率与血压下降');
+                else self::setPhase($state, 'critical', '濒危：需立即起搏/药物支持');
+                if ($elapsed > 45 && !isset($state['flags']['brady_worse'])) {
+                    $state['flags']['brady_worse'] = true;
+                    self::event($state, '患者意识模糊、血压进一步下降', 'bad');
+                }
+            }
+            $state['dirty'] = true;
+            return;
+        }
+
+        if ($algorithm === 'tachy') {
+            $base = $state['rhythm'] === 'af_fast' ? 152 : 190;
+            $state['hr'] = max(120, (int) round($base + sin($elapsed / 9) * 6 - $elapsed * 0.02));
+            $state['bpSys'] = max(42, (int) round(82 - $elapsed * 0.18));
+            $state['bpDia'] = max(26, (int) round(48 - $elapsed * 0.1));
+            $state['spo2'] = max(76, (int) round(93 - max(0, $elapsed - 30) * 0.05));
+            $state['etco2'] = 30;
+            $state['responsive'] = $state['bpSys'] > 65;
+            $state['pulse'] = true;
+            if ($elapsed < 30) self::setPhase($state, 'unstable', '血流动力学不稳定');
+            elseif ($elapsed < 90) self::setPhase($state, 'decompensated', '失代偿：低血压/意识改变');
+            else self::setPhase($state, 'critical', '濒危：需立即同步复律');
+            if ($elapsed > 45 && !isset($state['flags']['tachy_worse'])) {
+                $state['flags']['tachy_worse'] = true;
+                self::event($state, '患者出现意识模糊、末梢湿冷', 'bad');
+            }
+            $state['dirty'] = true;
+            return;
+        }
+
+        if ($algorithm === 'hyperk') {
+            $state['hr'] = max(18, (int) round(70 - $elapsed * 0.12));
+            $state['spo2'] = max(20, (int) round(55 - $elapsed * 0.3));
+            $state['bpSys'] = 0;
+            $state['bpDia'] = 0;
+            $state['etco2'] = 0;
+            $state['responsive'] = false;
+            $state['pulse'] = false;
+            if ($state['cpr']) {
+                $state['bpSys'] = 80;
+                $state['bpDia'] = 48;
+                $state['spo2'] = 84;
+                $state['etco2'] = 18;
+            }
+            self::setPhase($state, 'peri-arrest', '围停搏期：高钾/无脉电活动');
+            $state['dirty'] = true;
+            return;
+        }
+
+        // VF/pVT 及默认心脏骤停场景
+        $state['hr'] = 0;
+        $state['responsive'] = false;
+        $state['pulse'] = false;
+        if ($state['cpr']) {
+            $state['bpSys'] = 82;
+            $state['bpDia'] = 50;
+            $state['spo2'] = 86;
+            $state['etco2'] = 20;
+            self::setPhase($state, 'cpr', 'CPR 进行中');
+        } else {
+            $state['bpSys'] = 0;
+            $state['bpDia'] = 0;
+            $state['spo2'] = max(20, (int) round(62 - $elapsed * 0.35));
+            $state['etco2'] = 0;
+            self::setPhase($state, 'arrest', '心脏骤停');
+            if ($elapsed > 90 && empty($state['flags']['vf_fine'])) {
+                $state['flags']['vf_fine'] = true;
+                self::event($state, 'VF 振幅逐渐降低，转为细颤；除颤成功率下降', 'bad');
+            }
+        }
+        if (!$state['cpr'] && $elapsed > 30 && !isset($state['flags']['vf_hypoxia'])) {
+            $state['flags']['vf_hypoxia'] = true;
+            self::event($state, '长时间无胸外按压，组织缺氧与酸中毒加重', 'bad');
+        }
+        $state['dirty'] = true;
+    }
+
     private static function advance(array &$state, array $scenario, ?float $now = null): ?string
     {
         $now = $now ?? microtime(true);
         $elapsed = max(0, $now - (float) $state['startedAt']);
         $algorithm = $scenario['algorithm'];
         $cpr = (bool) $state['cpr'];
+
+        if (!empty($state['ivPendingUntil']) && $now >= (float) $state['ivPendingUntil']) {
+            $state['iv'] = true;
+            $state['ivPendingUntil'] = null;
+            self::event($state, 'IV/IO 通路已建立，可给予静脉药物', 'good');
+            $state['dirty'] = true;
+        }
+
+        if (!empty($state['postShockUntil']) && $now >= (float) $state['postShockUntil']) {
+            $outcome = $state['postShockOutcome'] ?? null;
+            $restore = (string) ($state['postShockRhythm'] ?? 'vf');
+            $state['postShockUntil'] = null;
+            $state['postShockRhythm'] = null;
+            $state['postShockOutcome'] = null;
+            if ($outcome !== null) {
+                $state['rhythm'] = 'rosc';
+                $state['dirty'] = true;
+                return $outcome;
+            }
+            $state['rhythm'] = $restore;
+            self::event($state, '电击后心律恢复为 ' . $restore . '，立即恢复或继续 CPR', 'warn');
+            $state['dirty'] = true;
+        }
+
+        if (!empty($state['chargeReadyAt']) && !$state['chargeAnnounced'] && $now >= (float) $state['chargeReadyAt']) {
+            $state['chargeAnnounced'] = true;
+            self::event($state, '除颤器充电完成，可放电（确认无人接触患者）', 'good');
+            $state['dirty'] = true;
+        }
+
+        self::evolve($state, $scenario, $now);
 
         if ($algorithm === 'vf' || $algorithm === 'hyperk') {
             $last = $state['lastCprEnd'] ?? $state['startedAt'];
@@ -298,10 +500,80 @@ final class SimEngine
         $state['dirty'] = true;
     }
 
+    private static function charge(array &$state, array $scenario, array $payload, float $now): void
+    {
+        if (!empty($state['postShockUntil'])) {
+            throw new ApiError(422, 'post_shock', '电击后观察期，不能充电');
+        }
+        if (!empty($state['chargeReadyAt'])) {
+            throw new ApiError(422, 'already_charged', '除颤器已充电；请停止按压后放电，或等待当前电击流程完成');
+        }
+        $algorithm = $scenario['algorithm'];
+        if ($algorithm === 'vf') {
+            if (!in_array($state['rhythm'], ['vf', 'pvt'], true)) {
+                throw new ApiError(422, 'not_shockable', '当前心律不是可除颤心律');
+            }
+            if ((bool) ($payload['sync'] ?? false)) {
+                throw new ApiError(422, 'sync_invalid', 'VF/无脉性 VT 必须使用非同步除颤');
+            }
+        } elseif ($algorithm === 'tachy') {
+            if (!in_array($state['rhythm'], ['svt', 'af_fast'], true)) {
+                throw new ApiError(422, 'not_tachy', '当前心律不是快速性心律失常');
+            }
+            if (!(bool) ($payload['sync'] ?? false)) {
+                throw new ApiError(422, 'sync_required', '有脉快速心律必须使用同步电复律');
+            }
+        } else {
+            throw new ApiError(422, 'not_shockable', '当前场景不适合电击/复律');
+        }
+        $energy = max(0, min(360, (int) ($payload['energy'] ?? 0)));
+        if ($energy < 20) {
+            throw new ApiError(422, 'invalid_energy', '请选择有效能量');
+        }
+        $state['chargeStartedAt'] = $now;
+        $state['chargeReadyAt'] = $now + 3.0;
+        $state['chargeEnergy'] = $energy;
+        $state['chargeSync'] = (bool) ($payload['sync'] ?? false);
+        $state['chargeAnnounced'] = false;
+        self::event($state, "除颤器开始充电 {$energy} J（约 3 秒）", 'neutral');
+        $state['dirty'] = true;
+    }
+
+    private static function clearCharge(array &$state): void
+    {
+        $state['chargeStartedAt'] = null;
+        $state['chargeReadyAt'] = null;
+        $state['chargeEnergy'] = null;
+        $state['chargeSync'] = null;
+        $state['chargeAnnounced'] = false;
+    }
+
     private static function shock(array &$state, array $scenario, array $payload, float $now): void
     {
+        if ($state['cpr']) {
+            throw new ApiError(422, 'stop_cpr_first', '请先暂停胸外按压，再除颤/复律');
+        }
+        if (!empty($state['postShockUntil'])) {
+            throw new ApiError(422, 'post_shock', '电击后观察期，请等待心律稳定并立即恢复按压');
+        }
+        $algorithm = $scenario['algorithm'];
+        if (!in_array($algorithm, ['vf', 'tachy'], true)) {
+            self::penalty($state, 18, '对不可除颤心律/心动过缓使用电击');
+            self::event($state, '电击禁忌：当前心律不应除颤', 'bad');
+            $state['dirty'] = true;
+            return;
+        }
         $energy = max(0, min(360, (int) ($payload['energy'] ?? 0)));
         $sync = (bool) ($payload['sync'] ?? false);
+        if (empty($state['chargeReadyAt']) || $now < (float) $state['chargeReadyAt']) {
+            $remaining = !empty($state['chargeReadyAt']) ? max(1, (int) ceil($state['chargeReadyAt'] - $now)) : 0;
+            throw new ApiError(422, 'not_charged', $remaining > 0 ? "除颤器仍在充电，约需 {$remaining} 秒" : '请先给除颤器充电，再放电');
+        }
+        if ((int) ($state['chargeEnergy'] ?? 0) !== $energy || (bool) ($state['chargeSync'] ?? false) !== $sync) {
+            self::clearCharge($state);
+            throw new ApiError(422, 'charge_mismatch', '能量或同步模式已改变，请重新充电');
+        }
+        self::clearCharge($state);
         $algorithm = $scenario['algorithm'];
 
         if ($algorithm === 'vf') {
@@ -317,19 +589,23 @@ final class SimEngine
                 $state['energyErrors']++;
                 self::penalty($state, 6, '双相除颤能量不在 120–200 J 范围');
             }
-            self::stopCprForShock($state, $now);
             $state['shocks']++;
             $state['lastShockAt'] = $now;
+            $state['postShockRhythm'] = 'vf';
+            $state['postShockUntil'] = $now + 2.2;
+            $state['rhythm'] = 'post_shock';
             self::event($state, "非同步除颤 {$energy} J", 'good');
+            self::event($state, '电击后短暂心室静止，观察约 2 秒；若未恢复立即恢复按压', 'warn');
             $chance = [0.30, 0.55, 0.75, 0.86, 0.92][min(4, $state['shocks'] - 1)] ?? 0.92;
+            if (!empty($state['flags']['vf_fine'])) $chance -= 0.12;
             if ($state['epi'] > 0) $chance += 0.04;
             if ($state['amio'] > 0) $chance += 0.04;
             if (self::random($state) < $chance) {
-                $state['rhythm'] = 'rosc';
-                self::event($state, '除颤成功，恢复自主循环（ROSC）', 'good');
-                self::finalize($state, $scenario, 'rosc', (int) $state['userId'], 0);
+                $state['postShockOutcome'] = 'rosc';
+                self::event($state, '除颤成功：电击后过渡心律，等待自主循环恢复', 'good');
             } else {
-                self::event($state, '除颤未成功，立即恢复胸外按压', 'warn');
+                $state['postShockOutcome'] = null;
+                self::event($state, '除颤未成功：电击后短暂静止，准备立即恢复按压', 'warn');
             }
             $state['dirty'] = true;
             return;
@@ -356,13 +632,17 @@ final class SimEngine
                 self::penalty($state, 5, '有意识患者电复律前未镇静');
             }
             self::event($state, "同步电复律 {$energy} J", 'good');
+            $previousRhythm = $state['rhythm'];
+            $state['postShockRhythm'] = $previousRhythm;
+            $state['postShockUntil'] = $now + 1.8;
+            $state['rhythm'] = 'post_shock';
+            $state['postShockOutcome'] = null;
             $chance = $state['shocks'] >= 2 ? 0.95 : 0.85;
             if (self::random($state) < $chance) {
-                $state['rhythm'] = 'rosc';
-                self::event($state, '电复律成功，转复为窦性心律', 'good');
-                self::finalize($state, $scenario, 'stable', (int) $state['userId'], 0);
+                $state['postShockOutcome'] = 'stable';
+                self::event($state, '电复律成功：短暂停搏后等待窦性心律恢复', 'good');
             } else {
-                self::event($state, '电复律未成功，可再次同步电复律', 'warn');
+                self::event($state, '电复律未成功：过渡 1.8 秒后评估原心律', 'warn');
             }
             $state['dirty'] = true;
             return;
@@ -453,6 +733,13 @@ final class SimEngine
         }
         $state['pacing'] = true;
         $state['pacingAt'] = $now;
+        $state['hr'] = 70;
+        $state['bpSys'] = 105;
+        $state['bpDia'] = 65;
+        $state['spo2'] = 96;
+        $state['etco2'] = 35;
+        $state['responsive'] = true;
+        $state['pulse'] = true;
         self::event($state, '开启经皮起搏（TCP）', 'good');
         $state['dirty'] = true;
     }
@@ -465,6 +752,12 @@ final class SimEngine
         }
         self::requireIv($state);
         $state['epiInfusionAt'] = $now;
+        $state['hr'] = 68;
+        $state['bpSys'] = 102;
+        $state['bpDia'] = 62;
+        $state['spo2'] = 96;
+        $state['responsive'] = true;
+        $state['pulse'] = true;
         self::event($state, '肾上腺素 2–10 μg/min 泵入', 'good');
         $state['dirty'] = true;
     }
@@ -475,8 +768,13 @@ final class SimEngine
             self::event($state, '静脉通路已建立', 'neutral');
             return;
         }
-        $state['iv'] = true;
-        self::event($state, '建立静脉/骨内通路', 'good');
+        if (!empty($state['ivPendingUntil'])) {
+            $remaining = max(0, (int) ceil($state['ivPendingUntil'] - microtime(true)));
+            self::event($state, "IV/IO 正在建立，还需约 {$remaining} 秒", 'neutral');
+            return;
+        }
+        $state['ivPendingUntil'] = microtime(true) + 6;
+        self::event($state, '开始建立 IV/IO 通路（约 6 秒，期间不能给静脉药）', 'neutral');
         $state['dirty'] = true;
     }
 
@@ -591,6 +889,10 @@ final class SimEngine
 
     private static function requireIv(array &$state): void
     {
+        if (!empty($state['ivPendingUntil'])) {
+            $remaining = max(1, (int) ceil($state['ivPendingUntil'] - microtime(true)));
+            throw new ApiError(422, 'iv_pending', "IV/IO 通路正在建立，还需约 {$remaining} 秒");
+        }
         if (!$state['iv']) {
             throw new ApiError(422, 'no_iv', '请先建立静脉/骨内通路（IV/IO）');
         }
@@ -647,8 +949,18 @@ final class SimEngine
         if ($state['syncErrors'] === 0) $score += 5;
         if ($state['energyErrors'] === 0) $score += 5;
         if ($state['epiErrors'] === 0) $score += 5;
-        $score = max(0, min(100, $score));
-        $grade = $score >= 85 ? 'A' : ($score >= 70 ? 'B' : ($score >= 55 ? 'C' : 'D'));
+        $processScore = max(0, min(100, $score));
+        $successfulOutcome = in_array($outcome, ['rosc', 'stable'], true);
+        if ($successfulOutcome) {
+            $score = $processScore;
+            $grade = $score >= 85 ? 'A' : ($score >= 70 ? 'B' : ($score >= 55 ? 'C' : 'D'));
+        } else {
+            // 结局优先：超时/未复苏/提前结束不能用流程分“洗白”。
+            $cap = $outcome === 'aborted' ? 45 : 35;
+            $score = min($cap, (int) round($processScore * ($outcome === 'aborted' ? 0.45 : 0.25)));
+            $grade = 'D';
+            self::event($state, $outcome === 'timeout' ? '结局：时限内未恢复自主循环，患者死亡' : '结局：未恢复自主循环/提前终止', 'bad');
+        }
         $state['score'] = $score;
         $state['grade'] = $grade;
         $state['cprRatio'] = round($cprRatio, 2);
@@ -697,14 +1009,24 @@ final class SimEngine
             'remaining' => max(0, (int) $scenario['maxDuration'] - $elapsed),
             'maxDuration' => (int) $scenario['maxDuration'],
             'rhythm' => $state['rhythm'],
+            'phase' => $state['phase'] ?? 'arrival',
+            'phaseLabel' => self::phaseLabel((string) ($state['phase'] ?? 'arrival')),
             'monitor' => $rhythmSpec,
             'vitals' => $vitals,
             'cpr' => $cpr,
             'flags' => [
                 'iv' => (bool) $state['iv'],
+                'ivPending' => !empty($state['ivPendingUntil']),
+                'ivReadyIn' => !empty($state['ivPendingUntil']) ? max(0, (int) ceil($state['ivPendingUntil'] - $now)) : 0,
                 'oxygen' => (bool) $state['oxygen'],
                 'sedated' => (bool) $state['sedated'],
                 'pacing' => (bool) $state['pacing'],
+                'postShock' => !empty($state['postShockUntil']),
+                'chargeReady' => !empty($state['chargeReadyAt']) && $now >= (float) $state['chargeReadyAt'],
+                'chargeInProgress' => !empty($state['chargeReadyAt']) && $now < (float) $state['chargeReadyAt'],
+                'chargeReadyIn' => !empty($state['chargeReadyAt']) ? max(0, (int) ceil((float) $state['chargeReadyAt'] - $now)) : 0,
+                'chargeEnergy' => $state['chargeEnergy'] !== null ? (int) $state['chargeEnergy'] : null,
+                'chargeSync' => $state['chargeSync'],
             ],
             'metrics' => [
                 'shocks' => (int) $state['shocks'],
@@ -734,24 +1056,39 @@ final class SimEngine
         if ($ended) {
             return ['hr' => 0, 'bpSys' => 0, 'bpDia' => 0, 'spo2' => 0, 'etco2' => 0, 'responsive' => false, 'pulse' => false];
         }
-        $algorithm = $scenario['algorithm'];
-        if ($algorithm === 'vf' || $algorithm === 'hyperk') {
-            if ($cpr) {
-                return ['hr' => 0, 'bpSys' => 82, 'bpDia' => 50, 'spo2' => 86, 'etco2' => 20, 'responsive' => false, 'pulse' => false];
-            }
-            return ['hr' => 0, 'bpSys' => 0, 'bpDia' => 0, 'spo2' => 62, 'etco2' => 0, 'responsive' => false, 'pulse' => false];
+        if ($state['rhythm'] === 'post_shock') {
+            return $cpr
+                ? ['hr' => 0, 'bpSys' => 78, 'bpDia' => 42, 'spo2' => 82, 'etco2' => 14, 'responsive' => false, 'pulse' => false]
+                : ['hr' => 0, 'bpSys' => 0, 'bpDia' => 0, 'spo2' => 55, 'etco2' => 0, 'responsive' => false, 'pulse' => false];
         }
-        if ($algorithm === 'tachy') {
-            $hr = $state['rhythm'] === 'af_fast' ? 152 : 190;
-            return ['hr' => $hr, 'bpSys' => 82, 'bpDia' => 48, 'spo2' => 93, 'etco2' => 30, 'responsive' => true, 'pulse' => true];
+        if ($cpr && in_array($scenario['algorithm'], ['vf', 'hyperk'], true)) {
+            return ['hr' => (int) ($state['hr'] ?? 0), 'bpSys' => 82, 'bpDia' => 50, 'spo2' => 86, 'etco2' => 20, 'responsive' => false, 'pulse' => false];
         }
-        if ($algorithm === 'brady') {
-            $atropineBoost = $state['lastAtropineAt'] && microtime(true) - $state['lastAtropineAt'] < 300 ? $state['atropine'] * 8 : 0;
-            $hr = 32 + $atropineBoost + ($state['pacing'] ? 38 : 0);
-            $bp = 76 + $atropineBoost * 0.8 + ($state['pacing'] ? 28 : 0);
-            return ['hr' => (int) $hr, 'bpSys' => (int) $bp, 'bpDia' => (int) max(30, $bp - 38), 'spo2' => 94, 'etco2' => 32, 'responsive' => $state['pacing'] || $atropineBoost >= 12, 'pulse' => true];
-        }
-        return ['hr' => 0, 'bpSys' => 0, 'bpDia' => 0, 'spo2' => 0, 'etco2' => 0, 'responsive' => false, 'pulse' => false];
+        return [
+            'hr' => (int) ($state['hr'] ?? 0),
+            'bpSys' => (int) ($state['bpSys'] ?? 0),
+            'bpDia' => (int) ($state['bpDia'] ?? 0),
+            'spo2' => (int) ($state['spo2'] ?? 0),
+            'etco2' => (int) ($state['etco2'] ?? 0),
+            'responsive' => (bool) ($state['responsive'] ?? false),
+            'pulse' => (bool) ($state['pulse'] ?? false),
+        ];
+    }
+
+    private static function phaseLabel(string $phase): string
+    {
+        return [
+            'arrival' => '就诊评估',
+            'compensated' => '代偿期',
+            'unstable' => '血流动力学不稳定',
+            'decompensated' => '失代偿期',
+            'critical' => '濒危',
+            'stabilized' => '已稳定',
+            'arrest' => '心脏骤停',
+            'cpr' => 'CPR 进行中',
+            'post-shock' => '电击后观察',
+            'peri-arrest' => '围停搏期',
+        ][$phase] ?? $phase;
     }
 
     private static function monitorSpec(array $state, array $scenario): array
@@ -766,14 +1103,37 @@ final class SimEngine
         if ($state['status'] !== 'active' && in_array($state['outcome'], ['rosc', 'stable'], true)) {
             return array_replace($base, ['rate' => 92, 'atrialRate' => 92, 'description' => '恢复自主循环，窦性心律。']);
         }
+        $elapsed = max(0, microtime(true) - (float) $state['startedAt']);
+        if ($scenario['algorithm'] === 'hyperk') {
+            $rate = max(16, (int) ($state['hr'] ?? 40));
+            $qrs = min(0.20, 0.10 + $elapsed * 0.00025);
+            $spec = array_replace($base, [
+                'rhythm' => 'sinus', 'rate' => $rate, 'atrialRate' => $rate,
+                'p' => 'flattened', 'pr' => 0.22, 'qrs' => $qrs, 'morphology' => 'hyperk',
+                't' => ['shape' => 'peaked', 'amp' => 2.4], 'qt' => 0.4,
+                'description' => '高钾血症：QRS 增宽、P 波低平、T 波高尖；无脉电活动。',
+            ]);
+            if ($elapsed > 150) {
+                $spec['sineWave'] = true;
+                $spec['description'] = '极重度高钾：正弦波，濒临心搏停止。';
+            }
+            return $spec;
+        }
+        if ($scenario['algorithm'] === 'brady' && !empty($state['pacing'])) {
+            return array_replace($base, [
+                'rhythm' => 'paced', 'rate' => 70, 'atrialRate' => 70, 'p' => 'absent',
+                'qrs' => 0.17, 'qt' => 0.44, 'description' => '经皮起搏心律：起搏钉后宽 QRS，确认夺获与机械收缩。',
+            ]);
+        }
         return match ($state['rhythm']) {
-            'vf' => array_replace($base, ['rhythm' => 'vf', 'rate' => 0, 'p' => 'absent', 'extras' => ['fibrillatory'], 'description' => '心室颤动。']),
+            'vf' => array_replace($base, ['rhythm' => 'vf', 'rate' => 0, 'p' => 'absent', 'extras' => ['fibrillatory'], 'vfAmplitude' => !empty($state['flags']['vf_fine']) ? 0.55 : 1, 'description' => !empty($state['flags']['vf_fine']) ? '细颤：振幅低、频率快，除颤成功率下降。' : '粗颤：振幅较高，立即 CPR 并尽快除颤。']),
             'pvt' => array_replace($base, ['rhythm' => 'vt', 'rate' => 200, 'qrs' => 0.17, 'morphology' => 'wide', 'p' => 'absent', 't' => ['shape' => 'discordant', 'amp' => 1.1], 'description' => '宽 QRS 心动过速，无脉。']),
-            'svt' => array_replace($base, ['rhythm' => 'svt', 'rate' => 190, 'atrialRate' => 190, 'p' => 'hidden', 'qrs' => 0.07, 'description' => '窄 QRS 规则心动过速。']),
-            'af_fast' => array_replace($base, ['rhythm' => 'af', 'rate' => 152, 'atrialRate' => 400, 'irregularity' => 0.24, 'p' => 'absent', 'extras' => ['fibrillatory'], 'description' => '快速心房颤动。']),
-            'brady' => array_replace($base, ['rate' => (int) (self::vitals($state, $scenario, false, false)['hr'] ?: 32), 'atrialRate' => 32, 'qt' => 0.46, 'description' => '显著心动过缓。']),
+            'svt' => array_replace($base, ['rhythm' => 'svt', 'rate' => (int) ($state['hr'] ?? 190), 'atrialRate' => (int) ($state['hr'] ?? 190), 'p' => 'hidden', 'qrs' => 0.07, 'description' => '窄 QRS 规则心动过速。']),
+            'af_fast' => array_replace($base, ['rhythm' => 'af', 'rate' => (int) ($state['hr'] ?? 152), 'atrialRate' => 400, 'irregularity' => 0.24, 'p' => 'absent', 'extras' => ['fibrillatory'], 'description' => '快速心房颤动。']),
+            'post_shock' => array_replace($base, ['rhythm' => 'asystole', 'rate' => 0, 'p' => 'absent', 'description' => '电击后短暂心室静止（约 2 秒），观察心律。']),
+            'brady' => array_replace($base, ['rate' => (int) ($state['hr'] ?? 32), 'atrialRate' => (int) ($state['hr'] ?? 32), 'qt' => 0.46, 'description' => '症状性心动过缓，心率约 ' . (int) ($state['hr'] ?? 32) . ' 次/分。']),
             'asystole' => array_replace($base, ['rhythm' => 'asystole', 'rate' => 0, 'p' => 'absent', 'qrs' => 0.16, 'description' => '心搏停止。']),
-            'pea' => array_replace($base, ['rhythm' => 'aivr', 'rate' => 70, 'atrialRate' => 70, 'qrs' => 0.14, 'morphology' => 'wide', 'p' => 'absent', 'description' => '有组织电活动但无脉（PEA）。']),
+            'pea' => array_replace($base, ['rhythm' => 'aivr', 'rate' => (int) ($state['hr'] ?? 70), 'atrialRate' => (int) ($state['hr'] ?? 70), 'qrs' => 0.14, 'morphology' => 'wide', 'p' => 'absent', 'description' => '有组织电活动但无脉（PEA）。']),
             default => $base,
         };
     }
@@ -793,21 +1153,21 @@ final class SimEngine
                 ['id' => 'shock', 'label' => '非同步除颤', 'tone' => 'danger', 'requiresEnergy' => true, 'sync' => false],
             ]];
             $groups[] = ['id' => 'drugs', 'label' => '药物', 'actions' => [
-                ['id' => 'epi', 'label' => '肾上腺素 1 mg', 'tone' => 'primary'],
-                ['id' => 'amio', 'label' => '胺碘酮 300 mg', 'tone' => 'ghost'],
+                ['id' => 'epi', 'label' => '肾上腺素 1 mg', 'tone' => 'warn', 'requiresIv' => true],
+                ['id' => 'amio', 'label' => '胺碘酮 300 mg', 'tone' => 'ghost', 'requiresIv' => true],
             ]];
         } elseif ($algorithm === 'tachy') {
             $groups[] = ['id' => 'assess', 'label' => '评估与准备', 'actions' => [
                 ['id' => 'iv', 'label' => '建立 IV', 'tone' => 'ghost'],
                 ['id' => 'oxygen', 'label' => '吸氧', 'tone' => 'ghost'],
-                ['id' => 'sedate', 'label' => '镇静', 'tone' => 'ghost'],
+                ['id' => 'sedate', 'label' => '镇静', 'tone' => 'ghost', 'requiresIv' => true],
                 ['id' => 'vagal', 'label' => '迷走刺激', 'tone' => 'ghost'],
             ]];
             $groups[] = ['id' => 'shock', 'label' => '电治疗', 'actions' => [
                 ['id' => 'shock', 'label' => '同步电复律', 'tone' => 'danger', 'requiresEnergy' => true, 'sync' => true],
             ]];
             $groups[] = ['id' => 'drugs', 'label' => '药物', 'actions' => [
-                ['id' => 'adenosine', 'label' => 'Adenosine 6 mg', 'tone' => 'ghost'],
+                ['id' => 'adenosine', 'label' => 'Adenosine 6 mg', 'tone' => 'ghost', 'requiresIv' => true],
             ]];
         } elseif ($algorithm === 'brady') {
             $groups[] = ['id' => 'assess', 'label' => '评估与准备', 'actions' => [
@@ -815,8 +1175,8 @@ final class SimEngine
                 ['id' => 'oxygen', 'label' => '吸氧', 'tone' => 'ghost'],
             ]];
             $groups[] = ['id' => 'drugs', 'label' => '药物', 'actions' => [
-                ['id' => 'atropine', 'label' => '阿托品 1 mg', 'tone' => 'primary'],
-                ['id' => 'epi_infusion', 'label' => '肾上腺素泵入', 'tone' => 'ghost'],
+                ['id' => 'atropine', 'label' => '阿托品 1 mg', 'tone' => 'warn', 'requiresIv' => true],
+                ['id' => 'epi_infusion', 'label' => '肾上腺素泵入', 'tone' => 'ghost', 'requiresIv' => true],
             ]];
             $groups[] = ['id' => 'pacing', 'label' => '起搏', 'actions' => [
                 ['id' => 'pacing', 'label' => '经皮起搏', 'tone' => 'primary'],
@@ -829,10 +1189,10 @@ final class SimEngine
                 ['id' => 'iv', 'label' => '建立 IV/IO', 'tone' => 'ghost'],
             ]];
             $groups[] = ['id' => 'drugs', 'label' => '药物与可逆病因', 'actions' => [
-                ['id' => 'epi', 'label' => '肾上腺素 1 mg', 'tone' => 'primary'],
-                ['id' => 'calcium', 'label' => '静脉钙剂', 'tone' => 'danger'],
-                ['id' => 'bicarb', 'label' => '碳酸氢钠', 'tone' => 'ghost'],
-                ['id' => 'insulin', 'label' => '胰岛素+葡萄糖', 'tone' => 'ghost'],
+                ['id' => 'epi', 'label' => '肾上腺素 1 mg', 'tone' => 'warn', 'requiresIv' => true],
+                ['id' => 'calcium', 'label' => '静脉钙剂', 'tone' => 'warn', 'requiresIv' => true],
+                ['id' => 'bicarb', 'label' => '碳酸氢钠', 'tone' => 'ghost', 'requiresIv' => true],
+                ['id' => 'insulin', 'label' => '胰岛素+葡萄糖', 'tone' => 'ghost', 'requiresIv' => true],
             ]];
         }
         $groups[] = ['id' => 'assess', 'label' => '评估', 'actions' => [
@@ -846,8 +1206,27 @@ final class SimEngine
     private static function hint(array $scenario, array $state, int $elapsed): string
     {
         $algorithm = $scenario['algorithm'];
+        if (!empty($state['postShockUntil'])) {
+            return '电击后短暂心室静止：立即恢复高质量按压；约 2 秒后评估心律，准备下一次除颤。';
+        }
+        if (!empty($state['chargeReadyAt'])) {
+            if ($state['cpr']) return '除颤器已充电：先停止胸外按压，确认无人接触患者，再放电。';
+            return '除颤器已充电：确认无人接触患者，立即放电；放电后立即恢复按压。';
+        }
+        if (!empty($state['ivPendingUntil'])) {
+            $remaining = max(1, (int) ceil($state['ivPendingUntil'] - microtime(true)));
+            return "IV/IO 通路建立中，还需约 {$remaining} 秒；通路完成前不能给静脉药。";
+        }
+        if ($algorithm === 'brady' && empty($state['pacing']) && empty($state['epiInfusionAt'])) {
+            $hr = (int) ($state['hr'] ?? 32);
+            if ($hr <= 24) return '心率持续下降、灌注恶化：立即准备经皮起搏或肾上腺素泵入，不能继续等待。';
+            if (!empty($state['lastAtropineAt']) && microtime(true) - $state['lastAtropineAt'] > 45) return '阿托品作用开始衰减：评估起搏或肾上腺素泵入。';
+        }
+        if ($algorithm === 'tachy' && (int) ($state['bpSys'] ?? 82) < 65) {
+            return '低血压进行性加重：立即同步电复律，不要只等待药物起效。';
+        }
         if ($algorithm === 'vf') {
-            if (!$state['cpr']) return '患者无脉。立即开始高质量胸外按压（100–120 次/分）。';
+            if (!$state['cpr']) return '患者无脉。立即开始高质量胸外按压；除颤前必须先停止按压。';
             if ($state['shocks'] === 0) return '可除颤心律：尽快非同步除颤（双相 120–200 J），除颤后立即恢复按压。';
             if ($state['shocks'] < 2) return '继续 CPR 2 分钟；第二次除颤后考虑肾上腺素 1 mg。';
             if ($state['epi'] === 0) return '可给予肾上腺素 1 mg IV/IO，每 3–5 分钟重复。';

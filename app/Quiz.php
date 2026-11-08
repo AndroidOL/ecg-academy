@@ -17,8 +17,34 @@ final class Quiz
         $stem = '';
 
         $all = Content::all();
+        $bankSeed = null;
+        $bankId = null;
+        $entry = QuestionBank::pick($level, $chapter, $focus);
+        if ($entry) {
+            $candidatePrimary = $all[$entry['primary']] ?? null;
+            $candidateSecondary = !empty($entry['secondary']) ? ($all[$entry['secondary']] ?? null) : null;
+            if ($candidatePrimary && (empty($entry['secondary']) || $candidateSecondary)) {
+                $primary = $candidatePrimary;
+                $secondary = $candidateSecondary;
+                $level = (int) ($entry['level'] ?? $level);
+                $bankSeed = (int) ($entry['seed'] ?? 0);
+                $bankId = (string) ($entry['id'] ?? '');
+                $question = (string) ($entry['question'] ?? $question);
+                $stem = (string) ($entry['stem'] ?? '');
+                if (!empty($entry['combo'])) {
+                    foreach (require BASE_PATH . '/data/combos.php' as $comboCandidate) {
+                        if (($comboCandidate['id'] ?? '') === $entry['combo']) {
+                            $combo = $comboCandidate;
+                            break;
+                        }
+                    }
+                }
+            } else {
+                $primary = null;
+            }
+        }
 
-        if ($level === 3) {
+        if (!$primary && $level === 3) {
             $combos = require BASE_PATH . '/data/combos.php';
             $pool = [];
             foreach ($combos as $candidate) {
@@ -72,7 +98,11 @@ final class Quiz
         if ($combo) {
             $spec = array_replace_recursive($spec, $combo['overrides'] ?? []);
         }
-        $spec['seed'] = random_int(1, 99999);
+        $spec['seed'] = $bankSeed ?? random_int(1, 99999);
+        if ($entry && !empty($entry['rate'])) {
+            $spec['rate'] = (int) $entry['rate'];
+            if (($spec['rhythm'] ?? '') === 'sinus') $spec['atrialRate'] = (int) $entry['rate'];
+        }
         $spec['duration'] = 8;
         $spec['annotations'] = [];
         unset($spec['description'], $spec['preview']);
@@ -82,7 +112,7 @@ final class Quiz
 
         $options = self::buildOptions($primary, $secondary, count($correctIds) > 1);
         $optionIds = array_column($options, 'id');
-        $caseKey = implode('+', $correctIds);
+        $caseKey = $bankId ?? implode('+', $correctIds);
         $payload = [
             'spec' => $spec,
             'correctIds' => $correctIds,
@@ -93,6 +123,7 @@ final class Quiz
             'stem' => $stem,
             'caseKey' => $caseKey,
             'primaryId' => $primary['id'],
+            'bankId' => $bankId,
             'createdAt' => time(),
         ];
 
