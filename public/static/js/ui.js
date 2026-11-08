@@ -44,6 +44,7 @@ const paths = {
   users: '<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 5a3 3 0 0 1 0 6M17 14a5 5 0 0 1 4 4"/>',
   compass: '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>',
   github: '<path d="M9 19c-4 1.5-4-2.5-6-3m12 6v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.7 4.7 0 0 0-1.3-3.2 4.3 4.3 0 0 0-.1-3.2s-1-.3-3.4 1.3a11.7 11.7 0 0 0-6.2 0C6.6 3.8 5.6 4.1 5.6 4.1a4.3 4.3 0 0 0-.1 3.2A4.7 4.7 0 0 0 4.2 10c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V22"/>',
+  flame: '<path d="M12 2c.6 3.5-2.2 5-3.8 7.2A7.4 7.4 0 0 0 6 13.6C6 17.7 8.7 21 12 21s6-3.3 6-7.4c0-2-.9-3.6-2-5C14.4 6.8 12.6 5 12 2z"/><path d="M12 21c-1.7 0-3-1.4-3-3.2 0-1.6 1-2.7 1.9-3.8.5-.6.9-1.3 1.1-2 .8 1 1.5 2.2 2.2 3.2.5.8.8 1.6.8 2.6 0 1.8-1.3 3.2-3 3.2z"/>',
 };
 
 export function icon(name, size = 18, extra = '') {
@@ -63,6 +64,7 @@ export const NAV_ITEMS = [
   { path: '/', label: '首页', icon: 'home' },
   { path: '/learn', label: '学习', icon: 'book' },
   { path: '/practice', label: '练习', icon: 'activity' },
+  { path: '/daily', label: '每日', icon: 'flame' },
   { path: '/exam', label: '考试', icon: 'target' },
   { path: '/leaderboard', label: '排行', icon: 'trophy', bottom: false },
   { path: '/sim', label: '急救', icon: 'zap' },

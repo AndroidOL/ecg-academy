@@ -1,7 +1,7 @@
 import { api } from '../api.js';
 import { store } from '../store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ap';
+const __asset = __isNode ? '' : '?v=20261108aq';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, chapterColor, difficultyDots, escapeHtml, setupMiniECG, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
@@ -50,6 +50,7 @@ export async function homeView() {
         <p class="hero-sub">从窦性心律到心室颤动，从 ST-T 改变到电解质紊乱。用可交互的心电图、组合判读练习与 ACLS 推演，把书本上的标准变成床边的直觉。</p>
         <div class="hero-actions">
           <a class="btn btn-primary btn-lg" href="#/learn">${icon('bookOpen', 18)} 开始学习</a>
+          <a class="btn btn-accent btn-lg" href="#/daily">${icon('flame', 18)} 每日挑战</a>
           <a class="btn btn-secondary btn-lg" href="#/practice">${icon('activity', 18)} 判读练习</a>
           <a class="btn btn-ghost btn-lg" href="#/sim">${icon('zap', 18)} 急救模拟</a>
         </div>
@@ -119,6 +120,9 @@ export async function homeView() {
     <section class="section">
       <div class="section-head"><div><div class="page-eyebrow">TOOLS</div><h2 class="section-title">四种练习方式，同一套判读逻辑</h2></div></div>
       <div class="feature-grid">
+        <a class="feature-card" href="#/daily">
+          <div class="feature-icon" style="background:var(--accent-soft);color:var(--accent)">${icon('flame', 20)}</div><h3>每日挑战</h3><p>每天 10 道全站同题的心电图判读，连续完成累计打卡；独立计分，不占用测试分。</p><span class="feature-link">开始今日挑战 ${icon('arrowRight', 13)}</span>
+        </a>
         <a class="feature-card" href="#/vectors">
           <div class="feature-icon">${icon('compass', 20)}</div><h3>心脏向量实验室</h3><p>P/QRS/T 环、肢体/胸导联投影、动作电位与四腔瓣膜解剖；拖动旋转，理解心电图为什么长这样。</p><span class="feature-link">进入向量实验室 ${icon('arrowRight', 13)}</span>
         </a>
