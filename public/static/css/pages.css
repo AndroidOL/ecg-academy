@@ -666,3 +666,7 @@
 .visual-controls .visual-range { flex: 0 0 auto; white-space: nowrap; }
 .visual-controls .visual-range select { min-width: 70px; }
 .visual-controls .visual-range input[type="range"] { vertical-align: middle; }
+.vector-phase-control { flex: 1 1 160px; }
+.vector-phase-control input { width: 100px; }
+.vector-phase-control span { min-width: 30px; text-align:right; color:var(--brand); font-family:var(--font-mono); font-size:9px; }
+.vector-phase-status { padding:4px 10px 6px; color:var(--muted); background:var(--bg-elev); border-top:1px solid var(--line); font-family:var(--font-mono); font-size:8.5px; }

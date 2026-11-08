@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108u';
+const __asset = __isNode ? '' : '?v=20261108v';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const LEADS = {
@@ -185,7 +185,7 @@ function drawProjectionCanvas(canvas, state, t) {
   const ampP = dot([0.28, 0.18, 0.05]) * 0.7;
   const ampQ = dot([0.72, 0.32, 0.12]) * 1.5;
   const ampT = dot([0.58, 0.3, 0.1]) * 0.9;
-  const phase = (t / cycleDuration(state)) % 1;
+  const phase = state.phase ?? 0;
   const yAt = (x) => {
     const u = x / plotW;
     let v = 0;
@@ -213,12 +213,12 @@ function drawProjectionCanvas(canvas, state, t) {
 }
 
 function updateProjectionBars(host, state, t) {
-  const cycle = (t / cycleDuration(state)) % 1;
+  const cycle = state.phase ?? 0;
   const windows = { P: [0, 0.16], QRS: [0.2, 0.42], T: [0.55, 0.8] };
   let active = null;
   Object.entries(windows).forEach(([key, [start, end]]) => { if (cycle >= start && cycle < end) active = key; });
   const loop = state.loop === 'all' ? (active || 'QRS') : state.loop;
-  const a = (((t / cycleDuration(state)) % 1) * Math.PI * 2);
+  const a = ((state.phase ?? 0) * Math.PI * 2);
   let point = loop === 'P'
     ? [0.18 + 0.24 * Math.cos(a), -0.1 + 0.16 * Math.sin(a), 0.04 * Math.sin(2 * a)]
     : loop === 'T'
@@ -246,6 +246,7 @@ function vectorLoopsPanel() {
       <div class="vector-figure-note"><b>教学示意，不是真实心电向量</b><span>单箭头是用于理解导联投影的简化合成向量；真实向量是无数心肌细胞瞬时电偶向量的空间叠加。</span></div>
       <canvas data-vector-canvas data-height="360" aria-label="心电向量环三维投影动画"></canvas>
       <div class="vector-timeline" data-vector-timeline><span>P</span><span>QRS</span><span>T</span><i data-vector-timeline-cursor></i></div>
+      <div class="vector-phase-status" data-vector-phase-state>当前时间：P 波</div>
       <div class="visual-sync"><div class="visual-sync-head"><span>同步导联波形</span><span data-vector-sync-label>II 导联 · 时间光标</span></div><canvas data-vector-ecg data-height="112" aria-label="向量环同步导联波形"></canvas></div>
       <div class="vector-projections" data-vector-projections>${Object.entries(LEADS).map(([id, lead]) => `<div data-projection-row="${id}"><b>${id}</b><div class="vector-projection-track"><i></i></div><span data-projection-value="${id}">+0.00</span></div>`).join('')}</div>
       <div class="visual-controls">
@@ -253,6 +254,7 @@ function vectorLoopsPanel() {
         <label class="visual-range">旋转 <input type="range" min="-80" max="80" value="24" data-vector-rotate></label>
         <label class="visual-range">俯仰 <input type="range" min="-50" max="50" value="18" data-vector-pitch></label>
         <label class="visual-range">速度 <select class="select" data-vector-speed style="min-height:28px;padding:2px 5px;font-size:9px"><option value="0.5">0.5× 慢</option><option value="1" selected>1×</option><option value="2">2×</option></select></label>
+        <label class="visual-range vector-phase-control">时间 <input type="range" min="0" max="1000" value="0" data-vector-phase><span data-vector-phase-label>0%</span></label>
         <select class="select" data-vector-loop aria-label="选择向量环"><option value="all" selected>P + QRS + T 全部</option><option value="P">P 环</option><option value="QRS">QRS 环</option><option value="T">T 环</option></select>
         <select class="select" data-vector-lead aria-label="选择投影导联">${Object.entries(LEADS).map(([id, l]) => `<option value="${id}" ${id === 'II' ? 'selected' : ''}>${l.name}</option>`).join('')}</select>
       </div>
@@ -563,7 +565,7 @@ export async function vectorLabView() {
   let raf = 0;
   let cleanup = [];
   let start = performance.now();
-  const state = { rotate: 24, pitch: 18, playing: true, loop: 'all', lead: 'II', axis: 60, angle: 60, auto: true, speed: 1, dragMode: 'view' };
+  const state = { rotate: 24, pitch: 18, playing: true, loop: 'all', lead: 'II', axis: 60, angle: 60, auto: true, speed: 1, dragMode: 'view', phase: 0 };
   el.innerHTML = `<div class="page-eyebrow">${icon('compass', 14)} VECTOR & ELECTROPHYSIOLOGY</div>
     <div class="vector-head"><div><h1 class="page-title">心脏向量实验室</h1><p class="page-sub">把“背图形”变成“看方向”：P/QRS/T 环、肢体/胸导联投影、动作电位与解剖一次串起来。</p></div><a class="btn btn-secondary btn-sm" href="#/learn/ecg-calibration-paper">回到基础课程 ${icon('arrowRight', 13)}</a></div>
     <div class="visual-tabs">${TABS.map(([id, label], i) => `<button class="chip ${i === 0 ? 'active' : ''}" type="button" data-visual-tab="${id}">${label}</button>`).join('')}</div>
@@ -572,24 +574,43 @@ export async function vectorLabView() {
 
   const content = el.querySelector('[data-visual-content]');
   const stopAnim = () => { if (raf) cancelAnimationFrame(raf); raf = 0; cleanup.forEach((fn) => fn()); cleanup = []; };
-  const drawLoopFrame = (now) => {
+  let lastFrame = 0;
+  const renderLoopState = () => {
     const canvas = content.querySelector('[data-vector-canvas]');
     if (!canvas) return;
-    drawVectorCanvas(canvas, state, now);
+    drawVectorCanvas(canvas, state, 0);
     const projection = content.querySelector('[data-vector-ecg]');
-    if (projection) drawProjectionCanvas(projection, state, now);
+    if (projection) drawProjectionCanvas(projection, state, 0);
     const syncLabel = content.querySelector('[data-vector-sync-label]');
     if (syncLabel) syncLabel.textContent = `${LEADS[state.lead].name} · 时间光标`;
     const bars = content.querySelector('[data-vector-projections]');
-    if (bars) updateProjectionBars(bars, state, now);
+    if (bars) updateProjectionBars(bars, state, 0);
+    const tc = state.phase ?? 0;
     const timeline = content.querySelector('[data-vector-timeline]');
     if (timeline) {
       const cursor = timeline.querySelector('[data-vector-timeline-cursor]');
-      if (cursor) cursor.style.left = `${((now / cycleDuration(state)) % 1) * 100}%`;
-      const tc = (now / cycleDuration(state)) % 1;
+      if (cursor) cursor.style.left = `${tc * 100}%`;
       const timelineActive = state.loop === 'all' ? (tc < 0.16 ? 'P' : tc < 0.42 ? 'QRS' : tc < 0.8 ? 'T' : null) : state.loop;
       timeline.querySelectorAll('span').forEach((node, i) => node.classList.toggle('active', timelineActive !== null && i === ({ P: 0, QRS: 1, T: 2 }[timelineActive])));
     }
+    const phaseSlider = content.querySelector('[data-vector-phase]');
+    if (phaseSlider) phaseSlider.value = String(Math.round(tc * 1000));
+    const phaseLabel = content.querySelector('[data-vector-phase-label]');
+    if (phaseLabel) phaseLabel.textContent = `${Math.round(tc * 100)}%`;
+    const phaseState = content.querySelector('[data-vector-phase-state]');
+    if (phaseState) {
+      const active = tc < 0.16 ? 'P' : tc < 0.42 ? 'QRS' : tc < 0.8 ? 'T' : null;
+      phaseState.textContent = active ? `当前时间：${active} 波 · ${state.loop === 'all' ? `${active} 环活动，其他环静止` : `${state.loop} 环观察`}` : '当前时间：等电位线 · 各环静止';
+    }
+  };
+  const drawLoopFrame = (now) => {
+    if (!content.querySelector('[data-vector-canvas]')) return;
+    if (state.playing) {
+      const dt = lastFrame ? Math.min(0.12, (now - lastFrame) / 1000) : 0;
+      state.phase = ((state.phase ?? 0) + dt / (cycleDuration(state) / 1000)) % 1;
+    }
+    lastFrame = now;
+    renderLoopState();
     if (state.playing) raf = requestAnimationFrame(drawLoopFrame);
   };
   const drawLimbFrame = (now) => {
@@ -610,11 +631,21 @@ export async function vectorLabView() {
     play?.addEventListener('click', () => {
       state.playing = !state.playing;
       play.innerHTML = state.playing ? `${icon('pause', 13)} 暂停` : `${icon('play', 13)} 播放`;
+      lastFrame = 0;
       if (state.playing) { stopAnim(); raf = requestAnimationFrame(drawLoopFrame); } else stopAnim();
     });
     content.querySelector('[data-vector-rotate]')?.addEventListener('input', (e) => { state.rotate = Number(e.target.value); });
     content.querySelector('[data-vector-pitch]')?.addEventListener('input', (e) => { state.pitch = Number(e.target.value); });
-    content.querySelector('[data-vector-speed]')?.addEventListener('change', (e) => { state.speed = Number(e.target.value) || 1; });
+    content.querySelector('[data-vector-speed]')?.addEventListener('change', (e) => { state.speed = Number(e.target.value) || 1; lastFrame = 0; });
+    content.querySelector('[data-vector-phase]')?.addEventListener('input', (e) => {
+      state.playing = false;
+      state.phase = Math.max(0, Math.min(1, Number(e.target.value) / 1000));
+      lastFrame = 0;
+      const play = content.querySelector('[data-vector-play]');
+      if (play) play.innerHTML = `${icon('play', 13)} 播放`;
+      stopAnim();
+      renderLoopState();
+    });
     const axisSlider = content.querySelector('[data-vector-axis]');
     const axisLabel = content.querySelector('[data-vector-axis-value]');
     const setAxis = (value) => {
