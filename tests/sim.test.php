@@ -62,6 +62,10 @@ try {
         try { SimEngine::action($userId, $id, 'shock', ['energy' => 200, 'sync' => false]); }
         catch (ApiError $e) { $blocked = $e->errorCode === 'stop_cpr_first'; }
         assert($blocked, 'shock should require stopping CPR');
+        $view = SimEngine::state($userId, $id);
+        assert($view['vitals']['hrSource'] === 'cpr', 'CPR should expose compression-rate artifact');
+        assert($view['vitals']['hr'] >= 92 && $view['vitals']['hr'] <= 122, 'CPR rate should fluctuate in a physiologic range');
+        assert($view['vitals']['pulse'] === false, 'compression artifact must not imply a pulse');
         $view = SimEngine::action($userId, $id, 'cpr_stop', []);
         assert($view['cpr'] === false);
         $notCharged = false;

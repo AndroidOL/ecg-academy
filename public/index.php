@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require dirname(__DIR__) . '/app/bootstrap.php';
 
+use App\AdminController;
 use App\ApiController;
 use App\ApiError;
 use App\Auth;
@@ -21,6 +22,22 @@ if (str_starts_with($path, '/api/')) {
         }
         $router = new Router();
         $router->get('/api/health', [ApiController::class, 'health']);
+        $router->get('/api/admin/auth-config', [AdminController::class, 'authConfig']);
+        $router->post('/api/admin/login', [AdminController::class, 'login']);
+        $router->get('/api/admin/passkey/login/options', [AdminController::class, 'passkeyLoginOptions']);
+        $router->post('/api/admin/passkey/login', [AdminController::class, 'passkeyLogin']);
+        $router->post('/api/admin/logout', [AdminController::class, 'logout']);
+        $router->get('/api/admin/session', [AdminController::class, 'session']);
+        $router->post('/api/admin/settings', [AdminController::class, 'saveSettings']);
+        $router->get('/api/admin/users', [AdminController::class, 'users']);
+        $router->post('/api/admin/user', [AdminController::class, 'updateUser']);
+        $router->get('/api/admin/passkey/options', [AdminController::class, 'passkeyOptions']);
+        $router->post('/api/admin/passkey/register', [AdminController::class, 'passkeyRegister']);
+        $router->post('/api/admin/passkey/delete', [AdminController::class, 'passkeyDelete']);
+        $router->post('/api/admin/ai/provider', [AdminController::class, 'aiProviderSave']);
+        $router->post('/api/admin/ai/provider/delete', [AdminController::class, 'aiProviderDelete']);
+        $router->post('/api/admin/ai/test', [AdminController::class, 'aiTest']);
+        $router->get('/api/admin/audit', [AdminController::class, 'audit']);
         $router->get('/api/bootstrap', [ApiController::class, 'bootstrap']);
         $router->get('/api/diagnoses', [ApiController::class, 'diagnoses']);
         $router->get('/api/diagnoses/{id}', [ApiController::class, 'diagnosis']);

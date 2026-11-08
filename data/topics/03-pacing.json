@@ -1,0 +1,971 @@
+[
+  {
+    "id": "nbg-code",
+    "name": "起搏器 NBG 代码",
+    "en": "NBG pacemaker code",
+    "chapter": "pacing",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "起搏器",
+      "NBG",
+      "代码"
+    ],
+    "oneLiner": "NBG 代码用 5 个位置描述起搏心腔、感知心腔、反应方式、频率适应与多部位起搏；例如 VVI、DDD、CRT。",
+    "specificity": "第一位起搏腔（A/V/D），第二位感知腔，第三位反应（I/T/D），第四位频率适应（R），第五位多部位起搏。",
+    "objectives": [
+      "VVI 单腔心室；AAI 单腔心房；DDD 双腔。",
+      "第三位 I/T/D 表示抑制/触发/双反应。",
+      "CRT 关注双室起搏与 QRS 变窄。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "代码是理解起搏心电图的第一步：知道起搏腔和感知腔，才能预测起搏钉、P 波与 QRS 的关系。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "VVI：心室起搏、心室感知、抑制。",
+          "DDD：双腔起搏、双腔感知、双腔反应。",
+          "CRT 常为双室起搏，用于心衰伴 LBBB。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "代码不能说明起搏器当前工作模式；程控后实际模式可能改变，需查起搏器记录。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "VVI 单腔心室；AAI 单腔心房；DDD 双腔。",
+      "第三位 I/T/D 表示抑制/触发/双反应。",
+      "CRT 关注双室起搏与 QRS 变窄。"
+    ],
+    "clinicalPearl": "读起搏心电图先问“起搏哪里、感知哪里、如何反应”，再问钉与夺获。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "vvi-pacing",
+    "name": "VVI 起搏心电图",
+    "en": "VVI pacing ECG",
+    "chapter": "pacing",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "VVI",
+      "起搏钉",
+      "夺获"
+    ],
+    "oneLiner": "VVI 起搏心室、感知心室，自身心率低于下限时发放起搏；起搏钉后紧跟宽 QRS，通常呈 LBBB 样。",
+    "specificity": "起搏钉与宽 QRS 固定关系；自身 QRS 出现时起搏被抑制；下限频率决定起搏频率。",
+    "objectives": [
+      "VVI：钉后宽 QRS，LBBB 样。",
+      "自身搏动抑制起搏。",
+      "无钉不等于无起搏。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "右室心尖起搏使心室从右室向左侧除极，QRS 宽、呈 LBBB 形态；起搏钉是人工电刺激的标志。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "起搏钉 + 宽 QRS（LBBB 样）。",
+          "自身搏动出现时起搏钉消失。",
+          "下限频率如 60 次/分。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "起搏钉很小，可能被滤波器削弱；没有钉不代表没有起搏，需结合起搏器程控。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "VVI：钉后宽 QRS，LBBB 样。",
+      "自身搏动抑制起搏。",
+      "无钉不等于无起搏。"
+    ],
+    "clinicalPearl": "VVI 的“钉 + 宽 QRS”是夺获；只有钉没有 QRS 是失夺获，必须立即处理。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "aai-pacing",
+    "name": "AAI 起搏心电图",
+    "en": "AAI pacing ECG",
+    "chapter": "pacing",
+    "difficulty": 2,
+    "urgency": "advanced",
+    "tags": [
+      "AAI",
+      "心房起搏",
+      "窦房结"
+    ],
+    "oneLiner": "AAI 起搏心房、感知心房，用于窦房结功能障碍而房室传导正常者；起搏钉后紧跟 P 波，QRS 通常窄。",
+    "specificity": "起搏钉—P 波固定关系；P 波后 QRS 窄且 PR 正常；自身 P 波出现时起搏被抑制。",
+    "objectives": [
+      "AAI：心房起搏，钉后 P 波。",
+      "房室传导必须正常。",
+      "QRS 窄，PR 固定。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "心房起搏恢复房室同步，避免心室起搏导致的房室不同步；前提是房室传导完整。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "钉后 P 波，QRS 窄。",
+          "自身 P 波抑制起搏。",
+          "适用于窦房结病变、房室传导正常者。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "AAI 不适用于房室阻滞；若房室传导恶化，可出现 P 波后 QRS 脱漏。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "AAI：心房起搏，钉后 P 波。",
+      "房室传导必须正常。",
+      "QRS 窄，PR 固定。"
+    ],
+    "clinicalPearl": "AAI 的关键不是“钉”，而是“每个钉后都有 P，每个 P 后都有 QRS”。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "ddd-pacing",
+    "name": "DDD 双腔起搏心电图",
+    "en": "DDD pacing ECG",
+    "chapter": "pacing",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "DDD",
+      "双腔",
+      "房室顺序"
+    ],
+    "oneLiner": "DDD 可起搏/感知心房与心室，并按房室顺序起搏，保持房室同步；心电图可见心房钉—P、心室钉—QRS。",
+    "specificity": "房室顺序起搏：A 钉→P→V 钉→宽 QRS；自身心房活动可触发心室起搏；自身心室活动可抑制心室起搏。",
+    "objectives": [
+      "DDD：房室顺序起搏，A 钉→P→V 钉→QRS。",
+      "自身心房活动可触发心室起搏。",
+      "警惕 PMT。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "DDD 根据自身心房率决定心室起搏频率，设置 AV 间期；适合窦房结病变合并房室阻滞。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "A 钉—P—V 钉—宽 QRS 的顺序。",
+          "自身 P 波可触发 V 起搏。",
+          "AV 间期由程控设置。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "DDD 可出现起搏器介导性心动过速（PMT）；需与室上速鉴别，磁铁或程控可终止。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "DDD：房室顺序起搏，A 钉→P→V 钉→QRS。",
+      "自身心房活动可触发心室起搏。",
+      "警惕 PMT。"
+    ],
+    "clinicalPearl": "DDD 的心电图要按“心房事件—AV 间期—心室事件”读；不要只看 QRS。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "crt-pacing",
+    "name": "CRT 双室起搏",
+    "en": "Cardiac resynchronization therapy",
+    "chapter": "pacing",
+    "difficulty": 3,
+    "urgency": "advanced",
+    "tags": [
+      "CRT",
+      "双室",
+      "心衰"
+    ],
+    "oneLiner": "CRT 同时起搏右室与左室（经冠状静脉窦），使心室同步收缩；心电图 QRS 可变窄，起搏钉后形态不同于单腔。",
+    "specificity": "双室起搏时 QRS 常较单腔右室起搏窄；V1 可能仍呈负向，但电轴与形态改变；需结合起搏器记录确认双室夺获。",
+    "objectives": [
+      "CRT 双室起搏，QRS 可变窄。",
+      "确认左室夺获是关键。",
+      "适用于 LBBB + 低 EF 心衰。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "左室起搏纠正左室侧壁延迟，改善房室与室间同步；适用于窦性心律、LBBB、EF 降低的心衰患者。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "双室起搏钉后 QRS 变窄。",
+          "V1 形态不同于单纯右室起搏。",
+          "需确认左室导线夺获。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "CRT 心电图不能仅凭 QRS 变窄判断疗效；需超声、临床与起搏器参数综合评估。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "CRT 双室起搏，QRS 可变窄。",
+      "确认左室夺获是关键。",
+      "适用于 LBBB + 低 EF 心衰。"
+    ],
+    "clinicalPearl": "CRT 的“钉”可能不止一个；看到两个起搏钉与窄 QRS，要想到双室起搏。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "pacing-spike",
+    "name": "起搏钉的识别",
+    "en": "Pacemaker spikes",
+    "chapter": "pacing",
+    "difficulty": 1,
+    "urgency": "core",
+    "tags": [
+      "起搏钉",
+      "夺获",
+      "感知"
+    ],
+    "oneLiner": "起搏钉是起搏器发放电刺激的短暂高频信号，在部分导联很小或不可见；钉后应有相应 P 波或 QRS。",
+    "specificity": "钉后无 P/QRS=失夺获；钉后有过早/异常波形=可能感知异常；钉被自身搏动抑制=正常。",
+    "objectives": [
+      "钉 + P/QRS=夺获；只有钉=失夺获。",
+      "双极钉小，需多导联查看。",
+      "结合程控与起搏器记录。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "起搏钉由起搏器电容放电产生，持续时间极短；现代双极起搏钉更小，易被滤波。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "钉后应有 P 或 QRS。",
+          "钉后无夺获=失夺获。",
+          "双极起搏钉可能很小。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "不要把起搏钉误认为 QRS 的一部分；也不要在没有钉时断言“没有起搏”。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "钉 + P/QRS=夺获；只有钉=失夺获。",
+      "双极钉小，需多导联查看。",
+      "结合程控与起搏器记录。"
+    ],
+    "clinicalPearl": "起搏钉是“人工刺激”，不是“心脏自身电活动”；判断夺获永远看钉后有没有波形。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "failure-to-capture",
+    "name": "起搏失夺获",
+    "en": "Failure to capture",
+    "chapter": "pacing",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "起搏器",
+      "失夺获",
+      "急症"
+    ],
+    "oneLiner": "起搏器发放钉但无相应 P/QRS，称失夺获；可因导线脱位、阈值升高、电池耗竭、心肌病变或药物/电解质异常。",
+    "specificity": "起搏钉后无 P/QRS；自身逸搏可能很慢；患者可晕厥、低血压；起搏器程控显示高阈值或导线阻抗异常。",
+    "objectives": [
+      "钉后无波形=失夺获。",
+      "可致晕厥/低血压。",
+      "检查导线、阈值、电解质。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "起搏阈值升高或导线完整性破坏使电刺激不能激动心肌；高钾、心肌梗死、抗心律失常药可提高阈值。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "钉后无 P/QRS。",
+          "伴缓慢逸搏、低血压、晕厥。",
+          "检查导线阻抗、阈值、电池。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "失夺获是起搏器急症；不要只调高输出，需评估导线、心肌与电解质，并准备临时起搏。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "钉后无波形=失夺获。",
+      "可致晕厥/低血压。",
+      "检查导线、阈值、电解质。"
+    ],
+    "clinicalPearl": "起搏器患者晕厥 + 钉后无 QRS，先按失夺获处理，不要等待门诊程控。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "undersensing",
+    "name": "起搏器感知不足",
+    "en": "Undersensing",
+    "chapter": "pacing",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "感知",
+      "起搏器",
+      "自身搏动"
+    ],
+    "oneLiner": "感知不足指起搏器未识别自身 P/QRS，导致在自身搏动后仍发放起搏钉，可能落在不应期或触发竞争。",
+    "specificity": "自身 QRS 后出现起搏钉；钉可能落在 T 波上；起搏器记录显示感知振幅低或感知阈值设置不当。",
+    "objectives": [
+      "自身搏动后仍有钉=感知不足。",
+      "可导致竞争性起搏。",
+      "程控感知阈值与导线位置。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "导线位置、心肌瘢痕、低电压、电磁干扰或程控灵敏度过低导致感知失败。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "自身搏动后仍有起搏钉。",
+          "起搏钉可能落在 T 波上。",
+          "检查感知振幅与程控。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "感知不足可诱发竞争性心律失常；不要把“钉落在 T 波上”误认为起搏器故障的唯一表现。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "自身搏动后仍有钉=感知不足。",
+      "可导致竞争性起搏。",
+      "程控感知阈值与导线位置。"
+    ],
+    "clinicalPearl": "感知不足的危险不在“钉多”，而在“钉落在易损期”；有症状时需立即处理。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "oversensing",
+    "name": "起搏器感知过度",
+    "en": "Oversensing",
+    "chapter": "pacing",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "感知过度",
+      "起搏抑制",
+      "电磁干扰"
+    ],
+    "oneLiner": "感知过度指起搏器把肌肉电、电磁干扰、T 波或远场信号误认为自身电活动，导致起搏被不适当抑制。",
+    "specificity": "起搏钉突然消失、心率低于下限；可伴头晕/晕厥；起搏器记录显示高频噪声或过度感知事件。",
+    "objectives": [
+      "钉消失 + 心率低于下限=可能感知过度。",
+      "电磁干扰/肌电是常见原因。",
+      "程控灵敏度与导线检查。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "感知灵敏度过高、单极导线、电磁干扰、肌肉震颤或 T 波过感知导致起搏抑制。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "起搏钉突然消失、心率慢。",
+          "可伴晕厥；记录显示噪声。",
+          "检查灵敏度、导线、电磁环境。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "感知过度可模拟起搏器电池耗竭；不要只换电池，需查感知与干扰源。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "钉消失 + 心率低于下限=可能感知过度。",
+      "电磁干扰/肌电是常见原因。",
+      "程控灵敏度与导线检查。"
+    ],
+    "clinicalPearl": "起搏器患者突然心率掉到下限以下，先想感知过度，再想导线/电池。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "pmt",
+    "name": "起搏器介导性心动过速",
+    "en": "Pacemaker-mediated tachycardia",
+    "chapter": "pacing",
+    "difficulty": 3,
+    "urgency": "urgent",
+    "tags": [
+      "PMT",
+      "DDD",
+      "心动过速"
+    ],
+    "oneLiner": "PMT 多见于 DDD 起搏器：室性早搏或房性早搏被心房导线感知后触发心室起搏，形成折返性心动过速。",
+    "specificity": "宽 QRS 心动过速（起搏心律），频率接近上限；起搏器记录显示心房感知—心室起搏循环；磁铁可终止。",
+    "objectives": [
+      "PMT：起搏钉 + 宽 QRS 心动过速。",
+      "磁铁可终止。",
+      "DDD 患者出现不明原因宽 QRS 心动过速要想到。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "逆行 P 波被心房导线感知，起搏器按 AV 间期起搏心室，形成“起搏器—房室结”折返。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "宽 QRS、起搏钉规律出现。",
+          "频率接近上限；磁铁可终止。",
+          "常见于 DDD，需与室速鉴别。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "PMT 是起搏器依赖者的急症；磁铁放置可转为固定频率起搏，随后程控调整。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "PMT：起搏钉 + 宽 QRS 心动过速。",
+      "磁铁可终止。",
+      "DDD 患者出现不明原因宽 QRS 心动过速要想到。"
+    ],
+    "clinicalPearl": "起搏器患者的宽 QRS 心动过速，不一定是室速；放磁铁既是诊断也是治疗。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "av-timing",
+    "name": "起搏 AV 间期与优化",
+    "en": "Pacing AV timing",
+    "chapter": "pacing",
+    "difficulty": 2,
+    "urgency": "advanced",
+    "tags": [
+      "AV间期",
+      "DDD",
+      "血流动力学"
+    ],
+    "oneLiner": "起搏 AV 间期决定心房收缩与心室收缩的时序；过短影响充盈，过长可能导致房室不同步或自身传导竞争。",
+    "specificity": "DDD 起搏心电图可见 A 钉—P—V 钉—QRS；AV 间期由程控设置，需结合超声与临床优化。",
+    "objectives": [
+      "起搏 AV 间期影响充盈。",
+      "DDD 顺序起搏可见两个钉。",
+      " optimization 需超声/临床。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "合适的 AV 间期改善左室充盈与心输出量；过长的 AV 延迟可导致舒张期二尖瓣反流。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "A 钉—P—V 钉—QRS 的顺序。",
+          "AV 间期可程控优化。",
+          "结合超声与症状评估。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "AV 间期不是越短越好；需个体化，尤其在心衰、肥厚型心肌病与老年人。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "起搏 AV 间期影响充盈。",
+      "DDD 顺序起搏可见两个钉。",
+      " optimization 需超声/临床。"
+    ],
+    "clinicalPearl": "起搏心电图上的 AV 间期是“设置值”，但血流动力学效果要看超声与症状。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "hysteresis",
+    "name": "起搏频率滞后与模式转换",
+    "en": "Hysteresis and mode switch",
+    "chapter": "pacing",
+    "difficulty": 2,
+    "urgency": "advanced",
+    "tags": [
+      "滞后",
+      "模式转换",
+      "房颤"
+    ],
+    "oneLiner": "频率滞后允许自身心率低于下限一段时间后才起搏，鼓励自身传导；模式转换在房性快速心律失常时避免快速心室起搏。",
+    "specificity": "滞后：自身心率低于下限仍不起搏，直到更低阈值；模式转换：房颤时 DDD 转为 VVI/DDIR，心室率不再跟踪心房。",
+    "objectives": [
+      "滞后鼓励自身传导。",
+      "房颤时 DDD 转 VVI/DDIR。",
+      "查起搏器记录确认模式。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "起搏器通过感知心房率判断房性心律失常，自动切换模式以保护心室率；心电图可显示起搏模式变化。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "滞后：自身心率可低于下限。",
+          "模式转换：房颤时不再跟踪心房。",
+          "起搏器记录可确认模式。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "模式转换后可能出现房室不同步；患者可有心悸，需程控优化。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "滞后鼓励自身传导。",
+      "房颤时 DDD 转 VVI/DDIR。",
+      "查起搏器记录确认模式。"
+    ],
+    "clinicalPearl": "起搏器患者房颤时心室率突然变慢/变规则，可能是模式转换，不一定是新发传导阻滞。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "icd-basics",
+    "name": "ICD 与起搏功能",
+    "en": "ICD and pacing",
+    "chapter": "pacing",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "ICD",
+      "除颤",
+      "起搏"
+    ],
+    "oneLiner": "ICD 可起搏、抗心动过速起搏（ATP）与除颤；心电图可见起搏钉、ATP 快速刺激或除颤后短暂停顿。",
+    "specificity": "ICD 的起搏功能类似起搏器；ATP 时可见快速起搏钉；除颤后心电图可短暂平直，随后恢复。",
+    "objectives": [
+      "ICD：起搏 + ATP + 除颤。",
+      "ATP 是快速起搏，不是放电。",
+      "电击后评估患者与设备。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "ICD 通过感知心室率与形态识别室速/室颤，按程控顺序进行 ATP 或放电；避免误放电需优化感知与鉴别。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "ICD 兼具起搏、ATP、除颤。",
+          "ATP 可见快速起搏钉。",
+          "除颤后短暂停顿需恢复按压/评估。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "ICD 患者发生电击后，需评估意识、心律、诱因与设备；反复电击可能是电风暴。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "ICD：起搏 + ATP + 除颤。",
+      "ATP 是快速起搏，不是放电。",
+      "电击后评估患者与设备。"
+    ],
+    "clinicalPearl": "ICD 电击不是“治疗结束”，而是“开始评估”：查诱因、查设备、查可逆原因。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "magnet-mode",
+    "name": "磁铁与起搏器",
+    "en": "Magnet mode",
+    "chapter": "pacing",
+    "difficulty": 2,
+    "urgency": "advanced",
+    "tags": [
+      "磁铁",
+      "起搏器",
+      "程控"
+    ],
+    "oneLiner": "磁铁放置在起搏器上可切换到固定频率/非同步模式，用于终止 PMT 或评估起搏功能；不同厂商反应不同。",
+    "specificity": "磁铁模式常为固定频率起搏（如 85–100 次/分），不再感知自身心律；可看到规律起搏钉。",
+    "objectives": [
+      "磁铁：固定频率起搏，终止 PMT。",
+      "不同厂商反应不同。",
+      "使用后需程控。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "磁铁通过霍尔传感器触发预设模式，绕过感知与跟踪；是急诊临时处理工具，不是治疗本身。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "磁铁→固定频率/非同步起搏。",
+          "可用于终止 PMT。",
+          "不同厂商模式不同。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "磁铁模式可能诱发竞争性心律失常；使用后需尽快程控与评估。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "磁铁：固定频率起搏，终止 PMT。",
+      "不同厂商反应不同。",
+      "使用后需程控。"
+    ],
+    "clinicalPearl": "磁铁是“临时开关”，不是“修复起搏器”；用完必须程控。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "ep-study-basics",
+    "name": "心脏电生理检查基础",
+    "en": "Basic EP study",
+    "chapter": "pacing",
+    "difficulty": 3,
+    "urgency": "advanced",
+    "tags": [
+      "电生理",
+      "程序刺激",
+      "射频"
+    ],
+    "oneLiner": "电生理检查通过心内电极记录局部电活动并进行程序刺激，评估窦房结、房室结、旁路与心律失常机制。",
+    "specificity": "基本测量包括 AH、HV、窦房结恢复时间、房室结文氏点；程序刺激可诱发/终止心动过速。",
+    "objectives": [
+      "AH=房室结，HV=希氏-浦肯野。",
+      "程序刺激诱发/终止。",
+      "有创检查需适应证。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "心内电图直接记录局部心肌电活动，比体表心电图更接近机制；HV 延长提示希氏-浦肯野病变。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "AH 反映房室结传导，HV 反映希氏-浦肯野传导。",
+          "程序刺激用于诱发/终止心动过速。",
+          "射频消融前需标测靶点。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "电生理检查有创，需严格适应证；不能替代无创心电图与临床评估。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "AH=房室结，HV=希氏-浦肯野。",
+      "程序刺激诱发/终止。",
+      "有创检查需适应证。"
+    ],
+    "clinicalPearl": "体表心电图是“地图”，心内电图是“街道”；电生理检查把机制从推测变成测量。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "esophageal-lead",
+    "name": "食管导联心电图",
+    "en": "Esophageal ECG",
+    "chapter": "pacing",
+    "difficulty": 2,
+    "urgency": "advanced",
+    "tags": [
+      "食管导联",
+      "房室分离",
+      "窄QRS"
+    ],
+    "oneLiner": "食管导联靠近左房，可清晰记录 P 波，用于窄 QRS 心动过速鉴别、房室分离判断与房扑/房速定位。",
+    "specificity": "食管导联 P 波振幅大、清晰；可测量房室关系、发现隐藏 P 波；对房室结折返与房速鉴别有帮助。",
+    "objectives": [
+      "食管导联靠近左房，P 波清晰。",
+      "用于窄 QRS 心动过速与房室分离。",
+      "有创，需适应证。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "食管电极位于左房后方，记录心房电活动更近；体表 P 波不明显时尤其有用。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "窄 QRS 心动过速鉴别。",
+          "发现隐藏 P 波/房室分离。",
+          "房扑/房速定位辅助。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "食管导联有创、患者不适；不能替代标准 12 导联，需在电生理条件下进行。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "食管导联靠近左房，P 波清晰。",
+      "用于窄 QRS 心动过速与房室分离。",
+      "有创，需适应证。"
+    ],
+    "clinicalPearl": "体表看不到 P 波时，食管导联能把“隐藏的 P”拉到眼前。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "intracardiac-egm",
+    "name": "心内电图基础",
+    "en": "Intracardiac electrograms",
+    "chapter": "pacing",
+    "difficulty": 3,
+    "urgency": "advanced",
+    "tags": [
+      "心内电图",
+      "标测",
+      "消融"
+    ],
+    "oneLiner": "心内电图记录局部心肌的除极时间与电压，用于标测心律失常起源、旁路位置与消融靶点。",
+    "specificity": "局部电极记录到高频、双相或碎裂电位；标测以最早激动点、舒张期电位、起搏标测为核心。",
+    "objectives": [
+      "心内电图=局部电活动。",
+      "最早激动点/舒张期电位是靶点。",
+      "有创、需专业团队。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "心内电图不受体表容积导电影响，能精确定位局部电活动；但需有创导管与专业设备。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "心内电图定位最早激动点。",
+          "旁路、房速、室早/室速标测。",
+          "起搏标测与拖带技术。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "心内电图解读依赖术者经验与电生理知识；不能把单点电位直接等同于心律失常机制。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "心内电图=局部电活动。",
+      "最早激动点/舒张期电位是靶点。",
+      "有创、需专业团队。"
+    ],
+    "clinicalPearl": "体表心电图给“区域”，心内电图给“点”；消融把点变成治疗。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "ablation-mapping",
+    "name": "射频消融与心电图定位",
+    "en": "Ablation and ECG mapping",
+    "chapter": "pacing",
+    "difficulty": 3,
+    "urgency": "advanced",
+    "tags": [
+      "消融",
+      "旁路",
+      "室早"
+    ],
+    "oneLiner": "射频消融前需根据体表心电图定位旁路、房速起源或室早/室速起源；消融后心电图可验证靶点。",
+    "specificity": "预激 delta 波方向、室早 QRS 形态、房速 P 波轴可提示起源；消融成功后预激消失、室早消失。",
+    "objectives": [
+      "体表 ECG 定位是术前地图。",
+      "消融后心电图验证成功。",
+      "复杂病例需心内标测。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "不同起源的心室激动顺序产生不同 QRS 形态；体表心电图是三维激动顺序的投影。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "delta 波方向定位旁路。",
+          "室早 QRS 形态定位起源。",
+          "消融后复查心电图验证。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "心电图定位是近似，最终需心内标测；瘢痕、多旁路、结构性心脏病会改变图形。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "体表 ECG 定位是术前地图。",
+      "消融后心电图验证成功。",
+      "复杂病例需心内标测。"
+    ],
+    "clinicalPearl": "心电图能告诉你去哪一间房，心内标测告诉你敲哪一扇门。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "pacing-malfunction-summary",
+    "name": "起搏器故障的心电图线索",
+    "en": "ECG clues of pacemaker malfunction",
+    "chapter": "pacing",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "起搏器",
+      "故障",
+      "失夺获"
+    ],
+    "oneLiner": "起搏器故障可表现为失夺获、感知不足、感知过度、起搏频率异常、PMT 或电池耗竭；心电图是第一道筛查。",
+    "specificity": "看钉与波形关系、起搏频率、自身搏动是否被感知、是否有噪声/电磁干扰；结合程控与阻抗。",
+    "objectives": [
+      "起搏器故障先看钉与夺获。",
+      "结合程控、阻抗、电池。",
+      "急症时准备临时起搏。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "故障可能来自导线、心肌、电池、程控或电磁环境；心电图只能提示，不能替代程控。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "钉后无波形=失夺获。",
+          "自身搏动后仍有钉=感知不足。",
+          "钉突然消失/心率慢=感知过度或电池。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "起搏器患者出现晕厥、低血压或新发宽 QRS 心动过速，需立即评估设备与患者。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "起搏器故障先看钉与夺获。",
+      "结合程控、阻抗、电池。",
+      "急症时准备临时起搏。"
+    ],
+    "clinicalPearl": "起搏器心电图异常时，不要只调参数；先问“导线、心肌、电池、干扰”四件事。",
+    "topic": true,
+    "quizEligible": false
+  }
+]

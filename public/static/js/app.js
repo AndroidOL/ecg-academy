@@ -10,6 +10,7 @@ import { simListView } from './views/sim-list.js';
 import { simSessionView } from './views/sim-session.js';
 import { labView } from './views/lab.js';
 import { meView } from './views/me.js';
+import { adminView } from './views/admin.js';
 
 const routes = [
   { path: '/', handler: homeView },
@@ -20,6 +21,7 @@ const routes = [
   { path: '/sim', handler: simListView },
   { path: '/lab', handler: labView },
   { path: '/me', handler: meView },
+  { path: '/admin', handler: adminView },
 ];
 
 let router;
@@ -30,7 +32,7 @@ function sidebarNav(activePath) {
     return `<a class="nav-link ${active ? 'active' : ''}" href="#${item.path}" data-nav="${item.path}">
       ${icon(item.icon, 19)}<span>${item.label}</span>${item.path === '/sim' ? '<span class="nav-badge">ACLS</span>' : ''}
     </a>`;
-  }).join('');
+  }).join('') + (store.user?.isAdmin ? `<a class="nav-link ${activePath.startsWith('/admin') ? 'active' : ''}" href="#/admin">${icon('shield', 19)}<span>后台</span></a>` : '');
 }
 
 function topbarLinks(activePath) {
@@ -102,6 +104,7 @@ function navLabel(path) {
   if (path.startsWith('/sim')) return { label: '急救模拟', active: '/sim' };
   if (path.startsWith('/lab')) return { label: '电解质实验室', active: '/lab' };
   if (path.startsWith('/me')) return { label: '我的', active: '/me' };
+  if (path.startsWith('/admin')) return { label: '管理后台', active: '/admin' };
   return { label: '心迹', active: '/' };
 }
 

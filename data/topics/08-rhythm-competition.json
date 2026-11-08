@@ -1,0 +1,767 @@
+[
+  {
+    "id": "escape-capture",
+    "name": "逸搏-夺获心律",
+    "en": "Escape-capture rhythm",
+    "chapter": "rhythm-competition",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "逸搏",
+      "夺获",
+      "房室分离"
+    ],
+    "oneLiner": "逸搏-夺获心律常出现在高度房室阻滞：心室逸搏维持下限频率，偶尔窦性冲动成功下传形成“夺获”窄 QRS。",
+    "specificity": "宽 QRS 逸搏背景下出现提前的窄 QRS（前面有 P、PR 合适），提示夺获；夺获搏动可说明房室传导并非完全中断。",
+    "objectives": [
+      "逸搏-夺获=高度 AVB 背景下的偶发下传。",
+      "夺获搏动窄 QRS，前有 P。",
+      "证明房室传导并非完全阻断。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "窦性冲动偶尔穿过阻滞区，激动心室，形成窄 QRS；即可证明房室传导存在，也提示阻滞程度可变。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "宽 QRS 逸搏 + 偶发窄 QRS 夺获。",
+          "夺获前有合适 PR 的 P 波。",
+          "提示高度/三度 AVB 但传导未完全中断。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "夺获搏动易被误认为早搏；看前面有无 P 与 PR 关系。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "逸搏-夺获=高度 AVB 背景下的偶发下传。",
+      "夺获搏动窄 QRS，前有 P。",
+      "证明房室传导并非完全阻断。"
+    ],
+    "clinicalPearl": "宽 QRS 节律里突然出现一个窄 QRS，先找 P；可能是夺获，不是早搏。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "parasystole",
+    "name": "并行心律",
+    "en": "Parasystole",
+    "chapter": "rhythm-competition",
+    "difficulty": 2,
+    "urgency": "advanced",
+    "tags": [
+      "并行心律",
+      "保护性传入",
+      "早搏"
+    ],
+    "oneLiner": "并行心律指异位起搏点受保护性传入阻滞，独立发放冲动；联律间期多变，可见融合波。",
+    "specificity": "联律间期不固定、异位搏动间期存在公约数、可见融合波；常见室性并行心律。",
+    "objectives": [
+      "并行心律：联律间期多变 + 公约数。",
+      "保护性传入阻滞。",
+      "融合波支持诊断。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "异位灶周围有传入阻滞，窦性冲动不能重置它；它按自己的频率发放，竞争心室。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "联律间期多变。",
+          "异位间期有公约数。",
+          "可见融合波。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "并行心律不是“早搏变多”；联律间期多变是关键，需长条图分析。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "并行心律：联律间期多变 + 公约数。",
+      "保护性传入阻滞。",
+      "融合波支持诊断。"
+    ],
+    "clinicalPearl": "早搏联律间期一会儿长一会儿短，别只写“频发室早”；量一量异位间期是否有公约数。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "wandering-pacemaker",
+    "name": "游走性心房起搏点",
+    "en": "Wandering atrial pacemaker",
+    "chapter": "rhythm-competition",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "游走",
+      "P波",
+      "多形"
+    ],
+    "oneLiner": "游走性心房起搏点指起搏点在心房内移动，P 波形态逐搏变化，心率通常 <100 次/分。",
+    "specificity": "同一导联 P 波形态 ≥3 种、PP 间期不等、心率不快；QRS 多窄。",
+    "objectives": [
+      "游走性起搏点：P 形态多变、心率不快。",
+      "多源性房速：同样多变但心率快。",
+      "QRS 通常窄。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "心房内多个起搏点轮流发放，或起搏点沿心房游走；与多源性房速的区别是心率。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "P 波形态逐搏变化（≥3 种）。",
+          "心率 <100；QRS 窄。",
+          "与多源性房速鉴别看心率。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "游走性起搏点常见于迷走张力高、洋地黄、老年；多源性房速常 >100 且与肺病相关。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "游走性起搏点：P 形态多变、心率不快。",
+      "多源性房速：同样多变但心率快。",
+      "QRS 通常窄。"
+    ],
+    "clinicalPearl": "P 波一会儿一个样但心率不快，先想游走性起搏点；心率快则想多源性房速。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "multifocal-atrial-tachy",
+    "name": "多源性房性心动过速",
+    "en": "Multifocal atrial tachycardia",
+    "chapter": "rhythm-competition",
+    "difficulty": 3,
+    "urgency": "urgent",
+    "tags": [
+      "MAT",
+      "多源性",
+      "肺病"
+    ],
+    "oneLiner": "MAT 表现为 ≥3 种 P 波形态、PP 间期不等、心率 >100；常见于 COPD、心衰、电解质紊乱。",
+    "specificity": "同一导联 P 波 ≥3 种形态、心率 >100、QRS 窄；需与房颤鉴别（有 P 波）。",
+    "objectives": [
+      "MAT：多形 P + 心率快。",
+      "有 P 波，与房颤不同。",
+      "治诱因 + 心率控制。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "心房多个异位灶竞争，常与心房牵张、缺氧、低钾/低镁、茶碱有关。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "≥3 种 P 波形态。",
+          "心率 >100，QRS 窄。",
+          "常见于 COPD/心衰/电解质紊乱。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "MAT 的治疗以纠正诱因、控制心率为主；不宜盲目复律。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "MAT：多形 P + 心率快。",
+      "有 P 波，与房颤不同。",
+      "治诱因 + 心率控制。"
+    ],
+    "clinicalPearl": "COPD 患者心率快、P 波多变，别只诊断房颤；可能是 MAT。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "interference-av-dissociation",
+    "name": "干扰性房室分离",
+    "en": "Interference AV dissociation",
+    "chapter": "rhythm-competition",
+    "difficulty": 2,
+    "urgency": "advanced",
+    "tags": [
+      "房室分离",
+      "干扰",
+      "三度"
+    ],
+    "oneLiner": "干扰性房室分离指心房与心室各自独立活动，但不是三度 AVB：心室率通常快于心房率，P 波落在不应期无法下传。",
+    "specificity": "P 与 QRS 无固定关系、心室率 > 心房率、可见 P 波逐渐“穿行”；常见于室速、交界性心动过速。",
+    "objectives": [
+      "干扰性分离：心室率 > 心房率。",
+      "三度 AVB：心房率 > 心室率。",
+      "常见于室速。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "快速心室节律使房室结处于不应期，窦性 P 无法下传；不是房室结病变。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "P-QRS 无固定关系。",
+          "心室率 > 心房率。",
+          "常见于室速/交界性心动过速。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "干扰性房室分离不是三度 AVB；三度 AVB 通常心房率 > 心室率，且有传导系统病变。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "干扰性分离：心室率 > 心房率。",
+      "三度 AVB：心房率 > 心室率。",
+      "常见于室速。"
+    ],
+    "clinicalPearl": "宽 QRS 心动过速 + P 波分离，不一定是室速伴三度 AVB；看谁更快。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "concealed-conduction",
+    "name": "隐匿性传导",
+    "en": "Concealed conduction",
+    "chapter": "rhythm-competition",
+    "difficulty": 2,
+    "urgency": "advanced",
+    "tags": [
+      "隐匿传导",
+      "房室结",
+      "不应期"
+    ],
+    "oneLiner": "隐匿性传导指冲动进入房室结但未穿透至心室，却改变了房室结的不应期，影响后续传导。",
+    "specificity": "表现为突然的 PR 延长、P 波脱漏、房颤心室率不规则；只能通过后续传导变化推断。",
+    "objectives": [
+      "隐匿传导=进入房室结但未过。",
+      "改变后续不应期。",
+      "解释房颤不规则/PR 突变。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "部分穿透的冲动使房室结部分除极，延长其不应期；下一次冲动传导变慢或阻滞。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "PR 突然延长/脱漏。",
+          "房颤心室率不规则。",
+          "只能从后续变化推断。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "隐匿性传导是解释“为什么这次没传/传得慢”的机制，不是独立心律诊断。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "隐匿传导=进入房室结但未过。",
+      "改变后续不应期。",
+      "解释房颤不规则/PR 突变。"
+    ],
+    "clinicalPearl": "房颤心室率“毫无规律”背后常有隐匿传导；不要试图用简单比例解释。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "ashman-phenomenon",
+    "name": "Ashman 现象",
+    "en": "Ashman phenomenon",
+    "chapter": "rhythm-competition",
+    "difficulty": 2,
+    "urgency": "urgent",
+    "tags": [
+      "Ashman",
+      "差异性传导",
+      "房颤"
+    ],
+    "oneLiner": "Ashman 现象：长-短周期后出现宽 QRS（常 RBBB 型），是功能性差异性传导，不是室早。",
+    "specificity": "房颤中长 RR 后紧跟短 RR，宽 QRS 呈 RBBB 形态；前无提前 P，常有前导长周期。",
+    "objectives": [
+      "Ashman：长-短周期 + RBBB 型宽 QRS。",
+      "功能性，不是室早。",
+      "房颤中常见。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "长周期延长束支不应期，短周期冲动落在不应期，形成功能性束支阻滞。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "长-短周期后宽 QRS。",
+          "多呈 RBBB 型。",
+          "房颤中最常见。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "Ashman 与室早鉴别：Ashman 有长-短周期、RBBB 形态、无代偿间歇；室早有固定联律。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "Ashman：长-短周期 + RBBB 型宽 QRS。",
+      "功能性，不是室早。",
+      "房颤中常见。"
+    ],
+    "clinicalPearl": "房颤中宽 QRS 不一定是室早；先找长-短周期，可能是 Ashman。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "aberrancy",
+    "name": "差异性传导",
+    "en": "Aberrant conduction",
+    "chapter": "rhythm-competition",
+    "difficulty": 2,
+    "urgency": "advanced",
+    "tags": [
+      "差异性传导",
+      "束支",
+      "宽QRS"
+    ],
+    "oneLiner": "差异性传导指室上性冲动因束支不应期不同而呈宽 QRS，常为 RBBB 型；心率快时更常见。",
+    "specificity": "宽 QRS 前有 P 波、与窦性/房性冲动相关、形态随心率变化；多见于房颤、房速、早搏。",
+    "objectives": [
+      "差异性传导：室上性冲动 + 束支不应期。",
+      "多 RBBB 型；心率快时出现。",
+      "与室速鉴别靠 P/形态/病史。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "束支不应期不一致，冲动落在某一束支不应期，导致该束支阻滞；右束支不应期较长，故 RBBB 型多见。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "宽 QRS 前有 P；与心率相关。",
+          "多呈 RBBB 型。",
+          "房颤/房速中常见。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "差异性传导与室速/室早的鉴别靠房室关系、形态、既往图与临床；不能只看宽度。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "差异性传导：室上性冲动 + 束支不应期。",
+      "多 RBBB 型；心率快时出现。",
+      "与室速鉴别靠 P/形态/病史。"
+    ],
+    "clinicalPearl": "宽 QRS 心动过速先按室速处理；但房颤中单个宽 QRS 可能是差异性传导。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "reciprocal-beats",
+    "name": "反复搏动与回波",
+    "en": "Reciprocal beats and echo beats",
+    "chapter": "rhythm-competition",
+    "difficulty": 3,
+    "urgency": "advanced",
+    "tags": [
+      "反复搏动",
+      "回波",
+      "折返"
+    ],
+    "oneLiner": "反复搏动指冲动在房室结或旁路内折返，产生一次“回波”搏动；可见于 AVNRT、AVRT 或起搏器。",
+    "specificity": "一个窦性/起搏搏动后紧跟一个逆行 P 或窄 QRS；回波搏动常成对出现；需与早搏鉴别。",
+    "objectives": [
+      "反复搏动=折返回波。",
+      "常成对；可诱发心动过速。",
+      "房室结双径路/旁路。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "房室结双径路或旁路形成折返环，一次冲动可再次激动心房/心室。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "一个搏动后紧跟回波。",
+          "逆行 P 或窄 QRS。",
+          "房室结双径路/旁路。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "回波搏动可诱发心动过速；不要把它当作孤立早搏。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "反复搏动=折返回波。",
+      "常成对；可诱发心动过速。",
+      "房室结双径路/旁路。"
+    ],
+    "clinicalPearl": "一个搏动后总跟着一个“回音”，量 PR/RP；可能是回波，不是频发早搏。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "fusion-beat",
+    "name": "融合波",
+    "en": "Fusion beats",
+    "chapter": "rhythm-competition",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "融合波",
+      "室速",
+      "起搏"
+    ],
+    "oneLiner": "融合波是室上性冲动与室性异位/起搏冲动同时激动心室，QRS 形态介于两者之间；支持室速或起搏。",
+    "specificity": "QRS 形态介于窦性与室性之间、PR 间期可变；室速中可见融合波/夺获波，支持室速。",
+    "objectives": [
+      "融合波=两种激动同时心室。",
+      "室速中支持室速。",
+      "起搏/室早也可融合。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "两个激动源同时除极心室，波形是两种形态的“加权平均”；融合波越明显，两个源越同步。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "QRS 形态介于窦性与室性之间。",
+          "室速中融合波支持室速。",
+          "起搏时也可见融合。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "融合波不是“混合心律”的诊断；它提示两个起搏点同时激动心室。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "融合波=两种激动同时心室。",
+      "室速中支持室速。",
+      "起搏/室早也可融合。"
+    ],
+    "clinicalPearl": "宽 QRS 心动过速中出现融合波，支持室速；但融合波消失不能排除室速。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "capture-beat",
+    "name": "夺获波",
+    "en": "Capture beats",
+    "chapter": "rhythm-competition",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "夺获波",
+      "室速",
+      "房室分离"
+    ],
+    "oneLiner": "夺获波是室速中窦性冲动成功下传、产生窄 QRS 的搏动；证明房室结与希氏-浦肯野系统仍可传导。",
+    "specificity": "宽 QRS 心动过速中突然出现窄 QRS，前有 P、PR 合适；支持室速而非室上速伴差异传导。",
+    "objectives": [
+      "夺获波=室速中窄 QRS。",
+      "前有 P/PR。",
+      "支持室速诊断。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "窦性冲动穿透房室结，短暂“夺获”心室，产生窄 QRS；室速的心室激动被暂时打断。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "宽 QRS 心动过速中窄 QRS。",
+          "前有 P、PR 合适。",
+          "支持室速。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "夺获波不常见，但一旦出现对室速诊断很有价值；不要误认为早搏。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "夺获波=室速中窄 QRS。",
+      "前有 P/PR。",
+      "支持室速诊断。"
+    ],
+    "clinicalPearl": "宽 QRS 心动过速中突然一个窄 QRS，先找 P；可能是夺获波，支持室速。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "ventricular-parasystole",
+    "name": "室性并行心律",
+    "en": "Ventricular parasystole",
+    "chapter": "rhythm-competition",
+    "difficulty": 3,
+    "urgency": "advanced",
+    "tags": [
+      "并行心律",
+      "室早",
+      "融合"
+    ],
+    "oneLiner": "室性并行心律是独立心室起搏点受保护性传入阻滞，按固定频率发放；联律间期多变，可见融合波。",
+    "specificity": "室早联律间期不固定、异位间期有公约数、融合波；异位频率通常 20–40 次/分。",
+    "objectives": [
+      "室性并行：联律间期多变 + 公约数。",
+      "融合波支持。",
+      "长条图分析。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "并行灶周围传入阻滞使窦性冲动不能重置它；它独立竞争心室。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "联律间期多变、异位间期有公约数。",
+          "可见融合波。",
+          "频率通常 20–40。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "并行心律需长条图测量；不要因“室早很多”直接射频消融，需明确机制。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "室性并行：联律间期多变 + 公约数。",
+      "融合波支持。",
+      "长条图分析。"
+    ],
+    "clinicalPearl": "室早联律间期忽长忽短，量异位间期；可能是并行心律，不是普通频发室早。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "isorhythmic-dissociation",
+    "name": "等频性房室分离",
+    "en": "Isorhythmic AV dissociation",
+    "chapter": "rhythm-competition",
+    "difficulty": 2,
+    "urgency": "advanced",
+    "tags": [
+      "等频",
+      "房室分离",
+      "交界"
+    ],
+    "oneLiner": "等频性房室分离指心房与心室频率几乎相同但无固定关系，P 波逐渐“穿行”QRS；常见于交界性心律/起搏。",
+    "specificity": "P 波与 QRS 频率接近、PR 逐渐变化、P 可落在 QRS 前后；无固定 PR。",
+    "objectives": [
+      "等频性分离：频率接近、PR 渐变。",
+      "P 穿行 QRS。",
+      "不等于三度 AVB。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "两个起搏点频率相近但独立，形成“看似有关系、实际分离”的现象。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "P-QRS 频率接近但无固定 PR。",
+          "P 波逐渐穿行。",
+          "常见交界性心律/起搏。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "等频性分离不是三度 AVB；需看频率、P 波穿行与临床。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "等频性分离：频率接近、PR 渐变。",
+      "P 穿行 QRS。",
+      "不等于三度 AVB。"
+    ],
+    "clinicalPearl": "P 波慢慢“穿过”QRS，PR 一会儿长一会儿短，频率又接近，想等频性分离。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "atrial-dissociation",
+    "name": "心房分离",
+    "en": "Atrial dissociation",
+    "chapter": "rhythm-competition",
+    "difficulty": 3,
+    "urgency": "advanced",
+    "tags": [
+      "心房分离",
+      "P波",
+      "心房"
+    ],
+    "oneLiner": "心房分离指左右心房或心房内不同区域独立活动，体表可见两种 P 波；罕见，常与严重心房病变/药物相关。",
+    "specificity": "同一导联可见两种形态/频率的 P 波，部分 P 后无 QRS；需与房扑/房颤、伪差鉴别。",
+    "objectives": [
+      "心房分离：两种独立 P 波。",
+      "罕见；常伴严重心房病变。",
+      "先排除伪差/房颤。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "心房内传导屏障使两个心房区域独立除极；可见于心房梗死、洋地黄中毒、严重心肌病。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "两种 P 波形态/频率。",
+          "部分 P 无 QRS。",
+          "罕见，需排除伪差。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "心房分离是罕见诊断；先排除导联伪差、房扑/房颤与多源性房速。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "心房分离：两种独立 P 波。",
+      "罕见；常伴严重心房病变。",
+      "先排除伪差/房颤。"
+    ],
+    "clinicalPearl": "看到“两种 P 波”先别兴奋；先排除伪差和房扑，再考虑罕见的心房分离。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "av-dissociation-differential",
+    "name": "房室分离的鉴别",
+    "en": "Differential of AV dissociation",
+    "chapter": "rhythm-competition",
+    "difficulty": 3,
+    "urgency": "urgent",
+    "tags": [
+      "房室分离",
+      "三度",
+      "干扰"
+    ],
+    "oneLiner": "房室分离的原因：三度 AVB（心房率 > 心室率）、干扰性分离（心室率 > 心房率）、等频性分离、起搏/室速。",
+    "specificity": "看心房率与心室率谁更快、有无固定 PR、有无宽 QRS 心动过速；三度 AVB 常伴缓慢逸搏。",
+    "objectives": [
+      "房室分离先比心房/心室率。",
+      "三度 AVB vs 干扰性分离。",
+      "室速中的分离不装起搏器。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "房室分离是“心房与心室独立”，不是单一诊断；机制决定处理。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "三度 AVB：心房率 > 心室率。",
+          "干扰性：心室率 > 心房率。",
+          "等频性：频率接近、PR 渐变。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "不要把所有房室分离都诊断三度 AVB；室速中的分离是干扰性，不是起搏器适应证。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "房室分离先比心房/心室率。",
+      "三度 AVB vs 干扰性分离。",
+      "室速中的分离不装起搏器。"
+    ],
+    "clinicalPearl": "房室分离是“现象”，不是“诊断”；先问谁控制谁、谁更快。",
+    "topic": true,
+    "quizEligible": false
+  }
+]

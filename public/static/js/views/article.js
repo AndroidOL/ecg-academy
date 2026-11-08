@@ -35,6 +35,10 @@ export async function articleView({ params }) {
   const chapter = detail.chapterMeta || {};
   const color = chapterColor(chapter.color);
   const keyNumbers = detail.keyNumbers || [];
+  const hasEcg = Boolean(detail.hasEcg && detail.ecg);
+  const isTopic = Boolean(detail.topic);
+  const urgency = detail.urgency || 'core';
+  const urgencyLabel = { critical: '危急优先', urgent: '急症相关', core: '核心课程', advanced: '进阶拓展' }[urgency] || '核心课程';
   const status = detail.status;
   let viewer = null;
   let textbookViewer = null;
@@ -50,6 +54,7 @@ export async function articleView({ params }) {
             <span class="badge badge-brand">${escapeHtml(chapter.name || '')}</span>
             ${difficultyDots(detail.difficulty)}
             <span class="badge">${detail.difficulty >= 3 ? '挑战' : detail.difficulty === 2 ? '进阶' : '基础'}</span>
+            <span class="badge ${urgency === 'critical' ? 'badge-danger' : urgency === 'urgent' ? 'badge-warn' : 'badge-brand'}">${urgencyLabel}</span>
             ${mastered ? `<span class="badge badge-ok">${icon('check', 11)} 已掌握</span>` : status ? '<span class="badge">已读</span>' : ''}
           </div>
           <h1 class="article-title">${escapeHtml(detail.name)}</h1>
@@ -62,11 +67,11 @@ export async function articleView({ params }) {
         </header>
 
         <div class="specificity-box">
-          <div class="label">${icon('target', 12)} 最具特异性的线索</div>
+          <div class="label">${icon('target', 12)} ${isTopic ? '本章要解决的问题' : '最具特异性的线索'}</div>
           <p>${escapeHtml(detail.specificity || detail.oneLiner)}</p>
         </div>
 
-        <section class="section" id="ecg-viewer-section">
+        <section class="section" id="ecg-viewer-section" ${hasEcg ? '' : 'hidden'}>
           <div class="section-head">
             <div><div class="page-eyebrow">TRACING</div><h2 class="section-title">教学心电图</h2></div>
             <span class="section-kicker">可播放 · 可测量 · 可切换 12 导联</span>
@@ -116,15 +121,16 @@ export async function articleView({ params }) {
             </div>
             ${detail.id !== 'normal-sinus' ? `<div class="textbook-compare"><div class="textbook-compare-label"><b>正常对照</b><span>窦性心律 · 72 次/分</span></div><div class="mini-ecg"><canvas data-textbook-normal aria-label="正常窦性心律对照心电图片段"></canvas></div></div>` : ''}
             <div class="textbook-metrics">
-              <span>本例 HR <b>${escapeHtml(String(detail.ecg.rate || '—'))}</b> 次/分</span>
-              <span>PR <b>${escapeHtml(String(detail.ecg.pr ?? '—'))}</b> s</span>
-              <span>QRS <b>${escapeHtml(String(detail.ecg.qrs ?? '—'))}</b> s</span>
-              <span>QT <b>${escapeHtml(String(detail.ecg.qt ?? '—'))}</b> s</span>
+              <span>本例 HR <b>${escapeHtml(String(detail.ecg?.rate || '—'))}</b> 次/分</span>
+              <span>PR <b>${escapeHtml(String(detail.ecg?.pr ?? '—'))}</b> s</span>
+              <span>QRS <b>${escapeHtml(String(detail.ecg?.qrs ?? '—'))}</b> s</span>
+              <span>QT <b>${escapeHtml(String(detail.ecg?.qt ?? '—'))}</b> s</span>
               <span>纸速 25 mm/s · 增益 10 mm/mV</span>
             </div>
           </div>
         </section>
 
+        <div ${isTopic ? 'hidden' : ''}>
         <section class="article-section" id="definition"><h2>定义</h2><p>${escapeHtml(detail.definition)}</p></section>
         <section class="article-section" id="mechanism"><h2>发生机制</h2>${list(detail.mechanism)}</section>
         <section class="article-section" id="criteria"><h2>诊断标准</h2>${list(detail.criteria, 'criteria-list')}</section>
@@ -142,6 +148,22 @@ export async function articleView({ params }) {
           <h2>记忆锦囊</h2>
           ${(detail.pearls || []).map((pearl) => `<div class="callout" style="margin-bottom:8px">${icon('sparkles', 13)} ${escapeHtml(pearl)}</div>`).join('')}
         </section>
+        </div>
+
+        ${isTopic ? `
+          <section class="article-section" id="topic-objectives">
+            <h2>学习目标</h2>
+            ${list(detail.objectives || [])}
+          </section>
+          ${(detail.sections || []).map((section, index) => `
+            <section class="article-section" id="topic-section-${index}">
+              <h2>${escapeHtml(section.title || '')}</h2>
+              ${(section.body || []).map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')}
+              ${section.list?.length ? list(section.list) : ''}
+            </section>`).join('')}
+          ${(detail.keyPoints || []).length ? `<section class="article-section" id="topic-keypoints"><h2>必须记住</h2><div class="callout brand">${list(detail.keyPoints)}</div></section>` : ''}
+          ${detail.clinicalPearl ? `<section class="article-section" id="topic-clinical"><h2>临床连接</h2><div class="callout">${icon('stethoscope', 13)} ${escapeHtml(detail.clinicalPearl)}</div></section>` : ''}
+        ` : ''}
 
         <div class="article-nav">
           ${detail.prev ? `<a class="card card-pad card-hover" href="#/learn/${encodeURIComponent(detail.prev.id)}"><span class="badge">上一篇</span><div style="margin-top:6px;font-weight:700">${escapeHtml(detail.prev.name)}</div></a>` : '<span></span>'}
@@ -154,7 +176,9 @@ export async function articleView({ params }) {
       <aside class="article-aside">
         <div class="toc">
           <div class="toc-title">ON THIS PAGE</div>
-          ${SECTIONS.map(([id, name]) => `<a class="toc-link" href="#ecg-viewer-section" data-toc="${id}">${name}</a>`).join('')}
+          ${isTopic
+            ? `<a class="toc-link" href="#topic-objectives" data-toc="topic-objectives">学习目标</a>${(detail.sections || []).map((section, index) => `<a class="toc-link" href="#topic-section-${index}" data-toc="topic-section-${index}">${escapeHtml(section.title || '')}</a>`).join('')}`
+            : SECTIONS.map(([id, name]) => `<a class="toc-link" href="#ecg-viewer-section" data-toc="${id}">${name}</a>`).join('')}
         </div>
         <div class="article-side-card">
           <h3>床旁速记</h3>
@@ -193,7 +217,7 @@ export async function articleView({ params }) {
   let annotations = true;
   let textbook = false;
 
-  if (viewerRoot) {
+  if (viewerRoot && hasEcg) {
     const spec = detail.ecg;
     viewer = mountECG(viewerRoot, spec, {
       mode: 'rhythm', lead: spec.primaryLead || 'II', speed: 2, showAnnotations: true, autoPlay: false,

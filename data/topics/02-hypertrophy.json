@@ -1,0 +1,716 @@
+[
+  {
+    "id": "left-atrial-enlargement",
+    "name": "左心房增大",
+    "en": "Left atrial enlargement",
+    "chapter": "hypertrophy",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "心房",
+      "P波",
+      "二尖瓣"
+    ],
+    "oneLiner": "左房增大使 P 波增宽、切迹，V1 终末负向波增大；常见于二尖瓣病变、高血压、心衰和房颤。",
+    "specificity": "II 导联 P 波宽度 ≥0.12 s、双峰间距 ≥0.04 s；V1 P 波终末负向部分 ≥0.04 s×0.1 mV（P 波终末力）。",
+    "objectives": [
+      "左房增大：P 宽、双峰，V1 终末负向增大。",
+      "P 波终末力 = 终末负向深度×宽度。",
+      "需与房内传导阻滞、洋地黄效应鉴别。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "左房除极向量向后向左，体表表现为 P 波时间延长；V1 位于右胸，能记录到左房向后除极的终末负向成分。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "II 导联：P 波宽、双峰呈“二尖瓣型 P 波”。",
+          "V1/V2：P 波终末负向深而宽，提示左房增大。",
+          "常伴房颤、左室肥厚或二尖瓣病变。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "P 波增宽也可见于房内传导阻滞、洋地黄效应和老龄；不能仅凭 P 波形态诊断左房增大，需结合超声。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "左房增大：P 宽、双峰，V1 终末负向增大。",
+      "P 波终末力 = 终末负向深度×宽度。",
+      "需与房内传导阻滞、洋地黄效应鉴别。"
+    ],
+    "clinicalPearl": "房颤患者 P 波消失，左房增大只能靠超声或既往窦性心电图判断。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "right-atrial-enlargement",
+    "name": "右心房增大",
+    "en": "Right atrial enlargement",
+    "chapter": "hypertrophy",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "心房",
+      "P波",
+      "肺心病"
+    ],
+    "oneLiner": "右房增大使 P 波振幅增高，II、III、aVF 出现高尖“肺型 P 波”；常见于肺心病、肺动脉高压、三尖瓣病变。",
+    "specificity": "II、III、aVF P 波振幅 ≥0.25 mV（2.5 mm），P 波窄而尖；V1 P 波可直立或双相。",
+    "objectives": [
+      "右房增大：下壁导联 P 高尖 ≥2.5 mm。",
+      "常伴 RVH 与电轴右偏。",
+      "P 波高尖也可见于低钾/先心病。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "右房除极向量向前下，II/III/aVF 面向下壁，因而记录到高尖 P 波；V1 可能看到直立 P 波。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "II、III、aVF：P 波高尖 ≥2.5 mm。",
+          "V1：P 波直立或双相，提示右房增大。",
+          "常伴电轴右偏、RVH、右胸导联劳损。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "低钾、交感兴奋、先天性心脏病也可出现高 P 波；肺型 P 波不是肺栓塞的特异征象，必须结合临床。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "右房增大：下壁导联 P 高尖 ≥2.5 mm。",
+      "常伴 RVH 与电轴右偏。",
+      "P 波高尖也可见于低钾/先心病。"
+    ],
+    "clinicalPearl": "看到“肺型 P 波”先找右心负荷证据，不要只凭 P 波高度诊断肺心病。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "biatrial-enlargement",
+    "name": "双心房增大",
+    "en": "Biatrial enlargement",
+    "chapter": "hypertrophy",
+    "difficulty": 2,
+    "urgency": "advanced",
+    "tags": [
+      "心房",
+      "P波",
+      "双房"
+    ],
+    "oneLiner": "双心房增大同时具备右房高 P 波与左房宽/双峰 P 波；P 波可既高又宽，V1 出现双相 P 波。",
+    "specificity": "II 导联 P 波 ≥0.25 mV 且 ≥0.12 s；V1 P 波初始正向（右房）增大、终末负向（左房）增大。",
+    "objectives": [
+      "双房增大：P 波又高又宽，V1 双相。",
+      "常提示长期压力/容量负荷。",
+      "心电图敏感度有限，需超声确认。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "右房与左房除极向量叠加，使 P 波振幅和时间同时增加；V1 的双相 P 波可分别反映右房与左房。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "II：P 波高尖且增宽。",
+          "V1：P 波初始高大正向 + 终末深负向。",
+          "常见于联合瓣膜病、先心病、心衰晚期。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "P 波形态受导联位置、房内传导和药物影响；双房增大的心电图标准敏感性低，超声更可靠。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "双房增大：P 波又高又宽，V1 双相。",
+      "常提示长期压力/容量负荷。",
+      "心电图敏感度有限，需超声确认。"
+    ],
+    "clinicalPearl": "双房增大不是独立诊断，而是提示寻找联合瓣膜病、先心病或长期房性压力负荷。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "lvh-voltage",
+    "name": "左心室肥厚电压标准",
+    "en": "LVH voltage criteria",
+    "chapter": "hypertrophy",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "LVH",
+      "电压",
+      "左室"
+    ],
+    "oneLiner": "左室肥厚使左室除极向量增大，胸导联 R 波增高、S 波加深；常用 Sokolow-Lyon、Cornell 等电压标准。",
+    "specificity": "Sokolow-Lyon：SV1 + RV5/V6 ≥3.5 mV；Cornell：RaVL + SV3 >2.8 mV（男）/2.0 mV（女）。",
+    "objectives": [
+      "LVH 电压标准只是筛查，超声/心脏 MRI 才是确诊。",
+      "运动员、年轻人可生理性高电压。",
+      "LVH 常伴劳损型 ST-T 改变。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "左室质量增加使除极向量增大，胸导联电压升高；但肥胖、肺气肿、心包积液会降低电压，年轻运动员可生理性增高。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "Sokolow-Lyon、Cornell 电压标准。",
+          "常伴电轴左偏、左房增大、侧壁 ST-T 劳损。",
+          "超声左室质量指数是确诊依据。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "电压标准敏感性和特异性都有限；不能仅凭电压诊断 LVH，也不能因电压不高排除 LVH。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "LVH 电压标准只是筛查，超声/心脏 MRI 才是确诊。",
+      "运动员、年轻人可生理性高电压。",
+      "LVH 常伴劳损型 ST-T 改变。"
+    ],
+    "clinicalPearl": "看到高电压先问“年龄、体型、血压、运动习惯”，再看有无劳损与左房增大。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "lvh-strain",
+    "name": "左室肥厚伴劳损",
+    "en": "LVH with strain",
+    "chapter": "hypertrophy",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "LVH",
+      "劳损",
+      "ST-T"
+    ],
+    "oneLiner": "左室肥厚伴劳损表现为侧壁导联 ST 段压低、T 波倒置，常呈不对称、下斜型；对应右胸导联可有 ST 抬高。",
+    "specificity": "V5/V6、I、aVL 出现 ST 压低与 T 波倒置，ST 段下斜；V1/V2 可出现镜像性 ST 抬高。",
+    "objectives": [
+      "劳损：侧壁 ST 下斜、T 倒置，右胸镜像抬高。",
+      "与 QRS 主波方向相反。",
+      "新发动态改变要排除缺血。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "肥厚心肌复极异常与心内膜下缺血共同导致 ST-T 改变；劳损图形通常与 QRS 主波方向相反。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "侧壁导联 ST 下斜型压低、T 倒置。",
+          "右胸导联镜像性 ST 抬高。",
+          "可与缺血/心梗相似，需结合电压、动态变化与临床。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "LVH 劳损可模拟侧壁缺血，缺血也可叠加在 LVH 上；新发、动态、伴症状的 ST-T 改变必须按缺血评估。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "劳损：侧壁 ST 下斜、T 倒置，右胸镜像抬高。",
+      "与 QRS 主波方向相反。",
+      "新发动态改变要排除缺血。"
+    ],
+    "clinicalPearl": "LVH 的 ST-T 改变不是“良性”的代名词；有胸痛、动态变化时仍需按 ACS 流程处理。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "rvh-criteria",
+    "name": "右心室肥厚",
+    "en": "Right ventricular hypertrophy",
+    "chapter": "hypertrophy",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "RVH",
+      "右室",
+      "电轴右偏"
+    ],
+    "oneLiner": "右室肥厚使右室除极向量占优势，V1 出现高 R、电轴右偏，右胸导联可有 ST-T 劳损；常见于肺心病、肺动脉高压、先心病。",
+    "specificity": "V1 R/S>1、RV1 ≥0.7 mV、电轴右偏 >+90°、V5/V6 深 S；可伴右房增大与右胸导联 ST 压低。",
+    "objectives": [
+      "RVH：V1 高 R + 电轴右偏 + 右胸劳损。",
+      "需与后壁 MI、WPW、RBBB 鉴别。",
+      "肺心病/肺动脉高压是常见背景。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "右室质量增加使向右前的向量增大，V1 记录到高 R；右室除极时间延长可导致 QRS 增宽或 RBBB 形态。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "V1 高 R、R/S>1；电轴右偏。",
+          "V5/V6 深 S；右胸导联 ST-T 劳损。",
+          "常伴右房增大、肺型 P 波。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "V1 高 R 还见于后壁心梗、WPW、RBBB、正常变异；不能只凭 V1 高 R 诊断 RVH。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "RVH：V1 高 R + 电轴右偏 + 右胸劳损。",
+      "需与后壁 MI、WPW、RBBB 鉴别。",
+      "肺心病/肺动脉高压是常见背景。"
+    ],
+    "clinicalPearl": "V1 高 R 的鉴别要结合电轴、右房增大、ST-T 与临床；单导联永远不够。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "rvh-differential",
+    "name": "V1 高 R 的鉴别诊断",
+    "en": "Differential of tall R in V1",
+    "chapter": "hypertrophy",
+    "difficulty": 3,
+    "urgency": "urgent",
+    "tags": [
+      "RVH",
+      "后壁心梗",
+      "WPW"
+    ],
+    "oneLiner": "V1 高 R 的常见原因：右室肥厚、后壁心肌梗死、WPW A 型、RBBB、肥厚型心肌病、正常变异。",
+    "specificity": "看电轴（右偏→RVH；左偏→后壁 MI/WPW）、看 ST-T（后壁 MI V1–V3 压低）、看 delta 波与 PR。",
+    "objectives": [
+      "V1 高 R 先看电轴与 ST-T。",
+      "后壁 MI：V1–V3 压低 + 直立 T。",
+      "WPW：短 PR + delta 波。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "不同病因改变的是不同向量成分：RVH 增加向右前向量，后壁 MI 丢失向后向量，WPW 改变初始除极。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "RVH：电轴右偏、右房增大、右胸劳损。",
+          "后壁 MI：V1–V3 ST 压低、R 波增高、T 直立。",
+          "WPW：短 PR、delta 波、宽 QRS。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "正常年轻人 V1 高 R 可为变异；没有其他异常时不要过度诊断。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "V1 高 R 先看电轴与 ST-T。",
+      "后壁 MI：V1–V3 压低 + 直立 T。",
+      "WPW：短 PR + delta 波。"
+    ],
+    "clinicalPearl": "V1 高 R 是“向量问题”，不是“右室肥厚”的同义词；先问哪个方向的向量变大了。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "hcm-ecg",
+    "name": "肥厚型心肌病心电图",
+    "en": "Hypertrophic cardiomyopathy ECG",
+    "chapter": "hypertrophy",
+    "difficulty": 3,
+    "urgency": "urgent",
+    "tags": [
+      "HCM",
+      "LVH",
+      "猝死"
+    ],
+    "oneLiner": "HCM 常有高电压、深窄 Q 波、ST-T 改变和左房增大；晕厥、家族猝死史、运动相关症状是危险信号。",
+    "specificity": "侧壁/下壁导联深窄 Q 波、LVH 电压、T 波倒置；可伴电轴左偏、短 PR 或预激样改变。",
+    "objectives": [
+      "HCM：高电压、深窄 Q、T 倒置。",
+      "异常 Q 波可不代表梗死。",
+      "有猝死家族史时需遗传/专科评估。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "心肌肥厚与纤维化改变除极/复极；异常 Q 波并非梗死，而是肥厚心肌除极向量改变。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "高电压 + 深窄 Q 波 + T 倒置。",
+          "可有左房增大、电轴左偏。",
+          "晕厥/家族猝死/运动症状需专科评估。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "HCM 心电图可模拟前壁/侧壁心梗；不要仅凭 Q 波诊断陈旧性心梗。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "HCM：高电压、深窄 Q、T 倒置。",
+      "异常 Q 波可不代表梗死。",
+      "有猝死家族史时需遗传/专科评估。"
+    ],
+    "clinicalPearl": "年轻运动员晕厥 + 高电压 + 深 Q 波，必须想到 HCM，不能只当作“运动员心脏”。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "atrial-enlargement-mechanism",
+    "name": "心房增大的电生理机制",
+    "en": "Mechanism of atrial enlargement",
+    "chapter": "hypertrophy",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "心房",
+      "向量",
+      "P波"
+    ],
+    "oneLiner": "心房增大改变心房除极向量的振幅、方向和持续时间；右房增大偏向下前，左房增大偏向后左。",
+    "specificity": "P 波振幅反映右房向量，P 波时间与终末负向反映左房向量；V1 是观察左房终末向量的关键导联。",
+    "objectives": [
+      "右房看振幅，左房看时间与终末向量。",
+      "V1 是左房终末负向的关键导联。",
+      "P 波改变需结合超声与临床。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "心房肌质量增加、传导路径延长和纤维化共同改变 P 波形态；心房压力/容量负荷是常见原因。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "右房增大→下壁 P 波高尖。",
+          "左房增大→P 波增宽、V1 终末负向。",
+          "双房增大→P 波又高又宽。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "P 波形态还受房内传导阻滞、洋地黄、低钾和导联位置影响；不能把 P 波改变简单等同于心房大小。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "右房看振幅，左房看时间与终末向量。",
+      "V1 是左房终末负向的关键导联。",
+      "P 波改变需结合超声与临床。"
+    ],
+    "clinicalPearl": "把 P 波分成“右房前半段、左房后半段”来读，比背“二尖瓣型/肺型”更接近机制。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "lvh-differential",
+    "name": "LVH 电压标准的鉴别",
+    "en": "Differential of LVH voltage",
+    "chapter": "hypertrophy",
+    "difficulty": 3,
+    "urgency": "core",
+    "tags": [
+      "LVH",
+      "运动员",
+      "LBBB"
+    ],
+    "oneLiner": "高电压还可见于年轻运动员、瘦高体型、LBBB、WPW、心包积液与导联位置错误；LVH 需结合形态与超声。",
+    "specificity": "运动员常有窦缓、早期复极、轻度电压增高但无劳损；LBBB 本身使电压标准失效；WPW 可有假性肥厚。",
+    "objectives": [
+      "高电压≠LVH；低电压≠没有 LVH。",
+      "运动员、LBBB、WPW 是常见混杂因素。",
+      "结合劳损、左房增大与超声。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "电压取决于心肌质量、胸壁阻抗、导联距离与除极同步性；不是单纯的“肌肉厚度”。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "年轻运动员：高电压 + 窦缓 + 早期复极，无劳损。",
+          "LBBB/WPW：电压标准不可靠。",
+          "心包积液/肥胖：电压降低。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "不要用电压标准排除 LVH；超声左室质量指数才是确诊依据。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "高电压≠LVH；低电压≠没有 LVH。",
+      "运动员、LBBB、WPW 是常见混杂因素。",
+      "结合劳损、左房增大与超声。"
+    ],
+    "clinicalPearl": "电压是“筛查信号”，不是“诊断结论”；把体型、导联和传导因素先排除。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "rvh-vs-posterior-mi",
+    "name": "右室肥厚与后壁心梗",
+    "en": "RVH vs posterior MI",
+    "chapter": "hypertrophy",
+    "difficulty": 3,
+    "urgency": "urgent",
+    "tags": [
+      "RVH",
+      "后壁心梗",
+      "V1"
+    ],
+    "oneLiner": "RVH 与后壁 MI 都可出现 V1 高 R，但 RVH 常伴电轴右偏、右房增大和右胸劳损；后壁 MI 常伴 V1–V3 ST 压低与直立 T。",
+    "specificity": "RVH：V1 R/S>1、电轴右偏、右胸 ST 压低；后壁 MI：V1–V3 ST 压低、R 波增高、T 波直立，V7–V9 ST 抬高。",
+    "objectives": [
+      "RVH 看电轴右偏与右胸劳损。",
+      "后壁 MI 看 V1–V3 压低、直立 T、V7–V9 抬高。",
+      "胸痛 + V1 高 R 要加做后壁导联。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "RVH 增加向右前向量，后壁 MI 丢失向后向量，两者都使 V1 R 波相对增高，但 ST-T 与电轴不同。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "RVH：电轴右偏 + 右房增大 + 右胸劳损。",
+          "后壁 MI：V1–V3 压低 + 直立 T + V7–V9 抬高。",
+          "加做右胸/后壁导联可帮助定位。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "V1 高 R 伴胸痛时，后壁 MI 是急症；不要因为“没有 ST 抬高”而漏诊。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "RVH 看电轴右偏与右胸劳损。",
+      "后壁 MI 看 V1–V3 压低、直立 T、V7–V9 抬高。",
+      "胸痛 + V1 高 R 要加做后壁导联。"
+    ],
+    "clinicalPearl": "V1 高 R + 胸痛 + V1–V3 ST 压低，先按后壁 STEMI 处理，而不是先诊断 RVH。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "chamber-enlargement-copd",
+    "name": "COPD 与右心负荷心电图",
+    "en": "COPD and right heart strain",
+    "chapter": "hypertrophy",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "COPD",
+      "肺心病",
+      "RVH"
+    ],
+    "oneLiner": "COPD 可导致低电压、电轴右偏、RVH、右房增大、R 波递增不良和“假性前壁梗死”；机制是肺过度充气与右心负荷。",
+    "specificity": "常见：II/III/aVF 高 P、电轴右偏、V1 高 R、V5/V6 深 S、胸导联低电压；可伴 S1Q3T3。",
+    "objectives": [
+      "COPD：低电压、右偏、右房增大、R 波递增不良。",
+      "S1Q3T3 不特异。",
+      "结合血气、超声与临床。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "肺过度充气增加胸壁阻抗、心脏位置下移，导致低电压与导联轴改变；肺动脉高压引起右室肥厚。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "低电压 + 电轴右偏 + 右房增大。",
+          "V1 高 R、V5/V6 深 S。",
+          "S1Q3T3 可见于肺栓塞，也可见于 COPD。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "COPD 的“假性前壁梗死”可来自导联位置与右室负荷；不能仅凭 Q 波诊断心梗。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "COPD：低电压、右偏、右房增大、R 波递增不良。",
+      "S1Q3T3 不特异。",
+      "结合血气、超声与临床。"
+    ],
+    "clinicalPearl": "COPD 患者的“奇怪心电图”常是几何与阻抗问题；先看 P 波、电轴与导联位置。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "hypertrophy-repolarization",
+    "name": "肥厚与复极改变",
+    "en": "Hypertrophy and repolarization",
+    "chapter": "hypertrophy",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "劳损",
+      "复极",
+      "ST-T"
+    ],
+    "oneLiner": "心室肥厚常伴继发性复极异常：ST 段与 T 波方向与 QRS 主波相反，称为“劳损型”改变。",
+    "specificity": "LVH：侧壁 ST 压低、T 倒置；RVH：右胸 ST 压低、T 倒置；改变通常与 QRS 主波方向相反。",
+    "objectives": [
+      "肥厚→继发复极异常，ST-T 与 QRS 相反。",
+      "新发动态改变按缺血评估。",
+      "不要把所有 ST-T 改变都归为劳损。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "肥厚心肌动作电位时程延长、复极顺序改变，导致 ST-T 与 QRS 向量不一致；缺血可叠加。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "劳损型 ST-T 与 QRS 主波方向相反。",
+          "LVH 侧壁、RVH 右胸。",
+          "新发/动态改变要排除缺血。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "劳损与缺血都可 ST 压低；运动试验、肌钙蛋白、动态变化与冠脉评估用于鉴别。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "肥厚→继发复极异常，ST-T 与 QRS 相反。",
+      "新发动态改变按缺血评估。",
+      "不要把所有 ST-T 改变都归为劳损。"
+    ],
+    "clinicalPearl": "“劳损”是形态描述，不是“无需处理”；有症状和动态变化时仍要查缺血。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "hypertrophy-echo-correlation",
+    "name": "肥厚心电图与超声的差异",
+    "en": "ECG vs echo in hypertrophy",
+    "chapter": "hypertrophy",
+    "difficulty": 2,
+    "urgency": "advanced",
+    "tags": [
+      "LVH",
+      "超声",
+      "电压"
+    ],
+    "oneLiner": "心电图对肥厚的敏感性和特异性有限；超声/心脏 MRI 是结构诊断标准，心电图更多用于筛查与随访。",
+    "specificity": "心电图电压高但超声正常可见于运动员；心电图电压正常但超声提示肥厚可见于肥胖、肺气肿、心包积液。",
+    "objectives": [
+      "ECG 筛查，超声确诊。",
+      "电压受体型、传导、阻抗影响。",
+      "不一致时以影像与临床为准。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "心电图反映电活动，不直接测量心肌厚度；纤维化、传导阻滞和体型都会改变电压。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "超声左室质量指数是 LVH 确诊依据。",
+          "心电图用于筛查、随访与发现劳损。",
+          "两者不一致时结合临床与影像。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "不要用心电图“排除”肥厚；也不要把高电压直接等同于肥厚。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "ECG 筛查，超声确诊。",
+      "电压受体型、传导、阻抗影响。",
+      "不一致时以影像与临床为准。"
+    ],
+    "clinicalPearl": "心电图是“电的投影”，超声是“结构的尺子”；两者不能互相替代。",
+    "topic": true,
+    "quizEligible": false
+  }
+]

@@ -1,0 +1,971 @@
+[
+  {
+    "id": "sick-sinus-syndrome",
+    "name": "病态窦房结综合征",
+    "en": "Sick sinus syndrome",
+    "chapter": "syndromes",
+    "difficulty": 3,
+    "urgency": "urgent",
+    "tags": [
+      "SSS",
+      "窦房结",
+      "晕厥"
+    ],
+    "oneLiner": "病态窦房结综合征包括窦性心动过缓、窦性停搏、窦房阻滞与慢快综合征；症状与心电图不一致时需长程监测。",
+    "specificity": "持续性窦缓 <40、窦性停搏 >3 s、窦房阻滞、心动过缓与房颤/房速交替；晕厥/黑矇是治疗关键。",
+    "objectives": [
+      "SSS=窦房结功能障碍的谱系。",
+      "慢快综合征：房颤终止后长间歇。",
+      "有症状才考虑起搏。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "窦房结功能障碍与心房肌病变导致起搏与传导异常；慢快综合征中快速房性心律失常后窦房结受抑制，出现长间歇。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "窦缓、窦停、窦房阻滞、慢快综合征。",
+          "长间歇 >3 s 或症状性心动过缓。",
+          "需排除药物、甲减、电解质与缺血。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "无症状的窦缓不一定需要起搏；起搏适应证取决于症状与可逆因素。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "SSS=窦房结功能障碍的谱系。",
+      "慢快综合征：房颤终止后长间歇。",
+      "有症状才考虑起搏。"
+    ],
+    "clinicalPearl": "SSS 的关键不是“心率多少”，而是“心率慢的时候患者有没有症状”。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "tachy-brady",
+    "name": "慢快综合征",
+    "en": "Tachy-brady syndrome",
+    "chapter": "syndromes",
+    "difficulty": 3,
+    "urgency": "urgent",
+    "tags": [
+      "慢快",
+      "房颤",
+      "长间歇"
+    ],
+    "oneLiner": "慢快综合征是房性快速心律失常（房颤/房扑/房速）与窦性心动过缓/停搏交替；快速发作终止后可出现长间歇。",
+    "specificity": "房颤终止后出现 >3 s 长间歇、晕厥；平时窦缓；动态心电图可捕捉交替。",
+    "objectives": [
+      "慢快综合征：快速房性心律失常 + 慢窦性。",
+      "房颤终止后长间歇是典型表现。",
+      "症状决定起搏。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "快速房性心律失常导致窦房结超速抑制与心房重构；终止后窦房结恢复延迟，形成长间歇。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "房颤/房扑终止后长间歇。",
+          "平时窦缓；可晕厥。",
+          "动态心电图捕捉交替。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "长间歇可能与房颤终止后的窦房结抑制有关，不一定是新发三度阻滞；需结合监测。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "慢快综合征：快速房性心律失常 + 慢窦性。",
+      "房颤终止后长间歇是典型表现。",
+      "症状决定起搏。"
+    ],
+    "clinicalPearl": "房颤患者晕厥，不要只看房颤；问“终止时有没有长间歇”。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "lgl-syndrome",
+    "name": "LGL 综合征",
+    "en": "Lown-Ganong-Levine syndrome",
+    "chapter": "syndromes",
+    "difficulty": 3,
+    "urgency": "advanced",
+    "tags": [
+      "LGL",
+      "短PR",
+      "预激"
+    ],
+    "oneLiner": "LGL 表现为短 PR、正常 QRS、阵发性室上速；传统认为存在 James 束，但解剖基础仍有争议。",
+    "specificity": "PR <0.12 s、QRS 正常、无 delta 波；阵发性窄 QRS 心动过速；需排除 WPW、AVNRT 与正常变异。",
+    "objectives": [
+      "LGL：短 PR + 正常 QRS + 室上速。",
+      "无 delta 波，与 WPW 不同。",
+      "诊断需排除其他原因。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "短 PR 可能来自房室结传导加速或旁路；LGL 不是单一明确疾病，诊断需谨慎。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "短 PR、正常 QRS、无 delta 波。",
+          "阵发性室上速。",
+          "需排除 WPW/AVNRT。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "LGL 是历史概念，不能仅凭短 PR 诊断；很多短 PR 者无心动过速。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "LGL：短 PR + 正常 QRS + 室上速。",
+      "无 delta 波，与 WPW 不同。",
+      "诊断需排除其他原因。"
+    ],
+    "clinicalPearl": "短 PR 不等于 LGL；没有心动过速时，短 PR 可能只是正常变异。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "mahaim-preexcitation",
+    "name": "Mahaim 型预激",
+    "en": "Mahaim preexcitation",
+    "chapter": "syndromes",
+    "difficulty": 3,
+    "urgency": "advanced",
+    "tags": [
+      "Mahaim",
+      "预激",
+      "旁路"
+    ],
+    "oneLiner": "Mahaim 纤维多为房束旁路，起搏后经旁路下传至右束支，产生 LBBB 样预激；常参与逆向型房室折返性心动过速。",
+    "specificity": "窦性心律预激不明显，起搏或心动过速时出现 LBBB 样宽 QRS；旁路前传，逆传经房室结。",
+    "objectives": [
+      "Mahaim：房束旁路，LBBB 样预激。",
+      "静息预激可隐匿。",
+      "宽 QRS 心动过速鉴别之一。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "Mahaim 旁路多位于右房-右束支区域，激动右室较晚，形成 LBBB 形态；与典型 WPW 不同。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "静息可无预激；心动过速呈 LBBB 样。",
+          "旁路前传、房室结逆传。",
+          "需电生理标测。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "Mahaim 易被误认为 RBBB 或室速；宽 QRS 心动过速伴 LBBB 形态需考虑。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "Mahaim：房束旁路，LBBB 样预激。",
+      "静息预激可隐匿。",
+      "宽 QRS 心动过速鉴别之一。"
+    ],
+    "clinicalPearl": "Mahaim 的“预激”可能只在起搏/心动过速时出现；静息正常不代表没有旁路。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "wpw-risk",
+    "name": "WPW 危险分层",
+    "en": "WPW risk stratification",
+    "chapter": "syndromes",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "WPW",
+      "预激",
+      "猝死"
+    ],
+    "oneLiner": "WPW 风险取决于旁路前传不应期与是否伴房颤；短不应期旁路在房颤时可导致极快心室率、室颤。",
+    "specificity": "高危线索：房颤时最短 RR <250 ms、多旁路、晕厥、家族猝死；无症状预激需评估职业/运动风险。",
+    "objectives": [
+      "WPW 风险看旁路前传不应期。",
+      "房颤 + 短 RR 可致室颤。",
+      "无症状也需风险分层。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "旁路绕过房室结，缺乏生理性过滤；房颤时冲动可经旁路快速下传，诱发室颤。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "房颤时最短 RR <250 ms 是高危。",
+          "晕厥/家族猝死史。",
+          "电生理评估旁路不应期。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "无症状 WPW 不等于低危；高风险职业、运动或家族史需进一步评估。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "WPW 风险看旁路前传不应期。",
+      "房颤 + 短 RR 可致室颤。",
+      "无症状也需风险分层。"
+    ],
+    "clinicalPearl": "WPW 的危险不在“delta 波好看”，而在“房颤时旁路能跑多快”。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "early-repolarization-syndrome",
+    "name": "早期复极综合征",
+    "en": "Early repolarization syndrome",
+    "chapter": "syndromes",
+    "difficulty": 3,
+    "urgency": "urgent",
+    "tags": [
+      "早期复极",
+      "J波",
+      "室颤"
+    ],
+    "oneLiner": "早期复极综合征指下壁/侧壁 J 点抬高、ST 段凹面向上抬高，部分患者可伴特发性室颤；多数为良性变异。",
+    "specificity": "J 点抬高 ≥0.1 mV、ST 凹面向上、J 波切迹；高危特征：J 波高、下壁导联、晕厥/家族猝死。",
+    "objectives": [
+      "早期复极多数良性。",
+      "高危：晕厥、家族猝死、下壁高 J 波。",
+      "需要个体化评估。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "复极早期心外膜与心内膜电位差增大，形成 J 波；高危者存在复极异质性，易诱发室颤。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "J 点抬高、ST 凹面、J 波。",
+          "多数良性；晕厥/家族猝死需评估。",
+          "下壁导联 J 波 + 高振幅提示高危。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "不要把早期复极一律当良性，也不要一律当高危；结合症状、家族史与动态变化。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "早期复极多数良性。",
+      "高危：晕厥、家族猝死、下壁高 J 波。",
+      "需要个体化评估。"
+    ],
+    "clinicalPearl": "早期复极的“良性”是概率，不是保证；有晕厥/家族猝死时需电生理评估。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "short-qt",
+    "name": "短 QT 综合征",
+    "en": "Short QT syndrome",
+    "chapter": "syndromes",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "短QT",
+      "室颤",
+      "离子通道"
+    ],
+    "oneLiner": "短 QT 综合征表现为 QTc <340 ms，伴高尖 T 波、室颤/猝死风险；属于罕见离子通道病。",
+    "specificity": "QTc <340 ms（部分标准 <360 ms）、T 波高尖、无 ST 段；晕厥/家族猝死/室颤史支持诊断。",
+    "objectives": [
+      "短 QT 综合征：QTc <340 ms + 高尖 T。",
+      "可致室颤/猝死。",
+      "排除高钙/药物等继发原因。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "复极钾通道功能增强使动作电位时程缩短、复极离散增加，易形成折返。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "QTc <340 ms 是高疑。",
+          "高尖 T 波、晕厥/家族猝死。",
+          "需排除高钙、洋地黄、发热等。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "短 QT 也可由高钙、洋地黄、乙酰胆碱、发热引起；先排除可逆原因。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "短 QT 综合征：QTc <340 ms + 高尖 T。",
+      "可致室颤/猝死。",
+      "排除高钙/药物等继发原因。"
+    ],
+    "clinicalPearl": "看到 QT 很短不要只写“正常”；结合 T 波形态、晕厥与家族史。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "lqt1",
+    "name": "长 QT 综合征 1 型",
+    "en": "LQT1",
+    "chapter": "syndromes",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "LQT1",
+      "运动",
+      "晕厥"
+    ],
+    "oneLiner": "LQT1 由 KCNQ1 突变导致 IKs 减少，T 波宽大，事件多由运动（尤其游泳）诱发。",
+    "specificity": "QTc 延长、T 波宽大/双峰；运动或情绪激动诱发晕厥/室颤；家族史常见。",
+    "objectives": [
+      "LQT1：运动诱发，T 波宽大。",
+      "β 阻滞剂；避免游泳/竞技运动。",
+      "家族筛查。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "IKs 在交感兴奋时负责缩短动作电位；LQT1 在运动时复极储备不足，易发生早期后除极。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "运动/游泳诱发晕厥。",
+          "T 波宽大，QTc 延长。",
+          "β 受体阻滞剂是基础治疗。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "LQT1 患者不能用“没有晕厥”排除风险；运动前评估与治疗很重要。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "LQT1：运动诱发，T 波宽大。",
+      "β 阻滞剂；避免游泳/竞技运动。",
+      "家族筛查。"
+    ],
+    "clinicalPearl": "LQT1 的典型场景是“游泳时晕厥”；问病史比只看 QTc 更有价值。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "lqt2",
+    "name": "长 QT 综合征 2 型",
+    "en": "LQT2",
+    "chapter": "syndromes",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "LQT2",
+      "听觉",
+      "晕厥"
+    ],
+    "oneLiner": "LQT2 由 KCNH2 突变导致 IKr 减少，T 波低平/切迹，事件常由情绪激动或突然声音（闹钟/电话）诱发。",
+    "specificity": "QTc 延长、T 波低平或有切迹；情绪/声音诱发晕厥；产后风险增加。",
+    "objectives": [
+      "LQT2：声音/情绪诱发，T 波切迹。",
+      "避免 QT 延长药物。",
+      "β 阻滞剂 + 家族筛查。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "IKr 是复极快速成分；LQT2 复极储备下降，交感兴奋时易发生早期后除极。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "声音/情绪诱发晕厥。",
+          "T 波低平/切迹。",
+          "避免延长 QT 药物。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "LQT2 的 T 波形态不典型，容易被忽略；需测量 QTc 并问诱发因素。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "LQT2：声音/情绪诱发，T 波切迹。",
+      "避免 QT 延长药物。",
+      "β 阻滞剂 + 家族筛查。"
+    ],
+    "clinicalPearl": "“被闹钟吓晕”不是夸张病史，可能是 LQT2 的典型触发。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "lqt3",
+    "name": "长 QT 综合征 3 型",
+    "en": "LQT3",
+    "chapter": "syndromes",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "LQT3",
+      "睡眠",
+      "心动过缓"
+    ],
+    "oneLiner": "LQT3 由 SCN5A 突变导致晚钠电流增加，QT 明显延长，事件常在睡眠/心动过缓时发生。",
+    "specificity": "QTc 显著延长、T 波晚而尖；睡眠/静息时晕厥/猝死；心率慢时风险更高。",
+    "objectives": [
+      "LQT3：睡眠/慢心率诱发。",
+      "晚钠电流；QT 显著延长。",
+      "避免心动过缓。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "晚钠电流延长动作电位平台，心动过缓时更明显；钠通道阻滞剂可能有效。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "睡眠/心动过缓时晕厥。",
+          "QTc 显著延长，T 波晚尖。",
+          "钠通道阻滞剂需专科评估。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "LQT3 与 LQT1/2 的诱因不同；不能统一用运动诱发来筛查。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "LQT3：睡眠/慢心率诱发。",
+      "晚钠电流；QT 显著延长。",
+      "避免心动过缓。"
+    ],
+    "clinicalPearl": "夜间猝死家族史 + 长 QT，要想到 LQT3；诱因是睡眠，不是运动。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "brugada-syndrome",
+    "name": "Brugada 综合征",
+    "en": "Brugada syndrome",
+    "chapter": "syndromes",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "Brugada",
+      "V1",
+      "室颤"
+    ],
+    "oneLiner": "Brugada 综合征表现为右胸导联穹隆型 ST 抬高与 T 波倒置，可导致多形性室速/室颤，结构心脏正常。",
+    "specificity": "V1–V2 穹隆型 ST 抬高 ≥2 mm + T 倒置（1 型）；发热、钠通道阻滞剂可揭示；晕厥/家族猝死支持诊断。",
+    "objectives": [
+      "Brugada 1 型：穹隆型 ST + T 倒置。",
+      "发热是重要诱因。",
+      "高危需 ICD。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "右室流出道心外膜复极异质性与传导延迟形成折返；SCN5A 突变常见。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "V1–V2 穹隆型 ST 抬高 + T 倒置。",
+          "发热/药物可诱发。",
+          "晕厥/家族猝死需 ICD 评估。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "Brugada 图形可间歇出现；发热时心电图阴性不能完全排除。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "Brugada 1 型：穹隆型 ST + T 倒置。",
+      "发热是重要诱因。",
+      "高危需 ICD。"
+    ],
+    "clinicalPearl": "发热 + 晕厥 + V1 穹隆型 ST，先按 Brugada 处理并避免诱发药物。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "arvc",
+    "name": "致心律失常性右室心肌病",
+    "en": "Arrhythmogenic right ventricular cardiomyopathy",
+    "chapter": "syndromes",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "ARVC",
+      "右室",
+      "室速"
+    ],
+    "oneLiner": "ARVC 以右室心肌纤维脂肪替代为特征，表现为右胸导联 T 倒置、epsilon 波、右室扩大与左束支阻滞型室速。",
+    "specificity": "V1–V3 T 倒置、epsilon 波、QRS 终末延迟、右室结构/功能异常；家族史与运动诱发室速。",
+    "objectives": [
+      "ARVC：右胸 T 倒置 + epsilon + LBBB 型 VT。",
+      "运动可加重。",
+      "需影像与家族筛查。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "右室心肌被纤维脂肪替代，传导延迟与折返形成室速；运动可加速疾病进展。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "V1–V3 T 倒置、epsilon 波。",
+          "LBBB 型室速。",
+          "心脏 MRI/超声右室异常。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "ARVC 早期心电图可正常；不能一次正常 ECG 排除，需影像、家族史与随访。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "ARVC：右胸 T 倒置 + epsilon + LBBB 型 VT。",
+      "运动可加重。",
+      "需影像与家族筛查。"
+    ],
+    "clinicalPearl": "年轻人运动时宽 QRS 心动过速 + V1–V3 T 倒置，要想到 ARVC。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "cpvt",
+    "name": "儿茶酚胺敏感性多形性室速",
+    "en": "CPVT",
+    "chapter": "syndromes",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "CPVT",
+      "运动",
+      "多形性室速"
+    ],
+    "oneLiner": "CPVT 是运动/情绪诱发的双向性或多形性室速，静息心电图常正常；多见于儿童/青年。",
+    "specificity": "运动试验诱发双向性室速（QRS 轴逐搏交替）或多形性室速；静息 QTc 正常；晕厥/猝死家族史。",
+    "objectives": [
+      "CPVT：运动诱发双向性 VT。",
+      "静息 ECG 正常。",
+      "β 阻滞剂，避免竞技运动。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "RyR2 突变导致肌浆网钙漏，交感兴奋时触发延迟后除极；结构心脏正常。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "运动诱发双向性/多形性室速。",
+          "静息 ECG 常正常。",
+          "β 阻滞剂 + 运动限制。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "静息心电图正常不能排除 CPVT；需要运动试验或基因检测。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "CPVT：运动诱发双向性 VT。",
+      "静息 ECG 正常。",
+      "β 阻滞剂，避免竞技运动。"
+    ],
+    "clinicalPearl": "儿童运动晕厥、静息 ECG 正常，别漏 CPVT；运动试验是钥匙。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "hcm-syndrome",
+    "name": "肥厚型心肌病与猝死",
+    "en": "HCM and sudden death",
+    "chapter": "syndromes",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "HCM",
+      "猝死",
+      "运动"
+    ],
+    "oneLiner": "HCM 是青少年运动猝死的重要原因；心电图可高电压、深 Q、T 倒置，也可正常。",
+    "specificity": "晕厥、运动猝死家族史、非持续性室速、左室壁厚度 ≥30 mm、异常血压反应是风险因素。",
+    "objectives": [
+      "HCM 可猝死，尤其运动时。",
+      "风险分层需影像/动态心电图。",
+      "家族筛查。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "心肌肥厚、纤维化与微血管缺血导致心律失常；运动时儿茶酚胺增加风险。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "高电压、深窄 Q、T 倒置。",
+          "晕厥/家族猝死/NSVT 是风险。",
+          "避免脱水/剧烈运动。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "HCM 心电图可模拟心梗；不能仅凭 Q 波诊断陈旧性心梗。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "HCM 可猝死，尤其运动时。",
+      "风险分层需影像/动态心电图。",
+      "家族筛查。"
+    ],
+    "clinicalPearl": "年轻运动员晕厥 + 高电压 + 家族猝死，先停运动并评估 HCM。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "cardiac-memory",
+    "name": "心脏记忆",
+    "en": "Cardiac memory",
+    "chapter": "syndromes",
+    "difficulty": 2,
+    "urgency": "advanced",
+    "tags": [
+      "心脏记忆",
+      "T波",
+      "起搏"
+    ],
+    "oneLiner": "心脏记忆指心室激动顺序改变后，T 波在恢复正常传导后仍持续倒置一段时间；常见于起搏、预激、室速后。",
+    "specificity": "起搏/室速时 QRS 宽，恢复窦性后 T 波仍与原来 QRS 方向一致（倒置），数天至数周恢复。",
+    "objectives": [
+      "心脏记忆：激动顺序改变后的 T 波倒置。",
+      "数天-数周恢复。",
+      "与缺血鉴别靠病史与动态。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "复极顺序对除极顺序有“记忆”，即使除极恢复，复极仍保持旧顺序；机制涉及离子通道重塑。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "起搏/室速后 T 波持续倒置。",
+          "恢复窦性后逐渐正常。",
+          "不要误诊为缺血。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "心脏记忆可模拟缺血性 T 波倒置；结合近期起搏/心律失常史与动态变化。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "心脏记忆：激动顺序改变后的 T 波倒置。",
+      "数天-数周恢复。",
+      "与缺血鉴别靠病史与动态。"
+    ],
+    "clinicalPearl": "起搏后 T 波倒置不一定是缺血；问“最近有没有起搏/室速”，可能是心脏记忆。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "vasovagal-syncope",
+    "name": "血管迷走性晕厥",
+    "en": "Vasovagal syncope",
+    "chapter": "syndromes",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "晕厥",
+      "迷走",
+      "低血压"
+    ],
+    "oneLiner": "血管迷走性晕厥由迷走反射导致低血压和/或心动过缓，常有诱因（久站、闷热、疼痛、情绪）。",
+    "specificity": "前驱症状：恶心、出汗、苍白、视野模糊；晕厥时心动过缓/低血压；心电图多正常。",
+    "objectives": [
+      "血管迷走性：诱因 + 前驱 + 低血压/心动过缓。",
+      "ECG 多正常。",
+      "先排除心脏性晕厥。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "静脉回流减少触发迷走张力增高，导致血管扩张与心动过缓；脑灌注下降致晕厥。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "久站/闷热/疼痛诱发。",
+          "前驱症状 + 低血压/心动过缓。",
+          "心电图多正常。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "晕厥伴胸痛、心悸、运动中发生、家族猝死史，需先排除心脏性原因。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "血管迷走性：诱因 + 前驱 + 低血压/心动过缓。",
+      "ECG 多正常。",
+      "先排除心脏性晕厥。"
+    ],
+    "clinicalPearl": "血管迷走性晕厥是“良性但烦人”；运动中晕厥则不是它，必须查心脏。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "carotid-sinus-syndrome",
+    "name": "颈动脉窦综合征",
+    "en": "Carotid sinus syndrome",
+    "chapter": "syndromes",
+    "difficulty": 3,
+    "urgency": "urgent",
+    "tags": [
+      "颈动脉窦",
+      "晕厥",
+      "心动过缓"
+    ],
+    "oneLiner": "颈动脉窦综合征由颈动脉窦压力感受器过敏导致心动过缓/血管扩张，常见于老年人，转头/衣领过紧诱发。",
+    "specificity": "颈动脉窦按摩诱发 >3 s 窦性停搏或血压下降 + 症状；需排除颈动脉狭窄/斑块。",
+    "objectives": [
+      "颈动脉窦综合征：诱因 + 按摩阳性。",
+      "可致窦停/低血压。",
+      "按摩前评估颈动脉。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "颈动脉窦压力感受器过度反应，迷走张力增高导致窦缓/房室阻滞或血管扩张。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "转头/衣领诱发晕厥。",
+          "按摩诱发长间歇/低血压。",
+          "老年人多见。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "颈动脉窦按摩有卒中风险，需评估颈动脉；不能随意在床旁进行。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "颈动脉窦综合征：诱因 + 按摩阳性。",
+      "可致窦停/低血压。",
+      "按摩前评估颈动脉。"
+    ],
+    "clinicalPearl": "老年人转头晕厥，问衣领、刮胡子、转头；但按摩试验要先看颈动脉。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "pots",
+    "name": "体位性心动过速综合征",
+    "en": "POTS",
+    "chapter": "syndromes",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "POTS",
+      "直立",
+      "心动过速"
+    ],
+    "oneLiner": "POTS 指直立 10 分钟内心率增加 ≥30 次/分（或 ≥40 次/分青少年）伴直立不耐受症状，血压不一定下降。",
+    "specificity": "直立后心率明显增快、心悸、头晕、乏力；无低位性低血压；需排除贫血、甲亢、脱水、药物。",
+    "objectives": [
+      "POTS：直立心率增快 + 症状。",
+      "血压不一定低。",
+      "补液/运动/药物综合管理。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "自主神经调节异常导致直立时心率代偿过度；血容量不足、去适应与自身免疫可能参与。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "直立后心率 ↑≥30 次/分。",
+          "直立不耐受症状。",
+          "排除贫血/甲亢/脱水。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "POTS 是临床综合征，不是单纯“心跳快”；需排除其他原因并综合管理。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "POTS：直立心率增快 + 症状。",
+      "血压不一定低。",
+      "补液/运动/药物综合管理。"
+    ],
+    "clinicalPearl": "年轻人久站心悸、头晕，躺下就好，量立卧位心率；可能是 POTS。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "congenital-lqts",
+    "name": "先天性长 QT 与家族筛查",
+    "en": "Congenital LQTS and family screening",
+    "chapter": "syndromes",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "LQTS",
+      "家族",
+      "猝死"
+    ],
+    "oneLiner": "先天性 LQTS 是遗传性复极异常，QTc 延长、晕厥/猝死风险；家族成员需心电图与基因筛查。",
+    "specificity": "QTc >480 ms 高疑；LQT1/2/3 诱因不同；晕厥、家族猝死、耳聋（Jervell-Lange-Nielsen）提示。",
+    "objectives": [
+      "先天性 LQTS 需家族筛查。",
+      "避免 QT 延长药物。",
+      "β 阻滞剂/ICD 个体化。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "离子通道突变导致复极储备下降；不同亚型诱因与治疗反应不同。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "QTc >480 ms 高疑。",
+          "晕厥/家族猝死。",
+          "家族筛查与避免 QT 延长药物。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "QTc 正常不能完全排除 LQTS；动态变化、基因与家族史重要。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "先天性 LQTS 需家族筛查。",
+      "避免 QT 延长药物。",
+      "β 阻滞剂/ICD 个体化。"
+    ],
+    "clinicalPearl": "一个年轻人晕厥，查完患者还要查家族；LQTS 是家族病。",
+    "topic": true,
+    "quizEligible": false
+  }
+]

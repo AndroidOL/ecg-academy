@@ -1,0 +1,767 @@
+[
+  {
+    "id": "pediatric-rate-ranges",
+    "name": "小儿心率正常范围",
+    "en": "Pediatric heart rate ranges",
+    "chapter": "pediatric",
+    "difficulty": 1,
+    "urgency": "core",
+    "tags": [
+      "小儿",
+      "心率",
+      "年龄"
+    ],
+    "oneLiner": "小儿心率随年龄下降：新生儿 120–160、婴儿 100–150、幼儿 90–140、学龄前 80–120、学龄 70–110、青少年 60–100 次/分。",
+    "specificity": "判断小儿心动过速/过缓必须按年龄；成人 60–100 的标准不适用于新生儿。",
+    "objectives": [
+      "小儿心率按年龄分层。",
+      "新生儿右室优势、心率快。",
+      "先排除发热/哭闹/脱水。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "自主神经发育与代谢率影响心率；新生儿交感张力高、迷走张力低，心率快。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "新生儿 120–160；婴儿 100–150。",
+          "学龄 70–110；青少年 60–100。",
+          "按年龄判断，不套成人标准。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "发热、哭闹、脱水、贫血都可心率快；先看状态与体温，不要直接诊断心律失常。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "小儿心率按年龄分层。",
+      "新生儿右室优势、心率快。",
+      "先排除发热/哭闹/脱水。"
+    ],
+    "clinicalPearl": "新生儿心率 150 可能是正常，成人 150 是心动过速；年龄决定正常范围。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "pediatric-axis-qrs",
+    "name": "小儿电轴与 QRS 特点",
+    "en": "Pediatric axis and QRS",
+    "chapter": "pediatric",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "小儿",
+      "电轴",
+      "右室"
+    ],
+    "oneLiner": "新生儿右室优势：电轴右偏、V1 高 R、V6 深 S；随年龄右室退化，成人型 R 波递增逐渐形成。",
+    "specificity": "新生儿电轴 +60° 至 +180° 可见；V1 R/S>1 常见；QRS 时限较成人短。",
+    "objectives": [
+      "新生儿右室优势是生理。",
+      "电轴右偏/V1 高 R 可为正常。",
+      "按年龄解释，动态随访。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "胎儿期右室承担肺循环，出生后肺血管阻力下降、左室逐渐占优势，心电图随之演变。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "新生儿右室优势、电轴右偏。",
+          "V1 高 R、V6 深 S 常见。",
+          "随年龄逐渐转为成人型。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "不要把新生儿右室优势误诊为 RVH；需结合年龄与随访。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "新生儿右室优势是生理。",
+      "电轴右偏/V1 高 R 可为正常。",
+      "按年龄解释，动态随访。"
+    ],
+    "clinicalPearl": "看到新生儿 V1 高 R 先问“多大”；这可能是正常的右室优势，不是 RVH。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "pediatric-intervals",
+    "name": "小儿 PR/QRS/QT 间期",
+    "en": "Pediatric intervals",
+    "chapter": "pediatric",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "小儿",
+      "PR",
+      "QT"
+    ],
+    "oneLiner": "小儿 PR 与 QRS 随年龄变化；QTc 校正公式在儿童中需谨慎，QTc >460–480 ms 需评估。",
+    "specificity": "新生儿 QRS 较窄、PR 较短；QTc 随年龄略有变化；不能直接套成人阈值。",
+    "objectives": [
+      "小儿间期随年龄变化。",
+      "QTc 延长需家族筛查。",
+      "不要套成人正常值。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "心肌与传导系统发育未成熟，间期随年龄增长；心率快时 QT 测量更困难。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "PR/QRS 按年龄解释。",
+          "QTc >460–480 ms 需评估。",
+          "心率快时 QT 测量困难。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "小儿长 QT 易被漏诊；晕厥、家族猝死、耳聋需警惕。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "小儿间期随年龄变化。",
+      "QTc 延长需家族筛查。",
+      "不要套成人正常值。"
+    ],
+    "clinicalPearl": "儿童晕厥 + QTc 延长，别只当“生长痛/低血糖”；长 QT 可致命。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "neonatal-ecg",
+    "name": "新生儿心电图",
+    "en": "Neonatal ECG",
+    "chapter": "pediatric",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "新生儿",
+      "右室优势",
+      "过渡"
+    ],
+    "oneLiner": "新生儿心电图以右室优势、电轴右偏、V1 高 R、心率快为特征；出生后数周至数月逐渐转变。",
+    "specificity": "正常新生儿心率 120–160、PR 0.08–0.16 s、QRS <0.08 s；V1 R/S>1 常见。",
+    "objectives": [
+      "新生儿右室优势正常。",
+      "心率快、QRS 窄。",
+      "异常结合临床与超声。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "胎儿循环到新生儿循环的过渡改变心室负荷与电活动；右室优势逐渐消退。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "右室优势、电轴右偏、V1 高 R。",
+          "心率 120–160。",
+          "出生后逐渐转为成人型。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "新生儿心电图异常需结合血氧、灌注、血糖、电解质与先心病筛查；不能单凭图形诊断。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "新生儿右室优势正常。",
+      "心率快、QRS 窄。",
+      "异常结合临床与超声。"
+    ],
+    "clinicalPearl": "新生儿心电图是“过渡期地图”；右室优势不是病，持续异常才需要查。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "neonatal-arrhythmia",
+    "name": "新生儿心律失常",
+    "en": "Neonatal arrhythmias",
+    "chapter": "pediatric",
+    "difficulty": 2,
+    "urgency": "critical",
+    "tags": [
+      "新生儿",
+      "心律失常",
+      "SVT"
+    ],
+    "oneLiner": "新生儿可出现房早、室上速、房扑、房颤、室早；多数为良性，但持续 SVT 可导致心衰/休克。",
+    "specificity": "SVT 心率常 >220 次/分、窄 QRS、规则；房颤/房扑可见房性活动；室早需评估结构性心脏病。",
+    "objectives": [
+      "新生儿 SVT 心率极快、窄 QRS。",
+      "持续可致心衰；急性处理迷走/腺苷。",
+      "查先心病/电解质。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "新生儿传导系统未成熟、自律性高；先心病、心肌炎、电解质异常可诱发。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "SVT >220 次/分、窄 QRS。",
+          "持续 SVT 可心衰/休克。",
+          "室早需查结构/电解质。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "新生儿 SVT 可能难以识别，需与哭闹/发热鉴别；迷走刺激/腺苷为急性处理。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "新生儿 SVT 心率极快、窄 QRS。",
+      "持续可致心衰；急性处理迷走/腺苷。",
+      "查先心病/电解质。"
+    ],
+    "clinicalPearl": "新生儿“一直哭闹、吃奶差、心率 240”，先做心电图，不要只当感染。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "congenital-av-block",
+    "name": "先天性房室阻滞",
+    "en": "Congenital AV block",
+    "chapter": "pediatric",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "先天性",
+      "房室阻滞",
+      "新生儿"
+    ],
+    "oneLiner": "先天性三度房室阻滞常与母体抗 Ro/La 抗体、先心病相关；新生儿心率慢、灌注差，需起搏评估。",
+    "specificity": "房室分离、心室率慢（常 <55–70 次/分）、QRS 可窄；胎儿超声可发现心动过缓/水肿。",
+    "objectives": [
+      "先天性 AVB 与母体抗体相关。",
+      "慢心室率/灌注差需起搏。",
+      "胎儿期可发现。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "母体抗体损伤胎儿房室结；也可由先心病或离子通道病导致。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "房室分离、心室率慢。",
+          "母体抗 Ro/La 抗体。",
+          "症状/低心率需起搏。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "新生儿三度 AVB 是急症；心率 <55 或灌注差需立即起搏/转诊。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "先天性 AVB 与母体抗体相关。",
+      "慢心室率/灌注差需起搏。",
+      "胎儿期可发现。"
+    ],
+    "clinicalPearl": "新生儿心率 50 + 灌注差，先想先天性三度 AVB；查母体抗体并准备起搏。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "kawasaki-ecg",
+    "name": "川崎病心电图",
+    "en": "Kawasaki disease ECG",
+    "chapter": "pediatric",
+    "difficulty": 2,
+    "urgency": "urgent",
+    "tags": [
+      "川崎病",
+      "冠脉",
+      "儿童"
+    ],
+    "oneLiner": "川崎病可累及冠状动脉，心电图可出现 ST-T 改变、Q 波、心律失常；冠脉瘤/血栓可致心梗。",
+    "specificity": "发热 >5 天、结膜充血、皮疹、口唇皲裂、淋巴结肿大；心电图异常提示冠脉受累。",
+    "objectives": [
+      "川崎病可致冠脉瘤/心梗。",
+      "ECG 异常提示冠脉受累。",
+      "超声随访冠脉。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "全身血管炎损伤冠脉，形成动脉瘤/血栓；心肌炎也可导致 ST-T 改变。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "发热 >5 天 + 典型表现。",
+          "ST-T/Q 波提示冠脉受累。",
+          "超声冠脉评估是关键。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "川崎病心电图正常不能排除冠脉瘤；需超声与随访。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "川崎病可致冠脉瘤/心梗。",
+      "ECG 异常提示冠脉受累。",
+      "超声随访冠脉。"
+    ],
+    "clinicalPearl": "儿童发热 + 皮疹 + 心电图 ST 改变，别忘了川崎病和冠脉超声。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "pediatric-myocarditis",
+    "name": "小儿心肌炎心电图",
+    "en": "Pediatric myocarditis",
+    "chapter": "pediatric",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "心肌炎",
+      "ST-T",
+      "心律失常"
+    ],
+    "oneLiner": "小儿心肌炎可表现为窦速、低电压、ST-T 改变、心律失常、QRS 增宽；暴发性心肌炎可迅速心衰/休克。",
+    "specificity": "窦速与发热不相称、低电压、ST 抬高/压低、房室阻滞、室速；肌钙蛋白/BNP 升高。",
+    "objectives": [
+      "小儿心肌炎：窦速、低电压、ST-T、心律失常。",
+      "暴发性可休克。",
+      "查肌钙蛋白/BNP/超声。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "病毒/免疫损伤心肌，导致传导与复极异常；暴发性者心肌水肿/收缩力下降。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "窦速、低电压、ST-T 改变。",
+          "房室阻滞/室速提示重。",
+          "肌钙蛋白/BNP + 超声。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "心肌炎心电图可模拟心梗；儿童胸痛/心衰 + 病毒前驱史需警惕。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "小儿心肌炎：窦速、低电压、ST-T、心律失常。",
+      "暴发性可休克。",
+      "查肌钙蛋白/BNP/超声。"
+    ],
+    "clinicalPearl": "儿童感冒后胸痛/乏力/心率快，别只当“恢复期”；查心电图和心肌标志物。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "pediatric-long-qt",
+    "name": "小儿长 QT 综合征",
+    "en": "Pediatric long QT",
+    "chapter": "pediatric",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "小儿",
+      "长QT",
+      "晕厥"
+    ],
+    "oneLiner": "小儿长 QT 可表现为晕厥、抽搐、猝死，常被误诊为癫痫；QTc 延长、T 波形态异常、家族史是关键。",
+    "specificity": "QTc >460–480 ms、T 波切迹/双峰、晕厥/家族猝死；运动/声音/睡眠诱因因亚型不同。",
+    "objectives": [
+      "小儿长 QT 可误诊癫痫。",
+      "QTc 延长 + 家族史。",
+      "β 阻滞剂/ICD 个体化。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "离子通道突变导致复极异常；儿童期即可发生 TdP/室颤。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "QTc 延长 + 晕厥/抽搐。",
+          "家族猝死/耳聋。",
+          "避免 QT 延长药物。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "小儿晕厥/抽搐需查 ECG；癫痫诊断前应排除长 QT。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "小儿长 QT 可误诊癫痫。",
+      "QTc 延长 + 家族史。",
+      "β 阻滞剂/ICD 个体化。"
+    ],
+    "clinicalPearl": "孩子“抽搐”不一定是癫痫；一张心电图可能发现长 QT。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "pediatric-wpw",
+    "name": "小儿预激综合征",
+    "en": "Pediatric WPW",
+    "chapter": "pediatric",
+    "difficulty": 3,
+    "urgency": "urgent",
+    "tags": [
+      "小儿",
+      "WPW",
+      "SVT"
+    ],
+    "oneLiner": "小儿 WPW 可无症状，也可发生 AVRT；短 PR、delta 波、宽 QRS 是线索；部分婴儿预激可消失。",
+    "specificity": "短 PR、delta 波、宽 QRS；SVT 发作时窄 QRS（顺向）或宽 QRS（逆向）。",
+    "objectives": [
+      "小儿 WPW：短 PR + delta。",
+      "SVT 处理需避免加速旁路。",
+      "无症状需专科评估。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "旁路绕过房室结，形成折返环；婴儿旁路可随发育退化。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "短 PR + delta 波。",
+          "SVT 可窄或宽 QRS。",
+          "婴儿部分可自行消失。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "无症状小儿 WPW 需风险分层；避免盲目使用房室结阻滞药（可能加速旁路）。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "小儿 WPW：短 PR + delta。",
+      "SVT 处理需避免加速旁路。",
+      "无症状需专科评估。"
+    ],
+    "clinicalPearl": "小儿宽 QRS 心动过速，不要随意用维拉帕米；可能是预激伴房颤。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "pediatric-syncope",
+    "name": "小儿晕厥",
+    "en": "Pediatric syncope",
+    "chapter": "pediatric",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "小儿",
+      "晕厥",
+      "运动"
+    ],
+    "oneLiner": "小儿晕厥多为血管迷走性，但运动中晕厥、无前驱、家族猝死、心电图异常提示心脏性原因。",
+    "specificity": "红线：运动中晕厥、胸痛、心悸、长 QT、WPW、HCM、ARVC、Brugada、三度 AVB。",
+    "objectives": [
+      "小儿晕厥先查红线。",
+      "运动中晕厥需心脏评估。",
+      "ECG + 家族史。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "小儿自主神经调节未成熟，血管迷走性晕厥常见；心脏性原因虽少但危险。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "多数为血管迷走性。",
+          "运动中晕厥是红线。",
+          "查 ECG/家族史。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "小儿晕厥伴抽搐需与癫痫鉴别；长 QT 可表现为抽搐。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "小儿晕厥先查红线。",
+      "运动中晕厥需心脏评估。",
+      "ECG + 家族史。"
+    ],
+    "clinicalPearl": "孩子运动时晕倒，不要只说“低血糖”；查心电图和家族史。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "pediatric-congenital-heart",
+    "name": "先天性心脏病心电图",
+    "en": "Congenital heart disease ECG",
+    "chapter": "pediatric",
+    "difficulty": 3,
+    "urgency": "advanced",
+    "tags": [
+      "先心病",
+      "儿童",
+      "电轴"
+    ],
+    "oneLiner": "先心病心电图可提示心室肥厚、电轴异常、房室阻滞、预激；不同畸形有不同模式。",
+    "specificity": "ASD：右室容量负荷、RBBB；VSD：双室肥厚；TOF：右室肥厚；Ebstein：右房增大、WPW。",
+    "objectives": [
+      "先心病 ECG 反映血流动力学。",
+      "ASD/RVH、TOF/RVH、Ebstein/WPW。",
+      "术后传导阻滞需监测。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "先天畸形改变心室容量/压力负荷与传导系统，心电图反映这些血流动力学后果。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "ASD→右室容量负荷/RBBB。",
+          "TOF→右室肥厚。",
+          "Ebstein→右房增大 + WPW。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "先心病术后可出现传导阻滞/心律失常；需与术前对比。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "先心病 ECG 反映血流动力学。",
+      "ASD/RVH、TOF/RVH、Ebstein/WPW。",
+      "术后传导阻滞需监测。"
+    ],
+    "clinicalPearl": "先心病患儿的心电图不是“看个热闹”；电轴与心室肥厚模式能提示畸形类型。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "pediatric-postop",
+    "name": "先心病术后心律失常",
+    "en": "Postoperative arrhythmias in CHD",
+    "chapter": "pediatric",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "先心病",
+      "术后",
+      "房扑"
+    ],
+    "oneLiner": "先心病术后常见房扑/房速、房室阻滞、室速；Mustard/Senning 术后房扑风险高，法洛四联症术后室速风险高。",
+    "specificity": "术后新发房室阻滞需起搏评估；房扑/房速需抗凝与节律控制；室速需评估是否需要 ICD。",
+    "objectives": [
+      "先心病术后易房扑/房室阻滞/室速。",
+      "动态监测与电生理评估。",
+      "术后传导阻滞可能迟发。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "手术瘢痕与补片形成折返环路；传导系统损伤导致房室阻滞。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "术后房扑/房速常见。",
+          "房室阻滞需起搏评估。",
+          "TOF 术后室速风险。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "先心病术后晕厥/心悸需动态监测；不能只看静息 ECG。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "先心病术后易房扑/房室阻滞/室速。",
+      "动态监测与电生理评估。",
+      "术后传导阻滞可能迟发。"
+    ],
+    "clinicalPearl": "先心病术后多年出现房扑，别只当“新发房颤”；瘢痕折返很常见。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "pediatric-sids",
+    "name": "婴儿猝死与心电图筛查",
+    "en": "SIDS and ECG screening",
+    "chapter": "pediatric",
+    "difficulty": 3,
+    "urgency": "advanced",
+    "tags": [
+      "SIDS",
+      "长QT",
+      "筛查"
+    ],
+    "oneLiner": "部分 SIDS 与长 QT、离子通道病相关；新生儿 ECG 筛查仍有争议，但家族史/晕厥婴儿需评估。",
+    "specificity": "QTc 延长、T 波异常、家族猝死史；新生儿筛查可发现部分高危者。",
+    "objectives": [
+      "SIDS 部分与长 QT 相关。",
+      "家族史/QTc 延长需评估。",
+      "筛查政策有争议。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "致命性心律失常可在睡眠中发生；离子通道病可能是部分 SIDS 的机制。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "部分 SIDS 与长 QT 相关。",
+          "家族猝死史需评估。",
+          "新生儿筛查有争议但可发现高危。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "SIDS 是排除性诊断；不能把所有婴儿猝死都归为长 QT。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "SIDS 部分与长 QT 相关。",
+      "家族史/QTc 延长需评估。",
+      "筛查政策有争议。"
+    ],
+    "clinicalPearl": "婴儿猝死家族史 + QTc 延长，需遗传与儿科心脏评估。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "pediatric-hyperkalemia",
+    "name": "新生儿高钾与心电图",
+    "en": "Neonatal hyperkalemia",
+    "chapter": "pediatric",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "新生儿",
+      "高钾",
+      "正弦波"
+    ],
+    "oneLiner": "新生儿高钾可因溶血、肾功能不全、肾上腺皮质增生、标本溶血等；心电图 T 高尖、QRS 宽、正弦波。",
+    "specificity": "新生儿血钾正常上限约 6.0–6.5 mmol/L（因标本而异）；心电图改变 + 高钾需紧急处理。",
+    "objectives": [
+      "新生儿高钾可致正弦波。",
+      "排除标本溶血。",
+      "钙剂稳定心肌 + 降钾。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "高钾降低膜电位、减慢传导；新生儿心肌对高钾更敏感。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "T 高尖、QRS 宽、正弦波。",
+          "查溶血/肾功能/肾上腺。",
+          "钙剂 + 降钾。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "新生儿标本溶血可造成假性高钾；需复查并同时看心电图。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "新生儿高钾可致正弦波。",
+      "排除标本溶血。",
+      "钙剂稳定心肌 + 降钾。"
+    ],
+    "clinicalPearl": "新生儿心电图正弦波 + 血钾高，先静脉钙剂，同时找溶血/肾功能/肾上腺原因。",
+    "topic": true,
+    "quizEligible": false
+  }
+]

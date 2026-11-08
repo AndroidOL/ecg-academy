@@ -21,8 +21,21 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/api/bootstrap` | 当前用户、CSRF、内容统计、1200 题库统计、进度、AI 状态、本周排行榜、场景数 |
+| GET | `/api/admin/auth-config` | 管理后台登录方式与 Passkey 是否存在（公开只读） |
+| POST | `/api/admin/login` | 管理员密码登录（受 `admin.password_login_enabled` 控制） |
+| GET | `/api/admin/passkey/login/options` | 生成 WebAuthn 登录 challenge |
+| POST | `/api/admin/passkey/login` | 校验 Passkey assertion 并建立管理员会话 |
+| GET | `/api/admin/session` | 管理员会话、设置、统计、Passkey、审计 |
+| POST | `/api/admin/settings` | 注册/登录/AI 开关与额度 |
+| GET | `/api/admin/users` | 用户搜索与分页 |
+| POST | `/api/admin/user` | 启停、角色、额度、密码重置 |
+| GET/POST | `/api/admin/passkey/*` | 注册/删除管理员 Passkey |
+| POST | `/api/admin/ai/provider` | 新增/更新 OpenAI-compatible 供应商与模型 |
+| POST | `/api/admin/ai/provider/delete` | 删除供应商 |
+| POST | `/api/admin/ai/test` | 测试供应商连接 |
+| GET | `/api/admin/audit` | 最近管理审计 |
 | GET | `/api/health` | 健康检查 |
-| GET | `/api/diagnoses?q=&chapter=` | 46 篇课程摘要、章节、统计；支持搜索/章节过滤 |
+| GET | `/api/diagnoses?q=&chapter=` | 229 章课程摘要、章节、统计；支持搜索/章节过滤 |
 | GET | `/api/diagnoses/{id}` | 诊断详情、完整文章、ECG 规格、上下篇、相关阅读、当前进度 |
 | POST | `/api/progress` | `{diagnosisId, status:"read"|"mastered"}` |
 

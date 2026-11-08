@@ -13,6 +13,7 @@ final class Content
         if (self::$chapters === null) {
             $file = BASE_PATH . '/data/chapters.php';
             self::$chapters = is_file($file) ? require $file : [];
+            usort(self::$chapters, static fn (array $a, array $b): int => ((int) ($a['order'] ?? 99)) <=> ((int) ($b['order'] ?? 99)));
         }
         return self::$chapters;
     }
@@ -34,8 +35,15 @@ final class Content
         }
 
         $diagnoses = [];
-        foreach (glob(BASE_PATH . '/data/diagnoses/*.php') ?: [] as $file) {
-            $items = require $file;
+        $files = array_merge(
+            glob(BASE_PATH . '/data/diagnoses/*.php') ?: [],
+            glob(BASE_PATH . '/data/topics/*.php') ?: [],
+            glob(BASE_PATH . '/data/topics/*.json') ?: []
+        );
+        foreach ($files as $file) {
+            $items = str_ends_with($file, '.json')
+                ? json_decode((string) file_get_contents($file), true)
+                : require $file;
             if (!is_array($items)) {
                 continue;
             }
@@ -79,6 +87,10 @@ final class Content
                 'keyNumbers' => $diagnosis['keyNumbers'] ?? [],
                 'preview' => self::previewSpec($diagnosis),
                 'quizEligible' => (bool) ($diagnosis['quizEligible'] ?? true),
+                'topic' => (bool) ($diagnosis['topic'] ?? false),
+                'urgency' => (string) ($diagnosis['urgency'] ?? 'core'),
+                'rarity' => (string) ($diagnosis['rarity'] ?? (in_array($diagnosis['chapter'], ['pacing','special','syndromes','pediatric','rhythm-competition','advanced'], true) ? 'uncommon' : 'common')),
+                'hasEcg' => isset($diagnosis['ecg']) && is_array($diagnosis['ecg']),
             ];
         }
         usort($out, static function (array $a, array $b): int {
@@ -123,13 +135,18 @@ final class Content
 
         $diagnosis['chapterMeta'] = $chapter;
         $diagnosis['related'] = array_values($related);
-        $diagnosis['ecg'] = self::fullSpec($diagnosis);
+        $diagnosis['topic'] = (bool) ($diagnosis['topic'] ?? false);
+        $diagnosis['urgency'] = (string) ($diagnosis['urgency'] ?? 'core');
+        $diagnosis['rarity'] = (string) ($diagnosis['rarity'] ?? (in_array($diagnosis['chapter'], ['pacing','special','syndromes','pediatric','rhythm-competition','advanced'], true) ? 'uncommon' : 'common'));
+        $diagnosis['hasEcg'] = isset($diagnosis['ecg']) && is_array($diagnosis['ecg']);
+        $diagnosis['ecg'] = $diagnosis['hasEcg'] ? self::fullSpec($diagnosis) : null;
         return $diagnosis;
     }
 
     public static function previewSpec(array $diagnosis): array
     {
-        $spec = $diagnosis['ecg'] ?? [];
+        if (!isset($diagnosis['ecg']) || !is_array($diagnosis['ecg'])) return [];
+        $spec = $diagnosis['ecg'];
         $spec['duration'] = min(4.0, (float) ($spec['duration'] ?? 4.0));
         $spec['annotations'] = [];
         $spec['seed'] = 7;
@@ -154,6 +171,7 @@ final class Content
             'diagnoses' => count($eligible),
             'chapters' => count(self::chapters()),
             'quizEligible' => count($eligible),
+            'topics' => count(array_filter($all, static fn (array $d): bool => (bool) ($d['topic'] ?? false))),
         ];
     }
 }

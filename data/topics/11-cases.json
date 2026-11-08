@@ -1,0 +1,1277 @@
+[
+  {
+    "id": "case-inferior-stemi-hypotension",
+    "name": "病例：下壁 STEMI 伴低血压",
+    "en": "Case: inferior STEMI with hypotension",
+    "chapter": "clinical",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "STEMI",
+      "右室",
+      "低血压"
+    ],
+    "oneLiner": "58 岁男性，胸痛 1 小时，血压 82/50，肺野清；II/III/aVF ST 抬高，V4R ST 抬高。",
+    "specificity": "下壁 STEMI + 低血压 + 肺清 → 右室梗死；避免硝酸酯，优先补液并尽快再灌注。",
+    "objectives": [
+      "右室梗死三联：低血压、肺清、颈静脉压高。",
+      "V4R ST 抬高支持诊断。",
+      "补液 + 再灌注，慎用硝酸酯。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "右室梗死时右室充盈依赖容量，硝酸酯/利尿剂可导致严重低血压；下壁常由右冠闭塞。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "下壁 STEMI + 低血压 + 肺清：查 V4R。",
+          "右室梗死慎用硝酸酯，先补液。",
+          "尽快再灌注（PCI/溶栓评估）。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "低血压 + 下壁 ST 抬高，不要习惯性给硝酸甘油；先看右胸导联与肺野。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "右室梗死三联：低血压、肺清、颈静脉压高。",
+      "V4R ST 抬高支持诊断。",
+      "补液 + 再灌注，慎用硝酸酯。"
+    ],
+    "clinicalPearl": "下壁心梗的低血压不是“心衰”一律利尿；右室梗死需要容量。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-af-fast-preexcited",
+    "name": "病例：预激伴房颤",
+    "en": "Case: pre-excited AF",
+    "chapter": "clinical",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "预激",
+      "房颤",
+      "宽QRS"
+    ],
+    "oneLiner": "32 岁男性，心悸、头晕；宽 QRS 不规则心动过速，RR 最短约 220 ms，既往 WPW。",
+    "specificity": "预激伴房颤：冲动经旁路快速下传，可蜕变为室颤；避免房室结阻滞药，立即同步复律。",
+    "objectives": [
+      "预激+房颤：宽 QRS、不规则、极快。",
+      "避免房室结阻滞药。",
+      "不稳定立即同步复律。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "旁路缺乏房室结过滤，房颤时心室率可极快；房室结阻滞药可能使更多冲动经旁路下传。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "宽 QRS 不规则 + 极快心室率。",
+          "避免维拉帕米/地高辛/腺苷。",
+          "不稳定→同步复律；稳定→普鲁卡因胺/伊布利特（专科）。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "预激伴房颤是“宽 QRS 不规则”，不要按普通房颤控制心率；房室结阻滞药可能加速旁路。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "预激+房颤：宽 QRS、不规则、极快。",
+      "避免房室结阻滞药。",
+      "不稳定立即同步复律。"
+    ],
+    "clinicalPearl": "宽 QRS 不规则心动过速 + 预激病史，先按预激伴房颤处理，不要给维拉帕米。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-torsades-hypokalemia",
+    "name": "病例：低钾致尖端扭转",
+    "en": "Case: TdP from hypokalemia",
+    "chapter": "clinical",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "TdP",
+      "低钾",
+      "镁"
+    ],
+    "oneLiner": "72 岁女性，腹泻后晕厥；QTc 560 ms，宽 QRS 多形性心动过速，QRS 围绕基线扭转。",
+    "specificity": "TdP：纠正低钾/低镁，静脉硫酸镁，停 QT 延长药；不稳定立即非同步除颤。",
+    "objectives": [
+      "TdP：QT 长 + 多形性宽 QRS。",
+      "硫酸镁是首选；纠正钾镁。",
+      "不稳定→非同步除颤。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "低钾/低镁延长复极，早期后除极触发 TdP；心动过缓与药物进一步增加风险。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "QTc 延长 + 多形性宽 QRS。",
+          "硫酸镁 + 补钾；停 QT 延长药。",
+          "无脉/不稳定→非同步除颤。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "TdP 的“扭转”不是普通室速；先补镁，不要只补钾。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "TdP：QT 长 + 多形性宽 QRS。",
+      "硫酸镁是首选；纠正钾镁。",
+      "不稳定→非同步除颤。"
+    ],
+    "clinicalPearl": "腹泻/利尿剂后晕厥 + QT 长，先查钾镁；TdP 可能随时复发。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-hyperkalemia-dialysis",
+    "name": "病例：透析患者高钾正弦波",
+    "en": "Case: hyperkalemic sine wave",
+    "chapter": "clinical",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "高钾",
+      "透析",
+      "正弦波"
+    ],
+    "oneLiner": "65 岁透析患者，乏力、心悸；心电图 QRS 增宽、P 波消失、正弦波，血钾 7.8 mmol/L。",
+    "specificity": "高钾正弦波是濒危心律：立即静脉钙剂稳定心肌，同时胰岛素+葡萄糖、β2、透析降钾。",
+    "objectives": [
+      "正弦波=高钾濒危。",
+      "钙剂稳定心肌，不降钾。",
+      "胰岛素+葡萄糖、透析降钾。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "高钾降低膜电位、减慢传导；钙剂拮抗膜效应但不降钾，需同时清除钾。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "正弦波→立即静脉钙剂。",
+          "钙剂后仍需降钾：胰岛素+葡萄糖、透析。",
+          "监测血糖/血钾/ECG。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "正弦波不要等血钾结果；先钙剂，再降钾，并联系透析。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "正弦波=高钾濒危。",
+      "钙剂稳定心肌，不降钾。",
+      "胰岛素+葡萄糖、透析降钾。"
+    ],
+    "clinicalPearl": "透析患者 sine wave，先推钙；不要只给降钾药而忽略心肌稳定。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-complete-heart-block",
+    "name": "病例：三度房室阻滞",
+    "en": "Case: complete AV block",
+    "chapter": "clinical",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "三度AVB",
+      "晕厥",
+      "起搏"
+    ],
+    "oneLiner": "78 岁女性，反复晕厥；P 波与 QRS 分离，心室率 28 次/分，QRS 宽。",
+    "specificity": "三度 AVB 伴慢逸搏：阿托品可能无效，准备经皮起搏；寻找下壁缺血/药物/电解质等可逆原因。",
+    "objectives": [
+      "三度 AVB：P-QRS 分离、慢心室率。",
+      "宽 QRS 逸搏提示低位阻滞。",
+      "经皮/永久起搏评估。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "房室结/希氏束病变导致房室分离；宽 QRS 逸搏提示阻滞位置较低，风险更高。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "P-QRS 分离、心室率慢。",
+          "阿托品无效→经皮起搏。",
+          "查缺血、药物、电解质；永久起搏评估。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "三度 AVB 的宽 QRS 逸搏不稳定；不要只等阿托品，准备起搏。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "三度 AVB：P-QRS 分离、慢心室率。",
+      "宽 QRS 逸搏提示低位阻滞。",
+      "经皮/永久起搏评估。"
+    ],
+    "clinicalPearl": "晕厥 + 心率 28 + 宽 QRS，先经皮起搏，再找可逆原因。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-asthma-svt",
+    "name": "病例：哮喘患者窄 QRS 心动过速",
+    "en": "Case: narrow-complex tachycardia in asthma",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "urgent",
+    "tags": [
+      "SVT",
+      "哮喘",
+      "腺苷"
+    ],
+    "oneLiner": "24 岁女性，突发心悸、胸闷；窄 QRS 规则心动过速 180 次/分，既往哮喘。",
+    "specificity": "窄 QRS 规则心动过速：先迷走刺激，腺苷；哮喘患者腺苷可能诱发支气管痉挛，需谨慎并备支气管扩张剂。",
+    "objectives": [
+      "窄 QRS 规则：迷走→腺苷。",
+      "哮喘者腺苷可诱发支气管痉挛。",
+      "不稳定→同步复律。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "AVNRT/AVRT 折返；腺苷短暂阻断房室结，终止折返；哮喘者腺苷可致支气管痉挛。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "窄 QRS 规则→迷走/腺苷。",
+          "哮喘：腺苷风险，备沙丁胺醇。",
+          "不稳定→同步复律。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "哮喘患者的窄 QRS 心动过速，腺苷不是绝对禁忌但需谨慎；不稳定直接复律。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "窄 QRS 规则：迷走→腺苷。",
+      "哮喘者腺苷可诱发支气管痉挛。",
+      "不稳定→同步复律。"
+    ],
+    "clinicalPearl": "哮喘 + SVT，先迷走；需要腺苷时备好沙丁胺醇，别在没监护的地方推。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-digoxin-toxicity",
+    "name": "病例：地高辛中毒",
+    "en": "Case: digoxin toxicity",
+    "chapter": "clinical",
+    "difficulty": 3,
+    "urgency": "urgent",
+    "tags": [
+      "地高辛",
+      "房速伴阻滞",
+      "高钾"
+    ],
+    "oneLiner": "80 岁心衰患者，恶心、视物发黄；心电图房速伴 2:1 阻滞、室早，血钾 5.8，肾功能差。",
+    "specificity": "地高辛中毒：停药、纠正钾镁、处理心律失常；严重者用地高辛特异抗体。避免盲目补钙。",
+    "objectives": [
+      "地高辛中毒：房速伴阻滞、室早。",
+      "纠正钾镁，停药；严重用抗体。",
+      "肾功能不全增加风险。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "地高辛抑制 Na-K-ATP 酶，增加细胞内钙、提高自律性；低钾/肾功能不全增加中毒。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "房速伴阻滞、室早、ST 鱼钩。",
+          "查地高辛浓度、钾、肾功能。",
+          "严重中毒→特异抗体。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "房速 + 房室阻滞 + 室早，尤其老年人/肾功能差，要问地高辛。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "地高辛中毒：房速伴阻滞、室早。",
+      "纠正钾镁，停药；严重用抗体。",
+      "肾功能不全增加风险。"
+    ],
+    "clinicalPearl": "地高辛中毒的心电图不是“鱼钩样 ST”那么简单；房速伴阻滞是危险信号。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-pe-s1q3t3",
+    "name": "病例：肺栓塞的 S1Q3T3",
+    "en": "Case: PE with S1Q3T3",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "urgent",
+    "tags": [
+      "肺栓塞",
+      "S1Q3T3",
+      "右心"
+    ],
+    "oneLiner": "48 岁女性，长途飞行后突发呼吸困难；窦速、S1Q3T3、V1–V4 T 倒置，D-二聚体升高。",
+    "specificity": "S1Q3T3 不特异，但右心负荷图形 + 临床概率高 → 影像学确认；不稳定者考虑再灌注。",
+    "objectives": [
+      "PE 心电图可正常。",
+      "S1Q3T3 不特异，右心负荷更重要。",
+      "诊断靠临床概率与影像。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "肺栓塞导致右室压力负荷、右心扩张与传导延迟；小栓塞心电图可正常。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "窦速最常见；S1Q3T3 不特异。",
+          "右心负荷→RBBB、右胸 T 倒置。",
+          "临床概率 + D-二聚体/CTPA。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "心电图正常不能排除 PE；S1Q3T3 也不是 PE 的同义词。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "PE 心电图可正常。",
+      "S1Q3T3 不特异，右心负荷更重要。",
+      "诊断靠临床概率与影像。"
+    ],
+    "clinicalPearl": "长途飞行 + 呼吸困难 + 窦速，别只看 S1Q3T3；查右心和 CTPA。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-brugada-fever",
+    "name": "病例：发热诱发 Brugada 图形",
+    "en": "Case: fever-induced Brugada",
+    "chapter": "clinical",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "Brugada",
+      "发热",
+      "晕厥"
+    ],
+    "oneLiner": "30 岁男性，发热 39°C 后晕厥；V1–V2 穹隆型 ST 抬高、T 倒置，家族有年轻猝死史。",
+    "specificity": "发热可揭示 Brugada 图形；避免诱发药物，积极退热，晕厥/家族猝死史需 ICD 评估。",
+    "objectives": [
+      "发热可诱发 Brugada。",
+      "避免钠通道阻滞剂等诱发药。",
+      "高危需 ICD。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "钠通道功能异常在发热时加重，右室流出道复极异质性增加，诱发室颤。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "发热 + V1 穹隆型 ST + T 倒置。",
+          "退热、避免诱发药物。",
+          "晕厥/家族猝死→ICD 评估。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "发热晕厥的年轻人，查 V1–V2；Brugada 图形可能只在发热时出现。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "发热可诱发 Brugada。",
+      "避免钠通道阻滞剂等诱发药。",
+      "高危需 ICD。"
+    ],
+    "clinicalPearl": "发热 + 晕厥 + V1 穹隆型 ST，先按 Brugada 处理，不要只当热性惊厥。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-hcm-syncope",
+    "name": "病例：运动员晕厥",
+    "en": "Case: athlete syncope",
+    "chapter": "clinical",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "HCM",
+      "运动",
+      "晕厥"
+    ],
+    "oneLiner": "18 岁篮球运动员，运动中晕厥；心电图 LVH 电压、侧壁 T 倒置、深窄 Q 波，家族有猝死史。",
+    "specificity": "运动中晕厥 + 心电图肥厚/深 Q + 家族猝死 → 怀疑 HCM，停止运动并做超声/风险评估。",
+    "objectives": [
+      "运动晕厥 + 家族猝死需心脏评估。",
+      "HCM 心电图可模拟心梗。",
+      "停止竞技运动直至评估。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "HCM 心肌肥厚、纤维化与微血管缺血导致运动时心律失常；是年轻运动员猝死的重要原因。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "运动晕厥是红线。",
+          "LVH + 深窄 Q + T 倒置。",
+          "超声/家族筛查/风险分层。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "运动员晕厥不能都归为脱水/低血糖；先停运动，查心电图和超声。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "运动晕厥 + 家族猝死需心脏评估。",
+      "HCM 心电图可模拟心梗。",
+      "停止竞技运动直至评估。"
+    ],
+    "clinicalPearl": "年轻运动员晕倒，最危险的不是“没休息好”，而是 HCM/离子通道病。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-pots",
+    "name": "病例：久站心悸的年轻人",
+    "en": "Case: POTS",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "POTS",
+      "直立",
+      "心悸"
+    ],
+    "oneLiner": "22 岁女性，久站后心悸、头晕，躺下缓解；立位心率从 68 升至 108，血压无明显下降。",
+    "specificity": "POTS：直立 10 分钟心率增加 ≥30 次/分 + 症状，需排除贫血、甲亢、脱水、药物。",
+    "objectives": [
+      "POTS：直立心动过速 + 症状。",
+      "血压不一定下降。",
+      "补液/运动/药物综合管理。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "自主神经调节异常导致直立时心率代偿过度；血容量不足与去适应参与。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "立位心率 ↑≥30 + 症状。",
+          "血压不一定低。",
+          "补液、盐、运动、药物个体化。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "POTS 不是“焦虑症”；量立卧位心率，排除其他原因。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "POTS：直立心动过速 + 症状。",
+      "血压不一定下降。",
+      "补液/运动/药物综合管理。"
+    ],
+    "clinicalPearl": "年轻人久站心悸、躺下就好，别只开安定；量一下立卧位心率。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-syncope-long-qt",
+    "name": "病例：晕厥被误诊癫痫",
+    "en": "Case: syncope misdiagnosed as epilepsy",
+    "chapter": "clinical",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "长QT",
+      "晕厥",
+      "癫痫"
+    ],
+    "oneLiner": "16 岁女性，情绪激动后“抽搐”数次，脑电图正常；QTc 520 ms，家族有猝死史。",
+    "specificity": "长 QT 导致的晕厥/抽搐可被误诊为癫痫；查心电图与家族史，避免 QT 延长药物。",
+    "objectives": [
+      "长 QT 可表现为抽搐。",
+      "晕厥 + QTc 延长需家族筛查。",
+      "避免 QT 延长药物。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "TdP 导致短暂脑缺血，可出现抽搐；脑电图不一定异常。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "晕厥伴抽搐需查 ECG。",
+          "QTc 延长 + 家族猝死。",
+          "避免 QT 延长药；β 阻滞剂/ICD 评估。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "“癫痫”反复发作、脑电图正常，别忘了长 QT；一张心电图可能改变诊断。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "长 QT 可表现为抽搐。",
+      "晕厥 + QTc 延长需家族筛查。",
+      "避免 QT 延长药物。"
+    ],
+    "clinicalPearl": "青少年情绪性“抽搐”，查心电图；LQTS 被误诊癫痫并不罕见。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-chf-lbbb",
+    "name": "病例：心衰伴 LBBB",
+    "en": "Case: heart failure with LBBB",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "LBBB",
+      "心衰",
+      "CRT"
+    ],
+    "oneLiner": "68 岁男性，活动后气短；心电图窦性、QRS 160 ms、LBBB，超声 EF 30%。",
+    "specificity": "LBBB + 低 EF + 心衰症状 → 评估 CRT；新发 LBBB 需排除缺血。",
+    "objectives": [
+      "LBBB + 低 EF + 心衰→评估 CRT。",
+      "新发 LBBB 排除缺血。",
+      "QRS 宽度与形态都要看。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "LBBB 使左室侧壁延迟激动、机械不同步；CRT 可改善部分患者。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "QRS ≥150 ms、LBBB、EF 低。",
+          "评估 CRT 适应证。",
+          "新发 LBBB 查缺血。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "LBBB 不只是“QRS 宽”；在合适的心衰患者中，它可能是 CRT 的指征。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "LBBB + 低 EF + 心衰→评估 CRT。",
+      "新发 LBBB 排除缺血。",
+      "QRS 宽度与形态都要看。"
+    ],
+    "clinicalPearl": "心衰患者 QRS 160 ms + LBBB，不要只加利尿剂；问是否需要 CRT。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-af-anticoag",
+    "name": "病例：无症状房颤的抗凝决策",
+    "en": "Case: asymptomatic AF",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "房颤",
+      "抗凝",
+      "CHA2DS2-VASc"
+    ],
+    "oneLiner": "70 岁男性，体检发现房颤，无心悸；CHA₂DS₂-VASc 3 分，HAS-BLED 1 分。",
+    "specificity": "房颤抗凝由卒中风险决定，不由症状决定；CHA₂DS₂-VASc 3 分通常推荐抗凝。",
+    "objectives": [
+      "无症状房颤仍有卒中风险。",
+      "抗凝决策用 CHA₂DS₂-VASc。",
+      "出血风险可干预，不是拒绝抗凝的绝对理由。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "房颤导致心房血流淤滞与血栓，卒中风险随危险因素增加；无症状不等于低风险。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "抗凝看卒中风险，不看症状。",
+          "CHA₂DS₂-VASc 3 分→抗凝评估。",
+          "同时评估出血风险与患者偏好。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "“没有症状”不是停抗凝的理由；房颤的卒中风险是长期的。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "无症状房颤仍有卒中风险。",
+      "抗凝决策用 CHA₂DS₂-VASc。",
+      "出血风险可干预，不是拒绝抗凝的绝对理由。"
+    ],
+    "clinicalPearl": "体检发现的房颤，别因为“没感觉”就不抗凝；算风险，谈获益。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-stemi-women",
+    "name": "病例：女性非典型胸痛",
+    "en": "Case: atypical chest pain in women",
+    "chapter": "clinical",
+    "difficulty": 3,
+    "urgency": "urgent",
+    "tags": [
+      "女性",
+      "ACS",
+      "非典型"
+    ],
+    "oneLiner": "62 岁女性，乏力、恶心、上腹不适，无典型胸痛；心电图 V2–V5 ST 压低、T 倒置，肌钙蛋白升高。",
+    "specificity": "女性 ACS 可无典型胸痛；心电图动态改变 + 肌钙蛋白 → NSTEMI/不稳定心绞痛评估。",
+    "objectives": [
+      "女性 ACS 症状可不典型。",
+      "心电图动态 + 肌钙蛋白是关键。",
+      "不要因症状不典型延误。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "女性缺血表现常不典型，可能与症状感知、共病和病变模式有关；不能因“不像心梗”漏诊。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "女性可无典型胸痛。",
+          "动态 ST-T + 肌钙蛋白。",
+          "按 ACS 流程评估。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "“不像心梗”不是排除 ACS 的理由；女性和老年人常表现不典型。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "女性 ACS 症状可不典型。",
+      "心电图动态 + 肌钙蛋白是关键。",
+      "不要因症状不典型延误。"
+    ],
+    "clinicalPearl": "老年女性乏力、恶心、上腹不适，查心电图和肌钙蛋白；可能是 ACS。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-pacemaker-failure",
+    "name": "病例：起搏器患者晕厥",
+    "en": "Case: syncope in pacemaker patient",
+    "chapter": "clinical",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "起搏器",
+      "失夺获",
+      "晕厥"
+    ],
+    "oneLiner": "75 岁女性，起搏器植入后反复晕厥；心电图起搏钉后无 QRS，自身逸搏 25 次/分。",
+    "specificity": "起搏失夺获：检查导线、阈值、电池、电解质；准备临时起搏。",
+    "objectives": [
+      "钉后无 QRS=失夺获。",
+      "导线/阈值/电池/电解质。",
+      "准备临时起搏。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "导线脱位/阈值升高/电池耗竭导致起搏刺激不能夺获；晕厥是危险信号。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "钉后无 QRS=失夺获。",
+          "查导线阻抗/阈值/电池。",
+          "临时起搏 + 程控/更换。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "起搏器患者晕厥 + 钉后无 QRS，先按失夺获处理，不要只做 Holter。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "钉后无 QRS=失夺获。",
+      "导线/阈值/电池/电解质。",
+      "准备临时起搏。"
+    ],
+    "clinicalPearl": "起搏器不是“装上就一劳永逸”；晕厥 + 无夺获是急症。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-copd-right-heart",
+    "name": "病例：COPD 急性加重伴心律失常",
+    "en": "Case: COPD exacerbation with arrhythmia",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "urgent",
+    "tags": [
+      "COPD",
+      "房颤",
+      "右心"
+    ],
+    "oneLiner": "70 岁男性，COPD 急性加重，喘憋；心电图窦速、肺型 P 波、电轴右偏、V1 高 R，新发房颤。",
+    "specificity": "COPD 急性加重常伴窦速/房颤/右心负荷；先纠正低氧、感染、电解质，再考虑心率控制。",
+    "objectives": [
+      "COPD 急性加重→窦速/房颤/右心负荷。",
+      "先纠正可逆因素。",
+      "β 阻滞剂需谨慎。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "低氧、酸中毒、交感激活与右心负荷促发心律失常；茶碱/β2 激动剂可加重。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "窦速/房颤常见；右心负荷图形。",
+          "先纠正低氧/感染/电解质。",
+          "谨慎使用 β 阻滞剂（支气管痉挛）。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "COPD 房颤不要只给 β 阻滞剂；先治低氧与感染，选药考虑支气管痉挛。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "COPD 急性加重→窦速/房颤/右心负荷。",
+      "先纠正可逆因素。",
+      "β 阻滞剂需谨慎。"
+    ],
+    "clinicalPearl": "COPD 患者新发房颤，先看血气和感染；治肺比单纯降心率更重要。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-young-stroke",
+    "name": "病例：年轻卒中与房颤",
+    "en": "Case: young stroke and AF",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "urgent",
+    "tags": [
+      "卒中",
+      "房颤",
+      "监测"
+    ],
+    "oneLiner": "45 岁男性，突发偏瘫；窦性心律，Holter 24 小时未见房颤，超声正常。",
+    "specificity": "隐源性卒中需延长心电监测寻找阵发房颤；短程 Holter 正常不能排除。",
+    "objectives": [
+      "卒中后房颤检出率随监测时间增加。",
+      "短程 Holter 正常不排除。",
+      "延长监测影响抗凝决策。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "阵发房颤可能短暂且无症状；延长监测（ILR）提高检出率，影响抗凝决策。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "年轻卒中查房颤。",
+          "24h Holter 正常不排除阵发房颤。",
+          "延长监测/ILR。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "隐源性卒中的房颤可能“抓不到”；监测时间越长，检出越多。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "卒中后房颤检出率随监测时间增加。",
+      "短程 Holter 正常不排除。",
+      "延长监测影响抗凝决策。"
+    ],
+    "clinicalPearl": "年轻卒中、Holter 正常，不等于没有房颤；考虑延长监测。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-renal-hyperkalemia",
+    "name": "病例：肾功能不全伴高钾",
+    "en": "Case: renal failure hyperkalemia",
+    "chapter": "clinical",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "肾功能",
+      "高钾",
+      "钙剂"
+    ],
+    "oneLiner": "55 岁男性，少尿、乏力；心电图 T 高尖、P 波低平、QRS 110 ms，血钾 6.9，肌酐 480。",
+    "specificity": "高钾伴肾功能不全：静脉钙剂稳定心肌，胰岛素+葡萄糖、β2、透析降钾；监测血糖与反跳。",
+    "objectives": [
+      "肾衰高钾可迅速恶化。",
+      "钙剂稳定心肌，透析清除钾。",
+      "停 ACEI/ARB/保钾药。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "肾排钾减少导致高钾；酸中毒与药物（ACEI/ARB、保钾利尿剂）加重。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "T 高尖/P 低平/QRS 宽。",
+          "钙剂 + 胰岛素/葡萄糖 + 透析。",
+          "停保钾药，查酸中毒。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "肾功能不全患者心电图 T 高尖，先查血钾；正弦波前可能只有轻微改变。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "肾衰高钾可迅速恶化。",
+      "钙剂稳定心肌，透析清除钾。",
+      "停 ACEI/ARB/保钾药。"
+    ],
+    "clinicalPearl": "肌酐 480 + T 高尖，别等血钾结果；先心电监护和钙剂评估。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-normal-ecg-acs",
+    "name": "病例：心电图正常的 ACS",
+    "en": "Case: ACS with normal ECG",
+    "chapter": "clinical",
+    "difficulty": 3,
+    "urgency": "urgent",
+    "tags": [
+      "ACS",
+      "正常ECG",
+      "肌钙蛋白"
+    ],
+    "oneLiner": "50 岁男性，持续胸痛；首份心电图正常，1 小时后复查 V3–V4 ST 压低，肌钙蛋白升高。",
+    "specificity": "正常心电图不能排除 ACS；持续症状需动态复查 ECG 与肌钙蛋白。",
+    "objectives": [
+      "ACS 早期 ECG 可正常。",
+      "动态 ECG + 肌钙蛋白。",
+      "高危症状需观察/负荷/冠脉评估。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "早期/间歇性缺血可无 ST 改变；单次 ECG 敏感性有限，动态变化更有价值。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "正常 ECG 不排除 ACS。",
+          "持续胸痛→动态复查。",
+          "肌钙蛋白与临床决策。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "“心电图正常”不是出院理由；症状持续就复查、观察、评估。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "ACS 早期 ECG 可正常。",
+      "动态 ECG + 肌钙蛋白。",
+      "高危症状需观察/负荷/冠脉评估。"
+    ],
+    "clinicalPearl": "胸痛患者心电图正常但持续不适，别让他回家；一小时后可能就变了。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-pediatric-svt",
+    "name": "病例：婴儿室上速",
+    "en": "Case: infant SVT",
+    "chapter": "clinical",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "婴儿",
+      "SVT",
+      "心衰"
+    ],
+    "oneLiner": "3 个月婴儿，吃奶差、呼吸急促；心率 260 次/分，窄 QRS 规则，肝大。",
+    "specificity": "婴儿 SVT 可导致心衰/休克；迷走刺激/腺苷为急性处理，持续者需复律与专科评估。",
+    "objectives": [
+      "婴儿 SVT 可致心衰。",
+      "迷走/腺苷；不稳定同步复律。",
+      "评估预激/先心病。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "婴儿房室结传导快、心室率极快，长时间 SVT 导致心输出量下降与心衰。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "婴儿心率 >220、窄 QRS 规则。",
+          "迷走刺激/腺苷；不稳定复律。",
+          "查先心病/预激。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "婴儿“吃奶差、呼吸快”可能是 SVT 心衰；心率 260 不是哭闹那么简单。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "婴儿 SVT 可致心衰。",
+      "迷走/腺苷；不稳定同步复律。",
+      "评估预激/先心病。"
+    ],
+    "clinicalPearl": "小婴儿心率 260 + 肝大，先做心电图；SVT 可能已经引起心衰。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-artifact-vt",
+    "name": "病例：监护仪“室速”其实是伪差",
+    "en": "Case: pseudo-VT artifact",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "伪差",
+      "室速",
+      "监护"
+    ],
+    "oneLiner": "ICU 患者监护仪报警室速，患者清醒、血压正常；多导联波形不规则，移动电极后恢复窦性。",
+    "specificity": "伪差可模拟室速/室颤；先看患者、脉搏与其他导联，再处理“心律失常”。",
+    "objectives": [
+      "伪差可模拟 VT/VF。",
+      "先看患者与多导联。",
+      "真实 VT 通常有血流动力学影响。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "电极移动/肌电干扰产生高幅伪差；真实室速通常多导联一致且伴血流动力学改变。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "报警时先看患者。",
+          "多导联一致性 + 脉搏。",
+          "重新贴电极/换导联。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "监护仪“室速”但患者清醒，不要电击；先确认导联与脉搏。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "伪差可模拟 VT/VF。",
+      "先看患者与多导联。",
+      "真实 VT 通常有血流动力学影响。"
+    ],
+    "clinicalPearl": "监护仪报警不等于患者心律失常；先看人，再看图。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-af-brady",
+    "name": "病例：房颤伴缓慢心室率",
+    "en": "Case: AF with slow ventricular response",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "urgent",
+    "tags": [
+      "房颤",
+      "缓慢心室率",
+      "药物"
+    ],
+    "oneLiner": "82 岁女性，乏力、头晕；房颤，心室率 38 次/分，服用地高辛与 β 阻滞剂。",
+    "specificity": "房颤缓慢心室率需查药物过量、房室结病变、高钾/甲减；有症状考虑起搏。",
+    "objectives": [
+      "房颤缓慢心室率查药物/传导/电解质。",
+      "症状性长间歇需起搏评估。",
+      "地高辛中毒可致慢心室率。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "房颤时房室结过滤冲动；药物/传导系统病变使心室率过慢，导致低灌注。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "房颤 + 心室率 <50。",
+          "查地高辛/β阻滞剂/电解质/甲减。",
+          "症状性长间歇→起搏评估。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "房颤不是“心率越快越危险”；缓慢心室率 + 症状同样需要处理。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "房颤缓慢心室率查药物/传导/电解质。",
+      "症状性长间歇需起搏评估。",
+      "地高辛中毒可致慢心室率。"
+    ],
+    "clinicalPearl": "房颤患者头晕 + 心率 38，先看药；地高辛/β阻滞剂可能过量。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-anaphylaxis-ecg",
+    "name": "病例：过敏性休克的 ECG",
+    "en": "Case: anaphylaxis ECG",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "urgent",
+    "tags": [
+      "过敏",
+      "休克",
+      "ST改变"
+    ],
+    "oneLiner": "35 岁女性，进食后全身荨麻疹、喉紧、低血压；心电图窦速、ST 压低、T 倒置。",
+    "specificity": "过敏性休克优先肾上腺素、补液、气道；心电图 ST-T 改变可来自低血压/缺氧/儿茶酚胺，需复查。",
+    "objectives": [
+      "过敏反应优先肾上腺素。",
+      "ECG 改变可继发低血压/缺氧。",
+      "稳定后复查。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "过敏介质导致血管扩张、低灌注与冠脉缺血；肾上腺素可致心动过速/ST 改变。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "过敏→肾上腺素、补液、气道。",
+          "ECG ST-T 改变可继发低灌注。",
+          "稳定后复查 ECG/肌钙蛋白。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "过敏性休克时先救命，不要因为 ST 压低先去导管室；稳定后评估缺血。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "过敏反应优先肾上腺素。",
+      "ECG 改变可继发低血压/缺氧。",
+      "稳定后复查。"
+    ],
+    "clinicalPearl": "过敏性休克的心电图“缺血”可能是结果，不是原因；先抗过敏复苏。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "case-heat-stroke",
+    "name": "病例：热射病与心律失常",
+    "en": "Case: heat stroke arrhythmia",
+    "chapter": "clinical",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "热射病",
+      "高钾",
+      "心律失常"
+    ],
+    "oneLiner": "28 岁跑者，高温运动后意识障碍、体温 41°C；心电图宽 QRS、T 高尖，血钾 6.5。",
+    "specificity": "热射病可致高钾、横纹肌溶解、心律失常；立即降温、补液、纠正电解质。",
+    "objectives": [
+      "热射病可致高钾/心律失常。",
+      "立即降温是核心。",
+      "查肌酸激酶/钾/肾功能。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "肌肉损伤释放钾，酸中毒/低灌注加重高钾；高热直接损伤心肌与传导系统。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "高热 + 意识障碍→热射病。",
+          "高钾/横纹肌溶解→心律失常。",
+          "立即降温 + 补液 + 电解质。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "热射病不是“中暑休息一下”；宽 QRS + 高钾需要紧急降温与降钾。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "热射病可致高钾/心律失常。",
+      "立即降温是核心。",
+      "查肌酸激酶/钾/肾功能。"
+    ],
+    "clinicalPearl": "高温运动后意识障碍 + 宽 QRS，先降温，同时查钾；不要只补液。",
+    "topic": true,
+    "quizEligible": false
+  }
+]

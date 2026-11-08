@@ -171,8 +171,13 @@ try {
   ok('home renders app shell + hero');
 
   await go('#/learn');
-  await waitFor(() => document.querySelectorAll('.diagnosis-card').length >= 30);
-  ok(`learn renders ${document.querySelectorAll('.diagnosis-card').length} diagnosis cards`);
+  await waitFor(() => document.querySelectorAll('.diagnosis-card').length >= 20);
+  if (!document.querySelector('[data-pager]')?.textContent.includes('页')) throw new Error('pagination missing');
+  if (document.querySelectorAll('.diagnosis-card').length > 24) throw new Error('pagination rendered too many cards');
+  document.querySelector('[data-page-next]')?.click();
+  await waitFor(() => document.querySelector('[data-pager]')?.textContent.includes('第 2'));
+  if (document.querySelectorAll('.diagnosis-card').length === 0) throw new Error('page 2 rendered no cards');
+  ok(`learn renders ${document.querySelectorAll('.diagnosis-card').length} cards with working pagination`);
 
   await go('#/learn/normal-sinus');
   await waitFor(() => document.querySelector('.article-title'));
@@ -195,6 +200,13 @@ try {
   if (!textbookPanel || textbookPanel.hidden) throw new Error('textbook panel did not open');
   document.querySelector('[data-ecg-textbook]')?.click();
   ok('12-lead playback, lead/view switch and textbook mode work');
+
+  await go('#/learn/heart-conduction-anatomy');
+  await waitFor(() => document.querySelector('.article-title'));
+  if (!document.querySelector('.article-title')?.textContent.includes('心脏传导系统解剖')) throw new Error('topic article title wrong');
+  if (!document.querySelector('#topic-objectives')) throw new Error('topic sections missing');
+  if (document.querySelector('#article-ecg-canvas canvas')) throw new Error('topic should not force an ECG canvas');
+  ok('theory chapter renders sections without ECG');
 
   await go('#/practice');
   await waitFor(() => document.querySelector('[data-start]'));
@@ -226,14 +238,21 @@ try {
 
   document.querySelector('[data-start-scenario]').click();
   await waitFor(() => document.querySelector('[data-cpr-toggle]'), 15000);
+  if (!document.querySelector('[data-quick-iv-action]')) throw new Error('quick IV access missing');
   document.querySelector('[data-cpr-toggle]').click();
   await waitFor(() => document.querySelector('[data-cpr-label]')?.textContent.includes('按压中'), 8000);
+  await waitFor(() => document.querySelector('[data-vital-hr] .vital-label')?.textContent.includes('按压频率'), 8000);
   document.querySelector('[data-action="finish"]').click();
   await waitFor(() => document.querySelector('.modal [data-ok]'), 4000);
   document.querySelector('.modal [data-ok]').click();
   await waitFor(() => document.querySelector('.debrief-score'), 15000);
   if (!document.querySelector('.debrief-score')?.textContent) throw new Error('debrief score missing');
-  ok('simulation starts, CPR updates monitor, finish renders debrief');
+  ok('simulation starts, quick IV visible, CPR shows compression-rate vitals, finish renders debrief');
+
+  await go('#/admin');
+  await waitFor(() => document.querySelector('.admin-login'));
+  if (!document.querySelector('[data-admin-login]')) throw new Error('admin login form missing');
+  ok('admin route protects console with login form');
 
   const relevantErrors = errors.filter((line) => !line.includes('Not implemented'));
   if (relevantErrors.length) throw new Error(`console errors: ${relevantErrors.slice(0, 4).join(' | ')}`);

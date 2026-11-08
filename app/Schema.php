@@ -15,6 +15,9 @@ final class Schema
                 password_hash VARCHAR(255) NULL,
                 display_name VARCHAR(32) NOT NULL,
                 is_guest TINYINT(1) NOT NULL DEFAULT 1,
+                is_admin TINYINT(1) NOT NULL DEFAULT 0,
+                is_active TINYINT(1) NOT NULL DEFAULT 1,
+                ai_daily_limit INT NULL,
                 xp INT NOT NULL DEFAULT 0,
                 theme VARCHAR(8) NOT NULL DEFAULT 'auto',
                 created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -98,10 +101,71 @@ final class Schema
                 PRIMARY KEY (user_id, usage_day),
                 CONSTRAINT fk_ai_usage_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+            "CREATE TABLE IF NOT EXISTS app_settings (
+                setting_key VARCHAR(64) NOT NULL PRIMARY KEY,
+                setting_value LONGTEXT NOT NULL,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+            "CREATE TABLE IF NOT EXISTS admin_passkeys (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                user_id BIGINT UNSIGNED NOT NULL,
+                credential_id VARCHAR(512) NOT NULL,
+                public_key TEXT NOT NULL,
+                sign_count BIGINT UNSIGNED NOT NULL DEFAULT 0,
+                label VARCHAR(80) NOT NULL DEFAULT 'Passkey',
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                last_used_at DATETIME NULL,
+                UNIQUE KEY uk_passkey_credential (credential_id(191)),
+                KEY idx_passkey_user (user_id),
+                CONSTRAINT fk_passkey_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+            "CREATE TABLE IF NOT EXISTS admin_audit (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                user_id BIGINT UNSIGNED NULL,
+                action VARCHAR(80) NOT NULL,
+                detail JSON NULL,
+                ip VARCHAR(64) NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                KEY idx_audit_time (created_at),
+                KEY idx_audit_user (user_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
         ];
 
         foreach ($statements as $sql) {
             $pdo->exec($sql);
+        }
+
+        self::ensureColumn($pdo, 'users', 'is_admin', 'TINYINT(1) NOT NULL DEFAULT 0 AFTER is_guest');
+        self::ensureColumn($pdo, 'users', 'is_active', 'TINYINT(1) NOT NULL DEFAULT 1 AFTER is_admin');
+        self::ensureColumn($pdo, 'users', 'ai_daily_limit', 'INT NULL AFTER is_active');
+
+        $defaults = [
+            'auth.registration_enabled' => true,
+            'auth.user_login_enabled' => true,
+            'admin.password_login_enabled' => true,
+            'admin.passkey_login_enabled' => true,
+            'ai.enabled' => false,
+            'ai.daily_limit' => 30,
+            'ai.default_provider' => '',
+            'ai.system_prompt_append' => '',
+        ];
+        $stmt = $pdo->prepare('INSERT IGNORE INTO app_settings (setting_key, setting_value) VALUES (?, ?)');
+        foreach ($defaults as $key => $value) {
+            $stmt->execute([$key, json_encode($value, JSON_UNESCAPED_UNICODE)]);
+        }
+    }
+
+    private static function ensureColumn(\PDO $pdo, string $table, string $column, string $definition): void
+    {
+        $stmt = $pdo->prepare(
+            'SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?'
+        );
+        $stmt->execute([$table, $column]);
+        if ((int) $stmt->fetchColumn() === 0) {
+            $pdo->exec("ALTER TABLE `{$table}` ADD COLUMN `{$column}` {$definition}");
         }
     }
 }

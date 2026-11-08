@@ -90,6 +90,7 @@ export async function simSessionView({ params }) {
             <div class="monitor-body">
               <div class="row-wrap" style="justify-content:space-between"><span class="badge badge-danger">${escapeHtml(RHYTHM_LABELS[state.rhythm] || state.rhythm)}</span><span class="badge" data-phase>${escapeHtml(state.phaseLabel || '就诊评估')}</span><span class="badge" data-pulse>${state.vitals?.pulse ? '有脉' : '无脉'}</span></div>
               <div class="vitals-grid" data-vitals></div>
+              <div class="monitor-quick" data-quick-iv></div>
               <div class="monitor-foot"><span class="cpr-flag ${state.cpr ? '' : 'off'}">${icon('activity', 11)} <span data-cpr-label>${state.cpr ? '按压中' : '未按压'}</span></span><span>ETCO₂ <b data-etco2>${state.vitals?.etco2 ?? '—'}</b> mmHg</span><span>目标：${escapeHtml(scenario.success || '稳定患者')}</span></div>
             </div>
           </section>
@@ -121,6 +122,10 @@ export async function simSessionView({ params }) {
   }
 
   function bindShell() {
+    el.addEventListener('click', (event) => {
+      const quick = event.target.closest('[data-quick-iv-action]');
+      if (quick && !quick.disabled) act('iv', {});
+    });
     el.querySelector('[data-exit]')?.addEventListener('click', async () => {
       if (state?.status === 'active') {
         const ok = await confirmDialog({ title: '退出模拟？', message: '当前模拟会保留在服务端，但不会自动生成完整复盘。建议完成或结束本局再离开。', confirmText: '保留并退出', danger: true });
@@ -144,10 +149,17 @@ export async function simSessionView({ params }) {
       const etco2 = v.etco2 ?? '—';
       const hrTone = v.hr && v.hr < 50 ? 'danger' : v.hr > 130 ? 'warn' : '';
       vitalsHost.innerHTML = `
-        <div class="vital ${hrTone}"><div class="vital-label">HR</div><div class="vital-value">${escapeHtml(hr)} <small>bpm</small></div></div>
+        <div class="vital ${hrTone}" data-vital-hr><div class="vital-label">${escapeHtml(v.hrLabel || 'HR')}</div><div class="vital-value">${escapeHtml(hr)} <small>bpm</small></div></div>
         <div class="vital ${v.bpSys && v.bpSys < 90 ? 'danger' : ''}"><div class="vital-label">NIBP</div><div class="vital-value">${escapeHtml(bp)} <small>mmHg</small></div></div>
         <div class="vital ${v.spo2 && v.spo2 < 90 ? 'warn' : ''}"><div class="vital-label">SpO₂</div><div class="vital-value">${escapeHtml(spo2)}</div></div>
         <div class="vital"><div class="vital-label">ETCO₂</div><div class="vital-value">${escapeHtml(String(etco2))} <small>mmHg</small></div></div>`;
+    }
+    const quickIv = el.querySelector('[data-quick-iv]');
+    if (quickIv) {
+      const flags = state.flags || {};
+      if (flags.iv) quickIv.innerHTML = `<span class="quick-iv ready">${icon('check', 12)} IV/IO 已建立</span>`;
+      else if (flags.ivPending) quickIv.innerHTML = `<span class="quick-iv pending">${icon('activity', 12)} IV/IO 建立中 · ${flags.ivReadyIn ?? 0}s</span>`;
+      else quickIv.innerHTML = `<button class="quick-iv-btn" type="button" data-quick-iv-action ${state.status !== 'active' ? 'disabled' : ''}>${icon('plus', 12)} 立即建立 IV/IO 通路</button>`;
     }
     const phase = el.querySelector('[data-phase]');
     if (phase) {

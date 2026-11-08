@@ -7,21 +7,95 @@ final class Ai
 {
     public static function configured(): bool
     {
-        return (bool) Config::get('ai.enabled', false) && trim((string) Config::get('ai.api_key', '')) !== '';
+        if (!Settings::bool('ai.enabled', (bool) Config::get('ai.enabled', false))) return false;
+        $provider = self::provider();
+        if ($provider !== null && trim((string) $provider['base_url']) !== '' && trim((string) $provider['api_key']) !== '') return true;
+        return trim((string) Config::get('ai.api_key', '')) !== '';
     }
 
     public static function status(int $userId): array
     {
-        $limit = (int) Config::get('ai.daily_limit', 30);
+        $limit = self::limitFor($userId);
         $used = self::usedToday($userId);
+        $provider = self::provider();
+        $model = $provider['default_model'] ?? ($provider['models'][0] ?? null);
         return [
             'configured' => self::configured(),
-            'model' => self::configured() ? (string) Config::get('ai.model', '') : null,
+            'model' => self::configured() ? (string) ($model ?: Config::get('ai.model', '')) : null,
+            'provider' => self::configured() ? ($provider['name'] ?? '内置兼容接口') : null,
             'dailyLimit' => $limit,
             'used' => $used,
             'remaining' => max(0, $limit - $used),
             'mode' => self::configured() ? 'ai' : 'local',
         ];
+    }
+
+    public static function testProvider(string $id): array
+    {
+        $provider = null;
+        foreach (Settings::aiProviders() as $candidate) {
+            if (($candidate['id'] ?? '') === $id) { $provider = $candidate; break; }
+        }
+        if ($provider === null) throw new ApiError(404, 'provider_not_found', '供应商不存在');
+        $base = rtrim((string) ($provider['base_url'] ?? ''), '/');
+        $key = Secret::decrypt((string) ($provider['api_key_enc'] ?? ''));
+        $model = (string) ($provider['default_model'] ?? ($provider['models'][0] ?? ''));
+        if ($base === '' || $key === '' || $model === '') return ['ok' => false, 'message' => '供应商配置不完整'];
+        $payload = json_encode([
+            'model' => $model,
+            'messages' => [['role' => 'user', 'content' => '只回复 OK']],
+            'temperature' => 0,
+            'max_tokens' => 8,
+        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        $ch = curl_init($base . (str_ends_with($base, '/chat/completions') ? '' : '/chat/completions'));
+        if ($ch === false) return ['ok' => false, 'message' => '无法初始化 cURL'];
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CONNECTTIMEOUT => 6,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json', 'Authorization: Bearer ' . $key],
+            CURLOPT_POSTFIELDS => $payload,
+        ]);
+        $response = curl_exec($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+        if ($response === false || $status < 200 || $status >= 300) {
+            return ['ok' => false, 'message' => '连接失败（HTTP ' . $status . '）' . ($error ? ': ' . $error : '')];
+        }
+        $data = json_decode((string) $response, true);
+        $text = $data['choices'][0]['message']['content'] ?? null;
+        return ['ok' => is_string($text) && trim($text) !== '', 'message' => is_string($text) ? mb_substr(trim($text), 0, 80, 'UTF-8') : '返回格式不符合 OpenAI 兼容协议'];
+    }
+
+    private static function provider(): ?array
+    {
+        $providers = Settings::aiProviders();
+        if ($providers === []) return null;
+        $default = (string) Settings::get('ai.default_provider', '');
+        foreach ($providers as $provider) {
+            if (($provider['id'] ?? '') !== $default || !filter_var($provider['enabled'] ?? true, FILTER_VALIDATE_BOOL)) continue;
+            $provider['api_key'] = Secret::decrypt((string) ($provider['api_key_enc'] ?? ''));
+            return $provider;
+        }
+        foreach ($providers as $provider) {
+            if (!filter_var($provider['enabled'] ?? true, FILTER_VALIDATE_BOOL)) continue;
+            $provider['api_key'] = Secret::decrypt((string) ($provider['api_key_enc'] ?? ''));
+            return $provider;
+        }
+        return null;
+    }
+
+    private static function limitFor(int $userId): int
+    {
+        $stmt = Db::pdo()->prepare('SELECT ai_daily_limit FROM users WHERE id = ? LIMIT 1');
+        $stmt->execute([$userId]);
+        $override = $stmt->fetchColumn();
+        if ($override !== false && $override !== null && $override !== '') return max(0, (int) $override);
+        return max(0, Settings::int('ai.daily_limit', (int) Config::get('ai.daily_limit', 30)));
     }
 
     public static function chat(int $userId, string $message, ?string $diagnosisId = null): array
@@ -146,12 +220,14 @@ final class Ai
 
     private static function call(array $messages, float $temperature): ?string
     {
-        $base = rtrim((string) Config::get('ai.base_url', ''), '/');
+        $provider = self::provider();
+        $base = rtrim((string) ($provider['base_url'] ?? Config::get('ai.base_url', '')), '/');
         if ($base === '') return null;
         $url = str_ends_with($base, '/chat/completions') ? $base : $base . '/chat/completions';
-        $apiKey = (string) Config::get('ai.api_key', '');
+        $apiKey = (string) ($provider['api_key'] ?? Config::get('ai.api_key', ''));
+        $model = (string) ($provider['default_model'] ?? ($provider['models'][0] ?? Config::get('ai.model', 'gpt-4o-mini')));
         $payload = [
-            'model' => (string) Config::get('ai.model', 'gpt-4o-mini'),
+            'model' => $model,
             'messages' => $messages,
             'temperature' => $temperature,
             'max_tokens' => 700,
@@ -189,7 +265,8 @@ final class Ai
 
     private static function consume(int $userId): bool
     {
-        $limit = max(1, (int) Config::get('ai.daily_limit', 30));
+        $limit = self::limitFor($userId);
+        if ($limit <= 0) return false;
         $pdo = Db::pdo();
         $today = date('Y-m-d');
         $stmt = $pdo->prepare('SELECT used_count FROM ai_usage WHERE user_id = ? AND usage_day = ?');
@@ -213,11 +290,14 @@ final class Ai
 
     private static function systemPrompt(): string
     {
+        $append = trim((string) Settings::get('ai.system_prompt_append', ''));
         return '你是“心迹 ECG Lab”的中文心电图教学导师，服务医学生与住院医师。'
             . '只做教学解释，不提供针对真实患者的个体化诊疗指令，不替代临床医生。'
             . '必须基于给定的心电图知识与客观线索回答；不确定时明确说“不确定”，不要编造数字或指南。'
             . '回答先给结论，再给 2–4 条依据，最后给一条下一次识别的动作；使用简体中文；不超过 450 字。'
-            . '涉及急症时提醒按当地急救流程处理。';
+            . '涉及急症时提醒按当地急救流程处理。'
+            . ($append !== '' ? "
+站点管理员补充要求：" . $append : '');
     }
 
     private static function diagnosisContext(array $d): string

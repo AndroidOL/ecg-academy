@@ -1,0 +1,614 @@
+[
+  {
+    "id": "cpr-artifact",
+    "name": "CPR 与电击伪差",
+    "en": "CPR and defibrillation artifact",
+    "chapter": "artifact",
+    "difficulty": 2,
+    "urgency": "critical",
+    "tags": [
+      "CPR",
+      "除颤",
+      "伪差"
+    ],
+    "oneLiner": "胸外按压会产生节律性高幅伪差，可模拟室速/室颤；电击后短暂平直也常是设备/肌肉反应，不一定是心搏停止。",
+    "specificity": "CPR 时先看患者、脉搏与按压反馈；电击后立即恢复按压，约 2 秒后再评估心律；不要被伪差误导。",
+    "objectives": [
+      "CPR 伪差高幅、节律性。",
+      "电击后立即恢复按压。",
+      "先确认患者，再处理心律。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "按压、肌肉收缩与电极移动产生高幅低频信号，掩盖真实心律；除颤后短暂停顿是常见现象。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "CPR 伪差可模拟 VT/VF。",
+          "电击后短暂平直常见。",
+          "先看患者与脉搏，再判读。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "CPR 中监护仪上的“室速”不能直接电击；必须确认无脉并停止按压后判读。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "CPR 伪差高幅、节律性。",
+      "电击后立即恢复按压。",
+      "先确认患者，再处理心律。"
+    ],
+    "clinicalPearl": "CPR 时监护仪再吓人，也先确认患者；伪差最容易被误当成室颤。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "tremor-artifact",
+    "name": "震颤与肌电伪差",
+    "en": "Tremor artifact",
+    "chapter": "artifact",
+    "difficulty": 1,
+    "urgency": "core",
+    "tags": [
+      "震颤",
+      "肌电",
+      "帕金森"
+    ],
+    "oneLiner": "震颤/寒战产生高频或节律性肌电伪差，可模拟房扑、房颤或室速；让患者放松、保暖、重新贴电极可改善。",
+    "specificity": "伪差多导联同步但形态不规则、与肌肉活动相关；真实心律的 QRS 通常仍可辨认。",
+    "objectives": [
+      "震颤伪差可模拟房扑/房颤。",
+      "让患者放松、重贴电极。",
+      "寻找真实 QRS。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "骨骼肌电活动频率高、振幅不定，叠加在心电信号上；帕金森震颤可呈 4–6 Hz 节律。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "高频/节律性肌电噪声。",
+          "与肌肉活动相关。",
+          "放松/保暖/重贴电极。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "不要因“波形乱”诊断房颤；寻找可辨认的 QRS 与 P 波。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "震颤伪差可模拟房扑/房颤。",
+      "让患者放松、重贴电极。",
+      "寻找真实 QRS。"
+    ],
+    "clinicalPearl": "帕金森患者心电图“房扑”，先看是不是震颤伪差；放松后可能消失。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "shivering-artifact",
+    "name": "寒战伪差",
+    "en": "Shivering artifact",
+    "chapter": "artifact",
+    "difficulty": 1,
+    "urgency": "core",
+    "tags": [
+      "寒战",
+      "肌电",
+      "术后"
+    ],
+    "oneLiner": "寒战产生持续高频肌电噪声，常见于术后、发热/降温、输血反应；可掩盖 P 波与 ST 段。",
+    "specificity": "噪声广泛、与寒战同步；保暖、镇静/镇痛后改善；真实 QRS 仍可辨认。",
+    "objectives": [
+      "寒战=高频肌电噪声。",
+      "保暖/镇痛后可消失。",
+      "不要据此诊断房颤。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "骨骼肌不自主收缩产生高频电信号；低体温与术后寒战常见。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "广泛高频噪声，与寒战同步。",
+          "保暖/镇痛后改善。",
+          "可掩盖 P/ST。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "寒战伪差可模拟房颤/室速；先处理寒战与体温，再判读。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "寒战=高频肌电噪声。",
+      "保暖/镇痛后可消失。",
+      "不要据此诊断房颤。"
+    ],
+    "clinicalPearl": "术后患者“房颤” + 寒战，先保暖；伪差消失后可能还是窦性。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "electrode-loose",
+    "name": "电极脱落与接触不良",
+    "en": "Loose electrodes",
+    "chapter": "artifact",
+    "difficulty": 1,
+    "urgency": "core",
+    "tags": [
+      "电极",
+      "脱落",
+      "基线"
+    ],
+    "oneLiner": "电极脱落/接触不良导致基线漂移、平线、突发高幅噪声；可模拟心搏停止或室颤。",
+    "specificity": "单个导联异常、其他导联正常；轻压/重新贴电极后恢复；患者生命体征与波形不一致。",
+    "objectives": [
+      "电极脱落可伪装心搏停止/室颤。",
+      "看多导联与患者。",
+      "重贴电极。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "电极-皮肤阻抗升高，信号丢失或拾取环境噪声；运动/出汗/毛发影响接触。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "单导联异常/平线/高幅噪声。",
+          "其他导联正常。",
+          "重贴电极后恢复。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "单导联“室颤”先看其他导联与患者；不要立即电击。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "电极脱落可伪装心搏停止/室颤。",
+      "看多导联与患者。",
+      "重贴电极。"
+    ],
+    "clinicalPearl": "一个导联平线、患者还在说话，先查电极；不要开始 CPR。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "electrical-interference",
+    "name": "交流电与电磁干扰",
+    "en": "Electrical interference",
+    "chapter": "artifact",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "交流电",
+      "电磁",
+      "干扰"
+    ],
+    "oneLiner": "交流电干扰呈 50/60 Hz 均匀细密波，电磁干扰可来自电刀、手机、充电器、附近设备。",
+    "specificity": "干扰广泛、频率固定；远离干扰源/更换导联/检查接地可改善；真实 QRS 可能仍可辨认。",
+    "objectives": [
+      "交流电干扰=50/60 Hz。",
+      "电刀/设备是常见源。",
+      "先排除干扰再诊断。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "环境电磁场被导联线拾取，叠加到心电信号；高阻抗电极更易受影响。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "50/60 Hz 细密均匀波。",
+          "电刀/手机/充电器常见。",
+          "远离干扰源/检查接地。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "电刀干扰可模拟室速/室颤；手术中需结合脉搏/血压/其他监护。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "交流电干扰=50/60 Hz。",
+      "电刀/设备是常见源。",
+      "先排除干扰再诊断。"
+    ],
+    "clinicalPearl": "手术室监护仪“室速” + 电刀正在工作，先看患者和脉搏；可能是干扰。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "double-counting",
+    "name": "心率双倍计数",
+    "en": "Heart rate double counting",
+    "chapter": "artifact",
+    "difficulty": 2,
+    "urgency": "advanced",
+    "tags": [
+      "心率",
+      "双倍计数",
+      "监护"
+    ],
+    "oneLiner": "监护仪可能把高尖 T 波或起搏钉误认为 R 波，显示心率约为真实心率的两倍；也可漏计低幅 QRS。",
+    "specificity": "心率数字与脉搏/听诊不一致、波形 RR 间期明显长于显示心率；调整导联/增益可改善。",
+    "objectives": [
+      "心率双倍计数常因高 T/起搏钉。",
+      "与脉搏核对。",
+      "手动测量 RR。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "自动心率算法依赖 R 波检测阈值；高 T 波、起搏钉、伪差可触发误计数。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "显示心率约为真实两倍。",
+          "与脉搏/听诊不一致。",
+          "调整导联/增益。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "不要根据监护仪数字给抗心律失常药；先手动数 RR 或听诊。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "心率双倍计数常因高 T/起搏钉。",
+      "与脉搏核对。",
+      "手动测量 RR。"
+    ],
+    "clinicalPearl": "监护仪心率 150，脉搏 75，先想双倍计数；不要急着推药。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "pacemaker-spike-artifact",
+    "name": "起搏钉伪差与过感知",
+    "en": "Pacemaker spike artifact",
+    "chapter": "artifact",
+    "difficulty": 2,
+    "urgency": "advanced",
+    "tags": [
+      "起搏钉",
+      "过感知",
+      "监护"
+    ],
+    "oneLiner": "起搏钉可能被监护仪误计为 QRS，或起搏器把监护仪/电磁信号误感知；两者都会造成“假性心律失常”。",
+    "specificity": "起搏钉规律、与 QRS 关系固定；过感知时起搏钉消失/心率慢；程控可确认。",
+    "objectives": [
+      "起搏钉可被误计数。",
+      "过感知可抑制起搏。",
+      "程控是金标准。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "起搏钉极短高频，监护仪算法可能误识别；起搏器感知线路可拾取外界电磁信号。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "钉被误计为 QRS→心率假性增快。",
+          "过感知→起搏抑制、心率慢。",
+          "程控确认。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "起搏器患者的心电图异常需结合程控；不要仅凭监护仪报警处理。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "起搏钉可被误计数。",
+      "过感知可抑制起搏。",
+      "程控是金标准。"
+    ],
+    "clinicalPearl": "起搏器患者心率突然“翻倍”或“掉到 30”，先看钉与程控；可能只是感知问题。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "motion-artifact",
+    "name": "运动伪差",
+    "en": "Motion artifact",
+    "chapter": "artifact",
+    "difficulty": 1,
+    "urgency": "core",
+    "tags": [
+      "运动",
+      "伪差",
+      "基线"
+    ],
+    "oneLiner": "患者移动、转运、抽搐可产生高幅不规则伪差，模拟室速/室颤；常见于急诊与院前。",
+    "specificity": "伪差与运动同步、多导联不规则；停止运动后恢复；患者意识/脉搏与波形不一致。",
+    "objectives": [
+      "运动伪差可模拟室颤。",
+      "先看患者/脉搏。",
+      "停止运动后复查。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "电极移动改变接触阻抗，产生低频高幅信号；导线摆动也会产生伪差。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "与运动同步的高幅不规则波。",
+          "停止运动后恢复。",
+          "患者状态与波形不一致。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "抽搐患者监护仪“室颤”先看脉搏；抽搐本身可产生伪差，也可能真的室颤。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "运动伪差可模拟室颤。",
+      "先看患者/脉搏。",
+      "停止运动后复查。"
+    ],
+    "clinicalPearl": "癫痫抽搐时监护仪“室颤”，先摸脉；伪差和真室颤的处理完全不同。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "phone-artifact",
+    "name": "手机与设备干扰",
+    "en": "Phone and device interference",
+    "chapter": "artifact",
+    "difficulty": 1,
+    "urgency": "core",
+    "tags": [
+      "手机",
+      "电磁",
+      "干扰"
+    ],
+    "oneLiner": "手机、充电器、电子设备靠近导联线可产生电磁干扰，表现为细密噪声或突发伪差。",
+    "specificity": "干扰与设备位置相关；移开设备后改善；多导联同步出现。",
+    "objectives": [
+      "手机/设备可干扰 ECG。",
+      "移开设备后复查。",
+      "先确认患者。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "电磁场被导线拾取，尤其在高阻抗/长导线时；现代设备屏蔽较好但仍可能干扰。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "设备靠近时出现噪声。",
+          "移开后改善。",
+          "多导联同步。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "不要因监护仪突然“室速”就电击；先看患者与设备位置。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "手机/设备可干扰 ECG。",
+      "移开设备后复查。",
+      "先确认患者。"
+    ],
+    "clinicalPearl": "监护仪突然报警，先看患者，再看旁边是不是有人充电/打电话。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "filters-artifact",
+    "name": "滤波设置与假性 ST 改变",
+    "en": "Filter settings and pseudo-ST changes",
+    "chapter": "artifact",
+    "difficulty": 2,
+    "urgency": "advanced",
+    "tags": [
+      "滤波",
+      "ST段",
+      "监护"
+    ],
+    "oneLiner": "低通/高通滤波、基线校正与自动增益可改变 ST 段与 QRS 形态；不同设备设置可能导致“假性 ST 抬高/压低”。",
+    "specificity": "同一患者不同设备/导联显示不同 ST；滤波过强可削低 QRS/T；需用标准 12 导联确认。",
+    "objectives": [
+      "滤波可改变 ST/QRS。",
+      "监护仪 ST 报警需 12 导联确认。",
+      "注意设备设置。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "滤波器去除噪声的同时也改变低频 ST 段与高频 QRS；自动增益会放大/压缩波形。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "不同设备 ST 不一致。",
+          "滤波过强改变 QRS/T。",
+          "用标准 12 导联确认。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "不要仅凭监护仪 ST 报警诊断 STEMI；标准 12 导联与临床是关键。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "滤波可改变 ST/QRS。",
+      "监护仪 ST 报警需 12 导联确认。",
+      "注意设备设置。"
+    ],
+    "clinicalPearl": "监护仪说 ST 抬高，12 导联正常；先想滤波/导联位置，不要直接送导管室。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "cable-reversal",
+    "name": "导线与通道错接",
+    "en": "Cable and channel reversal",
+    "chapter": "artifact",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "导线",
+      "错接",
+      "通道"
+    ],
+    "oneLiner": "监护仪导线/通道错接可造成导联“互换”，出现假性电轴偏移、ST 改变或心律误判。",
+    "specificity": "图形与解剖不符、aVR P 波直立、I 导联倒置、胸导联 R 波递增异常；重新连接后恢复。",
+    "objectives": [
+      "aVR P 直立是错接线索。",
+      "图形不符合解剖时重做。",
+      "先确认导联再诊断。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "通道与电极不匹配使不同导联信号被错标；多导联同时出现“不合理”图形是线索。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "aVR P 直立/I 倒置。",
+          "图形与解剖不符。",
+          "重新连接后恢复。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "发现导联错接不要继续解读；先重做，否则可能误诊心梗/心律失常。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "aVR P 直立是错接线索。",
+      "图形不符合解剖时重做。",
+      "先确认导联再诊断。"
+    ],
+    "clinicalPearl": "心电图“电轴右偏 + I 倒置 + aVR 直立”，先看左右臂导联是不是反了。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "smartwatch-artifact",
+    "name": "可穿戴设备伪差",
+    "en": "Smartwatch artifact",
+    "chapter": "artifact",
+    "difficulty": 2,
+    "urgency": "advanced",
+    "tags": [
+      "可穿戴",
+      "单导联",
+      "伪差"
+    ],
+    "oneLiner": "智能手表单导联心电图易受运动、接触、电极干燥影响，产生伪差；房颤算法也可能假阳性。",
+    "specificity": "单导联、P 波不清、运动时噪声；阳性提示需医疗级 ECG 确认，尤其抗凝决策前。",
+    "objectives": [
+      "可穿戴单导联易伪差。",
+      "房颤提示需确认。",
+      "抗凝前医疗级评估。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "单导联记录范围小、接触不稳定；算法基于 RR 不规则，伪差可触发假阳性。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "单导联、运动伪差常见。",
+          "房颤算法可假阳性。",
+          "医疗级 ECG 确认。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "不要根据手表提示直接抗凝；确认心律、症状与卒中风险。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "可穿戴单导联易伪差。",
+      "房颤提示需确认。",
+      "抗凝前医疗级评估。"
+    ],
+    "clinicalPearl": "手表说“房颤”，先做 12 导联；确认之前不要开始抗凝。",
+    "topic": true,
+    "quizEligible": false
+  }
+]

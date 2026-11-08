@@ -12,3 +12,6 @@ tests/artifacts/*
 .ssh/
 docs/*.local.md
 node_modules/
+
+# runtime encryption master key
+storage/master.key

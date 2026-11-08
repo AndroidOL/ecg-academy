@@ -43,13 +43,19 @@ app/                 后端（Web 根之外）
   Auth.php           游客、注册、登录、CSRF、限流
   Router.php         小型路由
   ApiController.php  全部 API
-  Content.php        读取并缓存 46 篇课程（含 6 篇基本功/速查）
+  Content.php        读取并缓存 229 章课程（诊断 + 理论/病例）
   Quiz.php           出题、选项、判分、XP
   SimEngine.php      ACLS 状态机与评分
   Ai.php             OpenAI 兼容客户端 + 提示词 + 降级
   Schema.php         MySQL DDL
+  Settings.php       数据库配置
+  AdminAuth.php      管理员密码 + Passkey 会话
+  WebAuthn.php       ES256 Passkey 校验
+  Secret.php         AES-256-GCM 密钥加密
+  AdminController.php 管理 API
 data/
-  diagnoses/*.php    9 个章节的内容文件（46 篇）
+  diagnoses/*.php    判读课程（46 篇，含 ECG 规格）
+  topics/*.json      理论/病例专题（183 章）
   chapters.php       章节元数据
   scenarios.php      6 个急救场景
 public/
@@ -113,4 +119,13 @@ hash 路由，便于任意静态托管与无重写部署：
 - 任何 OpenAI 兼容端点（OpenAI / DeepSeek / Moonshot / 通义 / Ollama）。
 - 配置位于 `app/config.local.php` 或环境变量；密钥不下发浏览器。
 - AI 只做**选择、解释、复盘、对话**，不生成诊断金标准、不生成 ECG 波形；练习答案始终由策展题库决定。
+
+## 管理后台
+
+1. `users.is_admin=1` 是唯一后台入口条件；普通用户即使知道 URL 也会被 `/api/admin/*` 拒绝。
+2. `app_settings` 保存注册/登录开关、AI 默认额度、供应商列表与系统提示词；`admin_passkeys` 保存 WebAuthn 凭据公钥与计数器；`admin_audit` 保存管理操作。
+3. 管理员密码登录和 Passkey 登录可独立开关；关闭密码登录前必须先注册 Passkey，避免自锁。
+4. AI 供应商支持任意 OpenAI-compatible `/chat/completions`，可配置多个模型；API Key 用 AES-256-GCM 加密，前端只显示掩码。
+5. 用户管理支持停用、角色变更、每日 AI 额度覆盖与密码重置；最后一个可用管理员不能被移除。
+6. 所有管理写操作校验 CSRF、记录审计；Passkey 校验 challenge、origin、rpIdHash、UP 标志与 ES256 签名。
 - 所有 AI 输出经过长度限制、纯文本/Markdown-Lite 渲染与免责声明包装；失败自动降级。

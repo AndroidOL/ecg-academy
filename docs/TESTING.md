@@ -7,12 +7,13 @@
 
 | 套件 | 命令 | 结果 |
 |---|---|---|
-| 内容结构与引用 | `php scripts/validate_content.php` | **46 篇，0 错误，0 警告** |
+| 内容结构与引用 | `php scripts/validate_content.php` | **46 篇诊断内容，0 错误，0 警告** |
+| 229 章课程体系 | `php scripts/validate_curriculum.php` | **229 章 / 19 章节，0 错误** |
 | 1200 道预生成题库 | `php scripts/validate_bank.php` | **1200 道，0 错误** |
 | ECG 波形引擎 | `node tests/engine.test.mjs` | **15/15 通过** |
 | ACLS 状态机 | `php tests/sim.test.php` | **9/9 通过** |
 | 播放器/12 导联/标注 | `node tests/playback.test.mjs` | **13/13 通过** |
-| 全链路 UI 冒烟 | `node tests/ui-smoke.mjs` | **9/9 组通过，0 控制台错误** |
+| 全链路 UI 冒烟 | `node tests/ui-smoke.mjs` | **11/11 组通过，0 控制台错误** |
 | 生产 API | curl + 独立 Cookie/CSRF | **通过**（见下） |
 | 静态资源 | 逐文件 HTTP 检查 | **全部 200** |
 | 无头截图 | Chrome 150 headless | 受环境 SwiftShader 卡死限制，未完成像素级截图 |
@@ -63,7 +64,8 @@
 `tests/sim.test.php` 覆盖：
 
 - 启动 VF 场景与监护状态；
-- IV 建立需约 6 秒，建立完成前静脉药被拒绝；
+- IV 建立需约 6 秒，建立完成前静脉药被拒绝；监护区提供常驻“立即建立 IV/IO 通路”按钮；
+- CPR 期间生命体征显示 92–122 次/分的按压伪差频率并逐秒波动，但脉搏保持“无脉”；
 - CPR → 充电 3 秒 → 停止按压 → 非同步放电的完整链路；
 - 电击后短暂心室静止、观察期与复盘评分/事件读取；
 - 症状性心动过缓：阿托品、经皮起搏夺获（监护转为 paced）、阶段转为“已稳定”；
@@ -81,12 +83,25 @@
 `data/question_bank.php` 为 1200 道确定性病例（200 道 level 1、550 道 level 2、450 道 level 3；按章节 125–275 道）。校验项：
 
 - 总数 ≥1000；
-- 诊断/组合引用均存在于 46 篇课程；
+- 诊断/组合引用均存在于判读课程；
 - ID 唯一、seed 为整数、题面与字段非空；
 - 题库统计与按章节计数一致。
 
 ```text
 Question bank: 1200 cases
+Errors: 0
+```
+
+## 3.2 课程体系与导航
+
+- 19 个章节、229 章；常见核心 139 章、不常见/进阶 90 章；
+- 默认按难度排序；每页 24 章，分页避免一次渲染数百张卡片；
+- 理论章无 ECG 时仍渲染学习目标、核心概念、判读应用、边界与必须记住；
+- 校验脚本检查 ID 唯一、章节引用、难度、urgency、sections 内容、keyPoints。
+
+```text
+Curriculum: 229 chapters / 19 sections
+Theory topics: 183 · ECG articles: 46
 Errors: 0
 ```
 
@@ -119,10 +134,20 @@ Playback tests passed: 13
 7. 急救列表：6 个场景；
 8. 急救会话：启动场景 200 → 轮询状态 200 → CPR action 200 → 结束 action 200 → 复盘 200 → 显示分数。
 9. 12 导联播放、12 导联→节律条切换、教科书面板与正常对照。
+10. 理论章无 ECG 渲染；分页第 2 页；急救监护常驻 IV 按钮与按压频率。
+11. 管理后台路由对访客显示登录保护表单。
 
 ```text
-UI smoke passed: 9 groups, 0 console errors
+UI smoke passed: 11 groups, 0 console errors
 ```
+
+## 5.1 管理后台验证
+
+- 管理员密码登录 → `/api/admin/session` 200；访客访问 `/api/admin/session` 403。
+- 注册/登录开关：关闭注册后新游客注册返回 403；关闭管理员密码登录后密码入口返回 403。
+- WebAuthn：Playwright + CDP 虚拟认证器注册 Passkey，退出后使用 Passkey 重新登录成功；Passkey 仅支持 ES256。
+- AI：使用本地 mock OpenAI-compatible `/chat/completions` 保存加密供应商、测试连接、启用后完成一次真实代理调用；随后删除测试供应商。
+- 管理 API 的写操作均校验 CSRF，密钥只返回掩码。
 
 ## 6. 生产 API 验证
 
@@ -167,6 +192,7 @@ Chrome 命令行 `--screenshot` 在当前低配环境会卡在 SwiftShader；改
 cd /www/wwwroot/ecg-academy
 
 php scripts/validate_content.php
+php scripts/validate_curriculum.php
 php scripts/validate_bank.php
 node tests/engine.test.mjs
 node tests/playback.test.mjs

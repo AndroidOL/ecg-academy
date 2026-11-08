@@ -49,7 +49,7 @@ final class Auth
             $stmt = Db::pdo()->prepare('SELECT * FROM users WHERE id = ? LIMIT 1');
             $stmt->execute([(int) $_SESSION['uid']]);
             $user = $stmt->fetch();
-            if ($user) {
+            if ($user && (int) ($user['is_active'] ?? 1) === 1) {
                 self::$user = $user;
                 return $user;
             }
@@ -79,6 +79,11 @@ final class Auth
         return $stmt->fetch();
     }
 
+    public static function resetCache(): void
+    {
+        self::$user = null;
+    }
+
     public static function csrf(): string
     {
         self::start();
@@ -98,6 +103,9 @@ final class Auth
     public static function register(array $input): array
     {
         self::requireCsrf();
+        if (!Settings::bool('auth.registration_enabled', true)) {
+            throw new ApiError(403, 'registration_disabled', '当前站点已关闭新用户注册');
+        }
         $current = self::user();
         if (!$current || (int) $current['is_guest'] !== 1) {
             throw new ApiError(409, 'already_registered', '当前账号已注册，请直接登录');
@@ -142,6 +150,9 @@ final class Auth
     public static function login(array $input): array
     {
         self::requireCsrf();
+        if (!Settings::bool('auth.user_login_enabled', true)) {
+            throw new ApiError(403, 'user_login_disabled', '当前站点已关闭普通用户登录');
+        }
         $username = strtolower(trim((string) ($input['username'] ?? '')));
         $password = (string) ($input['password'] ?? '');
         if ($username === '' || $password === '') {
@@ -154,9 +165,12 @@ final class Auth
         $stmt = Db::pdo()->prepare('SELECT * FROM users WHERE username = ? AND is_guest = 0 LIMIT 1');
         $stmt->execute([$username]);
         $account = $stmt->fetch();
-        if (!$account || !password_verify($password, (string) $account['password_hash'])) {
+        if (!$account || (int) ($account['is_active'] ?? 1) !== 1 || !password_verify($password, (string) $account['password_hash'])) {
             self::recordFailure($throttleKey);
             throw new ApiError(401, 'invalid_credentials', '用户名或密码不正确');
+        }
+        if ((int) ($account['is_admin'] ?? 0) === 1 && !Settings::bool('admin.password_login_enabled', true)) {
+            throw new ApiError(403, 'admin_password_login_disabled', '管理员密码登录已关闭，请使用 Passkey');
         }
 
         $guest = self::user();
@@ -223,6 +237,7 @@ final class Auth
             'displayName' => $user['display_name'],
             'username' => $user['username'],
             'isGuest' => (int) $user['is_guest'] === 1,
+            'isAdmin' => (int) ($user['is_admin'] ?? 0) === 1,
             'xp' => (int) $user['xp'],
             'theme' => $user['theme'],
             'createdAt' => $user['created_at'],

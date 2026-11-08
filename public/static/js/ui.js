@@ -37,6 +37,10 @@ const paths = {
   monitor: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/><path d="M6 10h2l1.2-3 2 6 1.5-3H18"/>',
   bookOpen: '<path d="M12 6.5C10 4.5 7 4 3 4v15c4 0 7 .5 9 2.5 2-2 5-2.5 9-2.5V4c-4 0-7 .5-9 2.5z"/><path d="M12 6.5v15"/>',
   spark: '<path d="m12 2 2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z"/>',
+  shield: '<path d="M12 3 4.5 6v5.5c0 4.5 3.2 8.2 7.5 9.5 4.3-1.3 7.5-5 7.5-9.5V6z"/><path d="m9 12 2 2 4-4"/>',
+  fingerprint: '<path d="M12 11a4 4 0 0 0-4 4c0 1.6-.3 3.2-1 4.6M16 15a4 4 0 0 0-4-4M12 7a8 8 0 0 1 8 8c0 1.5-.2 3-.7 4.4M4.7 16.7A14 14 0 0 0 6 12a6 6 0 0 1 6-5"/>',
+  key: '<circle cx="8" cy="15" r="4"/><path d="m11 12 8-8M15 4h5v5"/>',
+  users: '<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 5a3 3 0 0 1 0 6M17 14a5 5 0 0 1 4 4"/>',
 };
 
 export function icon(name, size = 18, extra = '') {

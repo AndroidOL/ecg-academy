@@ -9,7 +9,7 @@
 - [x] 新建独立目录与 git
 - [x] 数据库 `ecg_academy` 与 7 张表（users / user_progress / quiz_attempts / sim_sessions / sim_runs / auth_throttle / ai_usage）
 - [x] 文档：README / PROJECT / ARCHITECTURE / DESIGN / RESEARCH / DATABASE / AI / API / TESTING / DEPLOYMENT / MEDICAL
-- [x] 9 个章节、46 篇课程（40 种诊断 + 6 篇基本功/速查）
+- [x] 19 个章节、229 章课程（40 种判读诊断 + 183 个理论/病例专题）
 - [x] 40 种诊断的 ECG 规格、标注、机制、标准、鉴别、处理、易错点
 - [x] ECG 波形引擎（500 Hz、节律、早搏、阻滞、电解质、VT/VF/TdP、12 导联）
 - [x] Canvas 渲染器（网格、扫描、标注、悬停测量、12 导联、双主题）
@@ -26,7 +26,9 @@
 - [x] 教科书模式（P/PR/QRS/T/QT 波形标注 + 正常对照）
 - [x] 移动端满宽单列、44px 触控、16px 输入、安全区与移动操作面板重排
 - [x] 生产 nginx vhost（新增文件）与部署环境可访问
-- [x] 测试：内容校验 46/0 错误；题库 1200/0 错误；引擎 15/15；播放器 13/13；状态机 9/9；UI 冒烟 9/9；生产 API 通过
+- [x] 管理后台：数据库 settings、管理员密码 + WebAuthn Passkey、注册/登录开关、AI 多供应商/多模型、用户启停/角色/密码重置、审计日志
+- [x] 课程导航：常见/不常见分离、默认难度排序、每页 24 章分页
+- [x] 测试：内容 0 错误；课程 229/0 错误；题库 1200/0 错误；引擎 15/15；播放器 13/13；状态机 9/9；UI 冒烟 10/10；管理 API 通过
 - [x] 医学手册导出 `docs/MEDICAL.md`（182 KB）
 
 ## 关键信息

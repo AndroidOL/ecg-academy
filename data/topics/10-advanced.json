@@ -1,0 +1,410 @@
+[
+  {
+    "id": "ai-ecg",
+    "name": "AI 心电图：能力与边界",
+    "en": "AI ECG: capabilities and limits",
+    "chapter": "advanced",
+    "difficulty": 3,
+    "urgency": "advanced",
+    "tags": [
+      "AI",
+      "深度学习",
+      "筛查"
+    ],
+    "oneLiner": "AI 心电图可从波形识别房颤、低 EF、肥厚、高钾等，但依赖训练数据与设备，不能替代临床判断。",
+    "specificity": "AI 输出是概率/提示，不是诊断；在筛查、基层与远程监测中有潜力，但需前瞻验证与监管。",
+    "objectives": [
+      "AI 是筛查工具，不是诊断。",
+      "验证与监管重要。",
+      "临床确认不可少。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "深度学习从大量 ECG-标签配对中学习特征；分布偏移、导联差异与伪差会影响性能。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "AI 可筛查房颤/低 EF/高钾等。",
+          "输出概率，不是诊断。",
+          "需外部验证与监管。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "不要根据 AI 提示直接治疗；确认 ECG、临床与金标准检查。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "AI 是筛查工具，不是诊断。",
+      "验证与监管重要。",
+      "临床确认不可少。"
+    ],
+    "clinicalPearl": "AI 说“低 EF”，下一步是超声，不是直接开药。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "ecg-imaging",
+    "name": "心电成像与高级标测",
+    "en": "ECG imaging and advanced mapping",
+    "chapter": "advanced",
+    "difficulty": 3,
+    "urgency": "advanced",
+    "tags": [
+      "心电成像",
+      "标测",
+      "研究"
+    ],
+    "oneLiner": "心电成像通过体表多导联重建心脏电活动，探索心律失常起源与心室激动顺序；目前多用于研究。",
+    "specificity": "需要多导联/高密度记录与数学模型；空间分辨率与稳定性仍有限，不能替代心内标测。",
+    "objectives": [
+      "心电成像=体表逆问题。",
+      "研究阶段，分辨率有限。",
+      "心内标测仍是金标准。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "体表电位与心脏源的关系可通过逆问题求解；病态心脏与噪声使重建困难。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "多导联体表记录 + 逆问题。",
+          "研究工具，非临床常规。",
+          "不能替代心内标测。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "心电成像的“漂亮三维图”不等于临床可用的靶点；需验证。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "心电成像=体表逆问题。",
+      "研究阶段，分辨率有限。",
+      "心内标测仍是金标准。"
+    ],
+    "clinicalPearl": "看到三维心电成像图，先问验证；研究工具不能直接用于消融。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "high-density-mapping",
+    "name": "高密度标测",
+    "en": "High-density mapping",
+    "chapter": "advanced",
+    "difficulty": 3,
+    "urgency": "advanced",
+    "tags": [
+      "高密度",
+      "标测",
+      "消融"
+    ],
+    "oneLiner": "高密度标测用多电极导管快速采集心内电图，构建激动/电压图，识别瘢痕、慢传导通道与靶点。",
+    "specificity": "适用于复杂房速、室速、疤痕相关心律失常；需结合拖带/起搏标测验证。",
+    "objectives": [
+      "高密度标测用于复杂心律失常。",
+      "电压图识别瘢痕。",
+      "需拖带/起搏验证。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "多电极同时记录提高空间采样密度，缩短标测时间；但导管接触与稳定性仍影响准确性。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "多电极快速采集。",
+          "激动/电压图识别瘢痕与通道。",
+          "需拖带/起搏验证。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "高密度图不是“自动答案”；瘢痕、接触与噪声可造成假低电压区。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "高密度标测用于复杂心律失常。",
+      "电压图识别瘢痕。",
+      "需拖带/起搏验证。"
+    ],
+    "clinicalPearl": "高密度图很漂亮，但靶点要靠拖带与起搏确认；图不等于成功。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "wearable-multilead",
+    "name": "多导联可穿戴与远程监护",
+    "en": "Multilead wearables and remote monitoring",
+    "chapter": "advanced",
+    "difficulty": 3,
+    "urgency": "advanced",
+    "tags": [
+      "可穿戴",
+      "多导联",
+      "远程"
+    ],
+    "oneLiner": "多导联贴片/胸带可提供更完整的心律与 ST 监测，适合术后、抗心律失常药物与远程随访。",
+    "specificity": "多导联比单导联更能识别 P 波与 ST 改变；但佩戴依从性、数据量与报警管理是挑战。",
+    "objectives": [
+      "多导联可穿戴提高检测能力。",
+      "远程随访需工作流。",
+      "数据审核不可少。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "更多导联提供空间信息，改善房颤/缺血检测；远程传输缩短发现时间。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "多导联贴片/胸带。",
+          "术后/药物/远程随访。",
+          "数据量与依从性是挑战。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "远程监测数据需有人审核；不能只生成报警而不处理。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "多导联可穿戴提高检测能力。",
+      "远程随访需工作流。",
+      "数据审核不可少。"
+    ],
+    "clinicalPearl": "多导联贴片能抓到更多房颤，但如果没有团队审核，报警只是噪音。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "genetics-ecg",
+    "name": "遗传性心律失常与基因检测",
+    "en": "Genetics and inherited arrhythmias",
+    "chapter": "advanced",
+    "difficulty": 3,
+    "urgency": "advanced",
+    "tags": [
+      "基因",
+      "遗传",
+      "猝死"
+    ],
+    "oneLiner": "遗传性心律失常（LQTS、Brugada、CPVT、ARVC、HCM）可通过基因检测与家族筛查早期发现。",
+    "specificity": "基因结果需结合表型、家族史与变异解读；意义未明变异不能单独诊断。",
+    "objectives": [
+      "遗传性心律失常需家族筛查。",
+      "基因结果结合表型。",
+      "VUS 需谨慎。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "离子通道/结构蛋白突变导致电活动或心肌结构异常；外显率与年龄相关。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "LQTS/Brugada/CPVT/ARVC/HCM 可遗传。",
+          "基因 + 表型 + 家族史。",
+          "VUS 不能单独诊断。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "基因检测不是“算命”；需遗传咨询与多学科解读。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "遗传性心律失常需家族筛查。",
+      "基因结果结合表型。",
+      "VUS 需谨慎。"
+    ],
+    "clinicalPearl": "一个年轻人猝死，家族筛查可能救另一个人；但基因报告要专业解读。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "research-methods-ecg",
+    "name": "心电图研究方法入门",
+    "en": "ECG research methods",
+    "chapter": "advanced",
+    "difficulty": 3,
+    "urgency": "advanced",
+    "tags": [
+      "研究",
+      "统计",
+      "验证"
+    ],
+    "oneLiner": "心电图研究需明确问题、数据来源、标注标准、终点与验证集；AI 研究还要报告设备、导联与人群。",
+    "specificity": "常见设计：诊断准确性、预后队列、随机试验、回顾性数据库；需避免数据泄漏与过拟合。",
+    "objectives": [
+      "研究需明确终点与验证。",
+      "避免数据泄漏。",
+      "外部验证提高可信度。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "心电图信号高维、标签噪声与人群差异大；方法学质量决定结论可信度。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "明确问题与终点。",
+          "标注标准与验证集。",
+          "报告设备/导联/人群。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "不要用同一数据集训练与验证；AI 论文要外部验证。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "研究需明确终点与验证。",
+      "避免数据泄漏。",
+      "外部验证提高可信度。"
+    ],
+    "clinicalPearl": "一个 AI ECG 模型在单中心很准，不代表能用于另一个医院；外部验证是关键。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "digital-twin",
+    "name": "数字孪生与电生理模拟",
+    "en": "Digital twin and EP simulation",
+    "chapter": "advanced",
+    "difficulty": 3,
+    "urgency": "advanced",
+    "tags": [
+      "数字孪生",
+      "模拟",
+      "电生理"
+    ],
+    "oneLiner": "数字孪生用患者影像/电生理数据构建心脏电活动模型，模拟心律失常与治疗反应；目前多用于研究。",
+    "specificity": "需要解剖、纤维方向、离子通道与临床数据；个体化参数与验证仍是难点。",
+    "objectives": [
+      "数字孪生=个体化电生理模型。",
+      "研究工具，非临床常规。",
+      "需要验证。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "计算模型可探索折返、消融靶点与药物反应，但不能完全替代真实心脏。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "影像 + 电生理数据建模。",
+          "模拟心律失常/消融。",
+          "研究阶段，验证困难。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "数字孪生的预测需临床验证；不能把模拟结果直接用于患者治疗。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "数字孪生=个体化电生理模型。",
+      "研究工具，非临床常规。",
+      "需要验证。"
+    ],
+    "clinicalPearl": "数字孪生可以帮你理解折返，但不能代替电生理检查与临床判断。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "future-ecg",
+    "name": "心电图学的未来路线",
+    "en": "Future of electrocardiography",
+    "chapter": "advanced",
+    "difficulty": 2,
+    "urgency": "advanced",
+    "tags": [
+      "未来",
+      "路线",
+      "学习"
+    ],
+    "oneLiner": "未来心电图将融合 AI 筛查、可穿戴连续监测、远程医疗与精准遗传学；核心仍是病理生理与临床决策。",
+    "specificity": "学习者应掌握：基础电生理、系统判读、危急值、设备与伪差、临床整合；AI 是工具而非替代。",
+    "objectives": [
+      "未来=AI + 可穿戴 + 远程 + 遗传。",
+      "基础与临床整合仍是核心。",
+      "持续学习与验证。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "技术进步改变采集与分析方式，但心电图的价值在于把电活动与患者问题连接起来。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "AI/可穿戴/远程/遗传学。",
+          "核心仍是病理生理与临床。",
+          "AI 是工具，不是替代。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "不要只追新技术而忽略基础；也不要因 AI 而放弃系统判读。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "未来=AI + 可穿戴 + 远程 + 遗传。",
+      "基础与临床整合仍是核心。",
+      "持续学习与验证。"
+    ],
+    "clinicalPearl": "心电图学的未来不是“机器取代人”，而是“人用机器看得更远”；基础越牢，工具越有用。",
+    "topic": true,
+    "quizEligible": false
+  }
+]

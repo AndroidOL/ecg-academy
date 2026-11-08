@@ -4,7 +4,7 @@ const listeners = new Set();
 
 export const store = {
   user: null,
-  app: { name: '心迹 ECG Lab', version: '1.0.0', assetVersion: '1' },
+  app: { name: '心迹 ECG Lab', version: '1.1.0', assetVersion: '1' },
   content: { diagnoses: 0, chapters: 0, quizEligible: 0 },
   ai: { configured: false, mode: 'local', used: 0, dailyLimit: 30, remaining: 30 },
   progress: { read: 0, mastered: 0, total: 0 },

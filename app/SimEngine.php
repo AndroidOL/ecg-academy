@@ -1048,6 +1048,26 @@ final class SimEngine
         ];
     }
 
+    private static function cprVitals(array $state, int $bpSys, int $bpDia, int $spo2, int $etco2): array
+    {
+        // 胸外按压会在监护仪上产生节律性伪差；这里的“心率”是按压频率估计，不是自主循环。
+        $t = microtime(true);
+        $base = 108;
+        $jitter = (int) round(sin($t * 1.7) * 4 + sin($t * 0.83) * 3 + random_int(-1, 1));
+        $etco2Jitter = (int) round(sin($t * 0.9) * 2);
+        return [
+            'hr' => max(92, min(122, $base + $jitter)),
+            'bpSys' => $bpSys + (int) round(sin($t * 0.7) * 2),
+            'bpDia' => $bpDia + (int) round(sin($t * 0.6) * 1),
+            'spo2' => max(70, min(92, $spo2 + (int) round(sin($t * 0.5) * 2))),
+            'etco2' => max(8, $etco2 + $etco2Jitter),
+            'responsive' => false,
+            'pulse' => false,
+            'hrSource' => 'cpr',
+            'hrLabel' => '按压频率',
+        ];
+    }
+
     private static function vitals(array $state, array $scenario, bool $cpr, bool $ended): array
     {
         if ($ended && in_array($state['outcome'], ['rosc', 'stable'], true)) {
@@ -1058,11 +1078,11 @@ final class SimEngine
         }
         if ($state['rhythm'] === 'post_shock') {
             return $cpr
-                ? ['hr' => 0, 'bpSys' => 78, 'bpDia' => 42, 'spo2' => 82, 'etco2' => 14, 'responsive' => false, 'pulse' => false]
+                ? self::cprVitals($state, 78, 42, 82, 14)
                 : ['hr' => 0, 'bpSys' => 0, 'bpDia' => 0, 'spo2' => 55, 'etco2' => 0, 'responsive' => false, 'pulse' => false];
         }
         if ($cpr && in_array($scenario['algorithm'], ['vf', 'hyperk'], true)) {
-            return ['hr' => (int) ($state['hr'] ?? 0), 'bpSys' => 82, 'bpDia' => 50, 'spo2' => 86, 'etco2' => 20, 'responsive' => false, 'pulse' => false];
+            return self::cprVitals($state, 82, 50, 86, 20);
         }
         return [
             'hr' => (int) ($state['hr'] ?? 0),

@@ -52,8 +52,8 @@ export async function homeView() {
           <a class="btn btn-ghost btn-lg" href="#/sim">${icon('zap', 18)} 急救模拟</a>
         </div>
         <div class="hero-stats">
-          <div class="hero-stat"><b>${stats.quizEligible || stats.diagnoses || 40}</b><span>种心电图诊断</span></div>
-          <div class="hero-stat"><b>${stats.articles || stats.diagnoses || 46}</b><span>篇结构化课程</span></div>
+          <div class="hero-stat"><b>${stats.quizEligible || stats.diagnoses || 40}</b><span>种判读诊断</span></div>
+          <div class="hero-stat"><b>${stats.articles || 200}</b><span>章系统课程</span></div>
           <div class="hero-stat"><b>${stats.chapters || 9}</b><span>个系统章节</span></div>
           <div class="hero-stat"><b>${percent}%</b><span>我的学习进度</span></div>
         </div>
@@ -118,7 +118,7 @@ export async function homeView() {
       <div class="section-head"><div><div class="page-eyebrow">TOOLS</div><h2 class="section-title">四种练习方式，同一套判读逻辑</h2></div></div>
       <div class="feature-grid">
         <a class="feature-card" href="#/learn">
-          <div class="feature-icon">${icon('bookOpen', 20)}</div><h3>诊断图谱</h3><p>40 篇结构化课程，含机制、标准、鉴别、处理与易错点；每篇都配可播放、可标注的心电图。</p><span class="feature-link">进入图谱 ${icon('arrowRight', 13)}</span>
+          <div class="feature-icon">${icon('bookOpen', 20)}</div><h3>诊断图谱</h3><p>${stats.articles || 200} 章结构化课程：从电生理、导联与向量，到肥厚、起搏、综合征、儿科和临床决策；诊断篇配可播放、可标注的心电图。</p><span class="feature-link">进入图谱 ${icon('arrowRight', 13)}</span>
         </a>
         <a class="feature-card" href="#/practice">
           <div class="feature-icon">${icon('target', 20)}</div><h3>判读练习</h3><p>从单诊断到组合诊断，服务端判分；错题可追问 AI，也可以按薄弱章节生成专项训练。</p><span class="feature-link">开始判读 ${icon('arrowRight', 13)}</span>

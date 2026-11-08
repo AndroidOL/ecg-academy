@@ -1,0 +1,1175 @@
+[
+  {
+    "id": "systematic-ecg-reading",
+    "name": "心电图系统判读十步法",
+    "en": "Ten-step ECG interpretation",
+    "chapter": "clinical",
+    "difficulty": 1,
+    "urgency": "core",
+    "tags": [
+      "判读流程",
+      "系统",
+      "基础"
+    ],
+    "oneLiner": "固定顺序：定标与导联→心率→节律→电轴→PR/QRS/QT→P 波→QRS 形态→ST-T→U 波→与旧图/临床对照。",
+    "specificity": "固定顺序能防止“只看到最显眼的异常”而漏掉传导阻滞、短 PR、QT 延长等关键信息。",
+    "objectives": [
+      "固定十步法，避免只看 ST。",
+      "先定标/导联，再节律/频率。",
+      "结论要回答“是什么、可能为什么、下一步”。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "心电图异常往往不止一个；系统化阅读把“图形”转化为结构化报告，减少遗漏。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "先确认定标、纸速、导联位置。",
+          "节律→频率→间期→形态→ST-T。",
+          "最后与旧图、症状、电解质/药物对照。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "不要一开始就盯着 ST 段；先确定节律与导联，否则可能把伪差/错接当成心梗。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "固定十步法，避免只看 ST。",
+      "先定标/导联，再节律/频率。",
+      "结论要回答“是什么、可能为什么、下一步”。"
+    ],
+    "clinicalPearl": "读图像查体：顺序固定，才不会漏掉藏在角落的异常。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "critical-values",
+    "name": "心电图危急值",
+    "en": "ECG critical values",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "critical",
+    "tags": [
+      "危急值",
+      "报告",
+      "急症"
+    ],
+    "oneLiner": "危急值包括 STEMI、无脉 VT/VF、三度 AVB 伴长间歇、TdP、严重高钾正弦波、极快房颤伴预激、长 QT + 晕厥等。",
+    "specificity": "危急值需要立即报告并启动相应流程；报告内容包含心律、频率、关键改变、患者状态与已采取措施。",
+    "objectives": [
+      "危急值=可能立即致命。",
+      "报告要闭环。",
+      "先处理患者，再补记录。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "危急值的核心是“可能立即危及生命且需要快速干预”；不是所有异常都值得半夜叫醒医生。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "STEMI、无脉 VT/VF、TdP。",
+          "三度 AVB 伴长间歇/低血压。",
+          "严重高钾正弦波、预激伴极快房颤。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "危急值报告要闭环：谁报告、谁接收、什么时间、做了什么；不能只在系统里点“已读”。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "危急值=可能立即致命。",
+      "报告要闭环。",
+      "先处理患者，再补记录。"
+    ],
+    "clinicalPearl": "危急值不是“心电图很吓人”，而是“如果不马上处理，患者可能出事”。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "chest-pain-ecg",
+    "name": "胸痛：心电图决策链",
+    "en": "Chest pain ECG pathway",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "critical",
+    "tags": [
+      "胸痛",
+      "STEMI",
+      "ACS"
+    ],
+    "oneLiner": "胸痛患者首份心电图应在 10 分钟内完成；ST 抬高/压低、T 波动态、后壁/右室导联决定再灌注策略。",
+    "specificity": "STEMI：相邻导联 ST 抬高 + 临床；NSTEMI/不稳定心绞痛：ST 压低/T 倒置；但正常心电图不能排除 ACS。",
+    "objectives": [
+      "胸痛 10 分钟内 ECG。",
+      "STEMI 看相邻导联；aVR 抬高要警惕左主干。",
+      "动态复查与肌钙蛋白。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "冠脉闭塞导致透壁缺血/损伤电流；不同供血区域对应不同导联，下壁常伴右室/后壁受累。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "首份 ECG 10 分钟内完成。",
+          "相邻导联 ST 抬高→再灌注。",
+          "正常 ECG 不能排除 ACS，需动态复查。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "左主干/多支病变可表现为 aVR ST 抬高 + 广泛压低；不要只找单个 ST 抬高。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "胸痛 10 分钟内 ECG。",
+      "STEMI 看相邻导联；aVR 抬高要警惕左主干。",
+      "动态复查与肌钙蛋白。"
+    ],
+    "clinicalPearl": "胸痛 + 下壁 ST 抬高 + 低血压 + 肺清：先想右室梗死，慎用硝酸酯。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "nstemi-ecg",
+    "name": "NSTEMI 与缺血性 ST-T",
+    "en": "NSTEMI and ischemic ST-T",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "urgent",
+    "tags": [
+      "NSTEMI",
+      "ST压低",
+      "缺血"
+    ],
+    "oneLiner": "NSTEMI 常表现为 ST 段水平/下斜型压低、T 波倒置或动态改变；诊断需结合肌钙蛋白与临床。",
+    "specificity": "相邻导联 ST 压低 ≥0.05–0.1 mV、T 波倒置、动态变化；aVR ST 抬高提示左主干/多支病变。",
+    "objectives": [
+      "NSTEMI：ST 压低/T 倒置 + 肌钙蛋白。",
+      "aVR 抬高是高风险信号。",
+      "鉴别 LVH/洋地黄/低钾。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "心内膜下缺血产生损伤电流，体表表现为 ST 压低；缺血范围与导联相关。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "相邻导联 ST 压低/T 倒置。",
+          "动态变化比单次更重要。",
+          "aVR 抬高 + 广泛压低→左主干/多支。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "ST 压低也可见于 LVH 劳损、洋地黄、低钾、肺栓塞；需结合临床与动态。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "NSTEMI：ST 压低/T 倒置 + 肌钙蛋白。",
+      "aVR 抬高是高风险信号。",
+      "鉴别 LVH/洋地黄/低钾。"
+    ],
+    "clinicalPearl": "NSTEMI 的心电图可能“不夸张”，但风险不低；动态复查与肌钙蛋白是关键。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "syncope-ecg",
+    "name": "晕厥：心电图红线",
+    "en": "Syncope ECG red flags",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "critical",
+    "tags": [
+      "晕厥",
+      "长QT",
+      "传导阻滞"
+    ],
+    "oneLiner": "晕厥患者心电图红线：长 QT、短 PR/预激、Brugada、ARVC、三度 AVB、双分支阻滞、室速、起搏器故障。",
+    "specificity": "运动中晕厥、无前驱、家族猝死、心电图异常提示心脏性晕厥，需住院评估。",
+    "objectives": [
+      "晕厥先查心电图红线。",
+      "运动中晕厥最危险。",
+      "正常 ECG 不排除心律失常。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "心脏性晕厥可能由短暂心律失常导致，静息心电图可正常；需要动态监测/电生理评估。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "长 QT、预激、Brugada、ARVC。",
+          "三度 AVB/双分支阻滞。",
+          "运动中晕厥/家族猝死是红线。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "晕厥 + 心电图正常不能排除心脏性原因；反复晕厥需 ILR/电生理评估。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "晕厥先查心电图红线。",
+      "运动中晕厥最危险。",
+      "正常 ECG 不排除心律失常。"
+    ],
+    "clinicalPearl": "晕厥患者的心电图不是“走流程”，而是在找可能下一秒致命的线索。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "palpitations-ecg",
+    "name": "心悸：从心电图到机制",
+    "en": "Palpitations and ECG",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "心悸",
+      "早搏",
+      "室上速"
+    ],
+    "oneLiner": "心悸的评估先区分规则/不规则、突发突止/渐进、有无血流动力学不稳定；心电图/动态监测是核心。",
+    "specificity": "窄 QRS 规则→AVNRT/AVRT/房速；窄 QRS 不规则→房颤/房扑多变传导；宽 QRS→室速/预激/差异性传导。",
+    "objectives": [
+      "心悸先分窄/宽、规则/不规则。",
+      "宽 QRS 先按室速处理。",
+      "正常 ECG 需动态监测。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "心悸机制包括折返、自律性增高、触发活动；不同机制对迷走刺激/腺苷反应不同。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "规则/不规则、突发/渐进。",
+          "窄 QRS 看房室关系；宽 QRS 先排除室速。",
+          "动态监测捕捉发作。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "心悸时心电图正常很常见；需要事件记录器/可穿戴设备，不能一次正常就结束。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "心悸先分窄/宽、规则/不规则。",
+      "宽 QRS 先按室速处理。",
+      "正常 ECG 需动态监测。"
+    ],
+    "clinicalPearl": "心悸患者“发作时心电图”比“平时心电图”值钱；想办法抓到那一刻。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "hypotension-ecg",
+    "name": "低血压与心电图",
+    "en": "Hypotension and ECG",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "critical",
+    "tags": [
+      "低血压",
+      "休克",
+      "心律失常"
+    ],
+    "oneLiner": "低血压患者心电图可揭示心动过缓、快速心律失常、缺血、肺栓塞、心包填塞、电解质异常等可逆原因。",
+    "specificity": "严重心动过缓/三度 AVB、室速、广泛 ST 改变、低电压/电交替、S1Q3T3、高钾正弦波都需要立即处理。",
+    "objectives": [
+      "低血压先找可逆心律失常/缺血/梗阻。",
+      "电交替+低电压→心包填塞。",
+      "高钾正弦波→立即钙剂。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "心律失常/缺血/梗阻性原因导致心输出量下降；心电图是快速鉴别工具之一。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "心动过缓/三度 AVB→起搏。",
+          "室速/快速房颤→复律/控制心率。",
+          "低电压/电交替→心包填塞；S1Q3T3→肺栓塞。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "低血压+心电图异常时，先稳定患者，不要为了“确诊”延误处理；床旁超声很有价值。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "低血压先找可逆心律失常/缺血/梗阻。",
+      "电交替+低电压→心包填塞。",
+      "高钾正弦波→立即钙剂。"
+    ],
+    "clinicalPearl": "低血压患者的心电图是“血流动力学线索”，不是单纯诊断题；先救命再解释。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "pulmonary-embolism-ecg",
+    "name": "肺栓塞心电图",
+    "en": "Pulmonary embolism ECG",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "urgent",
+    "tags": [
+      "肺栓塞",
+      "S1Q3T3",
+      "右心负荷"
+    ],
+    "oneLiner": "肺栓塞心电图可正常，也可出现窦速、S1Q3T3、右束支阻滞、右胸 T 倒置、电轴右偏；不能依靠心电图排除。",
+    "specificity": "S1Q3T3 特异性低；右心负荷改变（V1–V4 T 倒置、RBBB、右房增大）提示大面积/次大面积 PE。",
+    "objectives": [
+      "PE 心电图可正常。",
+      "S1Q3T3 不特异。",
+      "右心负荷提示高风险。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "肺动脉高压与右室负荷导致右心扩张、传导延迟与复极异常；小栓塞心电图可完全正常。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "窦速最常见。",
+          "S1Q3T3 不特异。",
+          "右心负荷→RBBB、右胸 T 倒置、电轴右偏。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "心电图正常不能排除 PE；诊断靠临床概率、D-二聚体与影像。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "PE 心电图可正常。",
+      "S1Q3T3 不特异。",
+      "右心负荷提示高风险。"
+    ],
+    "clinicalPearl": "怀疑 PE 时心电图是“辅助”，不是“排除工具”；别因 ECG 正常延误 CTPA。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "hyperkalemia-emergency",
+    "name": "高钾血症心电图急症",
+    "en": "Hyperkalemia ECG emergency",
+    "chapter": "clinical",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "高钾",
+      "正弦波",
+      "钙剂"
+    ],
+    "oneLiner": "高钾心电图从 T 波高尖→P 波低平/PR 延长→QRS 增宽→正弦波→室颤/停搏；严重时立即静脉钙剂稳定心肌。",
+    "specificity": "K⁺ >6.5 或心电图改变时需紧急处理；钙剂不降钾，只稳定心肌；随后胰岛素+葡萄糖、β2、透析等降钾。",
+    "objectives": [
+      "高钾：T 高尖、P 消失、QRS 宽、正弦波。",
+      "钙剂稳定心肌，不降钾。",
+      "同时降钾与查病因。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "高钾降低静息膜电位、减慢传导，导致 P 波消失、QRS 增宽；心肌兴奋性先高后低。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "T 波高尖→P 消失→QRS 增宽→正弦波。",
+          "严重时立即静脉钙剂。",
+          "钙剂后仍需降钾（胰岛素/葡萄糖、透析）。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "高钾心电图与低钾/早期复极可混淆；血钾与临床是关键，不能只凭 T 波。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "高钾：T 高尖、P 消失、QRS 宽、正弦波。",
+      "钙剂稳定心肌，不降钾。",
+      "同时降钾与查病因。"
+    ],
+    "clinicalPearl": "看到正弦波不要等血钾结果；先静脉钙剂，再降钾。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "tca-overdose-ecg",
+    "name": "三环类抗抑郁药过量心电图",
+    "en": "TCA overdose ECG",
+    "chapter": "clinical",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "TCA",
+      "QRS增宽",
+      "碳酸氢钠"
+    ],
+    "oneLiner": "TCA 过量导致钠通道阻滞：QRS 增宽、电轴右偏、aVR R 波增高、QT 延长；QRS >100 ms 是高危。",
+    "specificity": "aVR R 波 ≥3 mm、QRS >100 ms 提示严重中毒；低血压、心律失常、抽搐是危险信号。",
+    "objectives": [
+      "TCA：QRS 宽 + aVR R 高。",
+      "碳酸氢钠，不是单纯利多卡因。",
+      "监测 QRS/QT 与血流动力学。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "钠通道阻滞减慢 0 相，QRS 增宽；抗胆碱/α 阻滞导致心动过速、低血压；碳酸氢钠提供钠负荷与碱化。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "QRS 增宽、aVR R 波增高。",
+          "QRS >100 ms 是高危。",
+          "碳酸氢钠是治疗关键。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "TCA 中毒的心电图可模拟 RBBB/室速；不要仅凭 QRS 宽诊断室速，结合药物史。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "TCA：QRS 宽 + aVR R 高。",
+      "碳酸氢钠，不是单纯利多卡因。",
+      "监测 QRS/QT 与血流动力学。"
+    ],
+    "clinicalPearl": "过量患者 QRS 增宽 + 抗胆碱表现，先想 TCA；碳酸氢钠可能救命。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "digoxin-toxicity-pattern",
+    "name": "洋地黄效应与中毒",
+    "en": "Digoxin effect and toxicity",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "urgent",
+    "tags": [
+      "洋地黄",
+      "ST鱼钩",
+      "中毒"
+    ],
+    "oneLiner": "洋地黄效应：ST 段鱼钩样下垂、T 波低平/倒置、QT 缩短；中毒：恶心、视觉异常、心律失常（房速伴阻滞、室早）。",
+    "specificity": "鱼钩样 ST 改变不等同中毒；中毒诊断结合血药浓度、症状、肾功能与心律失常。",
+    "objectives": [
+      "洋地黄效应≠中毒。",
+      "中毒心律失常：房速伴阻滞、室早。",
+      "查血钾、肾功能、血药浓度。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "洋地黄抑制 Na-K-ATP 酶，增加细胞内钙；治疗剂量产生复极改变，中毒导致触发活动/传导阻滞。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "鱼钩样 ST、T 低平、QT 短。",
+          "中毒：房速伴阻滞、室早、心动过缓。",
+          "低钾/肾功能不全增加中毒风险。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "不要把鱼钩样 ST 直接诊断中毒；也不要在中毒时盲目补钙（传统争议，需谨慎）。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "洋地黄效应≠中毒。",
+      "中毒心律失常：房速伴阻滞、室早。",
+      "查血钾、肾功能、血药浓度。"
+    ],
+    "clinicalPearl": "地高辛中毒的心电图常是“房速 + 房室阻滞”；看到这种组合要问地高辛。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "drug-induced-qt",
+    "name": "药物性 QT 延长",
+    "en": "Drug-induced QT prolongation",
+    "chapter": "clinical",
+    "difficulty": 3,
+    "urgency": "critical",
+    "tags": [
+      "QT",
+      "药物",
+      "尖端扭转"
+    ],
+    "oneLiner": "多种抗心律失常药、抗生素、抗精神病药、止吐药可延长 QT；QTc >500 ms 或较基线增加 >60 ms 是高风险。",
+    "specificity": "高危：女性、低钾/低镁、心动过缓、心衰、基因易感、联合用药；TdP 前可有 QT 延长、T-U 融合。",
+    "objectives": [
+      "药物性 QT：>500 ms 高风险。",
+      "纠正 K/Mg，停可疑药。",
+      "TdP→硫酸镁。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "药物阻滞 IKr 延长复极，增加早期后除极；电解质异常与心动过缓进一步放大风险。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "QTc >500 ms 或 Δ>60 ms 高风险。",
+          "纠正钾/镁；停可疑药。",
+          "TdP 用硫酸镁。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "不要只停一种药；查所有 QT 延长药物、电解质与肾功能。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "药物性 QT：>500 ms 高风险。",
+      "纠正 K/Mg，停可疑药。",
+      "TdP→硫酸镁。"
+    ],
+    "clinicalPearl": "QT 延长 + 低钾 + 多种药物，是 TdP 的温床；先停罪魁、补镁钾。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "electrolyte-ecg-integration",
+    "name": "电解质紊乱心电图整合",
+    "en": "Electrolyte ECG integration",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "钾",
+      "钙",
+      "镁"
+    ],
+    "oneLiner": "钾影响 T 波/QRS，钙影响 ST/QT，镁影响 QT/TdP；电解质紊乱常合并出现，需综合判读。",
+    "specificity": "高钾 T 高尖/QRS 宽；低钾 U 波/ST 低；高钙 QT 短；低钙 QT 长；低镁 QT 长 + TdP。",
+    "objectives": [
+      "钾看 T/QRS，钙看 ST/QT，镁看 QT/TdP。",
+      "低镁常伴低钾，补钾不补镁难纠正。",
+      "复查电解质与 ECG。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "电解质改变膜电位与复极时程；同一患者可同时有低镁、低钾、低钙。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "高钾→T 高尖、QRS 宽。",
+          "低钾→U 波、ST 低。",
+          "高钙 QT 短；低钙 QT 长；低镁 TdP。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "心电图提示电解质异常时，不要只查一种离子；纠正要缓慢并监测。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "钾看 T/QRS，钙看 ST/QT，镁看 QT/TdP。",
+      "低镁常伴低钾，补钾不补镁难纠正。",
+      "复查电解质与 ECG。"
+    ],
+    "clinicalPearl": "看到 QT 长 + U 波，别只补钾；查镁，低镁是 TdP 的共犯。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "preoperative-cardiac-risk",
+    "name": "围术期心脏风险与心电图",
+    "en": "Perioperative cardiac risk",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "围术期",
+      "风险",
+      "心电图"
+    ],
+    "oneLiner": "围术期心电图用于发现可改变管理的异常：新发缺血、严重传导阻滞、未控制心律失常、长 QT、起搏器故障。",
+    "specificity": "高风险手术/已知心脏病/症状者需评估；低风险手术年轻无症状者不常规做 ECG。",
+    "objectives": [
+      "围术期 ECG 按风险选择。",
+      "重点找可改变管理的异常。",
+      "起搏器/ICD 需术前评估。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "手术应激、麻醉、液体 shifts、电解质变化可诱发心律失常/缺血；基线 ECG 有助于比较。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "高风险手术/心脏病/症状者评估。",
+          "新发缺血/传导阻滞/长 QT。",
+          "起搏器/ICD 术前检查。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "术前 ECG 异常不等于取消手术；需评估严重程度与可逆因素。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "围术期 ECG 按风险选择。",
+      "重点找可改变管理的异常。",
+      "起搏器/ICD 需术前评估。"
+    ],
+    "clinicalPearl": "术前心电图的目的是“让麻醉更安全”，不是“给病历加一张纸”。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "postop-af",
+    "name": "术后房颤",
+    "en": "Postoperative AF",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "urgent",
+    "tags": [
+      "术后",
+      "房颤",
+      "房扑"
+    ],
+    "oneLiner": "术后房颤常见于心脏/胸科/大手术，多发生在术后 2–4 天；需评估缺血、感染、肺栓塞、电解质与容量。",
+    "specificity": "心电图示房颤/房扑，心室率快；可无症状或心悸/低血压；需抗凝风险评估。",
+    "objectives": [
+      "术后房颤多自限但需查诱因。",
+      "控制心率，评估抗凝。",
+      "持续者需长期管理。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "手术应激、炎症、交感激活、心房牵张与电解质异常促发房颤；多数为自限性但可复发。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "术后 2–4 天常见。",
+          "查诱因：缺血、感染、PE、电解质。",
+          "心室率控制 + 抗凝风险评估。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "术后房颤不是“良性”的；卒中/心衰风险需评估，尤其持续/复发者。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "术后房颤多自限但需查诱因。",
+      "控制心率，评估抗凝。",
+      "持续者需长期管理。"
+    ],
+    "clinicalPearl": "术后房颤先找“为什么现在发生”：感染、缺氧、容量、电解质，而不是只给 β 阻滞剂。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "sepsis-ecg",
+    "name": "脓毒症与心电图",
+    "en": "Sepsis and ECG",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "urgent",
+    "tags": [
+      "脓毒症",
+      "窦速",
+      "缺血"
+    ],
+    "oneLiner": "脓毒症常表现为窦速、低电压、ST 压低/T 倒置、房颤；心电图异常可能反映灌注不足、电解质与心肌抑制。",
+    "specificity": "窦速与发热/低血压程度不相称、新发房颤、缺血性 ST 改变提示病情重；需结合乳酸、感染指标与超声。",
+    "objectives": [
+      "脓毒症 ECG：窦速、房颤、ST-T 改变。",
+      "先复苏与查感染，同时排除 ACS。",
+      "电解质与心肌抑制要评估。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "交感激活、低灌注、炎症介质与电解质紊乱共同影响心肌电活动；脓毒症心肌病可致 ST-T 改变。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "窦速最常见。",
+          "新发房颤/ST 压低提示风险。",
+          "结合乳酸、灌注与超声。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "脓毒症的 ST 压低不一定冠脉闭塞；但持续/局灶性改变需排除 ACS。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "脓毒症 ECG：窦速、房颤、ST-T 改变。",
+      "先复苏与查感染，同时排除 ACS。",
+      "电解质与心肌抑制要评估。"
+    ],
+    "clinicalPearl": "脓毒症患者的心电图是“灌注的镜子”；先复苏，再解释波形。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "trauma-ecg",
+    "name": "创伤与心电图",
+    "en": "Trauma and ECG",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "urgent",
+    "tags": [
+      "创伤",
+      "心包",
+      "心律失常"
+    ],
+    "oneLiner": "创伤患者心电图可提示心肌挫伤、心包填塞、电解质异常、低体温、气胸/纵隔气肿；也可正常。",
+    "specificity": "低电压/电交替→心包填塞；ST 抬高/心律失常→心肌挫伤；Osborn 波→低体温；右心负荷→肺栓塞/气胸。",
+    "objectives": [
+      "创伤 ECG：填塞、挫伤、低体温。",
+      "电交替+低电压要快查超声。",
+      "正常 ECG 不排除损伤。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "钝性胸部创伤可损伤心肌/冠脉/心包；气胸/血胸改变胸腔阻抗与心脏位置。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "低电压/电交替→心包填塞。",
+          "ST 改变/心律失常→心肌挫伤。",
+          "Osborn 波→低体温。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "创伤患者心电图异常需结合 FAST/超声、生命体征；不要因“心电图正常”排除严重损伤。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "创伤 ECG：填塞、挫伤、低体温。",
+      "电交替+低电压要快查超声。",
+      "正常 ECG 不排除损伤。"
+    ],
+    "clinicalPearl": "创伤患者低血压 + 低电压 + 电交替，先看心包，不要只盯着监护仪。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "pregnancy-ecg",
+    "name": "妊娠与心电图",
+    "en": "Pregnancy and ECG",
+    "chapter": "clinical",
+    "difficulty": 1,
+    "urgency": "core",
+    "tags": [
+      "妊娠",
+      "窦速",
+      "电轴"
+    ],
+    "oneLiner": "妊娠期常见窦速、电轴左偏、轻度 ST-T 改变、早搏；多数为生理适应，但需排除肺栓塞/贫血/甲亢。",
+    "specificity": "心率增加 10–20 次/分、心输出量增加；下壁/侧壁非特异 ST-T 改变可见；QT 通常不延长。",
+    "objectives": [
+      "妊娠 ECG 多为生理适应。",
+      "窦速常见；异常要排除 PE/贫血/甲亢。",
+      "治疗需考虑胎儿安全。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "容量增加、膈肌上抬、交感激活与激素变化改变心脏位置与电活动。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "窦速、电轴左偏常见。",
+          "早搏/非特异 ST-T 可见。",
+          "排除 PE、贫血、甲亢、子痫。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "妊娠期 D-二聚体升高、心电图正常不能排除 PE；临床概率与影像决策。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "妊娠 ECG 多为生理适应。",
+      "窦速常见；异常要排除 PE/贫血/甲亢。",
+      "治疗需考虑胎儿安全。"
+    ],
+    "clinicalPearl": "孕妇心悸/气短很常见，但窦速 + 低氧/胸痛要想到 PE，不能都归为“怀孕正常”。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "elderly-ecg",
+    "name": "老年心电图",
+    "en": "Elderly ECG",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "core",
+    "tags": [
+      "老年",
+      "传导",
+      "房颤"
+    ],
+    "oneLiner": "老年人常见窦缓、传导阻滞、房颤、早搏、ST-T 改变；也更容易受药物/电解质影响。",
+    "specificity": "新发晕厥/跌倒、房颤、长间歇、三度 AVB、QT 延长需要重视；老化可解释部分改变但不能解释所有。",
+    "objectives": [
+      "老年 ECG 异常常见但非都良性。",
+      "晕厥/跌倒查长间歇/传导阻滞。",
+      "复核药物与电解质。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "传导系统纤维化、心房重构、冠脉病变与多病共存导致心电图异常；药物相互作用常见。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "窦缓/传导阻滞/房颤常见。",
+          "新发晕厥/跌倒要查长间歇。",
+          "药物/电解质影响大。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "不要把所有老年心电图异常都归为“老化”；新发/症状性改变需评估。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "老年 ECG 异常常见但非都良性。",
+      "晕厥/跌倒查长间歇/传导阻滞。",
+      "复核药物与电解质。"
+    ],
+    "clinicalPearl": "老年人跌倒不都是骨科问题；一张心电图可能发现长间歇。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "dialysis-ecg",
+    "name": "透析与心电图",
+    "en": "Dialysis and ECG",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "urgent",
+    "tags": [
+      "透析",
+      "高钾",
+      "钙"
+    ],
+    "oneLiner": "透析患者易高钾/低钙/高钙/低镁，心电图可出现 T 高尖、QRS 宽、QT 改变；透析前后需对比。",
+    "specificity": "透析前高钾风险高；透析后低钾/低钙也可致心律失常；需查透析前后电解质与 ECG。",
+    "objectives": [
+      "透析患者电解质波动大。",
+      "高钾/低钾/低钙都可致心律失常。",
+      "透析前后监测。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "透析快速改变钾、钙、镁与容量，影响膜电位与复极；心肌肥厚/冠心病常见。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "透析前高钾：T 高尖/QRS 宽。",
+          "透析后低钾/低钙也可心律失常。",
+          "透析前后对比 ECG/电解质。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "透析患者心电图异常不能只看一次；透析前后的动态变化更有意义。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "透析患者电解质波动大。",
+      "高钾/低钾/低钙都可致心律失常。",
+      "透析前后监测。"
+    ],
+    "clinicalPearl": "透析患者“透析后心悸/晕厥”，查钾钙镁与 ECG，别只当容量问题。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "stroke-ecg",
+    "name": "卒中与心电图",
+    "en": "Stroke and ECG",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "urgent",
+    "tags": [
+      "卒中",
+      "房颤",
+      "脑心综合征"
+    ],
+    "oneLiner": "卒中患者常合并房颤、缺血性 ST-T 改变、QT 延长、T 波倒置（脑心综合征）；需寻找房颤作为栓塞来源。",
+    "specificity": "缺血性卒中后房颤检出率随监测时间增加；ST 改变可能来自卒中本身或合并冠心病。",
+    "objectives": [
+      "卒中→查房颤。",
+      "脑心综合征可 ST-T/QT 改变。",
+      "ST 抬高仍需排除 ACS。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "岛叶/自主神经中枢受损导致交感激活、复极异常；房颤可能是卒中原因而非结果。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "卒中后监测房颤。",
+          "ST-T 改变可为脑心综合征。",
+          "QT 延长/T 倒置需复查。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "卒中患者 ST 抬高需按 ACS 评估，不能都归为脑心综合征；同时寻找房颤。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "卒中→查房颤。",
+      "脑心综合征可 ST-T/QT 改变。",
+      "ST 抬高仍需排除 ACS。"
+    ],
+    "clinicalPearl": "卒中患者的心电图有两个任务：找房颤，别漏心梗。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "acls-ecg",
+    "name": "ACLS 中的心电图决策",
+    "en": "ECG in ACLS",
+    "chapter": "clinical",
+    "difficulty": 2,
+    "urgency": "critical",
+    "tags": [
+      "ACLS",
+      "室颤",
+      "无脉VT"
+    ],
+    "oneLiner": "ACLS 中心电图分“可除颤”（VF/无脉 VT）与“不可除颤”（心搏停止/PEA）；处理路径完全不同。",
+    "specificity": "无脉 VT/VF：立即 CPR + 非同步除颤；PEA/心搏停止：CPR + 肾上腺素，寻找可逆病因（5H5T）。",
+    "objectives": [
+      "可除颤 vs 不可除颤。",
+      "无脉 VT 按 VF 处理。",
+      "5H5T 查可逆病因。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "心电图形态决定是否除颤；但必须先确认无脉/无意识，不能只看监护仪。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "VF/无脉 VT→CPR + 除颤。",
+          "PEA/心搏停止→CPR + 肾上腺素 + 5H5T。",
+          "先确认无脉，再按心律处理。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "有脉 VT 与无脉 VT 处理不同；有脉不稳定 VT 可同步复律，无脉 VT 必须非同步除颤。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "可除颤 vs 不可除颤。",
+      "无脉 VT 按 VF 处理。",
+      "5H5T 查可逆病因。"
+    ],
+    "clinicalPearl": "ACLS 的第一分叉不是“什么心律”，而是“有没有脉”；有脉/无脉决定电治疗模式。",
+    "topic": true,
+    "quizEligible": false
+  },
+  {
+    "id": "report-ecg",
+    "name": "心电图报告怎么写",
+    "en": "How to report an ECG",
+    "chapter": "clinical",
+    "difficulty": 1,
+    "urgency": "core",
+    "tags": [
+      "报告",
+      "沟通",
+      "结构化"
+    ],
+    "oneLiner": "一份可用的心电图报告应包含：心率/节律、电轴、间期（PR/QRS/QT）、波形异常、ST-T、与旧图比较、结论与建议。",
+    "specificity": "结论要分级：正常/正常变异/异常但非急症/危急值；危急值需电话闭环。",
+    "objectives": [
+      "报告要结构化，结论分级。",
+      "危急值电话闭环。",
+      "与旧图比较很重要。"
+    ],
+    "sections": [
+      {
+        "title": "核心概念",
+        "body": [
+          "结构化报告减少歧义，帮助临床医生快速决策；避免只写“窦性心律，T 波改变”这种模糊结论。"
+        ]
+      },
+      {
+        "title": "判读与应用",
+        "body": [],
+        "list": [
+          "心率/节律/电轴/间期。",
+          "波形与 ST-T；与旧图比较。",
+          "结论分级；危急值电话通知。"
+        ]
+      },
+      {
+        "title": "边界与陷阱",
+        "body": [
+          "报告不要写“建议进一步检查”就结束；要说明“怀疑什么、多紧急、下一步做什么”。"
+        ]
+      }
+    ],
+    "keyPoints": [
+      "报告要结构化，结论分级。",
+      "危急值电话闭环。",
+      "与旧图比较很重要。"
+    ],
+    "clinicalPearl": "心电图报告的读者是临床医生；写他们能用来做决定的话，而不是堆术语。",
+    "topic": true,
+    "quizEligible": false
+  }
+]
