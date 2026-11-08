@@ -1,4 +1,6 @@
-import { api, setCsrf } from './api.js';
+const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
+const __asset = __isNode ? '' : '?v=20261108as';
+const { api, setCsrf } = await import(`./api.js${__asset}`);
 
 const listeners = (typeof window !== 'undefined' && window.__ECG_STORE_LISTENERS__) || new Set();
 if (typeof window !== 'undefined') window.__ECG_STORE_LISTENERS__ = listeners;

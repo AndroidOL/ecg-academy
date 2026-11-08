@@ -1,6 +1,8 @@
-import { api } from './api.js';
-import { store } from './store.js';
-import { openModal, icon, escapeHtml, setButtonLoading, toast } from './ui.js';
+const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
+const __asset = __isNode ? '' : '?v=20261108as';
+const { api } = await import(`./api.js${__asset}`);
+const { store } = await import(`./store.js${__asset}`);
+const { openModal, icon, escapeHtml, setButtonLoading, toast } = await import(`./ui.js${__asset}`);
 
 export function openAuth(mode = 'register') {
   if (store.user && !store.user.isGuest) {

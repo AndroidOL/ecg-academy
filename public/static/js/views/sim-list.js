@@ -1,7 +1,9 @@
-import { api } from '../api.js';
-import { store } from '../store.js';
-import { navigate } from '../router.js';
-import { icon, escapeHtml, setButtonLoading, toast, difficultyDots, medicalDisclaimer } from '../ui.js';
+const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
+const __asset = __isNode ? '' : '?v=20261108as';
+const { api } = await import(`../api.js${__asset}`);
+const { store } = await import(`../store.js${__asset}`);
+const { navigate } = await import(`../router.js${__asset}`);
+const { icon, escapeHtml, setButtonLoading, toast, difficultyDots, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
 export async function simListView() {
   const el = document.createElement('div');

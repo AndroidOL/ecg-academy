@@ -1,4 +1,6 @@
-import { renderMiniECG } from './ecg-renderer.js';
+const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
+const __asset = __isNode ? '' : '?v=20261108as';
+const { renderMiniECG } = await import(`./ecg-renderer.js${__asset}`);
 
 const paths = {
   home: '<path d="M3 11.4 12 4l9 7.4"/><path d="M5.5 10v9.5h13V10"/>',

@@ -1,11 +1,13 @@
-import { api } from '../api.js';
-import { store, applyTheme, getThemeMode } from '../store.js';
-import { navigate } from '../router.js';
-import { openAuth, logout } from '../auth.js';
-import { icon, escapeHtml, toast, medicalDisclaimer } from '../ui.js';
-import { reviewSummary } from '../study-store.js';
-import { isLowBandwidth, setLowBandwidth, installPrompt, clearInstallPrompt } from '../bandwidth.js';
-import { getLocale, setLocale } from '../i18n.js';
+const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
+const __asset = __isNode ? '' : '?v=20261108as';
+const { api } = await import(`../api.js${__asset}`);
+const { store, applyTheme, getThemeMode } = await import(`../store.js${__asset}`);
+const { navigate } = await import(`../router.js${__asset}`);
+const { openAuth, logout } = await import(`../auth.js${__asset}`);
+const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
+const { reviewSummary } = await import(`../study-store.js${__asset}`);
+const { isLowBandwidth, setLowBandwidth, installPrompt, clearInstallPrompt } = await import(`../bandwidth.js${__asset}`);
+const { getLocale, setLocale } = await import(`../i18n.js${__asset}`);
 
 export async function meView() {
   const el = document.createElement('div');

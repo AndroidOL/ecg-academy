@@ -1,7 +1,9 @@
-import { api } from '../api.js';
-import { store } from '../store.js';
-import { icon, escapeHtml, toast, openModal } from '../ui.js';
-import { getByok, setByok, clearByok, byokPayload } from '../byok.js';
+const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
+const __asset = __isNode ? '' : '?v=20261108as';
+const { api } = await import(`../api.js${__asset}`);
+const { store } = await import(`../store.js${__asset}`);
+const { icon, escapeHtml, toast, openModal } = await import(`../ui.js${__asset}`);
+const { getByok, setByok, clearByok, byokPayload } = await import(`../byok.js${__asset}`);
 
 export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '', placeholder = '问一个关于这张心电图的问题…' } = {}) {
   const el = document.createElement('div');

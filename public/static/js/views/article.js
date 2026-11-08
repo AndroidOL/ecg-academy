@@ -1,10 +1,10 @@
-import { api } from '../api.js';
-import { store } from '../store.js';
-import { isFavorite, toggleFavorite } from '../study-store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ar';
+const __asset = __isNode ? '' : '?v=20261108as';
+const { api } = await import(`../api.js${__asset}`);
+const { store } = await import(`../store.js${__asset}`);
+const { isFavorite, toggleFavorite } = await import(`../study-store.js${__asset}`);
+const { createAiChat } = await import(`./ai-chat.js${__asset}`);
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
-import { createAiChat } from './ai-chat.js';
 const { icon, chapterColor, difficultyDots, escapeHtml, toast, medicalDisclaimer, setupMiniECG } = await import(`../ui.js${__asset}`);
 const { FIGURES } = await import(`../data/figures.js${__asset}`);
 

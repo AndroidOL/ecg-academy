@@ -1,11 +1,11 @@
-import { store } from '../store.js';
-import { navigate } from '../router.js';
 import {
   reviewEntries, favoriteEntries, reviewSummary, dueReviews, wrongReviews, weakDiagnosisIds,
   rateReview, toggleFavorite, exportStudyData, importStudyData, clearLocalStudyData,
 } from '../study-store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ar';
+const __asset = __isNode ? '' : '?v=20261108as';
+const { store } = await import(`../store.js${__asset}`);
+const { navigate } = await import(`../router.js${__asset}`);
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
 function dueLabel(entry) {

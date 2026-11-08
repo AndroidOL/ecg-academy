@@ -1,10 +1,10 @@
-import { api } from '../api.js';
-import { byokPayload, hasByok } from '../byok.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ar';
+const __asset = __isNode ? '' : '?v=20261108as';
+const { api } = await import(`../api.js${__asset}`);
+const { byokPayload, hasByok } = await import(`../byok.js${__asset}`);
+const { navigate } = await import(`../router.js${__asset}`);
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
-import { navigate } from '../router.js';
 const { icon, escapeHtml, toast, fmtDuration, confirmDialog, medicalDisclaimer, setButtonLoading } = await import(`../ui.js${__asset}`);
 
 const RHYTHM_LABELS = {

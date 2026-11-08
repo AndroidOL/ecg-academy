@@ -1,6 +1,6 @@
-import { store } from '../store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108ar';
+const __asset = __isNode ? '' : '?v=20261108as';
+const { store } = await import(`../store.js${__asset}`);
 const { CORRECTIONS } = await import(`../data/corrections.js${__asset}`);
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
