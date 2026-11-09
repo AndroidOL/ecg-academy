@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109ah';
+const __asset = __isNode ? '' : '?v=20261109ai';
 const { getLocale } = await import(`../i18n.js${__asset}`);
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
@@ -268,7 +268,7 @@ function drawVectorCanvas(canvas, state, t) {
     const isActive = key === active;
     ctx.strokeStyle = loopColors[key];
     ctx.lineWidth = key === state.loop ? 2.2 : 1.4;
-    ctx.globalAlpha = state.loop === 'all' ? (isActive ? 1 : 0.12) : 1;
+    ctx.globalAlpha = state.loop === 'all' ? (isActive ? 1 : 0.38) : 1;
     if (isActive) { ctx.shadowColor = loopColors[key]; ctx.shadowBlur = 5; }
     ctx.beginPath();
     for (let i = 0; i <= 100; i += 1) {
@@ -319,20 +319,29 @@ function gaussianAt(u, center, width) {
   return Math.exp(-Math.pow((u - center) / width, 2));
 }
 
-function leadAmplitudes(key, lead, axes) {
+function leadAmplitudes(lead, axes) {
   const unit = unitVector(lead.vec);
-  const p = rotateForAxis([0.28, -0.16, 0.05], 'P', axes);
-  const q = rotateForAxis([0.72, -0.32, -0.12], 'QRS', axes);
-  const t = rotateForAxis([0.58, -0.3, 0.1], 'T', axes);
+  // Use the actual loop trajectory, not a single fixed vector. A lead can be
+  // nearly perpendicular to the main vector but still has initial/terminal
+  // loop components, so it must not become a perfectly flat line.
+  const peak = (key) => {
+    let best = 0;
+    for (let i = 0; i < 180; i += 1) {
+      const vector = rotateForAxis(loopPoint(key, (i / 180) * Math.PI * 2), key, axes);
+      const value = dotVector(vector, unit);
+      if (Math.abs(value) > Math.abs(best)) best = value;
+    }
+    return best;
+  };
   return {
-    P: dotVector(p, unit) * 0.9,
-    QRS: dotVector(q, unit) * 1.4,
-    T: dotVector(t, unit) * 0.95,
+    P: peak('P') * 0.9,
+    QRS: peak('QRS') * 1.4,
+    T: peak('T') * 0.95,
   };
 }
 
 function leadWaveAt(lead, u, axes) {
-  const amp = leadAmplitudes('', lead, axes);
+  const amp = leadAmplitudes(lead, axes);
   let value = amp.P * gaussianAt(u, 0.18, 0.03);
   if (amp.QRS >= 0) {
     value += amp.QRS * (-0.12 * gaussianAt(u, 0.30, 0.009) + gaussianAt(u, 0.33, 0.012) - 0.18 * gaussianAt(u, 0.365, 0.012));
@@ -352,7 +361,10 @@ function draw12LeadCanvas(canvas, state) {
   const cellH = (height - top - bottom - gap * 2) / 3;
   ctx.clearRect(0, 0, width, height); ctx.fillStyle = c.bg; ctx.fillRect(0, 0, width, height);
   const axes = state.axes || { P: 60, QRS: 60, T: 60 };
-  const maxAmp = Math.max(0.18, ...Object.values(LEADS_12).map((lead) => Math.max(Math.abs(leadAmplitudes('', lead, axes).P), Math.abs(leadAmplitudes('', lead, axes).QRS), Math.abs(leadAmplitudes('', lead, axes).T))));
+  const maxAmp = Math.max(0.18, ...Object.values(LEADS_12).map((lead) => {
+      const amp = leadAmplitudes(lead, axes);
+      return Math.max(Math.abs(amp.P), Math.abs(amp.QRS), Math.abs(amp.T));
+    }));
   columns.forEach((column, col) => column.forEach((id, row) => {
     const lead = LEADS_12[id];
     const x = left + col * (cellW + gap);
