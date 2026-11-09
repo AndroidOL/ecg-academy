@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109ae';
+const __asset = __isNode ? '' : '?v=20261109af';
 const { getLocale } = await import(`../i18n.js${__asset}`);
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
@@ -47,10 +47,52 @@ const LEADS_12 = {
   V6: { label: 'V6', vec: [0.94, 0, -0.18], angle: null },
 };
 
+// 正常空间向量环的教学近似：起点/终点接近零点；P 环小、QRS 环最大、
+// T 环长而窄（长宽比约 2.5:1），QRS 主向量指向左下略后，T 主向量指向左前下。
+const LOOP_CONTROL_POINTS = {
+  P: [
+    [0, 0, 0], [0.055, 0.01, 0.025], [0.12, -0.035, 0.05], [0.15, -0.055, 0.035], [0.10, -0.045, -0.01], [0.035, -0.012, -0.012],
+  ],
+  QRS: [
+    [0, 0, 0], [-0.24, 0.04, 0.40], [0.10, -0.25, 0.46], [0.42, -0.42, 0.30],
+    [0.78, -0.52, -0.08], [0.95, -0.38, -0.42], [0.68, -0.14, -0.62], [0.28, 0.10, -0.44],
+  ],
+  T: [
+    [0, 0, 0], [0.30, -0.10, 0.18], [0.52, -0.24, 0.28], [0.62, -0.26, 0.24], [0.40, -0.12, 0.12],
+  ],
+};
+
+function catmullRom(p0, p1, p2, p3, t) {
+  const t2 = t * t;
+  const t3 = t2 * t;
+  return [0, 1, 2].map((axis) => 0.5 * (
+    (2 * p1[axis]) +
+    (-p0[axis] + p2[axis]) * t +
+    (2 * p0[axis] - 5 * p1[axis] + 4 * p2[axis] - p3[axis]) * t2 +
+    (-p0[axis] + 3 * p1[axis] - 3 * p2[axis] + p3[axis]) * t3
+  ));
+}
+
+function loopPoint(key, angle) {
+  const points = LOOP_CONTROL_POINTS[key] || LOOP_CONTROL_POINTS.QRS;
+  const count = points.length;
+  const wrapped = ((angle / (Math.PI * 2)) % 1 + 1) % 1;
+  const scaled = wrapped * count;
+  const index = Math.floor(scaled);
+  const t = scaled - index;
+  return catmullRom(
+    points[(index - 1 + count) % count],
+    points[index % count],
+    points[(index + 1) % count],
+    points[(index + 2) % count],
+    t,
+  );
+}
+
 const LOOPS = {
-  P: (a) => [0.18 + 0.24 * Math.cos(a), -0.1 + 0.16 * Math.sin(a), 0.04 * Math.sin(a * 2)],
-  QRS: (a) => [0.34 + 0.62 * Math.cos(a) + 0.1 * Math.cos(3 * a), -0.22 + 0.34 * Math.sin(a) + 0.09 * Math.sin(3 * a), -0.12 + 0.18 * Math.sin(a + 0.7)],
-  T: (a) => [0.3 + 0.5 * Math.cos(a) + 0.03 * Math.cos(4 * a), -0.18 + 0.28 * Math.sin(a), -0.08 + 0.1 * Math.sin(a + 1.4)],
+  P: (a) => loopPoint('P', a),
+  QRS: (a) => loopPoint('QRS', a),
+  T: (a) => loopPoint('T', a),
 };
 
 function unitVector([x, y, z]) { const n = Math.hypot(x, y, z) || 1; return [x / n, y / n, z / n]; }
@@ -89,15 +131,16 @@ function chestLeadProjection(id, v) {
 
 // 激活顺序：四个教学步骤，关键帧 u 取自 chestQrsVector 的三个高斯锚点附近。
 const ACTIVATION_STEPS = [
-  { u: 0.13, region: 'septum', label: '室间隔', dir: '向右前', detail: '室间隔自左向右除极，向量朝向 V1，形成小 r；V5/V6 背离向量，形成小 q。', leads: 'V1 小 r · V5/V6 小 q', article: 'heart-conduction-anatomy', articleLabel: '心脏传导系统解剖' },
-  { u: 0.30, region: 'apex', label: '心尖/前壁', dir: '向右前下', detail: '激动经浦肯野纤维快速扩布到心尖与前壁，向量仍偏向右前，V1 的 r 到达峰值后开始回落。', leads: 'V1 r 达峰后转折', article: 'depolarization-repolarization-ecg', articleLabel: '除极、复极与心电图' },
-  { u: 0.47, region: 'freewall', label: '左室游离壁', dir: '向左后', detail: '左室游离壁自心内膜向心外膜除极，主向量指向左后，背离 V1、朝向 V5，形成深 S 与高 R。', leads: 'V5 高 R · V1 深 S', article: 'horizontal-plane-chest-leads', articleLabel: '横面与胸导联投影' },
-  { u: 0.70, region: 'base', label: '基底部/流出道', dir: '向左后上', detail: '最后除极的是左室基底部与流出道，向量继续向左后上，V5/V6 的 R 波逐渐回到基线。', leads: 'V5/V6 R 回基线', article: 'ecg-vector-waveform-theory', articleLabel: '心电向量与波形形成' },
+  { u: 0.10, region: 'septum', label: '室间隔', time: '0–20 ms', dir: '向右前', detail: '室间隔左室面中 1/3 最早除极，冲动自左向右扩布；初始向量向右前，V1 形成小 r，V5/V6 形成小 q。', leads: 'V1 小 r · V5/V6 小 q', article: 'heart-conduction-anatomy', articleLabel: '心脏传导系统解剖' },
+  { u: 0.24, region: 'apex', label: '心尖 / 右室前壁', time: '20–40 ms', dir: '向前下', detail: '激动经浦肯野纤维快速扩布至心尖与右室前壁，向量转向前下；V1 的 r 波达峰，V5 的 q 波结束。', leads: 'V1 r 达峰 · V5 q', article: 'depolarization-repolarization-ecg', articleLabel: '除极、复极与心电图' },
+  { u: 0.43, region: 'freewall', label: '左室游离壁', time: '40–70 ms', dir: '向左后下', detail: '左室游离壁自心内膜向心外膜除极，主向量指向左后下，背离 V1、朝向 V5，形成深 S 与高 R。', leads: 'V5 高 R · V1 深 S', article: 'horizontal-plane-chest-leads', articleLabel: '横面与胸导联投影' },
+  { u: 0.62, region: 'lateral', label: '左室侧后壁', time: '70–90 ms', dir: '向左后', detail: '左室侧壁、后壁继续除极，向量进一步向左后；V5/V6 的 R 波接近峰值，I、aVL 也呈正向。', leads: 'V5/V6 R 峰 · I/aVL 正向', article: 'ecg-vector-waveform-theory', articleLabel: '心电向量与波形形成' },
+  { u: 0.80, region: 'base', label: '基底部 / 流出道', time: '90–110 ms', dir: '向左后上', detail: '最后除极的是左室基底部、后侧壁与流出道，向量转向左后上并回到零点；V5/V6 的 R 波回落，形成终末 S 或回到基线。', leads: 'V5/V6 R 回基线', article: 'ecg-vector-waveform-theory', articleLabel: '心电向量与波形形成' },
 ];
 
 function activationStepFor(u) {
   let index = 0;
-  ACTIVATION_STEPS.forEach((step, i) => { if (u >= step.u - 0.09) index = i; });
+  ACTIVATION_STEPS.forEach((step, i) => { if (u >= step.u - 0.07) index = i; });
   return { index, step: ACTIVATION_STEPS[index] };
 }
 
@@ -106,6 +149,7 @@ function activationHalos(cx, cy, rx, ry) {
     septum: [cx + rx * 0.02, cy - ry * 0.05, rx * 0.17],
     apex: [cx + rx * 0.30, cy - ry * 0.20, rx * 0.16],
     freewall: [cx + rx * 0.38, cy + ry * 0.10, rx * 0.21],
+    lateral: [cx + rx * 0.47, cy - ry * 0.02, rx * 0.18],
     base: [cx + rx * 0.04, cy - ry * 0.24, rx * 0.15],
   };
 }
@@ -278,7 +322,7 @@ function gaussianAt(u, center, width) {
 function leadAmplitudes(key, lead, axes) {
   const unit = unitVector(lead.vec);
   const p = rotateForAxis([0.28, -0.16, 0.05], 'P', axes);
-  const q = rotateForAxis([0.72, -0.32, 0.12], 'QRS', axes);
+  const q = rotateForAxis([0.72, -0.32, -0.12], 'QRS', axes);
   const t = rotateForAxis([0.58, -0.3, 0.1], 'T', axes);
   return {
     P: dotVector(p, unit) * 0.9,
@@ -360,7 +404,7 @@ function drawProjectionCanvas(canvas, state, t) {
   const rot = (key, v) => { const d = ((loopAxes[key] ?? 60) - 60) * Math.PI / 180; return [v[0] * Math.cos(d) - v[1] * Math.sin(d), v[0] * Math.sin(d) + v[1] * Math.cos(d), v[2]]; };
   // 以“左下”为正方向：II/aVF 的主投影应明显为正，P/T 不能再被压成平线
   const ampP = dot(rot('P', [0.28, -0.16, 0.05])) * 0.9;
-  const ampQ = dot(rot('QRS', [0.72, -0.32, 0.12])) * 1.4;
+  const ampQ = dot(rot('QRS', [0.72, -0.32, -0.12])) * 1.4;
   const ampT = dot(rot('T', [0.58, -0.3, 0.1])) * 0.95;
   const phase = state.phase ?? 0;
   const yAt = (x) => {
@@ -396,11 +440,7 @@ function updateProjectionBars(host, state, t) {
   Object.entries(windows).forEach(([key, [start, end]]) => { if (cycle >= start && cycle < end) active = key; });
   const loop = state.loop === 'all' ? (active || 'QRS') : state.loop;
   const a = ((state.phase ?? 0) * Math.PI * 2);
-  let point = loop === 'P'
-    ? [0.18 + 0.24 * Math.cos(a), -0.1 + 0.16 * Math.sin(a), 0.04 * Math.sin(2 * a)]
-    : loop === 'T'
-      ? [0.3 + 0.5 * Math.cos(a), -0.18 + 0.28 * Math.sin(a), -0.08 + 0.1 * Math.sin(a + 1.4)]
-      : [0.34 + 0.62 * Math.cos(a) + 0.1 * Math.cos(3 * a), -0.22 + 0.34 * Math.sin(a) + 0.09 * Math.sin(3 * a), -0.12 + 0.18 * Math.sin(a + 0.7)];
+  let point = loopPoint(loop, a);
   const loopAxes = state.axes || { P: 60, QRS: 60, T: 60 };
   const d = ((loopAxes[loop] ?? 60) - 60) * Math.PI / 180;
   point = [point[0] * Math.cos(d) - point[1] * Math.sin(d), point[0] * Math.sin(d) + point[1] * Math.cos(d), point[2]];
@@ -726,7 +766,8 @@ function drawChestVectorCanvas(canvas, state, options = {}) {
   }
   ctx.fillStyle = c.text; ctx.font = '600 10px ui-monospace, monospace';
   const phase = state.qrsPhase ?? 0;
-  const phaseLabel = options.caption ?? (phase < .25 ? '室间隔除极：向右前（V1 小 r）' : phase < .62 ? '左室游离壁除极：向左后（V5 高 R）' : '基底部/流出道：向左后上');
+  const activation = activationStepFor(phase).step;
+  const phaseLabel = options.caption ?? `${activation.label}：${activation.dir}`;
   ctx.fillText(phaseLabel, 12, 18);
   ctx.fillStyle = c.muted; ctx.font = '9px ui-monospace, monospace';
   ctx.fillText('白色箭头 = 当前瞬时 QRS 向量；金色虚线 = 正常 QRS 主向量（左下、略向后）', 12, height - 10);
@@ -861,6 +902,7 @@ function activationPanel() {
       <p data-activation-desc>室间隔自左向右除极，向量朝向 V1，形成小 r；V5/V6 背离向量，形成小 q。</p>
       <span class="activation-detail-leads" data-activation-leads>V1 小 r · V5/V6 小 q</span>
       <a class="btn btn-xs btn-secondary" style="margin-top:8px;width:fit-content" data-activation-link href="#/learn/heart-conduction-anatomy">相关章节：心脏传导系统解剖</a>
+      <p class="muted" style="font-size:9.5px;margin-top:8px">教学依据：Durrer 等（1970）离体心脏激动标测与常规心电向量图描述；正常顺序为室间隔 → 心尖/右室 → 左室游离壁 → 基底部。参考：Durrer D, et al. Total excitation of the isolated human heart. Circulation. 1970;41:899–912；Macfarlane PW, et al. Comprehensive Electrocardiology。</p>
     </div>
   </section>`;
 }
@@ -903,11 +945,11 @@ function updateActivationUi(host, state) {
 
 function activationSvgMarkup(state) {
   const W = 760;
-  const H = 520;
+  const H = 620;
   const cx = W * 0.5;
-  const cy = H * 0.50;
+  const cy = H * 0.40;
   const rx = W * 0.34;
-  const ry = H * 0.30;
+  const ry = H * 0.255;
   const paper = '#fffaf5';
   const ink = '#1f2430';
   const muted = '#6b7280';
@@ -925,7 +967,8 @@ function activationSvgMarkup(state) {
     const q = CHEST_VECTOR[id];
     return [cx + q.x * rx * 0.84, cy - q.z * ry * 0.84];
   };
-  const halo = activationHalos(cx, cy, rx, ry)[step.region];
+  const halos = activationHalos(cx, cy, rx, ry);
+  const halo = halos[step.region] || halos.freewall;
   const electrodePath = Object.keys(CHEST_VECTOR).map((id) => {
     const [x, y] = point(id);
     return `${x.toFixed(1)},${y.toFixed(1)}`;
@@ -947,29 +990,49 @@ function activationSvgMarkup(state) {
   const values = CHEST_VECTOR_KEYS.map((id, i) => {
     const value = chestLeadProjection(id, v);
     const tone = id === 'V1' ? accent : id === 'V5' ? brand : gold;
-    const y = H - 118 + i * 24;
-    return `<text x="${W - 190}" y="${y}" fill="${muted}" font-size="12" font-family="ui-monospace, monospace">${id}</text>
-      <text x="${W - 150}" y="${y}" fill="${tone}" font-size="13" font-weight="700" font-family="ui-monospace, monospace">${(value >= 0 ? '+' : '') + value.toFixed(2)}</text>`;
+    const y = H - 174 + i * 22;
+    return `<text x="${W - 204}" y="${y}" fill="${muted}" font-size="12" font-family="ui-monospace, monospace">${id}</text>
+      <text x="${W - 160}" y="${y}" fill="${tone}" font-size="13" font-weight="700" font-family="ui-monospace, monospace">${(value >= 0 ? '+' : '') + value.toFixed(2)}</text>`;
   }).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="QRS 激活顺序教学示意">
+  const zones = ACTIVATION_STEPS.map((item, i) => {
+    const h = halos[item.region] || halos.freewall;
+    const active = i === index;
+    return `<g opacity="${active ? 1 : 0.45}"><circle cx="${h[0]}" cy="${h[1]}" r="${active ? Math.max(14, h[2] * .32) : 12}" fill="${active ? '#f59e0b' : '#ffffff'}" fill-opacity="${active ? .35 : .75}" stroke="${active ? gold : line}" stroke-width="${active ? 2 : 1.2}"/>
+      <text x="${h[0]}" y="${h[1] + 4}" text-anchor="middle" fill="${active ? gold : muted}" font-size="11" font-weight="700">${i + 1}</text></g>`;
+  }).join('');
+  const timelineX = 24;
+  const timelineW = W - 48;
+  const segW = timelineW / ACTIVATION_STEPS.length;
+  const timeline = ACTIVATION_STEPS.map((item, i) => {
+    const active = i === index;
+    return `<g><rect x="${timelineX + i * segW + 2}" y="${H - 78}" width="${segW - 4}" height="22" rx="5" fill="${active ? '#fef3c7' : '#f7f4ef'}" stroke="${active ? gold : line}"/>
+      <text x="${timelineX + i * segW + 8}" y="${H - 63}" fill="${active ? gold : muted}" font-size="10" font-weight="700">${i + 1} · ${item.label}</text>
+      <text x="${timelineX + i * segW + 8}" y="${H - 49}" fill="${muted}" font-size="8.5">${item.time}</text></g>`;
+  }).join('');
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="正常心室激活顺序教学示意">
   <rect width="${W}" height="${H}" fill="${paper}"/>
-  <text x="24" y="32" fill="${ink}" font-size="16" font-weight="700">心迹 ECG Lab · QRS 激活顺序</text>
-  <text x="24" y="52" fill="${muted}" font-size="11">第 ${index + 1} 步：${step.label} · ${step.dir} · 教学示意，不用于临床诊断</text>
+  <text x="24" y="32" fill="${ink}" font-size="16" font-weight="700">心迹 ECG Lab · 正常心室激活顺序</text>
+  <text x="24" y="52" fill="${muted}" font-size="11">第 ${index + 1} 步：${step.label} · ${step.dir}（${step.time}） · 教学示意，不用于临床诊断</text>
   <ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#ffffff" stroke="${line}" stroke-width="1.6"/>
-  <line x1="${cx - rx * 0.92}" y1="${cy}" x2="${cx + rx * 0.92}" y2="${cy}" stroke="${line}" stroke-dasharray="4 4"/>
-  <line x1="${cx}" y1="${cy - ry * 0.92}" x2="${cx}" y2="${cy + ry * 0.92}" stroke="${line}" stroke-dasharray="4 4"/>
+  <line x1="${cx}" y1="${cy - ry * .92}" x2="${cx}" y2="${cy + ry * .92}" stroke="${line}" stroke-dasharray="4 4"/>
+  <line x1="${cx - rx * .92}" y1="${cy}" x2="${cx + rx * .92}" y2="${cy}" stroke="${line}" stroke-dasharray="4 4"/>
   <ellipse cx="${cx - rx * 0.10}" cy="${cy - ry * 0.10}" rx="${rx * 0.20}" ry="${ry * 0.30}" transform="rotate(-14 ${cx - rx * 0.10} ${cy - ry * 0.10})" fill="#fde8e4" stroke="${accent}" stroke-width="1.2"/>
   <ellipse cx="${cx + rx * 0.16}" cy="${cy + ry * 0.08}" rx="${rx * 0.25}" ry="${ry * 0.34}" transform="rotate(14 ${cx + rx * 0.16} ${cy + ry * 0.08})" fill="#dcf5f0" stroke="${brand}" stroke-width="1.2"/>
-  <circle cx="${halo[0]}" cy="${halo[1]}" r="${halo[2]}" fill="#f59e0b" fill-opacity="0.22" stroke="${gold}" stroke-dasharray="3 3"/>
-  <polyline points="${electrodePath}" fill="none" stroke="${brand}" stroke-opacity="0.3" stroke-dasharray="3 3"/>
+  <text x="${cx - rx * .30}" y="${cy - ry * .50}" fill="${accent}" font-size="10" font-weight="700">RV</text>
+  <text x="${cx + rx * .32}" y="${cy + ry * .53}" fill="${brand}" font-size="10" font-weight="700">LV</text>
+  <text x="${cx - 18}" y="${cy + 4}" fill="${muted}" font-size="9">室间隔</text>
+  ${zones}
+  <circle cx="${halo[0]}" cy="${halo[1]}" r="${halo[2]}" fill="#f59e0b" fill-opacity="0.18" stroke="${gold}" stroke-dasharray="3 3"/>
+  <polyline points="${electrodePath}" fill="none" stroke="${brand}" stroke-opacity="0.25" stroke-dasharray="3 3"/>
   ${electrodes}
   <line x1="${cx}" y1="${cy}" x2="${cx + 0.82 * rx * 0.72}" y2="${cy + 0.65 * ry * 0.72}" stroke="${gold}" stroke-opacity="0.55" stroke-dasharray="5 4"/>
   ${arrow}
-  <text x="24" y="${H - 112}" fill="${ink}" font-size="13" font-weight="700">${step.label}</text>
-  <text x="24" y="${H - 94}" fill="${muted}" font-size="11">${step.leads}</text>
-  <text x="24" y="${H - 72}" fill="${muted}" font-size="11">深色箭头 = 当前瞬时 QRS 向量（水平面）；金色虚线 = 正常 QRS 主向量（左下、略向后）</text>
+  <text x="24" y="${H - 196}" fill="${ink}" font-size="13" font-weight="700">${step.label}</text>
+  <text x="24" y="${H - 178}" fill="${muted}" font-size="11">${step.time} · ${step.dir} · ${step.leads}</text>
+  <text x="24" y="${H - 156}" fill="${muted}" font-size="10">深色箭头 = 当前瞬时 QRS 向量（横面）；金色虚线 = 正常 QRS 主向量（左下、略向后）。</text>
   ${values}
-  <text x="24" y="${H - 16}" fill="${muted}" font-size="10">向量方向与导联投影仅供教学理解，不代表任何患者实际情况。</text>
+  ${timeline}
+  <text x="24" y="${H - 14}" fill="${muted}" font-size="9.5">参考：Durrer 等心室激动标测与常规心电向量图描述；正常顺序为室间隔 → 心尖/右室 → 左室游离壁 → 基底部。仅供教学理解。</text>
 </svg>`;
 }
 

@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109ae';
+const __asset = __isNode ? '' : '?v=20261109af';
 const { api } = await import(`./api.js${__asset}`);
 const { store } = await import(`./store.js${__asset}`);
 const { openModal, icon, escapeHtml, setButtonLoading, toast } = await import(`./ui.js${__asset}`);
@@ -24,7 +24,7 @@ export function openAuth(mode = 'register') {
   const content = `
     <div class="form-grid">
       <div class="auth-note">${isRegister ? `当前为访客账号。注册需邮箱验证，注册后已读进度与答题记录会保留。${store.features?.emailConfigured === false ? ' 站点邮件服务尚未配置，请联系管理员。' : ''}` : '登录后会合并当前访客设备的已读进度。'}</div>
-      ${isRegister ? `<div class="field"><label for="auth-email">邮箱</label><input class="input" id="auth-email" type="email" maxlength="190" autocomplete="email" placeholder="用于接收验证码"><div class="row-wrap" style="margin-top:6px"><button class="btn btn-secondary btn-sm" type="button" id="auth-send-code">发送验证码</button><span class="muted" style="font-size:10px">每个邮箱每日 3 封，每个网络每日 5 次</span></div></div>
+      ${isRegister ? `<div class="field"><label for="auth-email">邮箱</label><div class="row-wrap" style="gap:6px"><input class="input" id="auth-email" type="email" maxlength="190" autocomplete="email" placeholder="用于接收验证码" style="flex:1;min-width:0"><button class="btn btn-secondary btn-sm" type="button" id="auth-send-code">发送验证码</button></div></div>
       <div class="field"><label for="auth-code">邮箱验证码</label><input class="input" id="auth-code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6 位数字"></div>
       <div class="field"><label for="auth-name">昵称（可选）</label><input class="input" id="auth-name" maxlength="20" autocomplete="nickname" placeholder="例如：心电图小白"></div>` : ''}
       <div class="field"><label for="auth-username">用户名</label><input class="input" id="auth-username" maxlength="24" autocomplete="username" placeholder="3–24 位字母、数字或下划线"></div>

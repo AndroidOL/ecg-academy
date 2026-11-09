@@ -268,8 +268,8 @@ try {
   await waitFor(() => document.querySelector('[data-visual-tab="activation"]'));
   document.querySelector('[data-visual-tab="activation"]').click();
   await waitFor(() => document.querySelector('[data-activation-canvas]'));
-  if (document.querySelectorAll('[data-activation-step]').length !== 4) throw new Error('activation steps missing');
-  if (document.querySelectorAll('.activation-timeline span').length !== 4) throw new Error('activation timeline missing');
+  if (document.querySelectorAll('[data-activation-step]').length !== 5) throw new Error('activation steps missing');
+  if (document.querySelectorAll('.activation-timeline span').length !== 5) throw new Error('activation timeline missing');
   document.querySelector('[data-activation-step="2"]').click();
   if (!document.querySelector('[data-activation-title]')?.textContent.includes('游离壁')) throw new Error('activation step did not update detail');
   ok('vector lab renders activation sequence timeline with step selection');

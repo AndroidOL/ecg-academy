@@ -1007,7 +1007,7 @@
 
 /* ---------- activation sequence (vector lab) ---------- */
 .activation-section { margin-top: 18px; }
-.activation-steps { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-top:14px; }
+.activation-steps { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; margin-top:14px; }
 .activation-step { display:flex; flex-direction:column; align-items:flex-start; gap:2px; text-align:left; padding:10px 12px; border-radius:12px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; transition:border-color var(--t-fast), background var(--t-fast); }
 .activation-step:hover { border-color:var(--brand); }
 .activation-step.active { border-color:var(--brand); background:var(--brand-soft); }
@@ -1015,7 +1015,7 @@
 .activation-step b { font-size:13px; }
 .activation-step-dir { font-size:10.5px; color:var(--brand); font-weight:600; }
 .activation-step small { font-size:10px; color:var(--muted); }
-.activation-timeline { position:relative; display:grid; grid-template-columns:repeat(4,1fr); gap:2px; margin-top:12px; }
+.activation-timeline { position:relative; display:grid; grid-template-columns:repeat(5,1fr); gap:2px; margin-top:12px; }
 .activation-timeline span { text-align:center; font-size:10px; color:var(--muted); padding:5px 0; background:var(--surface-2); border-radius:6px; }
 .activation-timeline i { position:absolute; top:0; bottom:0; width:2px; background:var(--brand); transition:left .1s linear; }
 .activation-detail { margin-top:12px; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
