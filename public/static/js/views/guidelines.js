@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109aa';
+const __asset = __isNode ? '' : '?v=20261109ab';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
 const TOPICS = [

@@ -1,6 +1,6 @@
 export const CORRECTIONS = [
     {
-        "version": "3.0.0",
+        "version": "3.0.1",
         "date": "2026-11-08",
         "title": "心梗定位、18 导联与筛选联动",
         "items": [

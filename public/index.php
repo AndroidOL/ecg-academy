@@ -22,6 +22,7 @@ if (str_starts_with($path, '/api/')) {
         }
         $router = new Router();
         $router->get('/api/health', [ApiController::class, 'health']);
+        $router->get('/api/version', [ApiController::class, 'version']);
         $router->get('/api/admin/auth-config', [AdminController::class, 'authConfig']);
         $router->post('/api/admin/login', [AdminController::class, 'login']);
         $router->get('/api/admin/passkey/login/options', [AdminController::class, 'passkeyLoginOptions']);
@@ -134,11 +135,18 @@ $appName = htmlspecialchars((string) Config::get('app.name', '心迹 ECG Lab'), 
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0e766e">
+  <meta name="theme-color" content="#0e766e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b2b29" media="(prefers-color-scheme: dark)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="<?= $appName ?>">
   <meta name="description" content="心迹 ECG Lab：面向医学生与住院医师的免费开源心电图学习、判读练习与 ACLS 急救推演。">
   <meta name="color-scheme" content="light dark">
   <title><?= $appName ?> · 读懂每一次心跳</title>
   <link rel="icon" href="/static/img/favicon.svg?v=<?= $version ?>" type="image/svg+xml">
+  <link rel="icon" href="/static/img/icon-192.png?v=<?= $version ?>" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="/static/img/apple-touch-icon.png?v=<?= $version ?>" sizes="180x180">
   <link rel="manifest" href="/static/manifest.webmanifest?v=<?= $version ?>">
   <link rel="stylesheet" href="/static/css/tokens.css?v=<?= $version ?>">
   <link rel="stylesheet" href="/static/css/base.css?v=<?= $version ?>">

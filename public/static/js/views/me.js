@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109aa';
+const __asset = __isNode ? '' : '?v=20261109ab';
 const { api } = await import(`../api.js${__asset}`);
 const { store, applyTheme, getThemeMode } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -10,6 +10,30 @@ const { isLowBandwidth, setLowBandwidth, installPrompt, clearInstallPrompt } = a
 const { getLocale, setLocale, LOCALES } = await import(`../i18n.js${__asset}`);
 const { createPasskey } = await import(`../webauthn.js${__asset}`);
 const { levelInfo, ADVANCED_UNLOCK, CHALLENGE_UNLOCK, AI_UNLOCK } = await import(`../levels.js${__asset}`);
+
+function isPwaStandalone() {
+  return (typeof window !== 'undefined' && window.matchMedia?.('(display-mode: standalone)')?.matches) || window.navigator.standalone === true;
+}
+
+function isIOSDevice() {
+  if (typeof navigator === 'undefined') return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function pwaActionMarkup() {
+  const app = store.app || {};
+  const version = `v${escapeHtml(app.version || '—')} · ${escapeHtml(app.assetVersion || '—')}`;
+  if (isPwaStandalone()) {
+    return `<div class="row-wrap"><span class="badge badge-ok">已安装并正在以应用运行</span></div><p class="muted pwa-note">应用版本 ${version}。新版本发布后打开应用会自动检查；如有更新提示，点击刷新即可。</p>`;
+  }
+  if (installPrompt()) {
+    return `<div class="row-wrap"><button class="btn btn-primary btn-sm" type="button" data-install>${icon('download', 14)} 安装到设备</button><span class="badge">可离线打开</span></div><p class="muted pwa-note">应用版本 ${version}。安装后从桌面图标进入，全屏运行并缓存已访问页面。</p>`;
+  }
+  if (isIOSDevice()) {
+    return `<div class="pwa-steps"><b>iPhone / iPad 安装步骤</b><ol><li>用 Safari 打开本页。</li><li>点击底部“分享”按钮。</li><li>选择“添加到主屏幕”，确认名称后添加。</li></ol></div><p class="muted pwa-note">应用版本 ${version}。iOS 不支持网页主动弹出安装框，需通过 Safari 分享菜单添加。</p>`;
+  }
+  return `<div class="pwa-steps"><b>当前浏览器没有提供自动安装按钮</b><ol><li>电脑端：使用 Chrome / Edge，点击地址栏右侧的安装图标。</li><li>手机端：Chrome 菜单 →“安装应用 / 添加到主屏幕”；iOS 使用 Safari 分享菜单。</li><li>必须通过 HTTPS 访问，且已加载过本站。</li></ol></div><p class="muted pwa-note">应用版本 ${version}。若你刚刚关闭了安装提示，刷新页面后重新尝试。</p>`;
+}
 
 function accountCard(user) {
   return `<section class="card card-pad account-card">
@@ -64,7 +88,7 @@ export async function meView() {
   el.innerHTML = `
     <header class="page-head">
       <div><div class="page-eyebrow">${icon('user', 14)} MY LAB</div><h1 class="page-title">我的学习</h1><p class="page-sub">${user.isGuest ? `当前为游客模式：学习进度保存在本设备浏览器。${canRegister || canLogin ? '注册或登录后可在服务器保存进度。' : ''}` : '进度、答题与急救记录保存在当前账号，错题与收藏会跨设备同步。'}</p></div>
-      <span class="badge badge-brand">${user.isGuest ? '访客模式' : '已登录'} · Lv.${level.level} · ${user.xp || 0} XP</span>
+      <div class="row-wrap"><span class="badge">v${escapeHtml(store.app?.version || '—')}</span><span class="badge badge-brand">${user.isGuest ? '访客模式' : '已登录'} · Lv.${level.level} · ${user.xp || 0} XP</span></div>
     </header>
     <div class="me-header" style="margin-bottom:14px">
       <div class="row"><span class="profile-avatar">${escapeHtml((user.displayName || '心迹').replace(/[·\s]/g, '').slice(0, 2))}</span><div><div class="profile-name">${escapeHtml(user.displayName || '访客')}</div><div class="profile-sub">${user.isGuest ? '访客模式 · 进度保存在当前设备浏览器' : `@${escapeHtml(user.username || '')}`}</div></div></div>
@@ -74,6 +98,10 @@ export async function meView() {
     </div>
     <div class="me-grid">
       <div class="stack-lg">
+        <section class="card card-pad" data-pwa-card>
+          <div class="section-head"><h2 class="section-title" style="font-size:16px">安装应用</h2><span class="badge ${isPwaStandalone() ? 'badge-ok' : 'badge-brand'}">${isPwaStandalone() ? '已安装' : 'PWA'}</span></div>
+          <div data-pwa-action>${pwaActionMarkup()}</div>
+        </section>
         ${user.isGuest ? '' : accountCard(user)}
         <section class="card card-pad">
           <div class="section-head"><h2 class="section-title">学习进度</h2><span class="badge">${read} / ${total} 篇</span></div>
@@ -119,7 +147,7 @@ export async function meView() {
         <section class="card card-pad">
           <h2 class="section-title" style="font-size:16px">外观主题</h2>
           <div class="segmented" style="margin-top:8px;width:100%"><button class="segment ${getThemeMode() === 'auto' ? 'active' : ''}" type="button" data-theme-set="auto">跟随系统</button><button class="segment ${getThemeMode() === 'light' ? 'active' : ''}" type="button" data-theme-set="light">浅色</button><button class="segment ${getThemeMode() === 'dark' ? 'active' : ''}" type="button" data-theme-set="dark">深色</button></div>
-          <div class="row-wrap" style="margin-top:10px"><button class="btn btn-sm ${isLowBandwidth() ? 'btn-primary' : 'btn-secondary'}" type="button" data-low-bandwidth aria-pressed="${isLowBandwidth() ? 'true' : 'false'}">${icon('activity', 13)} ${isLowBandwidth() ? '低带宽已开启' : '低带宽模式'}</button><span data-install-wrap ${installPrompt() ? '' : 'hidden'}><button class="btn btn-sm btn-secondary" type="button" data-install>${icon('monitor', 13)} 安装离线应用</button></span></div>
+          <div class="row-wrap" style="margin-top:10px"><button class="btn btn-sm ${isLowBandwidth() ? 'btn-primary' : 'btn-secondary'}" type="button" data-low-bandwidth aria-pressed="${isLowBandwidth() ? 'true' : 'false'}">${icon('activity', 13)} ${isLowBandwidth() ? '低带宽已开启' : '低带宽模式'}</button></div>
           <p class="muted" style="font-size:10.5px;margin-top:8px">主题与低带宽设置保存在本机；安装后可离线打开已缓存页面。</p>
           <div class="row-wrap" style="margin-top:9px"><span class="muted" style="font-size:10px">语言 / Language</span>${LOCALES.map((locale) => `<button class="btn btn-xs ${getLocale() === locale.id ? 'btn-primary' : 'btn-ghost'}" type="button" data-locale="${locale.id}">${escapeHtml(locale.label)}${locale.id === 'en' ? ' beta' : ''}</button>`).join('')}<a class="btn btn-xs btn-ghost" href="#/glossary">${icon('bookOpen', 12)} ${getLocale() === 'en' ? 'Glossary' : '术语表'}</a></div>
         </section>
@@ -223,16 +251,25 @@ export async function meView() {
     button.innerHTML = `${icon('activity', 13)} ${enabled ? '低带宽已开启' : '低带宽模式'}`;
     toast(enabled ? '已开启低带宽模式：减少装饰动画' : '已恢复正常动画', 'success');
   });
-  const installButton = el.querySelector('[data-install]');
-  installButton?.addEventListener('click', async () => {
-    const prompt = installPrompt();
-    if (!prompt) return toast('当前浏览器不支持自动安装，请使用浏览器菜单“添加到主屏幕”', 'info');
-    prompt.prompt();
-    const choice = await prompt.userChoice;
-    if (choice?.outcome === 'accepted') { clearInstallPrompt(); toast('已安装心迹', 'success'); }
-  });
+  const bindInstall = () => {
+    const installButton = el.querySelector('[data-install]');
+    installButton?.addEventListener('click', async () => {
+      const prompt = installPrompt();
+      if (!prompt) return toast('当前浏览器不支持自动安装，请使用浏览器菜单“添加到主屏幕”', 'info');
+      prompt.prompt();
+      const choice = await prompt.userChoice;
+      if (choice?.outcome === 'accepted') {
+        clearInstallPrompt();
+        toast('已安装心迹，可从桌面图标打开', 'success');
+        el.querySelector('[data-pwa-action]').innerHTML = pwaActionMarkup();
+        bindInstall();
+      }
+    });
+  };
+  bindInstall();
   window.addEventListener('ecg-install-ready', () => {
-    const wrap = el.querySelector('[data-install-wrap]'); if (wrap) wrap.hidden = false;
+    const action = el.querySelector('[data-pwa-action]');
+    if (action) { action.innerHTML = pwaActionMarkup(); bindInstall(); }
   }, { once: true });
 
   el.querySelectorAll('[data-theme-set]').forEach((button) => {

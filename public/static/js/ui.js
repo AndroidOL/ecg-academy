@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109aa';
+const __asset = __isNode ? '' : '?v=20261109ab';
 const { renderMiniECG } = await import(`./ecg-renderer.js${__asset}`);
 
 const paths = {
@@ -37,6 +37,7 @@ const paths = {
   star: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-2.9-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z"/>',
   arrowUpRight: '<path d="M7 17 17 7M8 7h9v9"/>',
   bolt: '<path d="M13 2 3 14h8l-1 8 10-12h-8z"/>',
+  download: '<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>',
   monitor: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/><path d="M6 10h2l1.2-3 2 6 1.5-3H18"/>',
   bookOpen: '<path d="M12 6.5C10 4.5 7 4 3 4v15c4 0 7 .5 9 2.5 2-2 5-2.5 9-2.5V4c-4 0-7 .5-9 2.5z"/><path d="M12 6.5v15"/>',
   spark: '<path d="m12 2 2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z"/>',

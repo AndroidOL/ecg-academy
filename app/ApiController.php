@@ -10,6 +10,14 @@ final class ApiController
         Http::ok(['status' => 'ok', 'time' => date(DATE_ATOM)]);
     }
 
+    public static function version(array $params = []): void
+    {
+        Http::ok([
+            'version' => (string) Config::get('app.version', ''),
+            'assetVersion' => (string) Config::get('app.asset_version', ''),
+        ]);
+    }
+
     public static function bootstrap(array $params = []): void
     {
         $user = Auth::user(true);

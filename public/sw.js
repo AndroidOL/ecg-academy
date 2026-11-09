@@ -1,13 +1,18 @@
-const CACHE_VERSION = 'ecg-20261109aa';
+const CACHE_VERSION = 'ecg-20261109ab';
 const SHELL = [
   '/', '/offline.html', '/static/manifest.webmanifest',
   '/static/css/tokens.css', '/static/css/base.css', '/static/css/components.css',
   '/static/css/pages.css', '/static/css/ecg.css',
+  '/static/img/icon-192.png', '/static/img/icon-512.png', '/static/img/apple-touch-icon.png',
   '/static/js/app.js', '/static/js/theme-init.js',
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_VERSION).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(CACHE_VERSION).then((cache) => cache.addAll(SHELL)));
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {

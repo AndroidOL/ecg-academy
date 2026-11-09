@@ -1,7 +1,7 @@
 // Cache-busted dynamic imports: keep Node tests query-free while forcing
 // browsers with immutable 7-day static caching to load the current modules.
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109aa';
+const __asset = __isNode ? '' : '?v=20261109ab';
 const { api } = await import(`./api.js${__asset}`);
 const { store, initTheme, applyTheme, toggleTheme } = await import(`./store.js${__asset}`);
 const { practiceView } = await import(`./views/practice.js${__asset}`);
@@ -59,15 +59,69 @@ applyLowBandwidth();
 document.documentElement.lang = getLocale() === 'en' ? 'en' : 'zh-CN';
 if (typeof window !== 'undefined') {
   window.addEventListener('beforeinstallprompt', (event) => { event.preventDefault(); window.__ecgInstallPrompt = event; window.dispatchEvent(new CustomEvent('ecg-install-ready')); });
+  let swReloading = false;
+  let swWaiting = null;
+  let updateDismissed = false;
+  window.showVersionBanner = (latest = null) => {
+    if (updateDismissed) return;
+    let banner = document.getElementById('version-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'version-banner';
+      banner.className = 'version-banner';
+      banner.setAttribute('role', 'status');
+      banner.innerHTML = `<div><b>发现新版本</b><span data-version-text>刷新后使用最新界面与修复。</span></div><div class="row-wrap"><button class="btn btn-primary btn-sm" type="button" data-version-refresh>立即刷新</button><button class="icon-btn" type="button" data-version-close aria-label="稍后提醒">${icon('x', 14)}</button></div>`;
+      document.body.appendChild(banner);
+      banner.querySelector('[data-version-refresh]').addEventListener('click', () => {
+        if (swWaiting) {
+          swWaiting.postMessage({ type: 'SKIP_WAITING' });
+          setTimeout(() => { swReloading = true; window.location.reload(); }, 1200);
+        } else {
+          window.location.reload();
+        }
+      });
+      banner.querySelector('[data-version-close]').addEventListener('click', () => {
+        updateDismissed = true;
+        banner.remove();
+      });
+    }
+    const text = banner.querySelector('[data-version-text]');
+    if (text && latest) text.textContent = `最新版本 ${latest.version || ''}（${latest.assetVersion || ''}）。刷新页面即可完成更新。`;
+  };
+  const checkAppVersion = async () => {
+    try {
+      const res = await fetch('/api/version', { cache: 'no-store', headers: { Accept: 'application/json' } });
+      if (!res.ok) return;
+      const data = await res.json();
+      const latest = data?.data;
+      if (latest?.assetVersion && store.app?.assetVersion && latest.assetVersion !== store.app.assetVersion) {
+        window.showVersionBanner(latest);
+      }
+    } catch { /* offline */ }
+  };
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
-    let swRefreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (swRefreshing) return;
-      swRefreshing = true;
+      if (!swReloading) return;
+      swReloading = false;
       window.location.reload();
     });
-    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    navigator.serviceWorker.register('/sw.js').then((registration) => {
+      registration.addEventListener('updatefound', () => {
+        const worker = registration.installing;
+        if (!worker) return;
+        worker.addEventListener('statechange', () => {
+          if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+            swWaiting = worker;
+            window.showVersionBanner();
+          }
+        });
+      });
+      window.setInterval(() => registration.update().catch(() => {}), 30 * 60 * 1000);
+    }).catch(() => {});
   }
+  window.setTimeout(checkAppVersion, 8000);
+  window.setInterval(checkAppVersion, 5 * 60 * 1000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkAppVersion(); });
 }
 
 let router;
@@ -145,6 +199,7 @@ function shell(activePath = '/') {
             <b>心迹 ECG Lab</b>
             <span>${escapeHtml(store.site?.copyright || '© 2026 Tianhao Wu 等')}</span>
             <span class="site-footer-note">免费开源心电图教学 · 内容持续迭代</span>
+            <span class="site-footer-version">v${escapeHtml(store.app?.version || '—')} · ${escapeHtml(store.app?.assetVersion || '—')}</span>
             <span class="site-footer-note">教学用途，不构成诊断或治疗建议。</span>
             ${getLocale() === 'en' ? '<span class="site-footer-note">English translations are machine-assisted and pending clinical review.</span>' : ''}
           </div>
