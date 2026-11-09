@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109af';
+const __asset = __isNode ? '' : '?v=20261109ag';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, escapeHtml, toast, confirmDialog, openModal } = await import(`../ui.js${__asset}`);
@@ -836,6 +836,7 @@ export async function adminView() {
       const openDiscountEditor = (model) => {
         const windows = (discountState[model] || []).map((w) => ({ ...w, days: daySet(w.days) }));
         const modal = openModal({
+          className: 'modal-wide discount-modal',
           title: `折扣规则 · ${model}`,
           sub: '按服务器本地时间匹配；每条规则只在其选择的星期生效。跨午夜可设 22:00–08:00。',
           content: `<div class="discount-editor" data-discount-editor></div>`,

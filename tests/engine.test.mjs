@@ -144,6 +144,41 @@ check('STEMI elevation reaches the ST segment', () => {
   assert.ok(found);
 });
 
+check('PAC keeps every P coupled to its QRS and resets the sinus pause', () => {
+  const session = new ECGSession({
+    ...base, rate: 70, pr: 0.16, qrs: 0.08, duration: 8,
+    ectopy: { type: 'pac', pattern: 'isolated', coupling: 0.58 },
+  });
+  const beats = [...session.schedule.beats].sort((a, b) => a.t - b.t);
+  const pacIndex = beats.findIndex((b) => b.type === 'pac');
+  assert.ok(pacIndex >= 0, 'PAC should exist');
+  for (const beat of beats) {
+    if (beat.type === 'sinus') {
+      assert.ok(Math.abs((beat.t - beat.pTime) - beat.pr) < 0.02, 'sinus P must stay coupled');
+    }
+    if (beat.type === 'pac') assert.ok(Math.abs((beat.t - beat.pTime) - 0.14) < 0.02, 'PAC P′–QRS gap');
+  }
+  const next = beats[pacIndex + 1];
+  assert.ok(next && next.type === 'sinus');
+  assert.ok(next.t - beats[pacIndex].t > 0.5, 'pause after PAC must be reasonable');
+  for (let i = 1; i < beats.length; i++) assert.ok(beats[i].t - beats[i-1].t > 0.18, 'QRS must not overlap');
+});
+
+check('PVC/PJC do not leave a detached P wave', () => {
+  for (const type of ['pvc', 'pjc']) {
+    const session = new ECGSession({
+      ...base, rate: 70, duration: 8,
+      ectopy: { type, pattern: 'isolated', coupling: 0.58 },
+    });
+    const beats = [...session.schedule.beats].sort((a, b) => a.t - b.t);
+    for (const beat of beats) {
+      if (beat.type === 'sinus') assert.ok(Math.abs((beat.t - beat.pTime) - beat.pr) < 0.02);
+      if (beat.type === type) assert.ok(beat.pTime === null || beat.pTime === undefined, type + ' should not carry a sinus P');
+    }
+    for (let i = 1; i < beats.length; i++) assert.ok(beats[i].t - beats[i-1].t > 0.18);
+  }
+});
+
 check('generation is deterministic for the same seed', () => {
   const a = generateLead({ ...base, seed: 99 }, 'V1').samples;
   const b = generateLead({ ...base, seed: 99 }, 'V1').samples;

@@ -232,7 +232,7 @@ foreach ($chapters as $chapter) {
             if (is_string($lines)) $lines = [$lines];
             foreach ($lines as $line) {
                 if (!is_string($line) || trim($line) === '') continue;
-                $add("按本站《{$name}》课程，以下哪项属于其{$label}？", $line, $otherFieldPool($field), $item['id'], "《{$name}》{$label}：" . $clean($line), $difficulty);
+                $add("按本站《{$name}》课程，以下哪项属于其{$label}？", $line, $crossPoolFor($field), $item['id'], "《{$name}》{$label}：" . $clean($line), $difficulty);
             }
         }
         foreach (($item['sections'] ?? []) as $section) {

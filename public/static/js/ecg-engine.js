@@ -295,9 +295,15 @@ function buildSchedule(spec) {
         beats.push(makeBeat(at, null, 0, s.qrs, { type: 'pjc', retrogradeP: true }));
       } else {
         beats.push(makeBeat(at, at - 0.14, 0.14, s.qrs, { type: 'pac', pMorph: 'prime' }));
-        for (let i = targetIndex + 1; i < beats.length; i += 1) {
-          if (beats[i].type === 'sinus') beats[i].t -= 0.35 * rr;
-        }
+      }
+      // Reset the sinus rhythm after an ectopic beat. Each later P stays
+      // coupled to its own QRS; PAC has a shorter pause than PVC/PJC.
+      const later = beats.filter((b) => b.type === 'sinus' && b.t > at).sort((a, b) => a.t - b.t);
+      let next = at + (type === 'pac' ? 0.82 : 1.0) * rr;
+      for (const beat of later) {
+        beat.t = next;
+        if (beat.pTime !== null && beat.pTime !== undefined) beat.pTime = next - (Number(beat.pr) || Number(s.pr) || 0.16);
+        next += rr;
       }
       beats.sort((a, b) => a.t - b.t);
     }
