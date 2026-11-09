@@ -72,12 +72,12 @@ try {
 
     check('recent window >10 gives a level and repeated errors revoke learned', function () use ($userId) {
         $chapter = 'theory';
-        for ($i = 0; $i < 2; $i++) Learning::recordPracticeAnswer($userId, true, $chapter, 'test-correct-' . $i);
+        for ($i = 0; $i < 2; $i++) Learning::recordPracticeAnswer($userId, true, $chapter, 'test-correct-' . $i, null, 10);
         $status = Learning::status($userId);
         $row = array_values(array_filter($status['chapters'], static fn (array $c): bool => $c['id'] === $chapter))[0];
         assert($row['sample'] > 10);
         assert($row['level'] === '精通');
-        for ($i = 0; $i < 3; $i++) Learning::recordPracticeAnswer($userId, false, $chapter, 'test-wrong-' . $i);
+        for ($i = 0; $i < 3; $i++) Learning::recordPracticeAnswer($userId, false, $chapter, 'test-wrong-' . $i, null, -40);
         $status = Learning::status($userId);
         $row = array_values(array_filter($status['chapters'], static fn (array $c): bool => $c['id'] === $chapter))[0];
         assert($row['status'] === 'relearning', 'repeated errors should revoke learned');
@@ -85,7 +85,7 @@ try {
     });
 
     check('practice score below threshold locks until next day', function () use ($userId) {
-        for ($i = 0; $i < 10; $i++) Learning::recordPracticeAnswer($userId, false, 'theory', 'lock-' . $i);
+        for ($i = 0; $i < 10; $i++) Learning::recordPracticeAnswer($userId, false, 'theory', 'lock-' . $i, null, -40);
         $until = Learning::practiceLockedUntil($userId);
         assert($until !== null);
         assert(strtotime($until) > time());

@@ -1,10 +1,10 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109al';
+const __asset = __isNode ? '' : '?v=20261109an';
 const { localizedName, getLocale, translate } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
-const { recordAttempt, reviewSummary, weakDiagnosisIds, deviceId } = await import(`../study-store.js${__asset}`);
+const { recordAttempt, reviewSummary, weakDiagnosisIds, deviceId, questionSignature } = await import(`../study-store.js${__asset}`);
 const { hasByok } = await import(`../byok.js${__asset}`);
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, toast, setButtonLoading, fmtDuration, medicalDisclaimer } = await import(`../ui.js${__asset}`);
@@ -152,9 +152,7 @@ export async function practiceView({ query } = {}) {
   try { testStatus = await api.practiceStatus(); } catch { /* offline / old API */ }
   state.practice = testStatus;
 
-  const userLevel = store.user?.isGuest
-    ? levelFromXp(Number(store.user?.xp || 0))
-    : Number(store.level?.level || store.user?.level || 1);
+  const userLevel = levelFromXp(Number(store.user?.xp || 0));
   const chapters = store.chapters || [];
   el.innerHTML = `
     <header class="page-head">
@@ -175,22 +173,22 @@ export async function practiceView({ query } = {}) {
         <a class="read-entry" href="#/read"><span class="read-entry-icon">${icon('target', 16)}</span><span class="read-entry-text"><b>系统判读训练</b><span>按 频率 → 节律 → 电轴 → 间期 → ST-T → 结论 的顺序读图，每一步即时反馈。</span></span><span class="badge badge-brand">NEW</span></a>
         <h2 class="section-title" style="margin-bottom:10px">选择玩法</h2>
         <div class="game-mode-grid">${GAME_MODES.map((mode) => `<button class="game-mode-card ${mode.id === state.gameMode ? 'active' : ''}" type="button" data-game-mode="${mode.id}"><span class="game-mode-icon">${icon(mode.icon, 16)}</span><b>${mode.name}</b><small>${mode.note}</small></button>`).join('')}</div>
-        <h2 class="section-title" style="margin:16px 0 8px;font-size:16px">难度与范围</h2>
+        <div class="section-head" style="margin:16px 0 8px"><h2 class="section-title" style="font-size:16px;margin:0">难度与范围</h2><span class="muted" style="font-size:10px">未解锁难度可自由练习 · 不计分 / 不扣分</span></div>
         <div class="level-grid">
           ${LEVELS.map((level) => {
             const need = level.id === 2 ? ADVANCED_UNLOCK : level.id === 3 ? CHALLENGE_UNLOCK : 0;
-            const locked = need > 0 && userLevel < need;
-            return `<button class="level-card ${level.id === state.level ? 'active' : ''} ${locked ? 'locked' : ''}" type="button" data-level="${level.id}" ${locked ? 'aria-disabled="true"' : ''}><b>${level.name}${locked ? ` ${icon('lock', 11)}` : ''}</b><span>${level.note}${locked ? ` · Lv.${need} 解锁` : ''}</span></button>`;
+            const freePractice = need > 0 && userLevel < need;
+            return `<button class="level-card ${level.id === state.level ? 'active' : ''}" type="button" data-level="${level.id}"><b>${level.name}</b><span>${level.note}${freePractice ? ` · Lv.${need} 后计分` : ''}</span></button>`;
           }).join('')}
         </div>
         <div class="section-head" style="margin:16px 0 6px;justify-content:space-between"><h2 class="section-title" style="font-size:15px;margin:0">专项练习</h2><span class="muted" style="font-size:10px">按定位主题预选病例</span></div>
         <div class="special-grid">
           ${SPECIAL_PRACTICES.map((item) => {
-            const locked = userLevel < item.level;
-            return `<button class="special-card ${locked ? 'locked' : ''}" type="button" data-special="${item.id}" ${locked ? 'aria-disabled="true"' : ''}>
-              <b>${item.label}${locked ? ` ${icon('lock', 11)}` : ''}</b>
+            const freePractice = userLevel < item.level;
+            return `<button class="special-card" type="button" data-special="${item.id}">
+              <b>${item.label}</b>
               <span>${item.note}</span>
-              <small>${locked ? `Lv.${item.level} 解锁` : `${item.focus.length} 个相关诊断`}</small>
+              <small>${freePractice ? `Lv.${item.level} 后计分 · ` : ''}${item.focus.length} 个相关诊断</small>
             </button>`;
           }).join('')}
         </div>
@@ -218,10 +216,10 @@ export async function practiceView({ query } = {}) {
           <div class="practice-stats">
             <div class="practice-stat"><b data-test-score>${testStatus.score > 0 ? '+' : ''}${testStatus.score}</b><span>今日测试分</span></div>
             <div class="practice-stat"><b>${testStatus.correct}</b><span>答对</span></div>
-            <div class="practice-stat"><b>${testStatus.wrong}</b><span>答错（-10）</span></div>
+            <div class="practice-stat"><b>${testStatus.wrong}</b><span>答错</span></div>
             <div class="practice-stat"><b>${store.quiz?.accuracy || 0}%</b><span>历史正确率</span></div>
           </div>
-          <p class="muted" style="font-size:10px;margin-top:7px">答对 +1，答错 -10；低于 ${testStatus.lockScore} 分锁定至次日。${testStatus.leaderboardMe?.rank ? ` 今日名次 <b>#${testStatus.leaderboardMe.rank}</b>。` : ' 今日暂未上榜。'}</p>
+          <p class="muted" style="font-size:10px;margin-top:7px">基础/进阶/挑战答对 +10/+15/+20，答错按 4× 基础分扣分；未达 Lv.5/Lv.8 的进阶/挑战为自由练习，不计分、不扣分；Lv10 后基础题不再给经验。低于 ${testStatus.lockScore} 分锁定至次日。${testStatus.leaderboardMe?.rank ? ` 今日名次 <b>#${testStatus.leaderboardMe.rank}</b>。` : ' 今日暂未上榜。'}</p>
           <div class="practice-leaderboard-head"><b>今日排行榜</b><div class="row-wrap" style="gap:2px"><a class="btn btn-xs btn-ghost" href="#/leaderboard">完整排行</a><button class="btn btn-xs btn-ghost" type="button" data-test-scope="all">总榜</button></div></div>
           <div class="practice-leaderboard" data-test-leaderboard>${renderMiniLeaderboard(testStatus.leaderboard)}</div>
         </div>
@@ -245,22 +243,12 @@ export async function practiceView({ query } = {}) {
   const chapterSelect = el.querySelector('#practice-chapter');
   chapterSelect.value = state.chapter;
   levelButtons.forEach((button) => button.addEventListener('click', () => {
-    const target = Number(button.dataset.level);
-    const need = target === 2 ? ADVANCED_UNLOCK : target === 3 ? CHALLENGE_UNLOCK : 0;
-    if (need > 0 && userLevel < need) {
-      toast(`升到 Lv.${need} 解锁${target === 2 ? '进阶' : '挑战'}难度`, 'warn');
-      return;
-    }
-    state.level = target;
+    state.level = Number(button.dataset.level);
     levelButtons.forEach((b) => b.classList.toggle('active', b === button));
   }));
   el.querySelectorAll('[data-special]').forEach((button) => button.addEventListener('click', async () => {
     const item = SPECIAL_PRACTICES.find((x) => x.id === button.dataset.special);
     if (!item) return;
-    if (userLevel < item.level) {
-      toast(`升到 Lv.${item.level} 解锁${item.label}`, 'warn');
-      return;
-    }
     state.level = item.level;
     levelButtons.forEach((b) => b.classList.toggle('active', Number(b.dataset.level) === item.level));
     button.disabled = true;
@@ -601,7 +589,7 @@ function renderQuestion(el) {
     clearTimer();
     setButtonLoading(submit, true, '判分中');
     try {
-      const result = await api.quizAnswer(quiz.attemptId, [...state.selected], Math.round(performance.now() - state.questionStart));
+      const result = await api.quizAnswer(quiz.attemptId, [...state.selected], Math.round(performance.now() - state.questionStart), levelFromXp(Number(store.user?.xp || 0)));
       if (getLocale() === 'en') {
         const localized = (id) => localizedName((quiz.options || []).find((option) => option.id === id) || {});
         result.correctNames = (result.correctIds || []).map(localized);
@@ -623,10 +611,20 @@ function renderQuestion(el) {
       }
       state.score += result.score;
       if (result.slow) state.slow += 1;
-      if (store.user?.isGuest) store.addLocalXp(result.xp);
+      store.applyXp(result.xp);
       const names = Object.fromEntries((quiz.options || []).map((option) => [option.id, option.name]));
       const chapterMap = Object.fromEntries((quiz.options || []).map((option) => [option.id, option.chapter]));
-      recordAttempt({ correct: result.correct, slow: Boolean(result.slow), correctIds: result.correctIds || [], selectedIds: [...state.selected], names, chapters: chapterMap });
+      recordAttempt({
+        correct: result.correct,
+        slow: Boolean(result.slow),
+        correctIds: result.correctIds || [],
+        selectedIds: [...state.selected],
+        names,
+        chapters: chapterMap,
+        source: 'practice',
+        questionKey: questionSignature((quiz.options || []).map((option) => option.id), result.correctIds || []),
+        questionText: quiz.stem || quiz.question || '',
+      });
       state.answeredCount += 1;
       if (state.gameMode === 'survival' && !result.correct) {
         state.lives = Math.max(0, state.lives - 1);
@@ -754,13 +752,14 @@ function renderQuestion(el) {
 
 function feedbackHtml(result, multiple, isLast = false) {
   const tone = result.correct ? 'good' : 'bad';
+  const freePractice = result.unlocked === false;
   const title = result.correct
-    ? (result.slow ? '判断正确，但不熟练（用时超过 15 秒）' : '判断正确')
-    : result.partial ? '部分正确，但诊断组合不完整' : '需要再读一遍';
+    ? (result.slow ? '判断正确，但不熟练（用时超过 15 秒）' : '判断正确') + (freePractice ? ' · 自由练习' : '')
+    : (result.partial ? '部分正确，但诊断组合不完整' : '需要再读一遍') + (freePractice ? ' · 自由练习' : '');
   const answer = result.correctNames?.join('、') || '';
   return `<div class="quiz-feedback">
-    <div class="feedback-head"><span class="feedback-icon ${tone === 'bad' ? 'bad' : ''}">${icon(result.correct ? 'check' : 'x', 16)}</span><div><div class="feedback-title">${title}</div><div class="muted" style="font-size:10px">本题得分 ${result.score ?? '—'}${Number.isFinite(Number(result.baseScore)) ? `（基础 ${result.baseScore} + 时间加成 ${result.timeBonus ?? 0}）` : ''} · 用时 ${Math.round((result.timeMs || 0) / 1000)} 秒 · 经验 +${result.xp}${answer ? ` · 正确答案：${escapeHtml(answer)}` : ''}</div></div></div>
-    <p class="muted" style="font-size:10px;margin:4px 0 0">测试分 +1/-10 与用时无关；本题得分含按答题速度计算的时间加成${result.speed === 'wrong' ? '，答错按 5× 基础分扣分' : ''}。用时超过 15 秒的答对题记为“不熟练”。</p>
+    <div class="feedback-head"><span class="feedback-icon ${tone === 'bad' ? 'bad' : ''}">${icon(result.correct ? 'check' : 'x', 16)}</span><div><div class="feedback-title">${title}</div><div class="muted" style="font-size:10px">${freePractice ? `自由练习：本题不计分、不扣分；Lv.${result.unlockLevel || '—'} 后按正常规则计分` : `本题得分 ${result.score ?? '—'}${Number.isFinite(Number(result.baseScore)) ? (result.correct ? `（基础 ${result.baseScore}${result.slow ? ' · 慢答 ×0.7' : ` + 时间加成 ${result.timeBonus ?? 0}`}）` : result.partial ? `（部分正确 ${result.baseScore} ×0.25）` : `（答错扣 ${result.penalty || 4}× 基础分）`) : ''}`} · 用时 ${Math.round((result.timeMs || 0) / 1000)} 秒${freePractice ? '' : ` · 经验 ${Number(result.xp) > 0 ? '+' : ''}${result.xp}`}${answer ? ` · 正确答案：${escapeHtml(answer)}` : ''}</div></div></div>
+    <p class="muted" style="font-size:10px;margin:4px 0 0">${freePractice ? '该难度尚未达到计分等级，可自由练习；答错不会扣测试分或 XP，错题仍会记录。' : '测试分按难度 10/15/20 计；答错按 4× 基础分扣分；慢答（>15 秒）正确只拿 70% 分数与 60% 经验；Lv10 后基础题不再给经验。用时超过 15 秒的答对题记为“不熟练”。'}</p>
     <p class="feedback-text">${escapeHtml(result.localExplanation || '')}</p>
     ${(result.explanation || []).map((item) => `<div class="explain-block"><h4>${escapeHtml(item.name)}</h4><p>${escapeHtml(item.specificity || item.oneLiner || '')}</p><ul>${(item.criteria || []).map((c) => `<li>${escapeHtml(c)}</li>`).join('')}</ul></div>`).join('')}
     ${aiUiAvailable() ? `<div class="ai-ask-row"><input class="input" data-ai-question maxlength="120" placeholder="简短追问（≤120 字）：为什么排除某个选项？"><button class="btn btn-secondary btn-sm" type="button" data-ai-ask>${icon('sparkles', 14)} 问 AI</button></div><div class="ai-ask-hint">追问限 120 字；复杂或跨主题问题请到文章页的「AI 导师」提问。</div>` : ''}

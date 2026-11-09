@@ -107,7 +107,8 @@ try {
         $result = Daily::complete($guest, (string) $round['token'], correctAnswersFor($round));
         assert($result['correct'] === 10, 'correct=' . $result['correct']);
         assert($result['total'] === 10);
-        assert($result['score'] >= 1000, 'score=' . $result['score']);
+        assert($result['score'] > 0, 'score=' . $result['score']);
+        assert($result['xp'] > 0, 'xp=' . $result['xp']);
         assert($result['streak'] === 1);
         assert(count($result['details']) === 10);
         foreach ($result['details'] as $detail) {

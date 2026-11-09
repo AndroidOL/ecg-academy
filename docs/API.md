@@ -49,17 +49,17 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/api/quiz/new?level=1|2|3&chapter=&focus=a,b&assignment=CODE&device=UUID` | 从 1920 道预生成病例中出题；level 3 为组合诊断；assignment 覆盖难度/章节/专项并记录匿名成绩；返回剥离答案的 ECG 规格、选项、attemptId、bankId |
-| POST | `/api/quiz/answer` | `{attemptId, selected:["id"], timeMs}`；服务端判分并返回解析；测试模式更新 +1/-10 与锁定 |
+| POST | `/api/quiz/answer` | `{attemptId, selected:["id"], timeMs, level?}`；服务端判分并返回解析；`level` 仅用于游客本地等级判断；未解锁难度返回 `unlocked:false`、score/xp=0；测试模式按难度计分、答错 4× 扣分并更新锁定 |
 | GET | `/api/quiz/history` | 最近答题记录 |
 | GET | `/api/learning/status` | 19 板块学习状态、最近 50 题评级、考试解锁、1735 题统计 |
 | GET | `/api/learning/start?chapter=` | 随机 10 题学习关卡（返回题目与签名 token，不含答案） |
-| POST | `/api/learning/complete` | `{token, answers}` 结算学习关卡；≥8/10 标记已学习 |
+| POST | `/api/learning/complete` | `{token, answers, level?}` 结算学习关卡/考试；返回 `score`、`xp`、`details`（含 `unlocked/unlockLevel`）；≥8/10 标记已学习 |
 | GET | `/api/exam/start` | 从已学习板块随机组卷；不足 8 个板块返回 403 `exam_locked` |
 | GET | `/api/practice/status` | 今日测试分、正确/错误数、锁定时间、今日排行榜/个人名次 |
 | GET | `/api/practice/leaderboard?scope=today\|week\|all` | 排行榜：`items`（前 50）、`me`（当前用户）、`total`、`updatedAt`；只含公开昵称/分数 |
 | GET | `/api/daily/status` | `day/done/result/count/streak/bestStreak/totalDays/history`（28 天） |
 | GET | `/api/daily/start` | 今日 10 题（全站同题、确定性选项顺序）与签名 token；已完成时返回 `done:true` 与结果 |
-| POST | `/api/daily/complete` | `{token, answers:[{id,selected,timeMs}]}`；判分、写 `daily_results`、token 一次性核销；不进入测试分/排行榜 |
+| POST | `/api/daily/complete` | `{token, answers:[{id,selected,timeMs}], level?}`；判分、写 `daily_results`、token 一次性核销；未解锁难度 0 分/0 XP；不进入测试分/排行榜 |
 | GET | `/api/assignment?code=` | 公开作业元数据（标题/班级/难度/章节），不返回答案；停用即 404 |
 | GET | `/api/stats?scope=week|all` | 进度、章节正确率、最近答题/急救、排行榜 |
 | GET | `/api/leaderboard?scope=week|all` | 排行榜 |
@@ -78,7 +78,7 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 }
 ```
 
-判分响应包含：`correct`、`partial`、`correctIds`、`correctNames`、`selectedNames`、`score`、`xp`、`explanation`（逐诊断的特异性/标准/处理）、`localExplanation`、`aiAvailable`。
+判分响应包含：`correct`、`partial`、`correctIds`、`correctNames`、`selectedNames`、`score`、`xp`、`baseScore`、`penalty`、`xpMultiplier`、`explanation`（逐诊断的特异性/标准/处理）、`localExplanation`、`aiAvailable`。
 
 ## 急救模拟
 
@@ -116,12 +116,12 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 |---|---|---|
 | GET | `/api/ai/status` | `configured/allowed/byokEnabled/model/dailyLimit/used/remaining/mode` |
 | POST | `/api/ai/chat` | `{message, diagnosisId?, byok?}`；`byok={baseUrl,model,apiKey}` 仅在管理员开启 BYOK 时接受 |
-| POST | `/api/ai/stream` | SSE：`{mode:"chat"|"explain", ...}`；事件 `meta / delta / done`，`done` 含 usage 与 cost |
+| POST | `/api/ai/stream` | SSE：`{mode:"chat"|"explain"|"review"|"mistake", ...}`；`mistake` 传 `{entryId, mistake:{choices,repeat,history}, question?}`；事件 `meta / delta / done`，`done` 含 usage 与 cost |
 | POST | `/api/ai/explain` | `{attemptId, question?, byok?}` |
 | POST | `/api/ai/study-plan` | `{byok?}` 生成薄弱诊断专项计划 |
 | POST | `/api/ai/sim-review` | `{runId, byok?}` 急救复盘 |
 
-未配置密钥、超时或额度用尽时返回 `fallback:true` 与本地文本，HTTP 仍为 200，避免打断学习。BYOK 请求不消耗站点每日额度；密钥只在请求内存中使用，不写数据库/日志，且 Base URL 必须为 HTTPS 公网地址。
+错题讲解请求示例：`{"mode":"mistake","entryId":"afib","mistake":{"choices":[{"id":"atrial-tachy","name":"房性心动过速","count":2}],"repeat":{"n":3,"picked":["房性心动过速"]},"history":[{"q":"该心电图最可能的诊断是？","picked":[{"id":"atrial-tachy"}],"correct":[{"id":"afib"}]}]}}`。服务端只按诊断 ID 回查真实名称，未知 ID 丢弃；该模式计入每日错因分析额度。未配置密钥、超时或额度用尽时返回 `fallback:true` 与本地文本，HTTP 仍为 200，避免打断学习。BYOK 请求不消耗站点每日额度；密钥只在请求内存中使用，不写数据库/日志，且 Base URL 必须为 HTTPS 公网地址。
 
 ## 前端本地数据与离线
 

@@ -1,9 +1,9 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109al';
+const __asset = __isNode ? '' : '?v=20261109an';
 const { localizedName, getLocale, translate } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
-const { recordAttempt } = await import(`../study-store.js${__asset}`);
+const { recordAttempt, questionSignature } = await import(`../study-store.js${__asset}`);
 const { streamAi } = await import(`../ai-stream.js${__asset}`);
 const { renderMarkdown } = await import(`../markdown.js${__asset}`);
 const { hasByok } = await import(`../byok.js${__asset}`);
@@ -59,9 +59,7 @@ const LEVELS = [
 export async function readView({ query } = {}) {
   const el = document.createElement('div');
   el.className = 'page read-page';
-  const userLevel = store.user?.isGuest
-    ? levelFromXp(Number(store.user?.xp || 0))
-    : Number(store.level?.level || store.user?.level || 1);
+  const userLevel = levelFromXp(Number(store.user?.xp || 0));
 
   const focus = String(query?.get('focus') || '').split(',').map((id) => id.trim()).filter(Boolean).slice(0, 8);
   const state = {
@@ -94,9 +92,9 @@ export async function readView({ query } = {}) {
       <section class="quiz-card read-ecg-card">
         <div class="row-wrap" style="justify-content:space-between;margin-bottom:8px">
           <div class="row-wrap" data-levels>${LEVELS.map((level) => {
-            const locked = Boolean(level.need && userLevel < level.need);
-            return `<button class="btn btn-xs ${level.id === state.level ? 'btn-primary' : 'btn-ghost'}" type="button" data-read-level="${level.id}" ${locked ? 'disabled' : ''} title="${escapeHtml(level.note)}${locked ? ` · Lv.${level.need} 解锁` : ''}">${level.name}${locked ? ` · Lv.${level.need}` : ''}</button>`;
-          }).join('')}</div>
+            const freePractice = Boolean(level.need && userLevel < level.need);
+            return `<button class="btn btn-xs ${level.id === state.level ? 'btn-primary' : 'btn-ghost'}" type="button" data-read-level="${level.id}" title="${escapeHtml(level.note)}${freePractice ? ` · Lv.${level.need} 后计分` : ''}">${level.name}${freePractice ? ' · 自由' : ''}</button>`;
+          }).join('')}<span class="muted" style="font-size:9.5px">未解锁难度自由练习，不计分/不扣分</span></div>
           <div class="row-wrap"><span class="badge" data-quiz-meta>加载中…</span><button class="btn btn-xs btn-ghost" type="button" data-read-new>${icon('refresh', 12)} 换一例</button></div>
         </div>
         <div class="ecg-card" id="read-ecg">
@@ -313,7 +311,7 @@ export async function readView({ query } = {}) {
       state.submitted = true;
       setButtonLoading(submit, true, '判分中');
       try {
-        const result = await api.quizAnswer(quiz.attemptId, [...selected], Math.round(performance.now() - state.startedAt));
+        const result = await api.quizAnswer(quiz.attemptId, [...selected], Math.round(performance.now() - state.startedAt), levelFromXp(Number(store.user?.xp || 0)));
         const localized = (id) => localizedName((quiz.options || []).find((option) => option.id === id) || {});
         result.correctNames = (result.correctIds || []).map(localized);
         result.selectedNames = [...selected].map(localized);
@@ -329,7 +327,17 @@ export async function readView({ query } = {}) {
         clearInterval(state.timerId);
         const names = Object.fromEntries((quiz.options || []).map((option) => [option.id, option.name]));
         const chapters = Object.fromEntries((quiz.options || []).map((option) => [option.id, option.chapter]));
-        recordAttempt({ correct: result.correct, slow: Boolean(result.slow), correctIds: result.correctIds || [], selectedIds: [...selected], names, chapters });
+        recordAttempt({
+          correct: result.correct,
+          slow: Boolean(result.slow),
+          correctIds: result.correctIds || [],
+          selectedIds: [...selected],
+          names,
+          chapters,
+          source: 'read',
+          questionKey: questionSignature((quiz.options || []).map((option) => option.id), result.correctIds || []),
+          questionText: quiz.stem || quiz.question || '',
+        });
         const stepTotal = STEPS.length;
         const stepHits = STEPS.filter((step) => state.results[step.id] === true).length;
         const stats = loadStats();
@@ -339,7 +347,7 @@ export async function readView({ query } = {}) {
         saveStats(stats);
         const statsNode = el.querySelector('[data-read-stats]');
         if (statsNode) statsNode.textContent = statsLabel();
-        if (store.user?.isGuest) store.addLocalXp(result.xp);
+        store.applyXp(result.xp);
         conclusionHost.querySelectorAll('[data-diagnosis]').forEach((label) => {
           const id = label.dataset.diagnosis;
           label.classList.remove('selected');
@@ -364,8 +372,9 @@ export async function readView({ query } = {}) {
     const stepDone = stepIds.filter((id) => state.results[id] !== undefined).length;
     const answer = (result.correctIds || []).map((id) => localizedName(quiz.options.find((option) => option.id === id))).filter(Boolean).join('、');
     const selectedNames = [...selected].map((id) => localizedName(quiz.options.find((option) => option.id === id))).filter(Boolean).join('、');
+    const freePractice = result.unlocked === false;
     feedbackHost.innerHTML = `<div class="quiz-feedback ${result.correct ? '' : 'is-bad'}">
-      <div class="feedback-head"><span class="feedback-icon ${result.correct ? '' : 'bad'}">${icon(result.correct ? 'check' : 'x', 16)}</span><div><div class="feedback-title">${result.correct ? '结论正确' : '结论需要修正'}</div><div class="muted" style="font-size:10px">本题得分 ${result.score ?? '—'} · 用时 ${Math.round((result.timeMs || 0) / 1000)} 秒 · 经验 +${result.xp}${result.slow ? ' · 判读偏慢' : ''}</div></div></div>
+      <div class="feedback-head"><span class="feedback-icon ${result.correct ? '' : 'bad'}">${icon(result.correct ? 'check' : 'x', 16)}</span><div><div class="feedback-title">${result.correct ? '结论正确' : '结论需要修正'}${freePractice ? ' · 自由练习' : ''}</div><div class="muted" style="font-size:10px">${freePractice ? `自由练习：本题不计分、不扣分；Lv.${result.unlockLevel || '—'} 后按正常规则计分` : `本题得分 ${result.score ?? '—'}${result.correct && result.slow ? '（慢答 ×0.7）' : !result.correct && result.partial ? '（部分正确）' : !result.correct ? '（答错按 4× 扣分）' : ''}`} · 用时 ${Math.round((result.timeMs || 0) / 1000)} 秒${freePractice ? '' : ` · 经验 ${Number(result.xp) > 0 ? '+' : ''}${result.xp}`}${result.slow ? ' · 判读偏慢' : ''}</div></div></div>
       <div class="read-score-row">
         <div class="read-score"><b>${stepCorrect} / ${stepIds.length}</b><span>结构化步骤正确</span></div>
         <div class="read-score"><b>${stepDone} / ${stepIds.length}</b><span>已完成步骤</span></div>

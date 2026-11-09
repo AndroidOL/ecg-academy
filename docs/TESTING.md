@@ -3,6 +3,24 @@
 测试日期：2026-11-07 ～ 2026-11-09
 环境：PHP 8.4.27 · MySQL 8.4.13 · nginx 1.30.6 · Node 22.23.4 · 内存 3.5 GB
 
+## 2026-11-09 v3.0.13 回归（20261109an）
+
+- 统一计分：`tests/scoring.test.php` 7/7；等级阈值 +50% 后 `tests/level.test.php` 5/5；慢答/错题扣分 `tests/slow.test.php` 3/3；学习/考试/每日挑战回归全部通过。
+- 向量环：新增 `tests/vector-loop.test.mjs` 5/5，覆盖开放式离心/归心支、QRS 横面前方面积 <1/3、右后 <20%、T 长宽比约 2.5、QRS/T 振幅比与肢体导联极性。
+- 本次相关 PHP 套件 43 项通过（`zend.assertions=1`）：scoring 8、level 5、slow 3、learning 7、daily 9、ai-quiz 6、study-sync 5；本地复习/BYOK/错选项 8 项、ECG 引擎 17 项、判读 6 项通过。
+- 全量 PHP 套件与共享生产库存在数据污染风险（排行榜/作业等断言依赖干净库），发布前应在独立测试库复跑。
+- 发布前题库审计：1920 道诊断题 = 1600 单选 + 320 组合，9920 个选项 0 问题；1765 道章节题答案审计 0 冲突；48 条 ECG × 12 导联波形审计 0 NaN/平坦/异常振幅，summary HR 48/48 与 spec rate 一致。
+- Chrome DevTools 实测：向量页默认 0.25×、可选 0.1/0.25/0.5，拖拽绕零点旋转并带惯性，0 JS 错误；练习/系统判读无难度锁定按钮并显示自由练习提示；我的页等级文案正确。
+- 未运行完整 jsdom `tests/ui-smoke.mjs` 与三视口截图，发布前仍需在测试站补跑。
+
+## 2026-11-09 v3.0.12 回归（20261109am）
+
+- 错题本新增 `wrongChoices / wrongLog / repeatWrongs`：记录实际错选项、最近 12 次错题与同题重复次数；诊断题、章节学习/考试、AI 出题均覆盖。
+- 错题主条目改为只保留正确诊断，误选干扰项作为记录而非独立错题。
+- AI 错题上下文只按诊断 ID 回查名称，未知 ID 丢弃；本地兜底会点出干扰项与同题重复。
+- 自动化：PHP 84 项通过；本地复习/BYOK/错选项 8 项、ECG 引擎 17 项、判读 6 项通过；AI 出题/错题上下文 6 项通过。
+- UI 冒烟：本次代码环境无现代 Node/jsdom 与浏览器，发布前需在测试站补跑 `tests/ui-smoke.mjs` 与三视口复习页检查。
+
 ## 2026-11-09 v3.0.11 回归（20261109al）
 
 - 缩放滑杆默认值 170%（40–350 范围约 40% 位置）；重置视角恢复 170%；不再误解为 45% 缩放。
@@ -151,7 +169,7 @@
 | 章节答案准确性 | `php scripts/audit_section_bank.php` | **1765 道，0 冲突** |
 | ECG 波形引擎 | `node tests/engine.test.mjs` | **15/15 通过** |
 | ACLS 状态机 | `php tests/sim.test.php` | **14/14 通过** |
-| 本地复习/BYOK | `node tests/study.test.mjs` | **4/4 通过** |
+| 本地复习/BYOK/错选项记录 | `node tests/study.test.mjs` | **8/8 通过** |
 | 班级作业 | `php tests/assignment.test.php` | **3/3 通过** |
 | 学习考试/评级/锁定 | `php tests/learning.test.php` | **7/7 通过** |
 | 排行榜排序/当前名次 | `php tests/leaderboard.test.php` | **2/2 通过** |
@@ -161,9 +179,11 @@
 | AI 成本/折扣计算 | `php tests/ai-cost.test.php` | **3/3 通过** |
 | 扣分/不熟练判定 | `php tests/slow.test.php` | **3/3 通过** |
 | 等级与难度解锁 | `php tests/level.test.php` | **5/5 通过** |
-| 账号学习数据同步 | `php tests/study-sync.test.php` | **4/4 通过** |
+| 统一计分/双轨 XP/自由练习 | `php tests/scoring.test.php` | **8/8 通过** |
+| 向量环正常值与极性 | `node tests/vector-loop.test.mjs` | **5/5 通过** |
+| 账号学习数据同步（含错选项） | `php tests/study-sync.test.php` | **5/5 通过** |
 | 课程包校验/导入/发布 | `php tests/coursepack.test.php` | **4/4 通过** |
-| AI 出题/解析兜底 | `php tests/ai-quiz.test.php` | **3/3 通过** |
+| AI 出题/解析/错题上下文 | `php tests/ai-quiz.test.php` | **6/6 通过** |
 | 播放器/12 导联/标注 | `node tests/playback.test.mjs` | **13/13 通过** |
 | 全链路 UI 冒烟 | `node tests/ui-smoke.mjs   # 15 组` | **15/15 组通过，0 控制台错误** |
 | 生产 API | curl + 独立 Cookie/CSRF | **通过**（见下） |

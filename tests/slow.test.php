@@ -6,6 +6,7 @@ require dirname(__DIR__) . '/app/bootstrap.php';
 use App\Db;
 use App\Learning;
 use App\Quiz;
+use App\Scoring;
 
 $passed = 0;
 $failed = 0;
@@ -40,7 +41,7 @@ try {
             'id' => (int) $row['id'],
             'correct' => json_decode((string) $row['correct_ids'], true),
             'options' => json_decode((string) $row['option_ids'], true),
-            'base' => [1 => 100, 2 => 140, 3 => 180][(int) $payload['level']] ?? 100,
+            'base' => Scoring::base((int) $payload['level']),
             'chapter' => (string) ($payload['chapter'] ?? ''),
         ];
     };
@@ -51,7 +52,7 @@ try {
         assert($result['correct'] === true);
         assert($result['slow'] === true);
         assert($result['speed'] === 'slow');
-        assert($result['score'] === $attempt['base'], 'score=' . $result['score']);
+        assert($result['score'] === (int) round($attempt['base'] * Scoring::SLOW_SCORE_RATIO), 'score=' . $result['score']);
         $stmt = Db::pdo()->prepare('SELECT time_ms, correct FROM learning_events WHERE user_id = ? ORDER BY id DESC LIMIT 1');
         $stmt->execute([$userId]);
         $event = $stmt->fetch();
@@ -70,7 +71,7 @@ try {
         assert($result['score'] > $attempt['base']);
     });
 
-    check('wrong answer deducts five times the base score', function () use ($makeAttempt, $userId): void {
+    check('wrong answer deducts four times the base score in practice', function () use ($makeAttempt, $userId): void {
         $attempt = $makeAttempt();
         $wrong = array_values(array_filter($attempt['options'], static fn (string $id): bool => !in_array($id, $attempt['correct'], true)));
         assert($wrong !== []);
@@ -78,7 +79,7 @@ try {
         assert($result['correct'] === false);
         assert($result['speed'] === 'wrong' || $result['speed'] === 'partial');
         if ($result['speed'] === 'wrong') {
-            assert($result['score'] === -5 * $attempt['base'], 'score=' . $result['score'] . ' base=' . $attempt['base']);
+            assert($result['score'] === -4 * $attempt['base'], 'score=' . $result['score'] . ' base=' . $attempt['base']);
         }
     });
 } finally {

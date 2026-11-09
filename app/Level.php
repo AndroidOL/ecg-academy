@@ -6,10 +6,10 @@ namespace App;
 final class Level
 {
     public const THRESHOLDS = [
-        1 => 0, 2 => 80, 3 => 200, 4 => 400, 5 => 700,
-        6 => 1100, 7 => 1600, 8 => 2200, 9 => 3000, 10 => 4000,
-        11 => 5200, 12 => 6600, 13 => 8200, 14 => 10000, 15 => 12000,
-        16 => 14500, 17 => 17500, 18 => 21000, 19 => 25000, 20 => 30000,
+        1 => 0, 2 => 120, 3 => 300, 4 => 600, 5 => 1050,
+        6 => 1650, 7 => 2400, 8 => 3300, 9 => 4500, 10 => 6000,
+        11 => 7800, 12 => 9900, 13 => 12300, 14 => 15000, 15 => 18000,
+        16 => 21800, 17 => 26300, 18 => 31500, 19 => 37500, 20 => 45000,
     ];
     public const MAX = 20;
     public const ADVANCED_UNLOCK = 5;
@@ -65,13 +65,7 @@ final class Level
 
     public static function canUseQuizLevel(array $user, int $requested): bool
     {
-        if ((int) ($user['is_admin'] ?? 0) === 1) return true;
-        // 游客 XP 存在浏览器本地，由前端按同一阈值解锁；服务端不阻断。
-        if ((int) ($user['is_guest'] ?? 1) === 1) return true;
-        if ($requested < 2) return true;
-        $level = self::forUser((int) $user['id'])['level'];
-        if ($requested === 2 && $level < self::ADVANCED_UNLOCK) return false;
-        if ($requested >= 3 && $level < self::CHALLENGE_UNLOCK) return false;
+        // 所有难度均可自由练习；未达到解锁等级时由 Scoring 置为 0 分/0 XP。
         return true;
     }
 }

@@ -33,7 +33,7 @@ try {
     });
 
     check('assignment quiz records anonymous device hash and score', function () use ($userId, $code, $pdo, $assignmentId) {
-        $attempt = Quiz::newAttempt($userId, ['assignment' => $code, 'device' => 'test-device-0123456789abcdef']);
+        $attempt = Quiz::newAttempt($userId, ['assignment' => $code, 'device' => 'deadbeef-0123456789abcdef']);
         assert($attempt['assignment']['code'] === $code);
         assert(count($attempt['options']) >= 2);
         $answer = Quiz::answer($userId, $attempt['attemptId'], [$attempt['options'][0]['id']], 1200);

@@ -1,12 +1,13 @@
 
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109al';
+const __asset = __isNode ? '' : '?v=20261109an';
 const { localizedName } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
+const { levelFromXp } = await import(`../levels.js${__asset}`);
 
 const state = {
   status: null,
@@ -77,7 +78,7 @@ function homeMarkup() {
         <div>
           <div class="page-eyebrow">${done ? 'TODAY COMPLETE' : 'TODAY'}</div>
           <h2 class="daily-hero-title">${done ? '今日已打卡' : '今天的 10 题在等你'}</h2>
-          <p class="muted">${done && result ? `答对 ${result.correct}/${result.total} · 得分 ${result.score} · +${result.xp} XP` : '坚持每天 10 分钟，保持判读手感。连续完成会累计打卡天数。'}</p>
+          <p class="muted">${done && result ? `答对 ${result.correct}/${result.total} · 得分 ${result.score} · ${Number(result.xp) > 0 ? '+' : ''}${result.xp} XP` : '坚持每天 10 分钟，保持判读手感。连续完成会累计打卡天数。'}</p>
           <div class="daily-hero-streak"><b>${streak}</b><span>连续打卡天数</span></div>
         </div>
       </div>
@@ -103,7 +104,7 @@ function resultDetailMarkup(result) {
     const correct = (detail.correctNames || []).join('、');
     const notes = (detail.notes || []).map((note) => `${note.name}：${note.oneLiner}`).join(' ');
     return `<div class="daily-review-item ${tone}">
-      <div class="daily-review-head"><span class="badge ${detail.correct ? 'badge-ok' : detail.partial ? 'badge-warn' : 'badge-danger'}">${detail.correct ? '正确' : detail.partial ? '部分正确' : '错误'}</span>${detail.slow ? '<span class="badge badge-warn">不熟练 · &gt;15s</span>' : ''}<span class="muted">第 ${index + 1} 题 · ${fmtClock(detail.timeMs || 0)}</span></div>
+      <div class="daily-review-head"><span class="badge ${detail.correct ? 'badge-ok' : detail.partial ? 'badge-warn' : 'badge-danger'}">${detail.correct ? '正确' : detail.partial ? '部分正确' : '错误'}</span>${detail.unlocked === false ? `<span class="badge">自由练习 · Lv.${detail.unlockLevel} 后计分</span>` : ''}${detail.slow ? '<span class="badge badge-warn">不熟练 · &gt;15s</span>' : ''}<span class="muted">第 ${index + 1} 题 · ${fmtClock(detail.timeMs || 0)}${Number.isFinite(Number(detail.score)) ? ` · ${Number(detail.score) >= 0 ? '+' : ''}${detail.score} 分` : ''}${Number.isFinite(Number(detail.xp)) ? ` · ${Number(detail.xp) > 0 ? '+' : ''}${detail.xp} XP` : ''}</span></div>
       <p class="daily-review-q">${escapeHtml(detail.stem || detail.question || '该心电图最可能的诊断是？')}</p>
       <p class="daily-review-a">你的答案：${escapeHtml(chosen)} · 正确答案：<b>${escapeHtml(correct)}</b></p>
       ${notes ? `<p class="daily-review-note">${escapeHtml(notes)}</p>` : ''}
@@ -295,8 +296,8 @@ function bindRunner(el) {
         selected: state.answers[q.id] || [],
         timeMs: Math.round(state.times[q.id] || 0),
       }));
-      const result = await api.dailyComplete(state.round.token, answers);
-      if (result.isGuest) store.addLocalXp(result.xp);
+      const result = await api.dailyComplete(state.round.token, answers, levelFromXp(Number(store.user?.xp || 0)));
+      store.applyXp(result.xp);
       state.result = result;
       state.status = {
         ...(state.status || {}),
@@ -339,12 +340,13 @@ function resultMarkup() {
       <div class="daily-result-score">${result.correct}<span>/${result.total}</span></div>
       <div class="daily-result-meta">
         <div><b>${result.score}</b><span>得分</span></div>
-        <div><b>+${result.xp}</b><span>XP${result.isGuest ? '（本地）' : ''}</span></div>
+        <div><b>${Number(result.xp) > 0 ? '+' : ''}${result.xp}</b><span>XP${result.isGuest ? '（本地）' : ''}</span></div>
         <div><b>${wrong}</b><span>错题</span></div>
         <div><b>${result.slow || 0}</b><span>不熟练</span></div>
         <div><b>${fmtClock(result.timeMs || 0)}</b><span>总用时</span></div>
       </div>
       <div class="daily-result-streak">${icon('flame', 17)} 连续打卡 <b>${result.streak}</b> 天 · 最佳 <b>${result.bestStreak}</b> 天</div>
+      ${(result.details || []).some((detail) => detail.unlocked === false) ? `<div class="muted" style="font-size:10px;margin-top:6px">本次有 ${(result.details || []).filter((detail) => detail.unlocked === false).length} 题属于未解锁难度，按自由练习计 0 分 / 0 XP；达到对应等级后恢复正常计分。</div>` : ''}
       ${Number.isFinite(Number(result.aiCreditsGranted)) ? `<div class="callout brand" style="margin-top:12px">${icon('sparkles', 14)} AI 对话次数 +${result.aiCreditsGranted}，当前可用 ${result.aiCredits} 次。${result.aiCreditRule ? `<span class="muted">${escapeHtml(result.aiCreditRule)}</span>` : ''} <a href="#/ai">去 AI 导师</a></div>` : (result.isGuest ? '<div class="muted" style="font-size:10px;margin-top:8px">注册且达到 Lv.10 后，每日挑战可累积 AI 对话次数。</div>' : '')}
       <div class="row-wrap" style="justify-content:center;margin-top:14px">
         <button class="btn btn-secondary" type="button" data-home>${icon('arrowLeft', 15)} 返回每日挑战</button>

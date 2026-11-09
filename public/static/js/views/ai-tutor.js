@@ -1,10 +1,10 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109al';
+const __asset = __isNode ? '' : '?v=20261109an';
 const { store } = await import(`../store.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { getByok, hasByok } = await import(`../byok.js${__asset}`);
 const { directQuiz } = await import(`../ai-direct.js${__asset}`);
-const { wrongReviews, weakDiagnosisIds, recordAttempt } = await import(`../study-store.js${__asset}`);
+const { wrongReviews, weakDiagnosisIds, recordAttempt, questionSignature, wrongChoiceSummary, strongestRepeat, mistakeContext } = await import(`../study-store.js${__asset}`);
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 const { createAiChat } = await import(`./ai-chat.js${__asset}`);
 
@@ -27,6 +27,11 @@ export async function aiTutorView() {
       <div class="learn-empty"><b>已达到 Lv.${ai.levelRequired || 10} 后解锁</b><span>你当前为 Lv.${ai.level || 1}。每日挑战每次奖励 ${ai.creditBase || 10} 次 + 答对题数，次数上限 ${ai.creditCap || 100} 次。</span><a class="btn btn-primary btn-sm" href="#/daily" style="margin-top:12px">前往每日挑战</a></div>${medicalDisclaimer()}`;
     return { el };
   }
+  const entryMeta = (entry) => {
+    const choice = wrongChoiceSummary(entry, 1)[0];
+    const repeat = strongestRepeat(entry);
+    return `错 ${Number(entry.wrong || 0)} · 慢 ${Number(entry.slow || 0)} · 遗忘 ${Number(entry.lapses || 0)}${choice ? ` · 常选 ${choice.name} ×${choice.count}` : ''}${repeat ? ` · 同题错 ${repeat.n} 次` : ''}`;
+  };
   const entries = wrongReviews(12).filter((entry) => Number(entry.wrong || 0) > 0 || Number(entry.slow || 0) > 0);
   const chat = createAiChat({
     suggestions: ['帮我梳理一次完整的判读顺序', '为什么我的错题集中在这些诊断？', '给我一个三天复习计划'],
@@ -42,7 +47,7 @@ export async function aiTutorView() {
       <aside class="stack">
         <section class="card card-pad">
           <div class="section-head"><h2 class="section-title" style="font-size:15px">从错题开始</h2><span class="badge">${entries.length} 条</span></div>
-          ${entries.length ? `<div class="ai-wrong-list">${entries.map((entry) => `<button class="ai-wrong-chip" type="button" data-ai-wrong="${escapeHtml(entry.id)}" data-name="${escapeHtml(entry.name || entry.id)}"><b>${escapeHtml(entry.name || entry.id)}</b><span>错 ${Number(entry.wrong || 0)} · 慢 ${Number(entry.slow || 0)} · 遗忘 ${Number(entry.lapses || 0)}</span></button>`).join('')}</div>` : '<p class="muted" style="font-size:11.5px">还没有错题记录。完成一局判读练习后，这里会列出常错诊断。</p>'}
+          ${entries.length ? `<div class="ai-wrong-list">${entries.map((entry) => `<button class="ai-wrong-chip" type="button" data-ai-wrong="${escapeHtml(entry.id)}" data-name="${escapeHtml(entry.name || entry.id)}"><b>${escapeHtml(entry.name || entry.id)}</b><span>${escapeHtml(entryMeta(entry))}</span></button>`).join('')}</div>` : '<p class="muted" style="font-size:11.5px">还没有错题记录。完成一局判读练习后，这里会列出常错诊断。</p>'}
           <a class="btn btn-secondary btn-sm btn-block" href="#/review" style="margin-top:10px">${icon('target', 13)} 打开错题本</a>
         </section>
         <section class="card card-pad">
@@ -109,8 +114,26 @@ export async function aiTutorView() {
             const names = { [correctItem.id]: correctItem.name };
             const chapters = { [correctItem.id]: correctItem.chapter || '' };
             const selectedIds = [];
+            const pickedText = selected >= 0 ? String(question.options[selected] || '') : '';
+            const picked = pickedText
+              ? [{ id: selectedItem?.id || '', name: selectedItem?.name || pickedText, label: String.fromCharCode(65 + selected) }]
+              : [];
             if (selectedItem) { names[selectedItem.id] = selectedItem.name; chapters[selectedItem.id] = selectedItem.chapter || ''; selectedIds.push(selectedItem.id); }
-            recordAttempt({ correct: false, correctIds: [correctItem.id], selectedIds, names, chapters });
+            recordAttempt({
+              correct: false,
+              correctIds: [correctItem.id],
+              selectedIds,
+              names,
+              chapters,
+              source: 'ai-quiz',
+              wrongAttempts: [{
+                entryId: correctItem.id,
+                key: questionSignature(question.question, question.options),
+                q: question.question,
+                picked,
+                correct: [{ id: correctItem.id, name: correctItem.name || String(question.options[question.answerIndex] || '') }],
+              }],
+            });
           }
         }
       });
@@ -145,10 +168,18 @@ export async function aiTutorView() {
   };
   el.querySelector('[data-quiz-generate]')?.addEventListener('click', generateQuiz);
   el.querySelectorAll('[data-ai-wrong]').forEach((button) => button.addEventListener('click', () => {
+    const entry = entries.find((item) => item.id === button.dataset.aiWrong);
     const name = button.dataset.name;
-    chat.ask(`请分析我在「${name}」上的常见错误：我最容易漏掉哪些线索？下一次判读应该按什么步骤进行？`);
+    const detail = entry ? mistakeContext(entry) : null;
+    const topChoice = detail?.choices?.[0];
+    const repeat = detail?.repeat;
+    let prompt = `请分析我在「${name}」上的错误：`;
+    if (topChoice) prompt += `我最近常错选「${topChoice.name}」${Number(topChoice.count || 0) > 1 ? `（${topChoice.count} 次）` : ''}。`;
+    if (repeat) prompt += `同一道题已错 ${repeat.n} 次${repeat.picked?.length ? `，最常选「${repeat.picked[0]}」` : ''}。`;
+    prompt += ' 请解释我为什么会被这个干扰项吸引，它和正确诊断的决定性鉴别线索是什么，下次判读按什么顺序排除它。';
+    chat.ask(prompt, { diagnosisId: entry?.id || '', mistake: detail });
     chat.focus();
-    toast('已把错题带入对话', 'info');
+    toast('已把错题与错选记录带入对话', 'info');
   }));
   return { el };
 }

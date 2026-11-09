@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109al';
+const __asset = __isNode ? '' : '?v=20261109an';
 const { api, setCsrf } = await import(`./api.js${__asset}`);
 
 const listeners = (typeof window !== 'undefined' && window.__ECG_STORE_LISTENERS__) || new Set();
@@ -85,6 +85,22 @@ const baseStore = {
     this.localXp = Math.max(0, (this.localXp || 0) + Math.max(0, Number(amount) || 0));
     try { localStorage.setItem('ecg-local-xp', String(this.localXp)); } catch { /* storage unavailable */ }
     this.user = { ...this.user, xp: this.localXp };
+    this.emit('user', this.user);
+  },
+
+  applyXp(amount) {
+    if (!this.user) return;
+    if (this.user.isGuest) {
+      const xp = Math.max(0, Number(this.localXp || this.user.xp || 0) + Number(amount || 0));
+      this.localXp = xp;
+      try { localStorage.setItem('ecg-local-xp', String(xp)); } catch { /* storage unavailable */ }
+      this.user = { ...this.user, xp };
+      this.emit('user', this.user);
+      return;
+    }
+    const xp = Math.max(0, Number(this.user.xp || 0) + Number(amount || 0));
+    this.user = { ...this.user, xp };
+    this.level = null;
     this.emit('user', this.user);
   },
 

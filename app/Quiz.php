@@ -12,14 +12,6 @@ final class Quiz
             throw new ApiError(423, 'practice_locked', '今日测试分已低于阈值，需等到次日 00:00 后再使用测试模块（' . $lockedUntil . '）');
         }
         $level = max(1, min(3, (int) ($params['level'] ?? 1)));
-        $requestedAssignment = trim((string) ($params['assignment'] ?? ''));
-        if ($requestedAssignment === '' && $level > 1) {
-            $me = Auth::user(false);
-            if ($me && !Level::canUseQuizLevel($me, $level)) {
-                $need = $level === 2 ? Level::ADVANCED_UNLOCK : Level::CHALLENGE_UNLOCK;
-                throw new ApiError(403, 'level_locked', '升到 Lv.' . $need . ' 解锁' . ($level === 2 ? '进阶' : '挑战') . '难度');
-            }
-        }
         $chapter = (string) ($params['chapter'] ?? 'all');
         $focus = array_values(array_filter((array) ($params['focus'] ?? []), 'is_string'));
         $assignment = null;
@@ -289,10 +281,10 @@ final class Quiz
         return $options;
     }
 
-    public static function answer(int $userId, int|string $attemptId, array $selectedIds, int $timeMs): array
+    public static function answer(int $userId, int|string $attemptId, array $selectedIds, int $timeMs, ?int $clientLevel = null): array
     {
         if (is_string($attemptId) && str_starts_with($attemptId, 'g_')) {
-            return self::answerGuest($userId, $attemptId, $selectedIds, $timeMs);
+            return self::answerGuest($userId, $attemptId, $selectedIds, $timeMs, $clientLevel);
         }
         $attemptId = (int) $attemptId;
         $pdo = Db::pdo();
@@ -332,12 +324,21 @@ final class Quiz
         $intersection = array_intersect($correctIds, $selectedIds);
         $partial = !$isCorrect && $intersection !== [];
         $level = (int) ($payload['level'] ?? 1);
-        $base = [1 => 100, 2 => 140, 3 => 180][$level] ?? 100;
         $timeMs = max(0, min(600000, $timeMs));
-        $timeBonus = $isCorrect ? max(0, 40 - (int) floor($timeMs / 1000) * 2) : 0;
-        $slow = $isCorrect && $timeMs > 15000;
-        $score = $isCorrect ? $base + $timeBonus : ($partial ? (int) round($base * 0.25) : -5 * $base);
-        $xp = $isCorrect ? 10 + $level * 5 : ($partial ? 3 : 1);
+        $scored = Scoring::evaluate([
+            'correct' => $isCorrect,
+            'partial' => $partial,
+            'difficulty' => $level,
+            'level' => Level::forUser($userId)['level'],
+            'mode' => 'practice',
+            'timeMs' => $timeMs,
+            'forceUnlocked' => !empty($payload['assignmentId']),
+        ]);
+        $base = $scored['base'];
+        $timeBonus = $scored['timeBonus'];
+        $slow = $scored['slow'];
+        $score = $scored['score'];
+        $xp = $scored['xp'];
 
         $pdo->beginTransaction();
         try {
@@ -357,7 +358,7 @@ final class Quiz
                 throw new ApiError(409, 'attempt_answered', '该题已提交，请开始新题');
             }
 
-            $pdo->prepare('UPDATE users SET xp = xp + ? WHERE id = ?')->execute([$xp, $userId]);
+            if ($xp !== 0) $pdo->prepare('UPDATE users SET xp = GREATEST(0, xp + ?) WHERE id = ?')->execute([$xp, $userId]);
 
             $all = Content::all();
             $progress = $pdo->prepare(
@@ -379,7 +380,7 @@ final class Quiz
         }
 
         self::recordAssignmentAttempt($payload, $isCorrect, $score, $timeMs);
-        Learning::recordPracticeAnswer($userId, $isCorrect, (string) ($payload['chapter'] ?? ''), (string) (($payload['bankId'] ?? '') ?: ($payload['caseKey'] ?? 'practice')));
+        Learning::recordPracticeAnswer($userId, $isCorrect, (string) ($payload['chapter'] ?? ''), (string) (($payload['bankId'] ?? '') ?: ($payload['caseKey'] ?? 'practice')), $timeMs, $score, $scored['unlocked']);
         $all = Content::all();
         $selectedNames = [];
         foreach ($selectedIds as $id) {
@@ -415,7 +416,11 @@ final class Quiz
             'baseScore' => $base,
             'timeBonus' => $timeBonus,
             'slow' => $slow,
-            'speed' => $isCorrect ? ($slow ? 'slow' : 'fast') : ($partial ? 'partial' : 'wrong'),
+            'speed' => $scored['speed'],
+            'xpMultiplier' => $scored['xpMultiplier'],
+            'penalty' => $scored['penalty'],
+            'unlocked' => $scored['unlocked'],
+            'unlockLevel' => $scored['unlockLevel'],
             'explanation' => $explanation,
             'localExplanation' => $localText,
             'aiAvailable' => Ai::configured(),
@@ -439,7 +444,7 @@ final class Quiz
         }
     }
 
-    private static function answerGuest(int $userId, string $token, array $selectedIds, int $timeMs): array
+    private static function answerGuest(int $userId, string $token, array $selectedIds, int $timeMs, ?int $clientLevel = null): array
     {
         $data = Secret::open(substr($token, 2));
         if (!$data || (time() - (int) ($data['created'] ?? 0)) > 7200) {
@@ -459,14 +464,23 @@ final class Quiz
         $isCorrect = $sortedCorrect === $sortedSelected;
         $partial = !$isCorrect && array_intersect($correctIds, $selectedIds) !== [];
         $level = (int) ($payload['level'] ?? 1);
-        $base = [1 => 100, 2 => 140, 3 => 180][$level] ?? 100;
         $timeMs = max(0, min(600000, $timeMs));
-        $timeBonus = $isCorrect ? max(0, 40 - (int) floor($timeMs / 1000) * 2) : 0;
-        $slow = $isCorrect && $timeMs > 15000;
-        $score = $isCorrect ? $base + $timeBonus : ($partial ? (int) round($base * 0.25) : -5 * $base);
-        $xp = $isCorrect ? 10 + $level * 5 : ($partial ? 3 : 1);
+        $scored = Scoring::evaluate([
+            'correct' => $isCorrect,
+            'partial' => $partial,
+            'difficulty' => $level,
+            'level' => max(1, min(Level::MAX, (int) ($clientLevel ?? 1))),
+            'mode' => 'practice',
+            'timeMs' => $timeMs,
+            'forceUnlocked' => !empty($payload['assignmentId']),
+        ]);
+        $base = $scored['base'];
+        $timeBonus = $scored['timeBonus'];
+        $slow = $scored['slow'];
+        $score = $scored['score'];
+        $xp = $scored['xp'];
         self::recordAssignmentAttempt($payload, $isCorrect, $score, $timeMs);
-        Learning::recordPracticeAnswer($userId, $isCorrect, (string) ($payload['chapter'] ?? ''), (string) (($payload['bankId'] ?? '') ?: ($payload['caseKey'] ?? 'practice')), $timeMs);
+        Learning::recordPracticeAnswer($userId, $isCorrect, (string) ($payload['chapter'] ?? ''), (string) (($payload['bankId'] ?? '') ?: ($payload['caseKey'] ?? 'practice')), $timeMs, $score, $scored['unlocked']);
         $all = Content::all();
         $selectedNames = array_map(static fn (string $id): string => $all[$id]['name'] ?? $id, $selectedIds);
         $explanation = [];
@@ -486,7 +500,9 @@ final class Quiz
             'correctNames' => array_map(static fn (string $id): string => $all[$id]['name'] ?? $id, $correctIds),
             'selectedNames' => $selectedNames, 'score' => $score, 'xp' => $xp, 'timeMs' => $timeMs,
             'baseScore' => $base, 'timeBonus' => $timeBonus,
-            'slow' => $slow, 'speed' => $isCorrect ? ($slow ? 'slow' : 'fast') : ($partial ? 'partial' : 'wrong'),
+            'slow' => $slow, 'speed' => $scored['speed'],
+            'xpMultiplier' => $scored['xpMultiplier'], 'penalty' => $scored['penalty'],
+            'unlocked' => $scored['unlocked'], 'unlockLevel' => $scored['unlockLevel'],
             'explanation' => $explanation,
             'localExplanation' => self::localExplanation($isCorrect, $partial, $correctIds, $selectedIds, $all),
             'aiAvailable' => false,

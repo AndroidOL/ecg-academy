@@ -57,6 +57,102 @@ final class Study
                 'interval' => max(0, min(3650, (int) ($entry['interval'] ?? 0))),
                 'due' => max(0, (int) ($entry['due'] ?? 0)),
                 'lastSeen' => max(0, (int) ($entry['lastSeen'] ?? 0)),
+                'wrongChoices' => self::normalizeWrongChoices($entry['wrongChoices'] ?? null),
+                'wrongLog' => self::normalizeWrongLog($entry['wrongLog'] ?? null),
+                'repeatWrongs' => self::normalizeRepeatWrongs($entry['repeatWrongs'] ?? null),
+            ];
+        }
+        return $out;
+    }
+
+    private static function normalizeOptionList(mixed $raw): array
+    {
+        if (!is_array($raw)) return [];
+        $out = [];
+        foreach (array_slice($raw, 0, 6) as $option) {
+            if (!is_array($option)) continue;
+            $id = mb_substr(trim((string) ($option['id'] ?? '')), 0, 64, 'UTF-8');
+            $name = mb_substr(trim((string) ($option['name'] ?? '')), 0, 80, 'UTF-8');
+            $label = mb_substr(trim((string) ($option['label'] ?? '')), 0, 4, 'UTF-8');
+            if ($id === '' && $name === '') continue;
+            $out[] = array_filter([
+                'id' => $id,
+                'name' => $name !== '' ? $name : $id,
+                'label' => $label,
+            ], static fn (string $value): bool => $value !== '');
+        }
+        return $out;
+    }
+
+    private static function normalizeWrongChoices(mixed $raw): array
+    {
+        if (!is_array($raw)) return [];
+        $out = [];
+        foreach ($raw as $key => $choice) {
+            if (count($out) >= 8 || !is_array($choice)) continue;
+            $id = mb_substr(trim((string) ($choice['id'] ?? $key)), 0, 64, 'UTF-8');
+            $name = mb_substr(trim((string) ($choice['name'] ?? '')), 0, 80, 'UTF-8');
+            if ($id === '' && $name === '') continue;
+            $key = mb_substr((string) ($id !== '' ? $id : 'name:' . $name), 0, 80, 'UTF-8');
+            $out[$key] = [
+                'id' => $id,
+                'name' => $name !== '' ? $name : $id,
+                'count' => max(0, min(1000000, (int) ($choice['count'] ?? 0))),
+                'lastAt' => max(0, (int) ($choice['lastAt'] ?? 0)),
+            ];
+        }
+        return $out;
+    }
+
+    private static function normalizeWrongLog(mixed $raw): array
+    {
+        if (!is_array($raw)) return [];
+        $out = [];
+        foreach ($raw as $item) {
+            if (!is_array($item)) continue;
+            $entry = [
+                'at' => max(0, (int) ($item['at'] ?? 0)),
+                'key' => mb_substr(trim((string) ($item['key'] ?? '')), 0, 80, 'UTF-8'),
+                'q' => mb_substr(trim((string) ($item['q'] ?? '')), 0, 120, 'UTF-8'),
+                'src' => mb_substr(trim((string) ($item['src'] ?? '')), 0, 16, 'UTF-8'),
+                'picked' => self::normalizeOptionList($item['picked'] ?? null),
+                'correct' => self::normalizeOptionList($item['correct'] ?? null),
+            ];
+            $out[] = array_filter($entry, static fn (mixed $value): bool => $value !== '' && $value !== []);
+            if (count($out) >= 12) break;
+        }
+        return $out;
+    }
+
+    private static function normalizeRepeatWrongs(mixed $raw): array
+    {
+        if (!is_array($raw)) return [];
+        $out = [];
+        foreach ($raw as $key => $item) {
+            if (count($out) >= 6 || !is_array($item)) continue;
+            $key = mb_substr(trim((string) $key), 0, 80, 'UTF-8');
+            if ($key === '') continue;
+            $pickedCounts = [];
+            foreach (array_slice((array) ($item['pickedCounts'] ?? []), 0, 8, true) as $name => $count) {
+                $name = mb_substr(trim((string) $name), 0, 80, 'UTF-8');
+                if ($name === '') continue;
+                $pickedCounts[$name] = max(0, min(1000000, (int) $count));
+            }
+            $picked = [];
+            foreach (array_slice((array) ($item['picked'] ?? []), 0, 4) as $name) {
+                $name = mb_substr(trim((string) $name), 0, 80, 'UTF-8');
+                if ($name !== '') $picked[] = $name;
+            }
+            if ($pickedCounts !== []) {
+                arsort($pickedCounts);
+                $picked = array_slice(array_keys($pickedCounts), 0, 4);
+            }
+            $out[$key] = [
+                'n' => max(0, min(1000000, (int) ($item['n'] ?? 0))),
+                'lastAt' => max(0, (int) ($item['lastAt'] ?? 0)),
+                'q' => mb_substr(trim((string) ($item['q'] ?? '')), 0, 120, 'UTF-8'),
+                'picked' => $picked,
+                'pickedCounts' => $pickedCounts,
             ];
         }
         return $out;

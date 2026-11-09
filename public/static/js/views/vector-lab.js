@@ -1,7 +1,8 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109al';
+const __asset = __isNode ? '' : '?v=20261109an';
 const { getLocale } = await import(`../i18n.js${__asset}`);
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
+const { LOOPS, LOOP_MAIN, LOOP_WINDOWS, loopPoint } = await import(`../vector-loop-model.js${__asset}`);
 
 const LEADS = {
   I:   { angle: 0,   vec: [1, 0, 0],     name: 'I 导联',   note: '左臂-右臂，观察左右方向' },
@@ -47,66 +48,9 @@ const LEADS_12 = {
   V6: { label: 'V6', vec: [0.94, 0, -0.18], angle: null },
 };
 
-// 正常空间向量环的教学近似：起点/终点接近零点；P 环小、QRS 环最大、
-// T 环长而窄（长宽比约 2.5:1），QRS 主向量指向左下略后，T 主向量指向左前下。
-const LOOP_CONTROL_POINTS = {
-  P: [
-    [0, 0, 0], [0.055, 0.01, 0.025], [0.12, -0.035, 0.05], [0.15, -0.055, 0.035], [0.10, -0.045, -0.01], [0.035, -0.012, -0.012],
-  ],
-  QRS: [
-    [0, 0, 0], [-0.24, 0.04, 0.40], [0.10, -0.25, 0.46], [0.42, -0.42, 0.30],
-    [0.78, -0.52, -0.08], [0.95, -0.38, -0.42], [0.68, -0.14, -0.62], [0.28, 0.10, -0.44],
-  ],
-  T: [
-    [0, 0, 0], [0.30, -0.10, 0.18], [0.52, -0.24, 0.28], [0.62, -0.26, 0.24], [0.40, -0.12, 0.12],
-  ],
-};
-
-function catmullRom(p0, p1, p2, p3, t) {
-  const t2 = t * t;
-  const t3 = t2 * t;
-  return [0, 1, 2].map((axis) => 0.5 * (
-    (2 * p1[axis]) +
-    (-p0[axis] + p2[axis]) * t +
-    (2 * p0[axis] - 5 * p1[axis] + 4 * p2[axis] - p3[axis]) * t2 +
-    (-p0[axis] + 3 * p1[axis] - 3 * p2[axis] + p3[axis]) * t3
-  ));
-}
-
-function loopPoint(key, angle) {
-  const points = LOOP_CONTROL_POINTS[key] || LOOP_CONTROL_POINTS.QRS;
-  const count = points.length;
-  const wrapped = ((angle / (Math.PI * 2)) % 1 + 1) % 1;
-  const scaled = wrapped * count;
-  const index = Math.floor(scaled);
-  const t = scaled - index;
-  return catmullRom(
-    points[(index - 1 + count) % count],
-    points[index % count],
-    points[(index + 1) % count],
-    points[(index + 2) % count],
-    t,
-  );
-}
-
-const LOOPS = {
-  P: (a) => loopPoint('P', a),
-  QRS: (a) => loopPoint('QRS', a),
-  T: (a) => loopPoint('T', a),
-};
-
-function unitVector([x, y, z]) { const n = Math.hypot(x, y, z) || 1; return [x / n, y / n, z / n]; }
-function dotVector(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
-function rotateForAxis(v, key, axes = {}) {
-  const d = ((axes[key] ?? 60) - 60) * Math.PI / 180;
-  return [v[0] * Math.cos(d) - v[1] * Math.sin(d), v[0] * Math.sin(d) + v[1] * Math.cos(d), v[2]];
-}
-function activeLoopAt(phase) {
-  if (phase < 0.16) return 'P';
-  if (phase < 0.42) return 'QRS';
-  if (phase < 0.8) return 'T';
-  return null;
-}
+// Normal P/QRS/T loop geometry lives in vector-loop-model.js so it can be
+// validated independently. The loops are open curves with separate outbound
+// and return limbs, not one symmetric closed spline.
 const CHEST_VECTOR_COLORS = { V1: 'accent', V5: 'brand', V6: 'gold' };
 
 // 水平面：x = 患者左，z = 前。QRS 由“向右前的小室间隔向量”过渡到“向左后的左室主向量”。
@@ -260,7 +204,7 @@ function drawVectorCanvas(canvas, state, t) {
   };
   const loopPoint = (key, a) => rotateAxis(key, loops[key](a));
   const cycle = state.phase ?? 0;
-  const windows = { P: [0, 0.16], QRS: [0.2, 0.42], T: [0.55, 0.8] };
+  const windows = LOOP_WINDOWS;
   let active = null;
   Object.entries(windows).forEach(([key, [start, end]]) => { if (cycle >= start && cycle < end) active = key; });
   Object.entries(loops).forEach(([key, fn]) => {
@@ -293,7 +237,7 @@ function drawVectorCanvas(canvas, state, t) {
     ctx.fillStyle = '#ffffff';
     ctx.beginPath(); ctx.arc(...p1, 3.5, 0, Math.PI * 2); ctx.fill();
   }
-  const main = rotateAxis(selected, loops[selected](0.8));
+  const main = rotateAxis(selected, LOOP_MAIN[selected] || loops[selected](0.8));
   const pm = project(main);
   ctx.strokeStyle = c.gold;
   ctx.setLineDash([5, 4]);
@@ -303,6 +247,16 @@ function drawVectorCanvas(canvas, state, t) {
   ctx.fillStyle = c.gold;
   ctx.font = '600 9.5px ui-monospace, monospace';
   ctx.fillText('主方向', pm[0] + 5, pm[1] - 4);
+  const origin = project([0, 0, 0]);
+  ctx.fillStyle = c.bg;
+  ctx.strokeStyle = c.brand;
+  ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.arc(origin[0], origin[1], 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = c.brand;
+  ctx.beginPath(); ctx.arc(origin[0], origin[1], 1.6, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = c.muted;
+  ctx.font = '9px ui-monospace, monospace';
+  ctx.fillText('轴心 / 零点', origin[0] + 7, origin[1] - 7);
   const lead = LEADS[state.lead];
   const dot = rotatedVec[0] * lead.vec[0] + rotatedVec[1] * lead.vec[1] + rotatedVec[2] * lead.vec[2];
   ctx.fillStyle = c.text;
@@ -454,7 +408,7 @@ function drawProjectionCanvas(canvas, state, t) {
 
 function updateProjectionBars(host, state, t) {
   const cycle = state.phase ?? 0;
-  const windows = { P: [0, 0.16], QRS: [0.2, 0.42], T: [0.55, 0.8] };
+  const windows = LOOP_WINDOWS;
   let active = null;
   Object.entries(windows).forEach(([key, [start, end]]) => { if (cycle >= start && cycle < end) active = key; });
   const loop = state.loop === 'all' ? (active || 'QRS') : state.loop;
@@ -490,7 +444,7 @@ function vectorLoopsPanel() {
         <label class="visual-range">缩放 <input type="range" min="40" max="350" value="170" data-vector-zoom></label>
         <button class="btn btn-ghost btn-xs" type="button" data-vector-zoom-out aria-label="缩小">−</button><button class="btn btn-ghost btn-xs" type="button" data-vector-zoom-in aria-label="放大">＋</button>
         <label class="visual-range">俯仰视角 <input type="range" min="-89" max="89" value="18" data-vector-pitch></label>
-        <label class="visual-range">速度 <select class="select" data-vector-speed><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×（1 秒/周期）</option><option value="2">2×</option></select></label>
+        <label class="visual-range">速度 <select class="select" data-vector-speed><option value="0.1">0.1×（10 秒/周期）</option><option value="0.25" selected>0.25×（4 秒/周期）</option><option value="0.5">0.5×（2 秒/周期）</option></select></label>
         <label class="visual-range vector-phase-control">时间 <input type="range" min="0" max="1000" value="0" data-vector-phase><span data-vector-phase-label>0%</span></label>
         <select class="select" data-vector-loop aria-label="选择向量环"><option value="all" selected>P + QRS + T 全部</option><option value="P">P 环</option><option value="QRS">QRS 环</option><option value="T">T 环</option></select>
         <select class="select" data-vector-lead aria-label="选择投影导联">${Object.entries(LEADS).map(([id, l]) => `<option value="${id}" ${id === 'II' ? 'selected' : ''}>${l.name}</option>`).join('')}</select>
@@ -507,7 +461,7 @@ function vectorLoopsPanel() {
           <input class="axis-range" type="range" min="-180" max="180" step="1" value="60" data-vector-axis="${key}" aria-label="${label}">
           <div class="axis-scale-ticks" aria-hidden="true"><span>-180°</span><span>-90°</span><span>-30°</span><span>0°</span><span>+90°</span><span>+180°</span></div>
         </div>`).join('')}
-        <div class="vector-control-note"><span>拖动画布可水平旋转 −180°～+180°、俯仰 −85°～+85°，从前面、后面、左外侧和顶部观察三个环；使用上方三行分别调整 P/QRS/T 环电轴。</span></div>
+        <div class="vector-control-note"><span>拖动画布绕<b>零点轴心</b>旋转：左右=水平、上下=俯仰；Shift+拖拽可精细调整，滚轮缩放，松手带轻微惯性。使用上方三行分别调整 P/QRS/T 环电轴。</span></div>
       </div>
     </div>
     <aside class="visual-explain">
@@ -1113,7 +1067,7 @@ export async function vectorLabView() {
   let raf = 0;
   let cleanup = [];
   let start = performance.now();
-  const state = { rotate: 24, pitch: 18, zoom: 1.7, playing: true, loop: 'all', lead: 'II', axes: { P: 60, QRS: 60, T: 60 }, axis: 60, angle: 60, magnitude: 1, auto: true, speed: 1, phase: 0, qrsPhase: 0, qrsPlaying: true };
+  const state = { rotate: 24, pitch: 18, zoom: 1.7, playing: true, loop: 'all', lead: 'II', axes: { P: 60, QRS: 60, T: 60 }, axis: 60, angle: 60, magnitude: 1, auto: true, speed: 0.25, phase: 0, qrsPhase: 0, qrsPlaying: true };
   el.innerHTML = `<div class="page-eyebrow">${icon('compass', 14)} VECTOR & ELECTROPHYSIOLOGY</div>
     <div class="vector-head"><div><h1 class="page-title">心脏向量实验室</h1><p class="page-sub">把“背图形”变成“看方向”：P/QRS/T 环、肢体/胸导联投影、激活顺序一次串起来。</p></div><div class="row-wrap"><a class="btn btn-secondary btn-sm" href="#/learn/ecg-vector-waveform-theory">理论阅读 ${icon('bookOpen', 13)}</a><a class="btn btn-ghost btn-sm" href="#/learn/ecg-calibration-paper">${icon('arrowRight', 13)} 基础课程</a></div></div>
     <div class="vector-safety-note">${icon('info', 14)} <span>向量方向与导联投影仅供教学参考，用于理解“投影”和“向量大小”，<b>不代表任何患者实际情况</b>，不用于诊断或治疗。</span></div>
@@ -1159,6 +1113,14 @@ export async function vectorLabView() {
         phaseState.textContent = active ? `当前时间：${active} 波 · ${state.loop === 'all' ? `${active} 环活动，其他环静止` : `${state.loop} 环观察`}` : '当前时间：等电位线 · 各环静止';
       }
     }
+  };
+  const renderOrbit = () => {
+    const canvas = content.querySelector('[data-vector-canvas]');
+    if (canvas) drawVectorCanvas(canvas, state, 0);
+    const projection = content.querySelector('[data-vector-ecg]');
+    if (projection) drawProjectionCanvas(projection, state, 0);
+    const bars = content.querySelector('[data-vector-projections]');
+    if (bars) updateProjectionBars(bars, state, 0);
   };
   const drawLoopFrame = (now) => {
     if (!content.querySelector('[data-vector-canvas]')) return;
@@ -1218,8 +1180,8 @@ export async function vectorLabView() {
       lastFrame = 0;
       if (state.playing) { stopAnim(); raf = requestAnimationFrame(drawLoopFrame); } else stopAnim();
     });
-    content.querySelector('[data-vector-rotate]')?.addEventListener('input', (e) => { state.rotate = Number(e.target.value); });
-    content.querySelector('[data-vector-pitch]')?.addEventListener('input', (e) => { state.pitch = Number(e.target.value); });
+    content.querySelector('[data-vector-rotate]')?.addEventListener('input', (e) => { state.rotate = Number(e.target.value); renderOrbit(); });
+    content.querySelector('[data-vector-pitch]')?.addEventListener('input', (e) => { state.pitch = Number(e.target.value); renderOrbit(); });
     const setZoom = (value) => {
       state.zoom = Math.max(0.4, Math.min(3.5, Number(value) || 1));
       const slider = content.querySelector('[data-vector-zoom]');
@@ -1236,7 +1198,7 @@ export async function vectorLabView() {
       if (rx) rx.value = '24'; if (py) py.value = '18';
       renderLoopState();
     });
-    content.querySelector('[data-vector-speed]')?.addEventListener('change', (e) => { state.speed = Number(e.target.value) || 1; lastFrame = 0; });
+    content.querySelector('[data-vector-speed]')?.addEventListener('change', (e) => { state.speed = Number(e.target.value) || 0.25; lastFrame = 0; });
     content.querySelector('[data-vector-phase]')?.addEventListener('input', (e) => {
       state.playing = false;
       state.phase = Math.max(0, Math.min(1, Number(e.target.value) / 1000));
@@ -1264,25 +1226,61 @@ export async function vectorLabView() {
     const canvas = content.querySelector('[data-vector-canvas]');
     if (canvas) {
       let dragging = false;
-      let dragStart = null;
-      canvas.addEventListener('pointerdown', (e) => {
-        dragStart = { x: e.clientX, y: e.clientY, rotate: state.rotate, pitch: state.pitch };
-        dragging = true;
-        canvas.setPointerCapture(e.pointerId);
-      });
-      canvas.addEventListener('pointerup', () => { dragging = false; dragStart = null; });
-      canvas.addEventListener('pointercancel', () => { dragging = false; dragStart = null; });
-      canvas.addEventListener('pointermove', (e) => {
-        if (!dragging || !dragStart) return;
+      let last = null;
+      let inertiaRaf = 0;
+      let vYaw = 0;
+      let vPitch = 0;
+      const wrapYaw = (value) => ((value + 180) % 360 + 360) % 360 - 180;
+      const orbit = (yawDelta, pitchDelta) => {
+        state.rotate = wrapYaw(state.rotate + yawDelta);
+        state.pitch = Math.max(-89, Math.min(89, state.pitch + pitchDelta));
         const rx = content.querySelector('[data-vector-rotate]');
         const py = content.querySelector('[data-vector-pitch]');
-        const nextRotate = Math.max(-180, Math.min(180, dragStart.rotate + (e.clientX - dragStart.x) * 0.55));
-        const nextPitch = Math.max(-89, Math.min(89, dragStart.pitch - (e.clientY - dragStart.y) * 0.55));
-        state.rotate = nextRotate; state.pitch = nextPitch;
-        if (rx) rx.value = String(Math.round(nextRotate));
-        if (py) py.value = String(Math.round(nextPitch));
-        renderLoopState();
+        if (rx) rx.value = String(Math.round(state.rotate));
+        if (py) py.value = String(Math.round(state.pitch));
+        renderOrbit();
+      };
+      const stopInertia = () => { if (inertiaRaf) cancelAnimationFrame(inertiaRaf); inertiaRaf = 0; vYaw = 0; vPitch = 0; };
+      const inertia = () => {
+        if (dragging || (Math.abs(vYaw) < 0.002 && Math.abs(vPitch) < 0.002)) { inertiaRaf = 0; return; }
+        orbit(vYaw * 16, vPitch * 16);
+        vYaw *= 0.9;
+        vPitch *= 0.9;
+        inertiaRaf = requestAnimationFrame(inertia);
+      };
+      canvas.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        e.preventDefault();
+        stopInertia();
+        dragging = true;
+        last = { x: e.clientX, y: e.clientY, t: performance.now() };
+        canvas.setPointerCapture(e.pointerId);
+        canvas.classList.add('is-dragging');
       });
+      const endDrag = () => {
+        if (!dragging) return;
+        dragging = false;
+        last = null;
+        canvas.classList.remove('is-dragging');
+        if (Math.abs(vYaw) >= 0.002 || Math.abs(vPitch) >= 0.002) inertiaRaf = requestAnimationFrame(inertia);
+      };
+      canvas.addEventListener('pointerup', endDrag);
+      canvas.addEventListener('pointercancel', endDrag);
+      canvas.addEventListener('lostpointercapture', endDrag);
+      canvas.addEventListener('pointermove', (e) => {
+        if (!dragging || !last) return;
+        e.preventDefault();
+        const now = performance.now();
+        const dt = Math.max(8, now - last.t);
+        const sensitivity = e.shiftKey ? 0.12 : 0.4;
+        const yawDelta = (e.clientX - last.x) * sensitivity;
+        const pitchDelta = -(e.clientY - last.y) * sensitivity;
+        orbit(yawDelta, pitchDelta);
+        vYaw = yawDelta / dt;
+        vPitch = pitchDelta / dt;
+        last = { x: e.clientX, y: e.clientY, t: now };
+      });
+      cleanup.push(stopInertia);
       canvas.addEventListener('wheel', (e) => {
         e.preventDefault();
         setZoom(state.zoom * Math.exp(-e.deltaY * 0.0015));

@@ -51,7 +51,7 @@ try {
         'ai.daily_limit' => 100000,
     ]);
     $pdo = Db::pdo();
-    $stmt = $pdo->prepare('INSERT INTO users (public_id, username, password_hash, display_name, is_guest, xp, ai_credits) VALUES (?, ?, ?, ?, 0, 4000, 2)');
+    $stmt = $pdo->prepare('INSERT INTO users (public_id, username, password_hash, display_name, is_guest, xp, ai_credits) VALUES (?, ?, ?, ?, 0, 6000, 2)');
     $stmt->execute([bin2hex(random_bytes(10)), 'guard' . bin2hex(random_bytes(4)), password_hash('pw-123456', PASSWORD_DEFAULT), 'AI 边界测试']);
     $userId = (int) $pdo->lastInsertId();
     $stmt = $pdo->prepare('INSERT INTO users (public_id, username, password_hash, display_name, is_guest, is_admin, xp, ai_credits) VALUES (?, ?, ?, ?, 0, 1, 0, 0)');

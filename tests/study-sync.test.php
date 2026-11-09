@@ -75,6 +75,40 @@ try {
         assert($state['updatedAt'] !== null);
     });
 
+    check('keeps wrong selections, recent logs and repeated-question counts', function () use ($account): void {
+        Study::save($account, [
+            'reviews' => [
+                'afib' => [
+                    'id' => 'afib', 'name' => '心房颤动', 'chapter' => 'arrhythmia', 'wrong' => 3, 'correct' => 1,
+                    'slow' => 0, 'lapses' => 3, 'ease' => 2.1, 'interval' => 0, 'due' => 123, 'lastSeen' => 456,
+                    'wrongChoices' => [
+                        'svt' => ['id' => 'svt', 'name' => '室上速', 'count' => 2, 'lastAt' => 123],
+                        'junk' => 'not-an-array',
+                    ],
+                    'wrongLog' => [
+                        ['at' => 123, 'key' => 'q1', 'q' => '该心电图最可能的诊断是？', 'src' => 'practice',
+                            'picked' => [['id' => 'svt', 'name' => '室上速']],
+                            'correct' => [['id' => 'afib', 'name' => '心房颤动']]],
+                        'not-an-array',
+                    ],
+                    'repeatWrongs' => [
+                        'q1' => ['n' => 3, 'lastAt' => 123, 'q' => '同一道题', 'picked' => ['室上速'], 'pickedCounts' => ['室上速' => 2, '房性心动过速' => 1]],
+                        'bad' => ['n' => 1],
+                    ],
+                ],
+            ],
+            'favorites' => [],
+        ]);
+        $entry = Study::get($account)['reviews']['afib'];
+        assert($entry['wrongChoices']['svt']['count'] === 2);
+        assert(count($entry['wrongChoices']) === 1);
+        assert(count($entry['wrongLog']) === 1);
+        assert($entry['wrongLog'][0]['picked'][0]['name'] === '室上速');
+        assert($entry['repeatWrongs']['q1']['n'] === 3);
+        assert($entry['repeatWrongs']['q1']['picked'][0] === '室上速');
+        assert($entry['repeatWrongs']['q1']['pickedCounts']['室上速'] === 2);
+    });
+
     check('second save replaces previous snapshot', function () use ($account): void {
         Study::save($account, ['reviews' => [], 'favorites' => ['only' => ['id' => 'only', 'name' => '仅一个', 'chapter' => 'x', 'addedAt' => 5]]]);
         $state = Study::get($account);

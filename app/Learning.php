@@ -78,7 +78,7 @@ final class Learning
         ];
     }
 
-    public static function submit(int $userId, string $token, array $answers): array
+    public static function submit(int $userId, string $token, array $answers, ?int $clientLevel = null): array
     {
         $round = Secret::open($token);
         if (!$round || (int) ($round['uid'] ?? 0) !== $userId) {
@@ -106,10 +106,16 @@ final class Learning
             throw new ApiError(422, 'answers_incomplete', '请完成全部题目后再提交');
         }
 
+        $guestStmt = Db::pdo()->prepare('SELECT is_guest FROM users WHERE id = ? LIMIT 1');
+        $guestStmt->execute([$userId]);
+        $isGuest = (int) ($guestStmt->fetchColumn() ?: 0) === 1;
         $details = [];
         $correctCount = 0;
+        $scoreTotal = 0;
+        $xpTotal = 0;
         $chapterCorrect = [];
         $chapterTotal = [];
+        $userLevel = $isGuest ? max(1, min(Level::MAX, (int) ($clientLevel ?? 1))) : Level::forUser($userId)['level'];
         foreach ($questionIds as $questionId) {
             $question = SectionBank::find($questionId);
             if (!$question) throw new ApiError(500, 'question_missing', '题目数据缺失，请重新开始');
@@ -122,6 +128,16 @@ final class Learning
                 $correctCount++;
                 $chapterCorrect[$chapter] = ($chapterCorrect[$chapter] ?? 0) + 1;
             }
+            $scored = Scoring::evaluate([
+                'correct' => $isCorrect,
+                'partial' => false,
+                'difficulty' => (int) ($question['difficulty'] ?? 1),
+                'level' => $userLevel,
+                'mode' => $mode,
+                'timeMs' => null,
+            ]);
+            $scoreTotal += $scored['score'];
+            $xpTotal += $scored['xp'];
             self::recordEvent($userId, $chapter, $questionId, $mode, $roundId, $isCorrect);
             $details[] = [
                 'id' => $questionId,
@@ -131,6 +147,13 @@ final class Learning
                 'selected' => $selected,
                 'answer' => $answer,
                 'correct' => $isCorrect,
+                'difficulty' => $scored['difficulty'],
+                'score' => $scored['score'],
+                'xp' => $scored['xp'],
+                'baseScore' => $scored['base'],
+                'penalty' => $scored['penalty'],
+                'unlocked' => $scored['unlocked'],
+                'unlockLevel' => $scored['unlockLevel'],
                 'explanation' => (string) ($question['explanation'] ?? ''),
                 'options' => array_values($question['options']),
             ];
@@ -145,6 +168,9 @@ final class Learning
         } else {
             foreach (array_keys($chapterTotal) as $chapter) self::evaluateChapter($userId, $chapter);
         }
+        if (!$isGuest) {
+            if ($xpTotal !== 0) Db::pdo()->prepare('UPDATE users SET xp = GREATEST(0, xp + ?) WHERE id = ?')->execute([$xpTotal, $userId]);
+        }
         $status = self::status($userId);
         return [
             'mode' => $mode,
@@ -153,7 +179,9 @@ final class Learning
             'total' => $total,
             'accuracy' => $accuracy,
             'passed' => $passed,
-            'score' => $mode === 'exam' ? $accuracy : null,
+            'score' => $scoreTotal,
+            'xp' => $xpTotal,
+            'isGuest' => $isGuest,
             'details' => $details,
             'chapterResults' => array_map(static fn (string $chapter): array => [
                 'chapter' => $chapter,
@@ -209,6 +237,7 @@ final class Learning
                 'learnedAt' => $stored['learned_at'] ?? null,
                 'sample' => $stat['sample'],
                 'correct' => $stat['correct'],
+                'slow' => $stat['slow'],
                 'accuracy' => $stat['accuracy'],
                 'level' => $stat['level'],
                 'recentAt' => $stat['recentAt'],
@@ -336,20 +365,20 @@ final class Learning
         return (string) $until;
     }
 
-    public static function recordPracticeAnswer(int $userId, bool $correct, string $chapter, string $questionId): array
+    public static function recordPracticeAnswer(int $userId, bool $correct, string $chapter, string $questionId, ?int $timeMs, int $scoreDelta, bool $scored = true): array
     {
         $chapter = trim($chapter);
         if ($chapter !== '' && isset(self::chapterMap()[$chapter])) {
-            self::recordEvent($userId, $chapter, $questionId !== '' ? $questionId : 'practice', 'practice', '', $correct);
+            self::recordEvent($userId, $chapter, $questionId !== '' ? $questionId : 'practice', 'practice', '', $correct, $timeMs);
             self::evaluateChapter($userId, $chapter);
         }
-        return self::recordPractice($userId, $correct);
+        if (!$scored) return [];
+        return self::recordPractice($userId, $correct, $scoreDelta);
     }
 
-    public static function recordPractice(int $userId, bool $correct): array
+    public static function recordPractice(int $userId, bool $correct, int $scoreDelta): array
     {
         $pdo = Db::pdo();
-        $scoreDelta = $correct ? 1 : -10;
         $pdo->prepare(
             'INSERT INTO practice_daily_scores (user_id, day, score, correct, wrong)
              VALUES (?, CURDATE(), ?, ?, ?)

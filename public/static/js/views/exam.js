@@ -1,11 +1,12 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109al';
+const __asset = __isNode ? '' : '?v=20261109an';
 const { localizedName } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
 const { recordAttempt } = await import(`../study-store.js${__asset}`);
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
+const { levelFromXp } = await import(`../levels.js${__asset}`);
 
 const state = {
   status: null,
@@ -86,8 +87,8 @@ function resultMarkup() {
       <div class="page-eyebrow" style="justify-content:center">${icon('trophy', 14)} ROUND COMPLETE</div>
       <div class="result-score">${result.correct}/${result.total}</div>
       <div class="result-label">${result.mode === 'exam' ? '考试正确数' : result.passed ? '学习关卡通过' : '学习关卡未通过'}</div>
-      <div class="result-stats"><div><b>${result.accuracy}%</b><span class="muted">正确率</span></div><div><b>${result.chapterResults?.length || 0}</b><span class="muted">涉及板块</span></div><div><b>${result.passed ? '通过' : '继续'}</b><span class="muted">状态</span></div></div>
-      <p class="muted" style="font-size:12px;line-height:1.7">${result.mode === 'exam' ? '考试只对自己可见；各板块评级已按最近 50 题动态更新。' : result.passed ? '本板块已标记为“已学习”。继续完成至少 8 个板块即可解锁综合考试。' : '本板块暂未通过，建议先回到课程复习，再重新挑战 10 题。'}</p>
+      <div class="result-stats"><div><b>${result.accuracy}%</b><span class="muted">正确率</span></div><div><b>${result.score ?? 0}</b><span class="muted">本轮得分</span></div><div><b>${Number(result.xp) > 0 ? '+' : ''}${result.xp ?? 0}</b><span class="muted">经验</span></div><div><b>${result.passed ? '通过' : '继续'}</b><span class="muted">状态</span></div></div>
+      <p class="muted" style="font-size:12px;line-height:1.7">${result.mode === 'exam' ? '考试只对自己可见；各板块评级已按最近 50 题动态更新。' : result.passed ? '本板块已标记为“已学习”。继续完成至少 8 个板块即可解锁综合考试。' : '本板块暂未通过，建议先回到课程复习，再重新挑战 10 题。'} 答错按${result.mode === 'exam' ? ' 3×' : ' 2×'}基础分扣分；Lv10 后基础题不再给经验。${(result.details || []).some((detail) => detail.unlocked === false) ? ` 本次有 ${(result.details || []).filter((detail) => detail.unlocked === false).length} 题属于未解锁难度，按自由练习计 0 分 / 0 XP。` : ''}</p>
       <div class="row-wrap" style="justify-content:center;margin-top:16px"><button class="btn btn-primary" type="button" data-back>${icon('arrowLeft', 15)} 返回学习考试</button><a class="btn btn-secondary" href="#/review">${icon('bookOpen', 15)} 查看错题本</a></div>
     </div>
     ${affectedChapters.length ? `<section class="card card-pad exam-rating-update"><h2 class="section-title" style="font-size:16px">章节评级更新</h2><div class="exam-rating-grid">${affectedChapters.map((chapter) => `<div><b>${escapeHtml(localizedName(chapter))}</b><span>${escapeHtml(chapter.statusLabel)} · ${escapeHtml(chapter.level)}</span><small>最近 ${chapter.sample} 题 · ${chapter.accuracy}%</small></div>`).join('')}</div></section>` : ''}
@@ -136,16 +137,31 @@ function bindRunner(el) {
     state.busy = true;
     const button = event.currentTarget; button.disabled = true; button.textContent = '评分中…';
     try {
-      const result = await api.learningComplete(state.round.token, state.answers);
+      const result = await api.learningComplete(state.round.token, state.answers, levelFromXp(Number(store.user?.xp || 0)));
       state.result = result;
+      store.applyXp(result.xp);
       const cache = store.diagnosesCache?.items || [];
       const sourceMap = Object.fromEntries(cache.map((item) => [item.id, item]));
       const chapterMap = Object.fromEntries(cache.map((item) => [item.id, item.chapter]));
-      const wrongSources = [...new Set((result.details || []).filter((item) => !item.correct).map((item) => item.sourceId).filter(Boolean))];
+      const wrongDetails = (result.details || []).filter((item) => !item.correct && item.sourceId);
+      const wrongSources = [...new Set(wrongDetails.map((item) => item.sourceId))];
       if (wrongSources.length) {
         const names = Object.fromEntries(wrongSources.map((id) => [id, sourceMap[id]?.name || id]));
         const chapters = Object.fromEntries(wrongSources.map((id) => [id, chapterMap[id] || '']));
-        recordAttempt({ correct: false, correctIds: wrongSources, selectedIds: [], names, chapters });
+        const label = (index) => (Number(index) >= 0 ? String.fromCharCode(65 + Number(index)) : '');
+        const wrongAttempts = wrongDetails.map((detail) => {
+          const options = Array.isArray(detail.options) ? detail.options : [];
+          const pickedText = detail.selected >= 0 ? String(options[detail.selected] ?? '') : '';
+          const correctText = detail.answer >= 0 ? String(options[detail.answer] ?? '') : '';
+          return {
+            entryId: String(detail.sourceId),
+            key: `exam:${detail.id || ''}`,
+            q: detail.stem || '',
+            picked: pickedText ? [{ name: pickedText, label: label(detail.selected) }] : [],
+            correct: correctText ? [{ name: correctText, label: label(detail.answer) }] : [],
+          };
+        });
+        recordAttempt({ correct: false, correctIds: wrongSources, selectedIds: [], names, chapters, source: 'exam', wrongAttempts });
       }
       el.innerHTML = resultMarkup();
       bindResult(el);

@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109al';
+const __asset = __isNode ? '' : '?v=20261109an';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, escapeHtml, toast, openModal } = await import(`../ui.js${__asset}`);
@@ -90,15 +90,19 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
     modal.el.querySelector('[data-byok-clear]')?.addEventListener('click', () => { clearByok(); refreshByokLabel(); modal.close(); toast('已清除 BYOK 密钥', 'info'); });
   });
 
-  const submit = async (override = null) => {
+  const submit = async (override = null, options = {}) => {
     const message = (override ?? input.value).trim();
     if (!message || busy) return;
     if (locked) return toast(`AI 对话需 Lv.${store.ai.levelRequired || 10} 解锁`, 'warn');
     if (noCredits) return toast('对话次数已用完，完成每日挑战可获得次数', 'warn');
+    const activeDiagnosisId = options?.diagnosisId || diagnosisId;
+    const mistake = options?.mistake && typeof options.mistake === 'object' ? options.mistake : null;
     input.value = '';
     addBubble(message, 'user');
     const bubble = addBubble('', 'assistant', 'streaming');
-    let contextHtml = contextLine(['已附带本页上下文']);
+    let contextHtml = contextLine(mistake
+      ? ['已附带错题记录', ...(mistake.choices?.[0] ? [`常见错选：${mistake.choices[0].name}`] : []), ...(mistake.repeat ? [`同题重复错 ${mistake.repeat.n} 次`] : [])]
+      : ['已附带本页上下文']);
     bubble.innerHTML = `<div class="ai-context">${contextHtml}</div><div class="ai-stream-text ai-thinking">正在生成…</div>`;
     busy = true;
     send.disabled = true;
@@ -108,7 +112,7 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
         contextHtml = contextLine([`BYOK 本地直连 · ${direct.model}`]);
         const contextHost = bubble.querySelector('.ai-context');
         if (contextHost) contextHost.innerHTML = contextHtml;
-        const directMessages = await buildMessages({ message, diagnosisId });
+        const directMessages = await buildMessages({ message, diagnosisId: activeDiagnosisId, mistake });
         const finalText = await streamDirectChat(direct, directMessages, {
           onDelta: (chunk, text) => {
             const host = bubble.querySelector('.ai-stream-text');
@@ -119,7 +123,7 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
         bubble.classList.remove('streaming');
         bubble.innerHTML = `<div class="ai-context">${contextHtml}</div>${renderMarkdown(finalText)}`;
       } else {
-        await streamAi({ mode: 'chat', message, diagnosisId }, {
+        await streamAi({ mode: 'chat', message, diagnosisId: activeDiagnosisId, ...(mistake ? { mistake } : {}) }, {
           onMeta: (meta) => {
             bubble.classList.toggle('local', Boolean(meta?.fallback));
             contextHtml = contextLine(meta?.context || []);
@@ -171,5 +175,5 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
   el.querySelectorAll('[data-ai-suggestion]').forEach((button) => {
     button.addEventListener('click', () => submit(button.dataset.aiSuggestion));
   });
-  return { el, focus: () => input.focus(), ask: (text) => submit(String(text || '')) };
+  return { el, focus: () => input.focus(), ask: (text, options = {}) => submit(String(text || ''), options) };
 }

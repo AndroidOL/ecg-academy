@@ -114,7 +114,7 @@ hash 路由，便于任意静态托管与无重写部署：
 
 ## 数据流：测试积分
 
-1. 练习答题后 `Learning::recordPracticeAnswer()`：答对 +1，答错 -10，写入 `practice_daily_scores` 与练习事件。
+1. 练习答题后由 `App\Scoring` 计算分数/XP：答对按难度 10/15/20 计，答错按 4× 扣；`Learning::recordPracticeAnswer()` 写入 `practice_daily_scores` 与练习事件。
 2. 当日分数 ≤ -100 时写 `locked_until=次日 00:00`；`Quiz::newAttempt` 拒绝新的测试请求（班级作业链接不受影响）。
 3. 排行榜按今日/总榜查询所有用户的公开昵称与分数，不展示答案、IP 或患者信息。
 

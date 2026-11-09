@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109al';
+const __asset = __isNode ? '' : '?v=20261109an';
 const { api } = await import(`../api.js${__asset}`);
 const { store, applyTheme, getThemeMode } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -150,7 +150,7 @@ export async function meView() {
           <div class="section-head"><h2 class="section-title" style="font-size:16px">成长等级</h2><span class="badge badge-brand">Lv.${level.level}</span></div>
           <div class="row-wrap" style="justify-content:space-between;margin-top:6px"><b>${level.xp || 0} XP</b><span class="muted" style="font-size:10.5px">${level.nextXp ? `距 Lv.${level.level + 1} 还差 ${Math.max(0, level.nextXp - (level.xp || 0))} XP` : '已达最高等级'}</span></div>
           <div class="progress" style="margin-top:6px"><div class="progress-bar" style="width:${level.progress || 0}%"></div></div>
-          <p class="muted" style="font-size:10.5px;margin-top:8px;line-height:1.7">Lv.${ADVANCED_UNLOCK} 解锁进阶难度、Lv.${CHALLENGE_UNLOCK} 解锁挑战、Lv.${AI_UNLOCK} 解锁 AI 对话；答错扣分导致 XP 下降时，等级会同步下降。</p>
+          <p class="muted" style="font-size:10.5px;margin-top:8px;line-height:1.7">所有难度均可自由练习；Lv.${ADVANCED_UNLOCK} 起进阶计分、Lv.${CHALLENGE_UNLOCK} 起挑战计分，未达等级时不计分、不扣分；Lv.${AI_UNLOCK} 解锁 AI 导师。答错扣 XP 会降级；Lv.10 后基础题不再给 XP。</p>
         </section>
         <section class="card card-pad">
           <div class="section-head"><h2 class="section-title" style="font-size:16px">AI 导师</h2><span class="badge ${store.ai?.disabledUntil ? 'badge-danger' : 'badge-brand'}">${store.ai?.disabledUntil ? '暂停中' : `Lv.${store.ai?.level || level.level}`}</span></div>

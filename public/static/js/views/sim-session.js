@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109al';
+const __asset = __isNode ? '' : '?v=20261109an';
 const { api } = await import(`../api.js${__asset}`);
 const { hasByok } = await import(`../byok.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -322,10 +322,6 @@ export async function simSessionView({ params }) {
         const action = button.dataset.action;
         if (action === 'finish') {
           const ok = await confirmDialog({ title: '结束并复盘？', message: '将按当前时间线生成评分与复盘，之后不能继续操作。', confirmText: '结束并复盘' });
-          if (!ok) return;
-        }
-        if (action === 'shock') {
-          const ok = await confirmDialog({ title: '确认放电？', message: '确认所有人员已离开患者与病床，无人接触患者、导线或床沿；氧气源远离。', confirmText: '确认放电', danger: true });
           if (!ok) return;
         }
         await act(action, (action === 'shock' || action === 'charge') ? { energy: shockEnergy, sync: shockSync } : {});

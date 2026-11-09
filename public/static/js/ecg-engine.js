@@ -783,9 +783,8 @@ function summarize(spec, schedule) {
   if (beats.length >= 2) {
     const intervals = [];
     for (let i = 1; i < beats.length; i += 1) intervals.push(beats[i].t - beats[i - 1].t);
-    intervals.sort((a, b) => a - b);
-    const median = intervals[Math.floor(intervals.length / 2)];
-    if (median > 0.12) hr = Math.round(60 / median);
+    const mean = intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length;
+    if (mean > 0.12) hr = Math.round(60 / mean);
   }
   const rateText = spec.rhythm === 'vf' || spec.rhythm === 'asystole' ? '无法计数' : `${Math.round(hr)} 次/分`;
   return {
@@ -854,6 +853,8 @@ export function sampleAt(result, seconds) {
 }
 
 export function estimateHeartRate(result) {
+  const summaryHr = Number(result?.summary?.hr);
+  if (Number.isFinite(summaryHr) && summaryHr > 0) return Math.round(summaryHr);
   const { samples, sampleRate } = result;
   let threshold = 0;
   for (let i = 0; i < samples.length; i += 1) threshold = Math.max(threshold, Math.abs(samples[i]));

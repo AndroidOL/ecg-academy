@@ -70,7 +70,7 @@ final class Daily
         ];
     }
 
-    public static function complete(int $userId, string $token, array $answers): array
+    public static function complete(int $userId, string $token, array $answers, ?int $clientLevel = null): array
     {
         $round = Secret::open($token);
         if (!$round || ($round['mode'] ?? '') !== 'daily' || (int) ($round['uid'] ?? 0) !== $userId) {
@@ -105,6 +105,9 @@ final class Daily
             ];
         }
 
+        $guestStmt = Db::pdo()->prepare('SELECT is_guest FROM users WHERE id = ? LIMIT 1');
+        $guestStmt->execute([$userId]);
+        $isGuest = (int) ($guestStmt->fetchColumn() ?: 0) === 1;
         $entries = self::bankIndex();
         $all = Content::all();
         $correctCount = 0;
@@ -112,6 +115,7 @@ final class Daily
         $xp = 0;
         $totalMs = 0;
         $details = [];
+        $userLevel = $isGuest ? max(1, min(Level::MAX, (int) ($clientLevel ?? 1))) : Level::forUser($userId)['level'];
         foreach ($ids as $id) {
             $entry = $entries[$id] ?? null;
             $built = $entry ? self::buildQuestion($day, $entry) : null;
@@ -133,12 +137,19 @@ final class Daily
             sort($sortedCorrect);
             $isCorrect = $sortedSelected === $sortedCorrect;
             $partial = !$isCorrect && count($correctIds) > 1 && array_intersect($selected, $correctIds) !== [];
-            $base = [1 => 100, 2 => 140, 3 => 180][$built['level']] ?? 100;
             $timeMs = $answer['timeMs'];
-            $timeBonus = $isCorrect ? max(0, 40 - intdiv($timeMs, 1000) * 2) : 0;
-            $slow = $isCorrect && $timeMs > 15000;
-            $questionScore = $isCorrect ? $base + $timeBonus : ($partial ? (int) round($base * 0.25) : -5 * $base);
-            $questionXp = $isCorrect ? 10 + $built['level'] * 5 : ($partial ? 3 : 1);
+            $scored = Scoring::evaluate([
+                'correct' => $isCorrect,
+                'partial' => $partial,
+                'difficulty' => (int) ($built['level'] ?? 1),
+                'level' => $userLevel,
+                'mode' => 'daily',
+                'timeMs' => $timeMs,
+            ]);
+            $timeBonus = $scored['timeBonus'];
+            $slow = $scored['slow'];
+            $questionScore = $scored['score'];
+            $questionXp = $scored['xp'];
             if ($isCorrect) $correctCount++;
             $score += $questionScore;
             $xp += $questionXp;
@@ -163,6 +174,13 @@ final class Daily
                 ], $correctIds),
                 'options' => array_map(static fn (array $option): array => ['id' => $option['id'], 'name' => $option['name'], 'nameEn' => $option['nameEn'] ?? $option['name']], $built['options']),
                 'score' => $questionScore,
+                'xp' => $questionXp,
+                'baseScore' => $scored['base'],
+                'penalty' => $scored['penalty'],
+                'xpMultiplier' => $scored['xpMultiplier'],
+                'unlocked' => $scored['unlocked'],
+                'unlockLevel' => $scored['unlockLevel'],
+                'timeBonus' => $timeBonus,
                 'timeMs' => $timeMs,
             ];
         }
@@ -178,9 +196,6 @@ final class Daily
             'details' => $details,
         ];
 
-        $stmt = Db::pdo()->prepare('SELECT is_guest FROM users WHERE id = ? LIMIT 1');
-        $stmt->execute([$userId]);
-        $isGuest = (int) ($stmt->fetchColumn() ?: 0) === 1;
         try {
             Db::pdo()->prepare(
                 'INSERT INTO daily_results (user_id, day, correct, total, score, xp, time_ms, details)
@@ -202,7 +217,7 @@ final class Daily
             throw $e;
         }
         if (!$isGuest) {
-            Db::pdo()->prepare('UPDATE users SET xp = xp + ? WHERE id = ?')->execute([$xp, $userId]);
+            Db::pdo()->prepare('UPDATE users SET xp = GREATEST(0, xp + ?) WHERE id = ?')->execute([$xp, $userId]);
             $baseCredit = max(0, Settings::int('ai.credit_base', 10));
             $grant = AiGuard::grant($userId, $baseCredit + $correctCount, 'daily-challenge', $day);
             $result['aiCreditsGranted'] = $grant['granted'];

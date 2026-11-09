@@ -20,19 +20,99 @@ const byok = await import('../public/static/js/byok.js');
 
 let passed = 0;
 function check(name, fn) {
-  try { fn(); passed += 1; console.log('  ok  ' + name); }
+  try { local.clear(); fn(); passed += 1; console.log('  ok  ' + name); }
   catch (error) { console.error('FAIL  ' + name + ': ' + error.message); process.exitCode = 1; }
 }
 
-check('wrong answer enters review queue and schedules immediately', () => {
-  study.recordAttempt({ correct: false, correctIds: ['afib'], selectedIds: ['svt'], names: { afib: '心房颤动', svt: '室上速' }, chapters: { afib: 'tachy', svt: 'tachy' } });
+const entryOf = (id) => study.reviewEntries().find((entry) => entry.id === id);
+
+check('wrong answer keeps the correct diagnosis and records what the user picked', () => {
+  study.recordAttempt({
+    correct: false,
+    correctIds: ['afib'],
+    selectedIds: ['svt'],
+    names: { afib: '心房颤动', svt: '室上速' },
+    chapters: { afib: 'tachy', svt: 'tachy' },
+    source: 'practice',
+    questionKey: 'q-demo',
+    questionText: '该心电图最可能的诊断是？',
+  });
   const summary = study.reviewSummary();
-  assert.equal(summary.wrong, 2);
-  assert.equal(summary.due, 2);
+  assert.equal(summary.wrong, 1);
+  assert.equal(summary.due, 1);
   assert.ok(study.weakDiagnosisIds(5).includes('afib'));
+  assert.equal(entryOf('svt'), undefined);
+  const entry = entryOf('afib');
+  assert.equal(entry.wrong, 1);
+  assert.equal(entry.wrongChoices.svt.name, '室上速');
+  assert.equal(entry.wrongChoices.svt.count, 1);
+  assert.equal(entry.wrongLog.length, 1);
+  assert.equal(entry.wrongLog[0].picked[0].id, 'svt');
+  assert.equal(entry.wrongLog[0].picked[0].name, '室上速');
+  assert.equal(entry.wrongLog[0].key, 'q-demo');
+  assert.equal(entry.wrongLog[0].src, 'practice');
+});
+
+check('repeated wrong answers on the same question are counted per question', () => {
+  const base = {
+    correct: false,
+    correctIds: ['afib'],
+    selectedIds: ['svt'],
+    names: { afib: '心房颤动', svt: '室上速' },
+    chapters: { afib: 'tachy', svt: 'tachy' },
+    source: 'practice',
+    questionKey: 'q-repeat',
+    questionText: '同一道心电图题',
+  };
+  study.recordAttempt(base);
+  study.recordAttempt(base);
+  study.recordAttempt({ ...base, selectedIds: ['atrial-tachy'], names: { ...base.names, 'atrial-tachy': '房性心动过速' } });
+  const entry = entryOf('afib');
+  assert.equal(entry.wrong, 3);
+  assert.equal(entry.wrongChoices.svt.count, 2);
+  assert.equal(entry.wrongChoices['atrial-tachy'].count, 1);
+  const repeat = study.strongestRepeat(entry);
+  assert.equal(repeat.n, 3);
+  assert.equal(repeat.key, 'q-repeat');
+  assert.ok(repeat.picked.includes('室上速'));
+  const context = study.mistakeContext(entry);
+  assert.equal(context.choices[0].name, '室上速');
+  assert.equal(context.repeat.n, 3);
+  assert.ok(context.history.length >= 2, `history length ${context.history.length}`);
+});
+
+check('exam-style attempts record option text and labels without catalog ids', () => {
+  study.recordAttempt({
+    correct: false,
+    correctIds: ['hyperkalemia'],
+    selectedIds: [],
+    names: { hyperkalemia: '高钾血症' },
+    chapters: { hyperkalemia: 'electrolyte' },
+    source: 'exam',
+    wrongAttempts: [{
+      entryId: 'hyperkalemia',
+      key: 'exam:42',
+      q: '按本站课程，以下哪项最符合？',
+      picked: [{ name: '低钾血症', label: 'B' }],
+      correct: [{ name: '高钾血症', label: 'C' }],
+    }],
+  });
+  const entry = entryOf('hyperkalemia');
+  assert.equal(entry.wrong, 1);
+  assert.equal(entry.wrongChoices['name:低钾血症'].count, 1);
+  assert.equal(entry.wrongLog[0].picked[0].label, 'B');
+  assert.equal(entry.wrongLog[0].correct[0].label, 'C');
+});
+
+check('question signatures are stable and ignore option order', () => {
+  const first = study.questionSignature(['a', 'b', 'c'], ['x']);
+  const second = study.questionSignature(['c', 'a', 'b'], ['x']);
+  assert.equal(first, second);
+  assert.notEqual(first, study.questionSignature(['a', 'b'], ['x']));
 });
 
 check('self rating moves entry into the future and increases interval', () => {
+  study.recordAttempt({ correct: false, correctIds: ['afib'], selectedIds: ['svt'], names: { afib: '心房颤动', svt: '室上速' }, chapters: { afib: 'tachy' } });
   const entry = study.rateReview('afib', 2);
   assert.ok(entry.interval >= 1);
   assert.ok(entry.due > Date.now());
@@ -40,14 +120,17 @@ check('self rating moves entry into the future and increases interval', () => {
   assert.ok(!due.includes('afib'));
 });
 
-check('favorites toggle and export/import round-trip', () => {
+check('favorites toggle and export/import round-trip keeps wrong selections', () => {
+  study.recordAttempt({ correct: false, correctIds: ['afib'], selectedIds: ['svt'], names: { afib: '心房颤动', svt: '室上速' }, chapters: { afib: 'tachy' } });
   assert.equal(study.toggleFavorite({ id: 'afib', name: '心房颤动', chapter: 'tachy' }), true);
   assert.equal(study.isFavorite('afib'), true);
   const data = study.exportStudyData();
-  assert.ok(data.reviews.afib);
+  assert.equal(data.version, 2);
+  assert.equal(data.reviews.afib.wrongChoices.svt.count, 1);
   local.clear();
   assert.equal(study.importStudyData(data), true);
   assert.equal(study.isFavorite('afib'), true);
+  assert.equal(entryOf('afib').wrongChoices.svt.name, '室上速');
 });
 
 check('merge keeps newer reviews and unions favorites', () => {
@@ -57,13 +140,23 @@ check('merge keeps newer reviews and unions favorites', () => {
   const base = study.snapshotStudy().reviews.x;
   study.mergeStudyData({
     reviews: {
-      x: { ...base, name: '远程旧记录', lastSeen: (base.lastSeen || 0) - 5000 },
+      x: {
+        ...base,
+        name: '远程旧记录',
+        lastSeen: (base.lastSeen || 0) - 5000,
+        wrong: 2,
+        wrongChoices: { svt: { id: 'svt', name: '室上速', count: 2, lastAt: 1 } },
+        wrongLog: [{ at: 1, key: 'q1', picked: [{ id: 'svt', name: '室上速' }] }],
+        repeatWrongs: { q1: { n: 2, lastAt: 1, picked: ['室上速'] } },
+      },
       y: { id: 'y', name: '远程新增', chapter: 'tachy', lastSeen: 10 },
     },
     favorites: { f: { id: 'f', name: '远程收藏', chapter: 'tachy', addedAt: 10 } },
   });
   let snap = study.snapshotStudy();
   assert.equal(snap.reviews.x.name, '本地记录');
+  assert.equal(snap.reviews.x.wrongChoices.svt.count, 2);
+  assert.equal(snap.reviews.x.wrong, 2);
   assert.ok(snap.reviews.y);
   assert.ok(snap.favorites.f);
   assert.ok(snap.favorites.keep);

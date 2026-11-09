@@ -155,7 +155,7 @@ final class ApiController
         $selected = $input['selected'] ?? [];
         if (!is_array($selected)) throw new ApiError(422, 'invalid_selection', '答案格式错误');
         $timeMs = (int) ($input['timeMs'] ?? 0);
-        Http::ok(Quiz::answer((int) $user['id'], $attemptId, $selected, $timeMs));
+        Http::ok(Quiz::answer((int) $user['id'], $attemptId, $selected, $timeMs, (int) ($input['level'] ?? 0)));
     }
 
     public static function assignment(array $params = []): void
@@ -188,7 +188,7 @@ final class ApiController
         $user = self::user();
         $input = Http::input();
         $answers = is_array($input['answers'] ?? null) ? $input['answers'] : [];
-        Http::ok(Learning::submit((int) $user['id'], (string) ($input['token'] ?? ''), $answers));
+        Http::ok(Learning::submit((int) $user['id'], (string) ($input['token'] ?? ''), $answers, (int) ($input['level'] ?? 0)));
     }
 
     public static function examStart(array $params = []): void
@@ -387,7 +387,8 @@ final class ApiController
         $input = Http::input();
         $diagnosisId = isset($input['diagnosisId']) ? (string) $input['diagnosisId'] : null;
         $byok = is_array($input['byok'] ?? null) ? $input['byok'] : null;
-        Http::ok(Ai::chat((int) $user['id'], (string) ($input['message'] ?? ''), $diagnosisId, $byok));
+        $mistake = is_array($input['mistake'] ?? null) ? $input['mistake'] : null;
+        Http::ok(Ai::chat((int) $user['id'], (string) ($input['message'] ?? ''), $diagnosisId, $byok, $mistake));
     }
 
     public static function aiQuiz(array $params = []): void
@@ -512,7 +513,7 @@ final class ApiController
         $user = self::user();
         $input = Http::input();
         $answers = is_array($input['answers'] ?? null) ? $input['answers'] : [];
-        Http::ok(Daily::complete((int) $user['id'], (string) ($input['token'] ?? ''), $answers));
+        Http::ok(Daily::complete((int) $user['id'], (string) ($input['token'] ?? ''), $answers, (int) ($input['level'] ?? 0)));
     }
 
     private static function user(): array
