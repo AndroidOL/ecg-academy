@@ -28,8 +28,12 @@ try {
     $pdo = Db::pdo();
     $savedAi = Settings::get('ai.enabled', false);
     $savedInterval = Settings::get('ai.min_interval_seconds', 5);
+    $savedIpLimit = Settings::get('ai.ip_daily_limit', 60);
+    $savedDailyLimit = Settings::get('ai.daily_limit', 30);
     Settings::set('ai.enabled', false);
     Settings::set('ai.min_interval_seconds', 0);
+    Settings::set('ai.ip_daily_limit', 100000);
+    Settings::set('ai.daily_limit', 100000);
     $stmt = $pdo->prepare('INSERT INTO users (public_id, username, password_hash, display_name, is_guest, xp, ai_credits) VALUES (?, ?, ?, ?, 0, 4000, 20)');
     $stmt->execute([bin2hex(random_bytes(10)), 'aiquiz' . bin2hex(random_bytes(4)), password_hash('pw-123456', PASSWORD_DEFAULT), 'AI 出题测试']);
     $userId = (int) $pdo->lastInsertId();
@@ -80,6 +84,8 @@ try {
 } finally {
     if (isset($savedAi)) Settings::set('ai.enabled', $savedAi);
     if (isset($savedInterval)) Settings::set('ai.min_interval_seconds', $savedInterval);
+    if (isset($savedIpLimit)) Settings::set('ai.ip_daily_limit', $savedIpLimit);
+    if (isset($savedDailyLimit)) Settings::set('ai.daily_limit', $savedDailyLimit);
     if ($userId > 0) {
         Db::pdo()->prepare('DELETE FROM ai_conversations WHERE user_id = ?')->execute([$userId]);
         Db::pdo()->prepare('DELETE FROM ai_violation_log WHERE user_id = ?')->execute([$userId]);

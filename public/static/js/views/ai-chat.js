@@ -1,9 +1,9 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109ac';
+const __asset = __isNode ? '' : '?v=20261109ad';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, escapeHtml, toast, openModal } = await import(`../ui.js${__asset}`);
-const { getByok, setByok, clearByok, byokPayload } = await import(`../byok.js${__asset}`);
+const { getByok, isRemembered, setByok, clearByok, byokPayload } = await import(`../byok.js${__asset}`);
 const { streamAi } = await import(`../ai-stream.js${__asset}`);
 const { renderMarkdown } = await import(`../markdown.js${__asset}`);
 
@@ -32,8 +32,9 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
   const input = el.querySelector('[data-ai-input]');
   const send = el.querySelector('[data-ai-send]');
   let busy = false;
-  const locked = store.ai && store.ai.levelUnlocked === false && !store.ai.admin;
-  const noCredits = store.ai && !store.ai.admin && Number(store.ai.credits || 0) <= 0;
+  const hasKey = Boolean(getByok());
+  const locked = store.ai && store.ai.levelUnlocked === false && !store.ai.admin && !hasKey;
+  const noCredits = store.ai && !store.ai.admin && !hasKey && Number(store.ai.credits || 0) <= 0;
   if (locked) {
     input.disabled = true;
     send.disabled = true;
@@ -67,21 +68,23 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
   el.querySelector('[data-byok-config]')?.addEventListener('click', () => {
     const current = getByok() || { baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini', apiKey: '' };
     const modal = openModal({
-      title: 'BYOK 演示 · 使用你的 API Key',
-      sub: '密钥只保存在当前浏览器标签页的 sessionStorage，关闭标签页即失效；不会写入数据库或日志。',
+      title: '自有 AI 配置 · BYOK',
+      sub: '密钥只保存在本浏览器，不会写入服务器数据库、成本日志或错误日志；调用时经本站服务器中转到你填写的 Base URL。',
       content: `<div class="form-grid">
-        <div class="field"><label for="byok-base">Base URL（必须 HTTPS）</label><input class="input" id="byok-base" value="${escapeHtml(current.baseUrl)}" placeholder="https://api.openai.com/v1" autocomplete="off"></div>
-        <div class="field"><label for="byok-model">模型</label><input class="input" id="byok-model" value="${escapeHtml(current.model)}" placeholder="gpt-4o-mini" autocomplete="off"></div>
+        <div class="field"><label for="byok-base">Base URL（必须 HTTPS 公网地址）</label><input class="input" id="byok-base" value="${escapeHtml(current.baseUrl)}" placeholder="https://api.deepseek.com/v1" autocomplete="off"></div>
+        <div class="field"><label for="byok-model">模型</label><input class="input" id="byok-model" value="${escapeHtml(current.model)}" placeholder="deepseek-chat" autocomplete="off"></div>
         <div class="field"><label for="byok-key">API Key</label><input class="input" id="byok-key" type="password" value="" placeholder="sk-…（不会回显已保存密钥）" autocomplete="off"></div>
-        <div class="auth-note">BYOK 仅适合个人演示；请求会经本站服务器转发，管理员可关闭此功能。不要使用生产环境高权限密钥。</div>
-        <div class="row-wrap"><button class="btn btn-primary btn-sm" type="button" data-byok-save>保存到当前标签页</button><button class="btn btn-ghost btn-sm" type="button" data-byok-clear>清除</button></div>
+        <label class="admin-check"><input type="checkbox" id="byok-remember" ${isRemembered() ? 'checked' : ''}> 记住到本设备（localStorage；公共电脑请勿勾选）</label>
+        <div class="auth-note">使用自有配置时不消耗本站 AI 次数，但仍受越界检测、提问间隔与对话审计约束；请勿使用生产环境高权限密钥。</div>
+        <div class="row-wrap"><button class="btn btn-primary btn-sm" type="button" data-byok-save>保存到浏览器</button><button class="btn btn-ghost btn-sm" type="button" data-byok-clear>清除</button></div>
       </div>`,
     });
     modal.el.querySelector('[data-byok-save]')?.addEventListener('click', () => {
       const apiKey = modal.el.querySelector('#byok-key').value.trim() || getByok()?.apiKey || '';
-      const ok = setByok({ baseUrl: modal.el.querySelector('#byok-base').value, model: modal.el.querySelector('#byok-model').value, apiKey });
-      if (!ok) return toast('请填写 Base URL、模型和 API Key', 'error');
-      refreshByokLabel(); modal.close(); toast('BYOK 已保存到当前标签页', 'success');
+      const remember = Boolean(modal.el.querySelector('#byok-remember')?.checked);
+      const ok = setByok({ baseUrl: modal.el.querySelector('#byok-base').value, model: modal.el.querySelector('#byok-model').value, apiKey }, { remember });
+      if (!ok) return toast('配置无效：Base URL 必须为 HTTPS 公网地址，Key 长度 8–300', 'error');
+      refreshByokLabel(); modal.close(); toast(remember ? '已保存在本设备浏览器' : '已保存在当前标签页，关闭后失效', 'success');
     });
     modal.el.querySelector('[data-byok-clear]')?.addEventListener('click', () => { clearByok(); refreshByokLabel(); modal.close(); toast('已清除 BYOK 密钥', 'info'); });
   });

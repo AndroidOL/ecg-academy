@@ -72,11 +72,20 @@ check('merge keeps newer reviews and unions favorites', () => {
   assert.equal(snap.reviews.x.name, '远程新记录');
 });
 
-check('BYOK stores only in sessionStorage and clears', () => {
+check('BYOK supports session/persistent local storage, validation and clearing', () => {
   assert.equal(byok.setByok({ baseUrl: 'https://api.example.com/v1', model: 'demo', apiKey: 'sk-test-1234' }), true);
   assert.equal(byok.hasByok(), true);
   assert.equal(local.getItem('ecg-byok-v1'), null);
   assert.ok(session.getItem('ecg-byok-v1'));
+  assert.equal(byok.isRemembered(), false);
+  byok.clearByok();
+  assert.equal(byok.hasByok(), false);
+  assert.equal(byok.setByok({ baseUrl: 'http://insecure.example.com/v1', model: 'demo', apiKey: 'sk-test-1234' }, { remember: true }), false);
+  assert.equal(byok.setByok({ baseUrl: 'https://api.example.com/v1', model: 'demo', apiKey: 'sk-test-1234' }, { remember: true }), true);
+  assert.equal(byok.isRemembered(), true);
+  assert.equal(session.getItem('ecg-byok-v1'), null);
+  assert.ok(local.getItem('ecg-byok-persist-v1'));
+  assert.match(byok.maskedKey(), /^sk-t.*1234$/);
   byok.clearByok();
   assert.equal(byok.hasByok(), false);
 });

@@ -1,9 +1,9 @@
 // Cache-busted dynamic imports: keep Node tests query-free while forcing
 // browsers with immutable 7-day static caching to load the current modules.
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109ac';
+const __asset = __isNode ? '' : '?v=20261109ad';
 const { api } = await import(`./api.js${__asset}`);
-const { store, initTheme, applyTheme, toggleTheme } = await import(`./store.js${__asset}`);
+const { store, initTheme, applyTheme } = await import(`./store.js${__asset}`);
 const { practiceView } = await import(`./views/practice.js${__asset}`);
 const { readView } = await import(`./views/read.js${__asset}`);
 const { simListView } = await import(`./views/sim-list.js${__asset}`);
@@ -168,9 +168,6 @@ function shell(activePath = '/') {
           <div class="sidebar-card-title"><span style="display:inline-flex;align-items:center;gap:5px">${icon('sparkles', 14)} AI 导师</span><span class="badge ${store.ai?.configured ? 'badge-brand' : ''}" data-ai-mode>${store.ai?.configured ? '在线' : '本地'}</span></div>
           <div class="sidebar-card-meta">${store.ai?.configured ? '个性化组卷 · 错因解析' : '本地知识库降级可用'}</div>
         </div>
-        <div class="sidebar-card" style="padding:9px 12px">
-          <div class="spread"><span class="sidebar-card-title" style="gap:6px">${icon('sun', 13)} 外观</span><button class="icon-btn" type="button" data-theme-toggle aria-label="切换深浅主题" title="切换主题" style="width:30px;height:30px">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon', 17)}</button></div>
-        </div>
         <div class="sidebar-card" style="padding:8px">
           <a class="sidebar-user" href="#/me">
             <span class="avatar" data-avatar>${initials(user.displayName)}</span>
@@ -187,7 +184,6 @@ function shell(activePath = '/') {
           <nav class="topbar-links" aria-label="顶部导航">${topbarLinks(activePath)}</nav>
           <div class="topbar-actions">
             <button class="icon-btn" type="button" data-locale-toggle aria-label="Language" title="Language">${nextLocale().short}</button>
-            <button class="icon-btn" type="button" data-theme-toggle aria-label="切换深浅主题" title="切换主题">${icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon', 19)}</button>
             <a class="avatar" href="#/me" aria-label="我的账号" data-avatar>${initials(user.displayName)}</a>
           </div>
         </div>
@@ -249,14 +245,6 @@ function bindShell() {
     button.addEventListener('click', () => {
       setLocale(nextLocale().id);
       window.location.reload();
-    });
-  });
-  document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
-    button.addEventListener('click', () => {
-      toggleTheme();
-      document.querySelectorAll('[data-theme-toggle]').forEach((el) => {
-        el.innerHTML = icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon', 19);
-      });
     });
   });
 }
@@ -330,11 +318,7 @@ async function boot() {
     if (getLocale() === 'en') setTimeout(() => loadContentCatalog(), 120);
     store.subscribe((type) => {
       if (['user', 'progress', 'stats', 'bootstrap'].includes(type)) updateShell();
-      if (type === 'theme') {
-        document.querySelectorAll('[data-theme-toggle]').forEach((el) => {
-          el.innerHTML = icon(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon', 19);
-        });
-      }
+      if (type === 'theme') { /* theme is controlled from the profile page */ }
     });
     window.addEventListener('auth:changed', () => {
       updateShell();

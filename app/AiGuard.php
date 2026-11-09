@@ -59,7 +59,7 @@ final class AiGuard
         if ((int) $user['is_guest'] === 1) throw new ApiError(403, 'ai_login_required', 'AI 导师仅对注册用户开放，请先注册并登录');
         $level = self::level($user);
         $required = max(1, Settings::int('ai.level_required', 10));
-        if (!$admin && self::isChargeMode($mode) && $level < $required) {
+        if (!$admin && !$byok && self::isChargeMode($mode) && $level < $required) {
             throw new ApiError(403, 'ai_level_required', "AI 导师对话需达到 Lv.{$required}；可先通过每日挑战积累经验与次数");
         }
         if (!$admin && !empty($user['ai_disabled_until'])) {
@@ -69,9 +69,9 @@ final class AiGuard
             'user' => $user,
             'admin' => $admin,
             'mode' => $mode,
-            'charge_credit' => !$admin && self::isChargeMode($mode),
-            'charge_analysis' => !$admin && !self::isChargeMode($mode),
-            'charge_account' => !$admin,
+            'charge_credit' => !$admin && !$byok && self::isChargeMode($mode),
+            'charge_analysis' => !$admin && !$byok && !self::isChargeMode($mode),
+            'charge_account' => !$admin && !$byok,
             'ip_hash' => hash('sha256', Http::clientIp()),
             'credit_consumed' => false,
         ];
@@ -84,7 +84,7 @@ final class AiGuard
                     throw new ApiError(429, 'ai_interval', "提问过快，请 {$retry} 秒后再试", ['retryAfter' => $retry]);
                 }
             }
-            if ($receipt['charge_credit']) {
+            if (!$byok && $receipt['charge_credit']) {
                 $reserve = Db::pdo()->prepare('UPDATE users SET ai_credits = ai_credits - 1 WHERE id = ? AND ai_credits > 0');
                 $reserve->execute([$userId]);
                 if ($reserve->rowCount() < 1) {
@@ -92,7 +92,7 @@ final class AiGuard
                 }
                 $receipt['credit_consumed'] = true;
             }
-            if ($receipt['charge_analysis']) {
+            if (!$byok && $receipt['charge_analysis']) {
                 $limit = max(1, Settings::int('ai.analysis_daily_limit', 5));
                 $stmt = Db::pdo()->prepare('SELECT used_count FROM ai_analysis_usage WHERE user_id = ? AND usage_day = CURDATE()');
                 $stmt->execute([$userId]);
@@ -100,7 +100,7 @@ final class AiGuard
                     throw new ApiError(429, 'ai_analysis_limit', '今日 AI 错因分析次数已用完');
                 }
             }
-            self::consumeAccountAndIp($userId, $receipt['ip_hash']);
+            if (!$byok) self::consumeAccountAndIp($userId, $receipt['ip_hash']);
         }
         if (!$admin && $message !== '') {
             $verdict = self::inspect($message, $diagnosisId);

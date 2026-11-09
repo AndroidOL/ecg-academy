@@ -21,6 +21,8 @@ $savedValues = [
     'ai.disabled_hours' => Settings::get('ai.disabled_hours', 24),
     'ai.level_required' => Settings::get('ai.level_required', 10),
     'ai.analysis_daily_limit' => Settings::get('ai.analysis_daily_limit', 5),
+    'ai.ip_daily_limit' => Settings::get('ai.ip_daily_limit', 60),
+    'ai.daily_limit' => Settings::get('ai.daily_limit', 30),
 ];
 
 function check(string $name, callable $fn): void
@@ -45,6 +47,8 @@ try {
         'ai.disabled_hours' => 1,
         'ai.level_required' => 10,
         'ai.analysis_daily_limit' => 2,
+        'ai.ip_daily_limit' => 100000,
+        'ai.daily_limit' => 100000,
     ]);
     $pdo = Db::pdo();
     $stmt = $pdo->prepare('INSERT INTO users (public_id, username, password_hash, display_name, is_guest, xp, ai_credits) VALUES (?, ?, ?, ?, 0, 4000, 2)');
@@ -117,6 +121,8 @@ try {
             }
             $receipt = AiGuard::check($id, 'explain', '', null);
             assert($receipt['charge_analysis'] === true);
+            $byokReceipt = AiGuard::check($id, 'chat', '房颤的特点', null, true);
+            assert($byokReceipt['charge_credit'] === false);
         } finally {
             Db::pdo()->prepare('DELETE FROM users WHERE id = ?')->execute([$id]);
         }

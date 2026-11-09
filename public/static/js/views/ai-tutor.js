@@ -1,8 +1,8 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109ac';
+const __asset = __isNode ? '' : '?v=20261109ad';
 const { store } = await import(`../store.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
-const { byokPayload } = await import(`../byok.js${__asset}`);
+const { byokPayload, hasByok } = await import(`../byok.js${__asset}`);
 const { wrongReviews, weakDiagnosisIds, recordAttempt } = await import(`../study-store.js${__asset}`);
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 const { createAiChat } = await import(`./ai-chat.js${__asset}`);
@@ -21,7 +21,7 @@ export async function aiTutorView() {
       <div class="learn-empty"><b>AI 权限暂停中</b><span>暂停至 ${escapeHtml(ai.disabledUntil)}。你仍可使用全部学习、练习与急救内容。</span><a class="btn btn-primary btn-sm" href="#/me" style="margin-top:12px">返回我的</a></div>${medicalDisclaimer()}`;
     return { el };
   }
-  if (ai.levelUnlocked === false) {
+  if (ai.levelUnlocked === false && !hasByok()) {
     el.innerHTML = `<header class="page-head"><div><div class="page-eyebrow">${icon('sparkles', 14)} AI TUTOR</div><h1 class="page-title">AI 导师</h1><p class="page-sub">AI 对话需要 Lv.${ai.levelRequired || 10}，并消耗每日挑战获得的次数。</p></div></header>
       <div class="learn-empty"><b>已达到 Lv.${ai.levelRequired || 10} 后解锁</b><span>你当前为 Lv.${ai.level || 1}。每日挑战每次奖励 ${ai.creditBase || 10} 次 + 答对题数，次数上限 ${ai.creditCap || 100} 次。</span><a class="btn btn-primary btn-sm" href="#/daily" style="margin-top:12px">前往每日挑战</a></div>${medicalDisclaimer()}`;
     return { el };
@@ -34,7 +34,7 @@ export async function aiTutorView() {
   });
   el.innerHTML = `<header class="page-head">
       <div><div class="page-eyebrow">${icon('sparkles', 14)} AI TUTOR</div><h1 class="page-title">AI 导师</h1><p class="page-sub">仅回答心电图、心血管电生理与判读相关问题；回答为教学用途，不替代临床判断。错题与复习数据会作为上下文，方便分析薄弱项。</p></div>
-      <div class="row-wrap"><span class="badge badge-brand">${ai.admin ? '管理员不限' : `${ai.credits} 次可用`}</span><span class="badge">错因分析 ${ai.analysisRemaining}/${ai.analysisLimit}</span><span class="badge">${ai.configured ? '在线' : '本地知识库'}</span></div>
+      <div class="row-wrap"><span class="badge badge-brand">${ai.admin ? '管理员不限' : hasByok() ? 'BYOK' : `${ai.credits} 次可用`}</span><span class="badge">错因分析 ${ai.analysisRemaining}/${ai.analysisLimit}</span><span class="badge">${ai.configured ? '在线' : '本地知识库'}</span></div>
     </header>
     ${ai.credits <= 0 ? `<div class="callout brand" style="margin-bottom:12px">${icon('flame', 14)} 对话次数已用完。完成每日挑战可获得 ${ai.creditBase || 10} 次 + 答对题数，最多保留 ${ai.creditCap || 100} 次。<a href="#/daily">去打卡</a></div>` : ''}
     <div class="ai-tutor-layout">

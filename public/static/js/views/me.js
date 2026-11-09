@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109ac';
+const __asset = __isNode ? '' : '?v=20261109ad';
 const { api } = await import(`../api.js${__asset}`);
 const { store, applyTheme, getThemeMode } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -8,6 +8,7 @@ const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${_
 const { reviewSummary } = await import(`../study-store.js${__asset}`);
 const { isLowBandwidth, setLowBandwidth, installPrompt, clearInstallPrompt } = await import(`../bandwidth.js${__asset}`);
 const { getLocale, setLocale, LOCALES } = await import(`../i18n.js${__asset}`);
+const { byokSummary, getByok, setByok, clearByok } = await import(`../byok.js${__asset}`);
 const { createPasskey } = await import(`../webauthn.js${__asset}`);
 const { levelInfo, ADVANCED_UNLOCK, CHALLENGE_UNLOCK, AI_UNLOCK } = await import(`../levels.js${__asset}`);
 
@@ -33,6 +34,22 @@ function pwaActionMarkup() {
     return `<div class="pwa-steps"><b>iPhone / iPad 安装步骤</b><ol><li>用 Safari 打开本页。</li><li>点击底部“分享”按钮。</li><li>选择“添加到主屏幕”，确认名称后添加。</li></ol></div><p class="muted pwa-note">应用版本 ${version}。iOS 不支持网页主动弹出安装框，需通过 Safari 分享菜单添加。</p>`;
   }
   return `<div class="pwa-steps"><b>当前浏览器没有提供自动安装按钮</b><ol><li>电脑端：使用 Chrome / Edge，点击地址栏右侧的安装图标。</li><li>手机端：Chrome 菜单 →“安装应用 / 添加到主屏幕”；iOS 使用 Safari 分享菜单。</li><li>必须通过 HTTPS 访问，且已加载过本站。</li></ol></div><p class="muted pwa-note">应用版本 ${version}。若你刚刚关闭了安装提示，刷新页面后重新尝试。</p>`;
+}
+
+function byokCard() {
+  const config = byokSummary();
+  return `<section class="card card-pad" data-byok-card>
+    <div class="section-head"><h2 class="section-title" style="font-size:16px">自有 AI 配置</h2><span class="badge ${config ? 'badge-ok' : ''}">${config ? '已保存到本机' : '可选'}</span></div>
+    <p class="muted" style="font-size:10.5px;line-height:1.7;margin:0 0 8px">仅保存在当前浏览器（勾选后 localStorage，否则 sessionStorage）；不会写入服务器数据库、成本日志或错误日志。调用时密钥会经本站服务器中转到你填写的 Base URL，请勿使用生产环境高权限密钥。${store.user?.isGuest ? '登录后才能使用自有配置对话。' : ''}</p>
+    ${config ? `<div class="settings-row" style="padding:4px 0"><div><div class="settings-name">${escapeHtml(config.model)}</div><div class="settings-sub">${escapeHtml(config.baseUrl)} · ${escapeHtml(config.apiKey)}${config.remembered ? ' · 已记住' : ' · 仅当前标签页'}</div></div><span class="badge badge-brand">BYOK</span></div>` : ''}
+    <div class="form-grid" style="margin-top:6px">
+      <label class="field"><span>Base URL（必须 HTTPS）</span><input class="input" data-byok-base value="${escapeHtml(config?.baseUrl || '')}" placeholder="https://api.deepseek.com/v1" autocomplete="off"></label>
+      <label class="field"><span>模型</span><input class="input" data-byok-model value="${escapeHtml(config?.model || '')}" placeholder="deepseek-chat" autocomplete="off"></label>
+      <label class="field"><span>API Key</span><input class="input" type="password" data-byok-key value="" placeholder="${config ? '已保存，留空不修改' : 'sk-…'}" autocomplete="off"></label>
+      <label class="admin-check"><input type="checkbox" data-byok-remember ${config?.remembered ? 'checked' : ''}> 记住到本设备（localStorage，公共电脑请勿勾选）</label>
+    </div>
+    <div class="row-wrap" style="margin-top:8px"><button class="btn btn-primary btn-sm" type="button" data-byok-save>保存到浏览器</button><button class="btn btn-ghost btn-sm" type="button" data-byok-clear ${config ? '' : 'disabled'}>清除</button></div>
+  </section>`;
 }
 
 function accountCard(user) {
@@ -140,6 +157,7 @@ export async function meView() {
           ${user.isGuest ? `<p class="muted" style="font-size:11px;line-height:1.7">注册并达到 Lv.${store.ai?.levelRequired || AI_UNLOCK} 后解锁 AI 对话；每日挑战可获得对话次数。</p><a class="btn btn-secondary btn-sm" href="#/daily" style="margin-top:8px">去每日挑战</a>` : store.ai?.levelUnlocked === false ? `<p class="muted" style="font-size:11px;line-height:1.7">达到 Lv.${store.ai?.levelRequired || AI_UNLOCK} 后解锁 AI 对话。每日挑战每次奖励基础次数 + 答对题数。</p><a class="btn btn-secondary btn-sm" href="#/daily" style="margin-top:8px">去每日挑战</a>` : `<div class="review-me-grid"><div><b>${store.ai?.admin ? '不限' : (store.ai?.credits ?? 0)}</b><span>对话次数</span></div><div><b>${store.ai?.analysisRemaining ?? 0}/${store.ai?.analysisLimit ?? 0}</b><span>今日错因分析</span></div><div><b>${store.ai?.creditCap ?? 100}</b><span>次数上限</span></div></div><p class="muted" style="font-size:10.5px;margin-top:8px">次数仅通过每日挑战获得；每日 ${store.ai?.creditBase ?? 10} 次 + 答对题数，最多保留 ${store.ai?.creditCap ?? 100} 次。</p><a class="btn btn-secondary btn-sm" href="#/ai" style="margin-top:8px">${icon('sparkles', 13)} 打开 AI 导师</a>`}
           ${store.ai?.disabledUntil ? `<p class="muted" style="font-size:10px;color:var(--danger)">暂停至 ${escapeHtml(store.ai.disabledUntil)}，请联系管理员恢复。</p>` : ''}
         </section>
+        ${store.ai?.byokEnabled ? byokCard() : ''}
         <section class="card card-pad">
           <div class="section-head"><h2 class="section-title" style="font-size:16px">排行榜</h2><div class="segmented"><button class="segment active" type="button" data-scope="week">本周</button><button class="segment" type="button" data-scope="all">总榜</button></div></div>
           <div class="leaderboard" data-leaderboard>${renderLeaderboard(stats.leaderboard || [])}</div>
@@ -271,6 +289,30 @@ export async function meView() {
     const action = el.querySelector('[data-pwa-action]');
     if (action) { action.innerHTML = pwaActionMarkup(); bindInstall(); }
   }, { once: true });
+
+  const bindByok = () => {
+    const card = el.querySelector('[data-byok-card]');
+    if (!card) return;
+    card.querySelector('[data-byok-save]')?.addEventListener('click', () => {
+      const baseUrl = card.querySelector('[data-byok-base]').value.trim();
+      const model = card.querySelector('[data-byok-model]').value.trim();
+      const keyInput = card.querySelector('[data-byok-key]');
+      const apiKey = keyInput.value.trim() || getByok()?.apiKey || '';
+      const remember = Boolean(card.querySelector('[data-byok-remember]')?.checked);
+      if (!baseUrl || !model || !apiKey) return toast('请填写 Base URL、模型和 API Key', 'warn');
+      if (!setByok({ baseUrl, model, apiKey }, { remember })) return toast('配置无效：Base URL 必须为 HTTPS 公网地址，Key 长度 8–300', 'error');
+      toast(remember ? '已保存在本设备浏览器（本地存储，未上传服务器），请勿在公共电脑使用' : '已保存在当前标签页，关闭后失效', 'success');
+      card.outerHTML = byokCard();
+      bindByok();
+    });
+    card.querySelector('[data-byok-clear]')?.addEventListener('click', () => {
+      clearByok();
+      toast('已清除本地 AI 配置', 'info');
+      card.outerHTML = byokCard();
+      bindByok();
+    });
+  };
+  bindByok();
 
   el.querySelectorAll('[data-theme-set]').forEach((button) => {
     button.addEventListener('click', () => {
