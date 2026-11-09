@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109aj';
+const __asset = __isNode ? '' : '?v=20261109ak';
 const { getLocale } = await import(`../i18n.js${__asset}`);
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
@@ -342,13 +342,20 @@ function leadAmplitudes(lead, axes) {
 
 function leadWaveAt(lead, u, axes) {
   const amp = leadAmplitudes(lead, axes);
-  let value = amp.P * gaussianAt(u, 0.18, 0.03);
-  if (amp.QRS >= 0) {
-    value += amp.QRS * (-0.12 * gaussianAt(u, 0.30, 0.009) + gaussianAt(u, 0.33, 0.012) - 0.18 * gaussianAt(u, 0.365, 0.012));
+  // A lead can be nearly perpendicular to the loop plane. Keep a small
+  // visible floor so the educational 12-lead view never collapses to a flat
+  // line; exact projections remain available in the numeric readouts.
+  const visible = (value, floor) => Math.abs(value) < floor ? (value < 0 ? -floor : floor) : value;
+  const pAmp = visible(amp.P, 0.06);
+  const qAmp = visible(amp.QRS, 0.08);
+  const tAmp = visible(amp.T, 0.08);
+  let value = pAmp * gaussianAt(u, 0.18, 0.03);
+  if (qAmp >= 0) {
+    value += qAmp * (-0.12 * gaussianAt(u, 0.30, 0.009) + gaussianAt(u, 0.33, 0.012) - 0.18 * gaussianAt(u, 0.365, 0.012));
   } else {
-    value += Math.abs(amp.QRS) * (0.16 * gaussianAt(u, 0.30, 0.010) - gaussianAt(u, 0.34, 0.014) + 0.06 * gaussianAt(u, 0.38, 0.010));
+    value += Math.abs(qAmp) * (0.16 * gaussianAt(u, 0.30, 0.010) - gaussianAt(u, 0.34, 0.014) + 0.06 * gaussianAt(u, 0.38, 0.010));
   }
-  value += amp.T * gaussianAt(u, 0.64, 0.055);
+  value += tAmp * gaussianAt(u, 0.64, 0.055);
   return value;
 }
 
@@ -516,7 +523,7 @@ function vectorLoopsPanel() {
     <div class="visual-card visual-card-dark">
       <div class="visual-sync-head"><span>12 导联投影图</span><span>P/QRS/T 同源 · 随三环电轴变化</span></div>
       <div class="vector-12lead-scroll"><canvas data-vector-12lead data-height="390" aria-label="由 P、QRS、T 向量环投影生成的十二导联示意图"></canvas></div><div class="vector-12lead-hint">左右滑动查看 12 导联</div>
-      <div class="vector-mini-note">同一瞬时的空间向量投影到 12 个导联轴：朝向某导联为正，背离为负。V1–V6 为水平面教学近似，不是诊断图。</div>
+      <div class="vector-mini-note">同一瞬时的空间向量投影到 12 个导联轴：朝向某导联为正，背离为负。V1–V6 为水平面教学近似，不是诊断图；小振幅导联使用最小可见度增益，精确投影数值以上方读数/投影条为准。</div>
     </div>
   </div>`;
 }
