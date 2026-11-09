@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109ad';
+const __asset = __isNode ? '' : '?v=20261109ae';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, escapeHtml, toast, confirmDialog, openModal } = await import(`../ui.js${__asset}`);
@@ -208,8 +208,8 @@ function aiCard(session) {
           <div><b>模型价格与折扣</b><span>单位：每百万 tokens；折扣按服务器本地时间生效</span></div>
           <div class="row-wrap"><button class="btn btn-xs btn-ghost" type="button" data-provider-discount-preset>套用 DeepSeek 示例（每天 00:30–08:30 五折）</button><button class="btn btn-xs btn-secondary" type="button" data-provider-pricing-build>按模型刷新</button></div>
         </div>
-        <div class="admin-table-wrap admin-pricing-table"><table class="admin-table"><thead><tr><th>模型</th><th>输入</th><th>输出</th><th>折扣日（周一–周日）</th><th>开始</th><th>结束</th><th>比例</th></tr></thead><tbody data-provider-pricing></tbody></table></div>
-        <p class="muted admin-pricing-note">价格留空按 0；比例 1 = 原价，0.5 = 五折；跨午夜可设 22:00–08:00。未选择任何星期时按每天生效。</p>
+        <div class="admin-table-wrap admin-pricing-table"><table class="admin-table"><thead><tr><th>模型</th><th>输入</th><th>输出</th><th>折扣规则</th><th></th></tr></thead><tbody data-provider-pricing></tbody></table></div>
+        <p class="muted admin-pricing-note">每百万 tokens；点“编辑规则”可配置多段规则、周一至周日、跨午夜与比例。DeepSeek 示例：工作日 09:00–12:00、14:00–18:00 为高峰期，其余时段与周末全天五折。</p>
       </div>
       <label class="admin-check"><input type="checkbox" name="enabled" checked> 启用该供应商</label>
       <div style="grid-column:1/-1"><button class="btn btn-primary" type="submit">保存供应商</button><button class="btn btn-ghost" type="reset">清空</button></div>
@@ -321,7 +321,6 @@ export async function adminView() {
     const content = el.querySelector('[data-admin-content]');
     const active = startTab;
     let registerPasskey = async () => {};
-    let saveProvider = async () => {};
     let fillPricing = () => {};
     content.addEventListener('click', async (event) => {
       const register = event.target.closest('[data-passkey-register]');
@@ -387,11 +386,6 @@ export async function adminView() {
         event.preventDefault();
         await loadUsers(userSearch.q.value.trim());
         return;
-      }
-      const providerForm = event.target.closest('[data-provider-form]');
-      if (providerForm) {
-        event.preventDefault();
-        await saveProvider(providerForm);
       }
     });
     const drawTab = async (tab) => {
@@ -803,40 +797,121 @@ export async function adminView() {
     // AI provider forms
     const bindProviderForm = () => {
       const form = content.querySelector('[data-provider-form]');
+      const discountState = {};
+      const dayLabels = [['1', '一'], ['2', '二'], ['3', '三'], ['4', '四'], ['5', '五'], ['6', '六'], ['7', '日']];
+      const deepseekRules = () => [
+        { label: '工作日 00:00–09:00', days: [1, 2, 3, 4, 5], from: '00:00', to: '09:00', ratio: 0.5 },
+        { label: '工作日 12:00–14:00', days: [1, 2, 3, 4, 5], from: '12:00', to: '14:00', ratio: 0.5 },
+        { label: '工作日 18:00–23:59', days: [1, 2, 3, 4, 5], from: '18:00', to: '23:59', ratio: 0.5 },
+        { label: '周末全天', days: [6, 7], from: '00:00', to: '23:59', ratio: 0.5 },
+      ];
+      const daySet = (days) => {
+        const values = days instanceof Set ? [...days] : (Array.isArray(days) ? days : []);
+        return new Set((values.length ? values : [1, 2, 3, 4, 5, 6, 7]).map(Number));
+      };
+      const dayText = (days) => {
+        const set = daySet(days);
+        if (set.size === 7) return '每天';
+        if (set.size === 5 && [1, 2, 3, 4, 5].every((d) => set.has(d))) return '工作日';
+        if (set.size === 2 && set.has(6) && set.has(7)) return '周末';
+        return [...set].sort().map((d) => `周${dayLabels[d - 1][1]}`).join('、');
+      };
+      const discountSummary = (windows) => {
+        if (!Array.isArray(windows) || windows.length === 0) return '无折扣（原价）';
+        return windows.map((w) => `${w.label || '规则'}（${dayText(w.days)} ${w.from}–${w.to} ×${Number(w.ratio)}）`).join('；');
+      };
+      const readRateValues = () => {
+        const values = {};
+        form?.querySelectorAll('[data-provider-pricing] tr').forEach((row) => {
+          const model = String(row.querySelector('[data-price-model]')?.value || '').trim();
+          if (!model) return;
+          values[model] = {
+            input: Number(row.querySelector('[data-price-input]')?.value || 0),
+            output: Number(row.querySelector('[data-price-output]')?.value || 0),
+            windows: discountState[model] || [],
+          };
+        });
+        return values;
+      };
+      const openDiscountEditor = (model) => {
+        const windows = (discountState[model] || []).map((w) => ({ ...w, days: daySet(w.days) }));
+        const modal = openModal({
+          title: `折扣规则 · ${model}`,
+          sub: '按服务器本地时间匹配；每条规则只在其选择的星期生效。跨午夜可设 22:00–08:00。',
+          content: `<div class="discount-editor" data-discount-editor></div>`,
+        });
+        const host = modal.el.querySelector('[data-discount-editor]');
+        const render = () => {
+          host.innerHTML = `<div class="discount-rules">${windows.map((w, index) => `<div class="discount-rule" data-disc-index="${index}">
+            <label class="field discount-label"><span>名称</span><input class="input" data-disc-label value="${escapeHtml(w.label || '')}" placeholder="例如 工作日夜间"></label>
+            <div class="discount-days">${dayLabels.map(([value, label]) => `<label><input type="checkbox" data-disc-day value="${value}" ${w.days.has(Number(value)) ? 'checked' : ''}><span>${label}</span></label>`).join('')}</div>
+            <label class="field"><span>开始</span><input class="input" data-disc-from value="${escapeHtml(w.from || '')}" placeholder="00:00" style="width:78px"></label>
+            <label class="field"><span>结束</span><input class="input" data-disc-to value="${escapeHtml(w.to || '')}" placeholder="08:00" style="width:78px"></label>
+            <label class="field"><span>比例</span><input class="input" type="number" min="0" max="1" step="0.05" data-disc-ratio value="${Number(w.ratio ?? 1)}" style="width:70px"></label>
+            <button class="btn btn-xs btn-ghost" type="button" data-disc-remove="${index}">删除</button>
+          </div>`).join('') || '<div class="muted" style="font-size:11px">还没有折扣规则；当前按原价计费。</div>'}</div>
+          <div class="row-wrap" style="margin-top:10px"><button class="btn btn-secondary btn-sm" type="button" data-disc-add>添加规则</button><button class="btn btn-ghost btn-sm" type="button" data-disc-preset>套用 DeepSeek 规则</button></div>
+          <div class="admin-settings-actions" style="margin-top:12px"><button class="btn btn-primary btn-sm" type="button" data-disc-save>保存规则</button><span class="muted">未选择星期时按每天生效；比例 1 = 原价，0.5 = 五折。</span></div>`;
+          host.querySelectorAll('[data-disc-index]').forEach((row) => {
+            const index = Number(row.dataset.discIndex);
+            row.querySelectorAll('[data-disc-day]').forEach((input) => input.addEventListener('change', () => {
+              const set = new Set(windows[index].days);
+              if (input.checked) set.add(Number(input.value)); else set.delete(Number(input.value));
+              windows[index].days = set;
+            }));
+            row.querySelector('[data-disc-label]')?.addEventListener('input', (event) => { windows[index].label = event.currentTarget.value; });
+            row.querySelector('[data-disc-from]')?.addEventListener('input', (event) => { windows[index].from = event.currentTarget.value; });
+            row.querySelector('[data-disc-to]')?.addEventListener('input', (event) => { windows[index].to = event.currentTarget.value; });
+            row.querySelector('[data-disc-ratio]')?.addEventListener('input', (event) => { windows[index].ratio = Number(event.currentTarget.value || 1); });
+            row.querySelector('[data-disc-remove]')?.addEventListener('click', () => { windows.splice(index, 1); render(); });
+          });
+          host.querySelector('[data-disc-add]')?.addEventListener('click', () => { windows.push({ label: '', days: daySet([1,2,3,4,5,6,7]), from: '', to: '', ratio: 1 }); render(); });
+          host.querySelector('[data-disc-preset]')?.addEventListener('click', () => { windows.splice(0, windows.length, ...deepseekRules().map((w) => ({ ...w, days: daySet(w.days) }))); render(); });
+          host.querySelector('[data-disc-save]')?.addEventListener('click', () => {
+            discountState[model] = windows.map((w) => ({
+              label: String(w.label || '').trim() || '规则',
+              days: [...w.days].sort((a, b) => a - b),
+              from: String(w.from || '').trim(),
+              to: String(w.to || '').trim(),
+              ratio: Math.max(0, Math.min(1, Number(w.ratio ?? 1))),
+            })).filter((w) => w.from && w.to && /^\d{1,2}:\d{2}$/.test(w.from) && /^\d{1,2}:\d{2}$/.test(w.to));
+            form?.querySelectorAll('[data-provider-pricing] tr').forEach((row) => {
+              if (String(row.querySelector('[data-price-model]')?.value || '') !== model) return;
+              const summary = row.querySelector('[data-discount-summary]');
+              if (summary) summary.textContent = discountSummary(discountState[model]);
+            });
+            modal.close();
+            toast('折扣规则已更新，记得保存供应商', 'success');
+          });
+        };
+        render();
+      };
       fillPricing = (pricing = {}) => {
         if (!form) return;
         const body = form.querySelector('[data-provider-pricing]');
         if (!body) return;
+        const previous = readRateValues();
+        Object.keys(discountState).forEach((model) => { delete discountState[model]; });
         const models = String(form.querySelector('[name="models"]')?.value || '').split(',').map((item) => item.trim()).filter(Boolean);
-        const previous = {};
-        body.querySelectorAll('tr').forEach((row) => {
-          const model = String(row.querySelector('[data-price-model]')?.value || '').trim();
-          if (!model) return;
-          const days = [...row.querySelectorAll('[data-price-day]:checked')].map((input) => Number(input.value));
-          previous[model] = {
-            input: row.querySelector('[data-price-input]')?.value || 0,
-            output: row.querySelector('[data-price-output]')?.value || 0,
-            days,
-            from: row.querySelector('[data-price-from]')?.value || '',
-            to: row.querySelector('[data-price-to]')?.value || '',
-            ratio: row.querySelector('[data-price-ratio]')?.value || 1,
-          };
-        });
-        const dayLabels = [['1', '一'], ['2', '二'], ['3', '三'], ['4', '四'], ['5', '五'], ['6', '六'], ['7', '日']];
         body.innerHTML = models.map((model) => {
           const rate = pricing[model] || previous[model] || {};
-          const window = Array.isArray(rate.discounts) ? (rate.discounts[0] || {}) : (rate.discount || {});
-          const days = Array.isArray(rate.days) ? rate.days : (Array.isArray(window.days) ? window.days : [1, 2, 3, 4, 5, 6, 7]);
-          return `<tr>
+          const rawWindows = Array.isArray(rate.windows) ? rate.windows : (Array.isArray(rate.discounts) ? rate.discounts : (rate.discount ? [rate.discount] : []));
+          discountState[model] = rawWindows.map((w) => ({
+            label: w.label || '规则',
+            days: daySet(w.days).size ? daySet(w.days) : daySet([1, 2, 3, 4, 5, 6, 7]),
+            from: w.from || '',
+            to: w.to || '',
+            ratio: Number(w.ratio ?? 1),
+          }));
+          return `<tr data-price-row="${escapeHtml(model)}">
             <td><input class="input" data-price-model value="${escapeHtml(model)}" readonly></td>
             <td><input class="input" type="number" min="0" step="0.0001" data-price-input value="${Number(rate.input ?? 0)}"></td>
             <td><input class="input" type="number" min="0" step="0.0001" data-price-output value="${Number(rate.output ?? 0)}"></td>
-            <td><div class="pricing-days">${dayLabels.map(([value, label]) => `<label><input type="checkbox" data-price-day value="${value}" ${days.includes(Number(value)) ? 'checked' : ''}><span>${label}</span></label>`).join('')}</div></td>
-            <td><input class="input" data-price-from value="${escapeHtml(rate.from || window.from || '')}" placeholder="00:30" style="width:78px"></td>
-            <td><input class="input" data-price-to value="${escapeHtml(rate.to || window.to || '')}" placeholder="08:30" style="width:78px"></td>
-            <td><input class="input" type="number" min="0" max="1" step="0.05" data-price-ratio value="${Number(rate.ratio ?? window.ratio ?? 1)}" style="width:66px"></td>
+            <td><div class="discount-summary" data-discount-summary>${escapeHtml(discountSummary(discountState[model]))}</div></td>
+            <td><button class="btn btn-xs btn-secondary" type="button" data-edit-discount="${escapeHtml(model)}">编辑规则</button></td>
           </tr>`;
-        }).join('') || '<tr><td colspan="7" class="muted">先填写模型列表</td></tr>';
+        }).join('') || '<tr><td colspan="5" class="muted">先填写模型列表</td></tr>';
+        body.querySelectorAll('[data-edit-discount]').forEach((button) => button.addEventListener('click', () => openDiscountEditor(button.dataset.editDiscount)));
       };
       form?.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -846,20 +921,17 @@ export async function adminView() {
         f.querySelectorAll('[data-provider-pricing] tr').forEach((row) => {
           const model = String(row.querySelector('[data-price-model]')?.value || '').trim();
           if (!model) return;
-          const days = [...row.querySelectorAll('[data-price-day]:checked')].map((input) => Number(input.value));
-          const from = String(row.querySelector('[data-price-from]')?.value || '').trim();
-          const to = String(row.querySelector('[data-price-to]')?.value || '').trim();
-          const discounts = from && to ? [{
-            label: '时段折扣',
-            days: days.length ? days : [1, 2, 3, 4, 5, 6, 7],
-            from,
-            to,
-            ratio: Number(row.querySelector('[data-price-ratio]')?.value || 1),
-          }] : [];
+          const windows = (discountState[model] || []).filter((w) => w.from && w.to && /^\d{1,2}:\d{2}$/.test(w.from) && /^\d{1,2}:\d{2}$/.test(w.to));
           model_pricing[model] = {
             input: Number(row.querySelector('[data-price-input]')?.value || 0),
             output: Number(row.querySelector('[data-price-output]')?.value || 0),
-            discounts,
+            discounts: windows.map((w) => ({
+              label: w.label || '规则',
+              days: w.days.length ? w.days : [1, 2, 3, 4, 5, 6, 7],
+              from: w.from,
+              to: w.to,
+              ratio: Math.max(0, Math.min(1, Number(w.ratio ?? 1))),
+            })),
           };
         });
         const provider = { id: val('id'), name: val('name'), base_url: val('base_url'), api_key: f.querySelector('[name="api_key"]')?.value || '', models: val('models'), default_model: val('default_model'), model_pricing, enabled: Boolean(f.querySelector('[name="enabled"]')?.checked) };
@@ -867,15 +939,13 @@ export async function adminView() {
       });
       form?.querySelector('[data-provider-discount-preset]')?.addEventListener('click', () => {
         form.querySelectorAll('[data-provider-pricing] tr').forEach((row) => {
-          row.querySelectorAll('[data-price-day]').forEach((input) => { input.checked = true; });
-          const from = row.querySelector('[data-price-from]');
-          const to = row.querySelector('[data-price-to]');
-          const ratio = row.querySelector('[data-price-ratio]');
-          if (from) from.value = '00:30';
-          if (to) to.value = '08:30';
-          if (ratio) ratio.value = '0.5';
+          const model = String(row.querySelector('[data-price-model]')?.value || '').trim();
+          if (!model) return;
+          discountState[model] = deepseekRules().map((w) => ({ ...w, days: daySet(w.days) }));
+          const summary = row.querySelector('[data-discount-summary]');
+          if (summary) summary.textContent = discountSummary(discountState[model]);
         });
-        toast('已套用示例：每天 00:30–08:30 五折', 'info');
+        toast('已套用 DeepSeek 规则：工作日高峰外 + 周末全天五折', 'info');
       });
       form?.addEventListener('reset', () => { const idField = form.querySelector('[name="id"]'); if (idField) idField.value = ''; fillPricing({}); });
       content.querySelectorAll('[data-provider-edit]').forEach((b) => b.addEventListener('click', () => {
@@ -919,11 +989,6 @@ export async function adminView() {
         toast('Passkey 已注册');
         await reloadSession();
       } catch (err) { toast(err.message || '注册失败', 'error'); }
-    };
-    saveProvider = async (form) => {
-      const val = (name) => (form.querySelector(`[name="${name}"]`)?.value || '').trim();
-      const provider = { id: val('id'), name: val('name'), base_url: val('base_url'), api_key: form.querySelector('[name="api_key"]')?.value || '', models: val('models'), default_model: val('default_model'), enabled: Boolean(form.querySelector('[name="enabled"]')?.checked) };
-      try { await api.adminProviderSave(provider); toast('供应商已保存'); await reloadSession(); } catch (err) { toast(err.message || '保存失败', 'error'); }
     };
     await drawTab(active);
   };

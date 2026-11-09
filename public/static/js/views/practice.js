@@ -1,11 +1,11 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109ad';
+const __asset = __isNode ? '' : '?v=20261109ae';
 const { localizedName, getLocale, translate } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
 const { recordAttempt, reviewSummary, weakDiagnosisIds, deviceId } = await import(`../study-store.js${__asset}`);
-const { byokPayload, hasByok } = await import(`../byok.js${__asset}`);
+const { hasByok } = await import(`../byok.js${__asset}`);
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, toast, setButtonLoading, fmtDuration, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 const { streamAi } = await import(`../ai-stream.js${__asset}`);
@@ -326,7 +326,7 @@ export async function practiceView({ query } = {}) {
   planButton.addEventListener('click', async () => {
     setButtonLoading(planButton, true, '分析中');
     try {
-      const result = await api.aiStudyPlan(byokPayload());
+      const result = await api.aiStudyPlan();
       state.aiPlan = result;
       state.focus = result.plan?.focus?.map((f) => f.id) || [];
       planResult.innerHTML = `<div class="callout brand"><div style="font-weight:700;margin-bottom:4px">${result.source === 'ai' ? 'AI 专项计划' : '本地专项计划'}</div><p data-plan-text></p><div class="row-wrap" style="margin-top:8px">${(result.plan?.focus || []).map((f) => `<span class="tag">${escapeHtml(f.name)}</span>`).join('')}</div><button class="btn btn-sm btn-primary" type="button" data-start-plan style="margin-top:9px">${icon('target', 13)} 按此计划开始</button></div>`;
@@ -701,7 +701,7 @@ function renderQuestion(el) {
       const costHost = panel.querySelector('[data-ai-cost]');
       setButtonLoading(button, true, '生成中');
       try {
-        await streamAi({ mode: 'explain', attemptId: state.result.attemptId, question: questionText, byok: byokPayload() }, {
+        await streamAi({ mode: 'explain', attemptId: state.result.attemptId, question: questionText }, {
           onMeta: (meta) => {
             contextHost.innerHTML = (meta?.context || []).map((item) => `<span>${escapeHtml(item)}</span>`).join('');
           },

@@ -1,12 +1,12 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109ad';
+const __asset = __isNode ? '' : '?v=20261109ae';
 const { localizedName, getLocale, translate } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { recordAttempt } = await import(`../study-store.js${__asset}`);
 const { streamAi } = await import(`../ai-stream.js${__asset}`);
 const { renderMarkdown } = await import(`../markdown.js${__asset}`);
-const { byokPayload, hasByok } = await import(`../byok.js${__asset}`);
+const { hasByok } = await import(`../byok.js${__asset}`);
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, toast, setButtonLoading, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 const { levelFromXp, ADVANCED_UNLOCK, CHALLENGE_UNLOCK } = await import(`../levels.js${__asset}`);
@@ -389,7 +389,7 @@ export async function readView({ query } = {}) {
       const costHost = panel.querySelector('[data-ai-cost]');
       setButtonLoading(button, true, '生成中');
       try {
-        await streamAi({ mode: 'explain', attemptId: result.attemptId, byok: byokPayload() }, {
+        await streamAi({ mode: 'explain', attemptId: result.attemptId }, {
           onMeta: (meta) => { contextHost.innerHTML = (meta?.context || []).map((item) => `<span>${escapeHtml(item)}</span>`).join(''); },
           onDelta: (chunk, text) => { streamHost.classList.remove('ai-thinking'); streamHost.innerHTML = renderMarkdown(text); },
           onDone: (done, text) => {

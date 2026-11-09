@@ -153,6 +153,14 @@ $appName = htmlspecialchars((string) Config::get('app.name', '心迹 ECG Lab'), 
   <link rel="stylesheet" href="/static/css/components.css?v=<?= $version ?>">
   <link rel="stylesheet" href="/static/css/pages.css?v=<?= $version ?>">
   <link rel="stylesheet" href="/static/css/ecg.css?v=<?= $version ?>">
+  <link rel="modulepreload" href="/static/js/api.js?v=<?= $version ?>">
+  <link rel="modulepreload" href="/static/js/store.js?v=<?= $version ?>">
+  <link rel="modulepreload" href="/static/js/router.js?v=<?= $version ?>">
+  <link rel="modulepreload" href="/static/js/ui.js?v=<?= $version ?>">
+  <link rel="modulepreload" href="/static/js/i18n.js?v=<?= $version ?>">
+  <link rel="modulepreload" href="/static/js/bandwidth.js?v=<?= $version ?>">
+  <link rel="modulepreload" href="/static/js/study-sync.js?v=<?= $version ?>">
+  <link rel="modulepreload" href="/static/js/views/home.js?v=<?= $version ?>">
   <script src="/static/js/theme-init.js?v=<?= $version ?>"></script>
 </head>
 <body>

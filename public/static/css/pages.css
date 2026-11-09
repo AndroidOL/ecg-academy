@@ -1198,3 +1198,18 @@
   .admin-settings-actions { align-items: flex-start; flex-direction: column; }
   .admin-pricing-head { flex-direction: column; }
 }
+
+/* ---------- provider discount rules ---------- */
+.discount-summary { max-width: 360px; color: var(--muted); font-size: 9.5px; line-height: 1.6; }
+.discount-editor .discount-rules { display: flex; flex-direction: column; gap: 8px; max-height: 55vh; overflow: auto; padding-right: 2px; }
+.discount-rule { display: grid; grid-template-columns: minmax(140px, 1fr) auto 78px 78px 70px auto; gap: 8px; align-items: end; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-elev); }
+.discount-rule .field { gap: 3px; }
+.discount-days { display: flex; flex-wrap: wrap; gap: 3px; align-self: end; padding-bottom: 2px; }
+.discount-days label { display: inline-flex; align-items: center; gap: 1px; padding: 2px 4px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); color: var(--muted); font-size: 9px; cursor: pointer; }
+.discount-days label:has(input:checked) { border-color: var(--brand); background: var(--brand-soft); color: var(--brand-ink); }
+.discount-days input { width: 10px; height: 10px; margin: 0; accent-color: var(--brand); }
+.discount-rule [data-disc-remove] { align-self: end; }
+@media (max-width: 900px) {
+  .discount-rule { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .discount-rule .discount-days { grid-column: 1 / -1; }
+}

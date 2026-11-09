@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109ad';
+const __asset = __isNode ? '' : '?v=20261109ae';
 const { api } = await import(`../api.js${__asset}`);
 const { store, applyTheme, getThemeMode } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -40,7 +40,7 @@ function byokCard() {
   const config = byokSummary();
   return `<section class="card card-pad" data-byok-card>
     <div class="section-head"><h2 class="section-title" style="font-size:16px">自有 AI 配置</h2><span class="badge ${config ? 'badge-ok' : ''}">${config ? '已保存到本机' : '可选'}</span></div>
-    <p class="muted" style="font-size:10.5px;line-height:1.7;margin:0 0 8px">仅保存在当前浏览器（勾选后 localStorage，否则 sessionStorage）；不会写入服务器数据库、成本日志或错误日志。调用时密钥会经本站服务器中转到你填写的 Base URL，请勿使用生产环境高权限密钥。${store.user?.isGuest ? '登录后才能使用自有配置对话。' : ''}</p>
+    <p class="muted" style="font-size:10.5px;line-height:1.7;margin:0 0 8px">仅保存在当前浏览器（勾选后 localStorage，否则 sessionStorage）；请求由浏览器直接发送到你填写的 Base URL，不经过本站服务器，也不会写入服务器数据库、成本日志或错误日志。BYOK 直连对话不进入服务端审计；请勿使用生产环境高权限密钥。${store.user?.isGuest ? '登录后才能使用自有配置对话。' : ''}</p>
     ${config ? `<div class="settings-row" style="padding:4px 0"><div><div class="settings-name">${escapeHtml(config.model)}</div><div class="settings-sub">${escapeHtml(config.baseUrl)} · ${escapeHtml(config.apiKey)}${config.remembered ? ' · 已记住' : ' · 仅当前标签页'}</div></div><span class="badge badge-brand">BYOK</span></div>` : ''}
     <div class="form-grid" style="margin-top:6px">
       <label class="field"><span>Base URL（必须 HTTPS）</span><input class="input" data-byok-base value="${escapeHtml(config?.baseUrl || '')}" placeholder="https://api.deepseek.com/v1" autocomplete="off"></label>

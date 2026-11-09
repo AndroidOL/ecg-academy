@@ -9,7 +9,9 @@ try {
       if (version) url.searchParams.set('v', version);
       return (await import(url.href)).default || {};
     };
-    GENERATED = await load('./i18n.map.js');
+    let stored = null;
+    try { stored = localStorage.getItem(KEY); } catch { /* private mode */ }
+    if (stored === 'en') GENERATED = await load('./i18n.map.js');
   }
 } catch { /* generated catalogs are optional */ }
 

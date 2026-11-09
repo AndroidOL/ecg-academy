@@ -1,8 +1,9 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109ad';
+const __asset = __isNode ? '' : '?v=20261109ae';
 const { store } = await import(`../store.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
-const { byokPayload, hasByok } = await import(`../byok.js${__asset}`);
+const { getByok, hasByok } = await import(`../byok.js${__asset}`);
+const { directQuiz } = await import(`../ai-direct.js${__asset}`);
 const { wrongReviews, weakDiagnosisIds, recordAttempt } = await import(`../study-store.js${__asset}`);
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 const { createAiChat } = await import(`./ai-chat.js${__asset}`);
@@ -114,7 +115,7 @@ export async function aiTutorView() {
         }
       });
       const score = quizPanel.querySelector('[data-quiz-score]');
-      if (score) score.textContent = `得分 ${correctCount}/${questions.length}${quizData.source === 'local' ? ' · 本地题库' : ''}${quizData.cost ? ` · ${quizData.cost.model || ''} ${quizData.cost.prompt || 0}→${quizData.cost.completion || 0} tokens` : ''}`;
+      if (score) score.textContent = `得分 ${correctCount}/${questions.length}${quizData.source === 'local' ? ' · 本地题库' : quizData.source === 'byok' ? ' · BYOK 直连' : ''}${quizData.cost ? ` · ${quizData.cost.model || ''} ${quizData.cost.prompt || 0}→${quizData.cost.completion || 0} tokens` : ''}`;
     });
   };
   const generateQuiz = async () => {
@@ -127,7 +128,14 @@ export async function aiTutorView() {
     quizPanel.hidden = false;
     quizPanel.innerHTML = `<h3 style="margin:0;font-size:16px">AI 出题</h3><p class="muted" style="margin-top:6px">正在生成 ${count} 道题（${escapeHtml(topic)}）…</p>`;
     try {
-      quizData = await api.aiQuiz({ count, difficulty, topic, byok: byokPayload() });
+      const direct = getByok();
+      if (direct) {
+        const questions = await directQuiz(direct, { count, difficulty, topic });
+        if (!questions.length) throw new Error('自有 AI 未返回有效题目');
+        quizData = { source: 'byok', questions, cost: null };
+      } else {
+        quizData = await api.aiQuiz({ count, difficulty, topic });
+      }
       renderQuiz();
     } catch (error) {
       quizPanel.innerHTML = `<div class="callout danger">${escapeHtml(error.message || '生成失败')}</div>`;

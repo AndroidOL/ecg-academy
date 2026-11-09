@@ -1,10 +1,11 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109ad';
+const __asset = __isNode ? '' : '?v=20261109ae';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, escapeHtml, toast, openModal } = await import(`../ui.js${__asset}`);
-const { getByok, isRemembered, setByok, clearByok, byokPayload } = await import(`../byok.js${__asset}`);
+const { getByok, isRemembered, setByok, clearByok } = await import(`../byok.js${__asset}`);
 const { streamAi } = await import(`../ai-stream.js${__asset}`);
+const { streamDirectChat, buildMessages } = await import(`../ai-direct.js${__asset}`);
 const { renderMarkdown } = await import(`../markdown.js${__asset}`);
 
 export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '', placeholder = '问一个关于这张心电图的问题…' } = {}) {
@@ -69,7 +70,7 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
     const current = getByok() || { baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini', apiKey: '' };
     const modal = openModal({
       title: '自有 AI 配置 · BYOK',
-      sub: '密钥只保存在本浏览器，不会写入服务器数据库、成本日志或错误日志；调用时经本站服务器中转到你填写的 Base URL。',
+      sub: '密钥只保存在本浏览器；请求由浏览器直接发送到你填写的 Base URL，不经过本站服务器。',
       content: `<div class="form-grid">
         <div class="field"><label for="byok-base">Base URL（必须 HTTPS 公网地址）</label><input class="input" id="byok-base" value="${escapeHtml(current.baseUrl)}" placeholder="https://api.deepseek.com/v1" autocomplete="off"></div>
         <div class="field"><label for="byok-model">模型</label><input class="input" id="byok-model" value="${escapeHtml(current.model)}" placeholder="deepseek-chat" autocomplete="off"></div>
@@ -101,36 +102,53 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
     bubble.innerHTML = `<div class="ai-context">${contextHtml}</div><div class="ai-stream-text ai-thinking">正在生成…</div>`;
     busy = true;
     send.disabled = true;
+    const direct = getByok();
     try {
-      await streamAi({ mode: 'chat', message, diagnosisId, byok: byokPayload() }, {
-        onMeta: (meta) => {
-          bubble.classList.toggle('local', Boolean(meta?.fallback));
-          contextHtml = contextLine(meta?.context || []);
-          const host = bubble.querySelector('.ai-context');
-          if (host) host.innerHTML = contextHtml;
-        },
-        onDelta: (chunk, text) => {
-          const host = bubble.querySelector('.ai-stream-text');
-          if (host) { host.classList.remove('ai-thinking'); host.innerHTML = renderMarkdown(text); }
-          messages.scrollTop = messages.scrollHeight;
-        },
-        onDone: (done, text) => {
-          if (done?.source === 'ai' && !getByok() && !store.ai?.admin) {
-            store.ai.credits = Math.max(0, Number(store.ai?.credits || 0) - 1);
-            const creditsBadge = el.querySelector('[data-ai-credits]');
-            if (creditsBadge) creditsBadge.textContent = `${store.ai.credits} 次`;
-          }
-          bubble.classList.remove('streaming');
-          bubble.classList.toggle('local', Boolean(done?.fallback));
-          bubble.innerHTML = `${contextHtml ? `<div class="ai-context">${contextHtml}</div>` : ''}${renderMarkdown(text)}`;
-          if (done?.cost) {
-            const tail = document.createElement('div');
-            tail.className = 'ai-meta';
-            tail.textContent = `${done.cost.model || ''} · ${done.cost.prompt || 0}→${done.cost.completion || 0} tokens${done.cost.cost ? ` · ${done.cost.currency || ''}${done.cost.cost}` : ''}${done.cost.discount ? ` · ${done.cost.discount}` : ''}`;
-            bubble.appendChild(tail);
-          }
-        },
-      });
+      if (direct) {
+        contextHtml = contextLine([`BYOK 本地直连 · ${direct.model}`]);
+        const contextHost = bubble.querySelector('.ai-context');
+        if (contextHost) contextHost.innerHTML = contextHtml;
+        const directMessages = await buildMessages({ message, diagnosisId });
+        const finalText = await streamDirectChat(direct, directMessages, {
+          onDelta: (chunk, text) => {
+            const host = bubble.querySelector('.ai-stream-text');
+            if (host) { host.classList.remove('ai-thinking'); host.innerHTML = renderMarkdown(text); }
+            messages.scrollTop = messages.scrollHeight;
+          },
+        });
+        bubble.classList.remove('streaming');
+        bubble.innerHTML = `<div class="ai-context">${contextHtml}</div>${renderMarkdown(finalText)}`;
+      } else {
+        await streamAi({ mode: 'chat', message, diagnosisId }, {
+          onMeta: (meta) => {
+            bubble.classList.toggle('local', Boolean(meta?.fallback));
+            contextHtml = contextLine(meta?.context || []);
+            const host = bubble.querySelector('.ai-context');
+            if (host) host.innerHTML = contextHtml;
+          },
+          onDelta: (chunk, text) => {
+            const host = bubble.querySelector('.ai-stream-text');
+            if (host) { host.classList.remove('ai-thinking'); host.innerHTML = renderMarkdown(text); }
+            messages.scrollTop = messages.scrollHeight;
+          },
+          onDone: (done, text) => {
+            if (done?.source === 'ai' && !store.ai?.admin) {
+              store.ai.credits = Math.max(0, Number(store.ai?.credits || 0) - 1);
+              const creditsBadge = el.querySelector('[data-ai-credits]');
+              if (creditsBadge) creditsBadge.textContent = `${store.ai.credits} 次`;
+            }
+            bubble.classList.remove('streaming');
+            bubble.classList.toggle('local', Boolean(done?.fallback));
+            bubble.innerHTML = `${contextHtml ? `<div class="ai-context">${contextHtml}</div>` : ''}${renderMarkdown(text)}`;
+            if (done?.cost) {
+              const tail = document.createElement('div');
+              tail.className = 'ai-meta';
+              tail.textContent = `${done.cost.model || ''} · ${done.cost.prompt || 0}→${done.cost.completion || 0} tokens${done.cost.cost ? ` · ${done.cost.currency || ''}${done.cost.cost}` : ''}${done.cost.discount ? ` · ${done.cost.discount}` : ''}`;
+              bubble.appendChild(tail);
+            }
+          },
+        });
+      }
       messages.scrollTop = messages.scrollHeight;
     } catch (error) {
       bubble.remove();

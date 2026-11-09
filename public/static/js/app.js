@@ -1,58 +1,52 @@
 // Cache-busted dynamic imports: keep Node tests query-free while forcing
 // browsers with immutable 7-day static caching to load the current modules.
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109ad';
-const { api } = await import(`./api.js${__asset}`);
-const { store, initTheme, applyTheme } = await import(`./store.js${__asset}`);
-const { practiceView } = await import(`./views/practice.js${__asset}`);
-const { readView } = await import(`./views/read.js${__asset}`);
-const { simListView } = await import(`./views/sim-list.js${__asset}`);
-const { meView } = await import(`./views/me.js${__asset}`);
-const { Router } = await import(`./router.js${__asset}`);
-const { NAV_ITEMS, icon, logo, initials, escapeHtml } = await import(`./ui.js${__asset}`);
-const { homeView } = await import(`./views/home.js${__asset}`);
-const { learnView } = await import(`./views/learn.js${__asset}`);
-const { articleView } = await import(`./views/article.js${__asset}`);
-const { simSessionView } = await import(`./views/sim-session.js${__asset}`);
-const { labView } = await import(`./views/lab.js${__asset}`);
-const { adminView } = await import(`./views/admin.js${__asset}`);
-const { vectorLabView } = await import(`./views/vector-lab.js${__asset}`);
-const { reviewView } = await import(`./views/review.js${__asset}`);
-const { aboutView } = await import(`./views/about.js${__asset}`);
-const { examView } = await import(`./views/exam.js${__asset}`);
-const { leaderboardView } = await import(`./views/leaderboard.js${__asset}`);
-const { glossaryView } = await import(`./views/glossary.js${__asset}`);
-const { guidelinesView } = await import(`./views/guidelines.js${__asset}`);
-const { dailyView } = await import(`./views/daily.js${__asset}`);
-const { introView } = await import(`./views/intro.js${__asset}`);
-const { packsView } = await import(`./views/packs.js${__asset}`);
-const { aiTutorView } = await import(`./views/ai-tutor.js${__asset}`);
-const { applyLowBandwidth } = await import(`./bandwidth.js${__asset}`);
-const { t, navKey, getLocale, setLocale, applyLocale, startLocaleObserver, loadContentCatalog, LOCALES } = await import(`./i18n.js${__asset}`);
-const { pullStudy, scheduleStudyPush } = await import(`./study-sync.js${__asset}`);
+const __asset = __isNode ? '' : '?v=20261109ae';
+const [
+  { api },
+  { store, initTheme, applyTheme },
+  { Router },
+  { NAV_ITEMS, icon, logo, initials, escapeHtml },
+  { applyLowBandwidth },
+  { t, navKey, getLocale, setLocale, applyLocale, startLocaleObserver, loadContentCatalog, LOCALES },
+  { pullStudy, scheduleStudyPush },
+] = await Promise.all([
+  import(`./api.js${__asset}`),
+  import(`./store.js${__asset}`),
+  import(`./router.js${__asset}`),
+  import(`./ui.js${__asset}`),
+  import(`./bandwidth.js${__asset}`),
+  import(`./i18n.js${__asset}`),
+  import(`./study-sync.js${__asset}`),
+]);
+
+const lazyView = (file, exportName) => async (ctx) => {
+  const mod = await import(`./views/${file}${__asset}`);
+  return mod[exportName](ctx);
+};
 
 const routes = [
-  { path: '/', handler: homeView },
-  { path: '/intro', handler: introView },
-  { path: '/packs', handler: packsView },
-  { path: '/ai', handler: aiTutorView },
-  { path: '/learn', handler: learnView },
-  { path: '/learn/:id', handler: articleView },
-  { path: '/practice', handler: practiceView },
-  { path: '/read', handler: readView },
-  { path: '/daily', handler: dailyView },
-  { path: '/review', handler: reviewView },
-  { path: '/exam', handler: examView },
-  { path: '/leaderboard', handler: leaderboardView },
-  { path: '/sim/:sessionId', handler: simSessionView },
-  { path: '/sim', handler: simListView },
-  { path: '/vectors', handler: vectorLabView },
-  { path: '/lab', handler: labView },
-  { path: '/me', handler: meView },
-  { path: '/about', handler: aboutView },
-  { path: '/glossary', handler: glossaryView },
-  { path: '/guidelines', handler: guidelinesView },
-  { path: '/admin', handler: adminView },
+  { path: '/', handler: lazyView('home.js', 'homeView') },
+  { path: '/intro', handler: lazyView('intro.js', 'introView') },
+  { path: '/packs', handler: lazyView('packs.js', 'packsView') },
+  { path: '/ai', handler: lazyView('ai-tutor.js', 'aiTutorView') },
+  { path: '/learn', handler: lazyView('learn.js', 'learnView') },
+  { path: '/learn/:id', handler: lazyView('article.js', 'articleView') },
+  { path: '/practice', handler: lazyView('practice.js', 'practiceView') },
+  { path: '/read', handler: lazyView('read.js', 'readView') },
+  { path: '/daily', handler: lazyView('daily.js', 'dailyView') },
+  { path: '/review', handler: lazyView('review.js', 'reviewView') },
+  { path: '/exam', handler: lazyView('exam.js', 'examView') },
+  { path: '/leaderboard', handler: lazyView('leaderboard.js', 'leaderboardView') },
+  { path: '/sim/:sessionId', handler: lazyView('sim-session.js', 'simSessionView') },
+  { path: '/sim', handler: lazyView('sim-list.js', 'simListView') },
+  { path: '/vectors', handler: lazyView('vector-lab.js', 'vectorLabView') },
+  { path: '/lab', handler: lazyView('lab.js', 'labView') },
+  { path: '/me', handler: lazyView('me.js', 'meView') },
+  { path: '/about', handler: lazyView('about.js', 'aboutView') },
+  { path: '/glossary', handler: lazyView('glossary.js', 'glossaryView') },
+  { path: '/guidelines', handler: lazyView('guidelines.js', 'guidelinesView') },
+  { path: '/admin', handler: lazyView('admin.js', 'adminView') },
 ];
 
 applyLowBandwidth();
@@ -290,6 +284,9 @@ function updateNav(path) {
 
 async function boot() {
   const app = document.getElementById('app');
+  // Paint the shell immediately; data and the route view load afterwards.
+  app.innerHTML = shell('/');
+  bindShell();
   try {
     const data = await api.bootstrap();
     store.setBootstrap(data);

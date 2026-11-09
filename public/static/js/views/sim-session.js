@@ -1,7 +1,7 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109ad';
+const __asset = __isNode ? '' : '?v=20261109ae';
 const { api } = await import(`../api.js${__asset}`);
-const { byokPayload, hasByok } = await import(`../byok.js${__asset}`);
+const { hasByok } = await import(`../byok.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -401,7 +401,7 @@ export async function simSessionView({ params }) {
       const panel = el.querySelector('[data-ai-review-panel]');
       setButtonLoading(button, true, 'AI 复盘中');
       try {
-        const result = await api.aiSimReview(state.runId, byokPayload());
+        const result = await api.aiSimReview(state.runId);
         panel.innerHTML = `<div class="explain-block"><h4>${result.source === 'ai' ? 'AI 复盘' : '本地复盘'}</h4><p data-ai-text></p></div>`;
         panel.querySelector('[data-ai-text]').textContent = result.text;
       } catch (error) {
