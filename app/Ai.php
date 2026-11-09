@@ -885,7 +885,7 @@ final class Ai
         $entry = is_array($providerConfig['model_pricing'][$model] ?? null) ? $providerConfig['model_pricing'][$model] : null;
         if ($entry !== null) {
             $rate = ['input' => (float) ($entry['input'] ?? 0), 'output' => (float) ($entry['output'] ?? 0)];
-            $discount = self::activeDiscountFor($entry['discount'] ?? null);
+            $discount = self::activeDiscountFor($entry['discounts'] ?? ($entry['discount'] ?? null));
         } else {
             $pricing = self::pricing();
             $rate = $pricing[$model] ?? $pricing['*'] ?? ['input' => 0, 'output' => 0];
@@ -919,30 +919,37 @@ final class Ai
         return is_array($pricing) ? $pricing : [];
     }
 
-    private static function activeDiscountFor(?array $discount): ?array
+    private static function activeDiscountFor(array|string|null $discounts): ?array
     {
-        if (!is_array($discount)) return null;
-        $from = self::minutes((string) ($discount['from'] ?? ''));
-        $to = self::minutes((string) ($discount['to'] ?? ''));
-        if ($from === null || $to === null) return null;
+        if ($discounts === null || $discounts === '') return null;
+        if (!is_array($discounts)) return null;
+        $list = array_is_list($discounts) ? $discounts : [$discounts];
         $now = (int) date('G') * 60 + (int) date('i');
-        $match = $from <= $to ? ($now >= $from && $now < $to) : ($now >= $from || $now < $to);
-        return $match ? $discount : null;
+        $day = (int) date('N'); // 1=Mon ... 7=Sun
+        $previousDay = $day === 1 ? 7 : $day - 1;
+        foreach ($list as $discount) {
+            if (!is_array($discount)) continue;
+            $from = self::minutes((string) ($discount['from'] ?? ''));
+            $to = self::minutes((string) ($discount['to'] ?? ''));
+            if ($from === null || $to === null) continue;
+            $days = array_values(array_filter(array_map('intval', (array) ($discount['days'] ?? [1,2,3,4,5,6,7])), static fn (int $d): bool => $d >= 1 && $d <= 7));
+            if ($days === []) $days = [1, 2, 3, 4, 5, 6, 7];
+            $match = false;
+            if ($from <= $to) {
+                $match = in_array($day, $days, true) && $now >= $from && $now < $to;
+            } elseif ($now >= $from) {
+                $match = in_array($day, $days, true);
+            } elseif ($now < $to) {
+                $match = in_array($previousDay, $days, true);
+            }
+            if ($match) return $discount;
+        }
+        return null;
     }
 
     private static function discountNow(): ?array
     {
-        $discounts = Settings::get('ai.discounts', []);
-        if (!is_array($discounts)) return null;
-        $now = (int) date('G') * 60 + (int) date('i');
-        foreach ($discounts as $discount) {
-            $from = self::minutes((string) ($discount['from'] ?? ''));
-            $to = self::minutes((string) ($discount['to'] ?? ''));
-            if ($from === null || $to === null) continue;
-            $match = $from <= $to ? ($now >= $from && $now < $to) : ($now >= $from || $now < $to);
-            if ($match) return $discount;
-        }
-        return null;
+        return self::activeDiscountFor(Settings::get('ai.discounts', []));
     }
 
     private static function minutes(string $time): ?int
@@ -968,6 +975,8 @@ final class Ai
 
     public static function saveCostSettings(array $input): array
     {
+        $pricing = self::pricing();
+        if (array_key_exists('pricing', $input)) {
         $pricing = [];
         foreach ((array) ($input['pricing'] ?? []) as $model => $rate) {
             if (!is_array($rate)) continue;
@@ -978,18 +987,29 @@ final class Ai
                 'output' => max(0, min(1000000, (float) ($rate['output'] ?? 0))),
             ];
         }
+        }
+        $discounts = is_array(Settings::get('ai.discounts', [])) ? Settings::get('ai.discounts', []) : [];
+        if (array_key_exists('discounts', $input)) {
         $discounts = [];
         foreach ((array) ($input['discounts'] ?? []) as $discount) {
             if (!is_array($discount)) continue;
             $from = (string) ($discount['from'] ?? '');
             $to = (string) ($discount['to'] ?? '');
             if (self::minutes($from) === null || self::minutes($to) === null) continue;
+            $days = [];
+            foreach ((array) ($discount['days'] ?? []) as $day) {
+                $day = (int) $day;
+                if ($day >= 1 && $day <= 7 && !in_array($day, $days, true)) $days[] = $day;
+            }
+            sort($days);
             $discounts[] = [
                 'label' => mb_substr(trim((string) ($discount['label'] ?? '折扣')), 0, 20, 'UTF-8') ?: '折扣',
+                'days' => $days !== [] ? $days : [1, 2, 3, 4, 5, 6, 7],
                 'from' => $from,
                 'to' => $to,
                 'ratio' => max(0.0, min(1.0, (float) ($discount['ratio'] ?? 1))),
             ];
+        }
         }
         $currency = mb_substr(trim((string) ($input['currency'] ?? '¥')), 0, 8, 'UTF-8') ?: '¥';
         $maxTokens = max(128, min(4000, (int) ($input['maxTokens'] ?? 1200)));

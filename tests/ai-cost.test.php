@@ -66,6 +66,21 @@ try {
         assert($summary['currency'] === '¥');
     });
 
+    check('weekday and cross-midnight discounts match correctly', function (): void {
+        $method = new ReflectionMethod(Ai::class, 'activeDiscountFor');
+        $method->setAccessible(true);
+        $day = (int) date('N');
+        $other = $day === 1 ? 2 : 1;
+        $allDay = ['label' => '测试', 'days' => [$day], 'from' => '00:00', 'to' => '23:59', 'ratio' => 0.5];
+        $wrongDay = ['label' => '测试', 'days' => [$other], 'from' => '00:00', 'to' => '23:59', 'ratio' => 0.5];
+        assert(is_array($method->invoke(null, [$allDay])));
+        assert($method->invoke(null, [$wrongDay]) === null);
+        $midnight = ['label' => '跨午夜', 'days' => [$day], 'from' => '22:00', 'to' => '08:00', 'ratio' => 0.5];
+        $now = (int) date('G') * 60 + (int) date('i');
+        $expected = $now >= 22 * 60 || $now < 8 * 60;
+        assert(($method->invoke(null, [$midnight]) !== null) === $expected);
+    });
+
     check('empty log yields zero totals without warnings', function (): void {
         Db::pdo()->exec("DELETE FROM ai_usage_log WHERE model = 'unit-test-model'");
         $summary = Ai::costSummary(7);

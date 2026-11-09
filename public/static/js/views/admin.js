@@ -1,11 +1,12 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109ab';
+const __asset = __isNode ? '' : '?v=20261109ac';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, escapeHtml, toast, confirmDialog, openModal } = await import(`../ui.js${__asset}`);
 
 const TABS = [
   ['overview', '概览'],
+  ['settings', '站点设置'],
   ['traffic', '流量统计'],
   ['cost', 'AI 成本'],
   ['packs', '课程包'],
@@ -103,36 +104,51 @@ function settingsCard(session) {
   const providers = session.settings.providers;
   const site = session.settings.site || {};
   return `<div class="card card-pad">
-    <h2 class="section-title" style="font-size:17px">站点开关与 AI 默认值</h2>
-    <form data-settings-form class="admin-settings-grid">
-      <label class="admin-check"><input type="checkbox" name="auth.registration_enabled" ${a.registration_enabled ? 'checked' : ''}> 允许新用户注册（邮箱验证）</label>
-      <label class="admin-check"><input type="checkbox" name="auth.user_login_enabled" ${a.user_login_enabled ? 'checked' : ''}> 允许普通用户登录</label>
-      <label class="field"><span>每日注册上限</span><input class="input" type="number" min="1" max="1000" name="auth.registration_daily_limit" value="${a.registration_daily_limit}"></label>
-      <label class="field"><span>验证码有效期（秒）</span><input class="input" type="number" min="300" max="1800" name="auth.email_code_ttl" value="${a.email_code_ttl}"></label>
-      <label class="field"><span>每邮箱每日验证码上限</span><input class="input" type="number" min="1" max="20" name="auth.email_daily_per_address" value="${a.email_daily_per_address}"></label>
-      <label class="field"><span>每 IP 每日验证码上限</span><input class="input" type="number" min="1" max="50" name="auth.email_daily_per_ip" value="${a.email_daily_per_ip}"></label>
-      <label class="admin-check"><input type="checkbox" name="admin.password_login_enabled" ${ad.password_login_enabled ? 'checked' : ''}> 允许管理员密码登录</label>
-      <label class="admin-check"><input type="checkbox" name="admin.passkey_login_enabled" ${ad.passkey_login_enabled ? 'checked' : ''}> 允许管理员 Passkey 登录</label>
-      <label class="admin-check"><input type="checkbox" name="ai.enabled" ${ai.enabled ? 'checked' : ''}> 启用 AI 服务</label>
-      <label class="admin-check"><input type="checkbox" name="ai.allow_guest" ${ai.allow_guest ? 'checked' : ''}> 允许未登录用户使用 AI</label>
-      <label class="admin-check"><input type="checkbox" name="ai.byok_enabled" ${ai.byok_enabled ? 'checked' : ''}> 允许 BYOK 演示（用户自带密钥，仅存当前浏览器）</label>
-      <label class="field"><span>普通用户每日 AI 总调用上限</span><input class="input" type="number" min="0" max="10000" name="ai.daily_limit" value="${ai.daily_limit}"></label>
-      <label class="field"><span>AI 对话解锁等级</span><input class="input" type="number" min="1" max="20" name="ai.level_required" value="${ai.level_required}"></label>
-      <label class="field"><span>每日打卡基础对话次数</span><input class="input" type="number" min="0" max="100" name="ai.credit_base" value="${ai.credit_base}"></label>
-      <label class="field"><span>对话次数上限</span><input class="input" type="number" min="1" max="100" name="ai.credit_cap" value="${ai.credit_cap}"></label>
-      <label class="field"><span>错因分析每日上限</span><input class="input" type="number" min="1" max="100" name="ai.analysis_daily_limit" value="${ai.analysis_daily_limit}"></label>
-      <label class="field"><span>提问最小间隔（秒）</span><input class="input" type="number" min="0" max="120" name="ai.min_interval_seconds" value="${ai.min_interval_seconds}"></label>
-      <label class="field"><span>每 IP 每日 AI 上限</span><input class="input" type="number" min="1" max="1000" name="ai.ip_daily_limit" value="${ai.ip_daily_limit}"></label>
-      <label class="field"><span>越界次数阈值</span><input class="input" type="number" min="1" max="20" name="ai.violation_limit" value="${ai.violation_limit}"></label>
-      <label class="field"><span>越界统计窗口（小时）</span><input class="input" type="number" min="1" max="720" name="ai.violation_window_hours" value="${ai.violation_window_hours}"></label>
-      <label class="field"><span>暂停时长（小时）</span><input class="input" type="number" min="1" max="720" name="ai.disabled_hours" value="${ai.disabled_hours}"></label>
-      <label class="field"><span>默认供应商</span><select class="select" name="ai.default_provider"><option value="">自动选择首个启用项</option>${providers.map((p) => `<option value="${escapeHtml(p.id)}" ${p.id === ai.default_provider ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}</select></label>
-      <label class="field" style="grid-column:1/-1"><span>补充系统提示词（可选，最多 1000 字）</span><textarea class="input" name="ai.system_prompt_append" rows="3" maxlength="1000">${escapeHtml(ai.system_prompt_append)}</textarea></label>
-      <label class="field"><span>GitHub 链接</span><input class="input" name="site.github_url" maxlength="180" value="${escapeHtml(site.github_url || '')}" placeholder="https://github.com/AndroidOL/ecg-academy"></label>
-      <label class="field"><span>许可证说明</span><input class="input" name="site.license" maxlength="180" value="${escapeHtml(site.license || '')}" placeholder="MIT（代码）· CC BY-SA 4.0（内容）"></label>
-      <label class="field"><span>版权信息</span><input class="input" name="site.copyright" maxlength="180" value="${escapeHtml(site.copyright || '')}" placeholder="© 2026 Tianhao Wu 等"></label>
-      <label class="field"><span>ICP 备案号</span><input class="input" name="site.icp" maxlength="180" value="${escapeHtml(site.icp || '')}" placeholder="例如：京ICP备xxxxxxxx号"></label>
-      <div style="grid-column:1/-1"><button class="btn btn-primary" type="submit">保存设置</button><span class="muted" style="font-size:10px;margin-left:8px">关闭两种管理员登录方式会被拒绝。</span></div>
+    <div class="section-head"><h2 class="section-title" style="font-size:17px">站点设置</h2><span class="badge">保存后立即生效</span></div>
+    <form data-settings-form>
+      <section class="admin-settings-section">
+        <div class="admin-settings-title"><b>注册与登录</b><span>注册必须邮箱验证；每日名额与验证码频率见右侧邮件设置</span></div>
+        <div class="admin-settings-grid">
+          <label class="admin-check"><input type="checkbox" name="auth.registration_enabled" ${a.registration_enabled ? 'checked' : ''}> 允许新用户注册（邮箱验证）</label>
+          <label class="admin-check"><input type="checkbox" name="auth.user_login_enabled" ${a.user_login_enabled ? 'checked' : ''}> 允许普通用户登录</label>
+          <label class="admin-check"><input type="checkbox" name="admin.password_login_enabled" ${ad.password_login_enabled ? 'checked' : ''}> 允许管理员密码登录</label>
+          <label class="admin-check"><input type="checkbox" name="admin.passkey_login_enabled" ${ad.passkey_login_enabled ? 'checked' : ''}> 允许管理员 Passkey 登录</label>
+          <label class="field"><span>每日注册上限</span><input class="input" type="number" min="1" max="1000" name="auth.registration_daily_limit" value="${a.registration_daily_limit}"></label>
+          <label class="field"><span>验证码有效期（秒）</span><input class="input" type="number" min="300" max="1800" name="auth.email_code_ttl" value="${a.email_code_ttl}"></label>
+          <label class="field"><span>每邮箱每日验证码上限</span><input class="input" type="number" min="1" max="20" name="auth.email_daily_per_address" value="${a.email_daily_per_address}"></label>
+          <label class="field"><span>每 IP 每日验证码上限</span><input class="input" type="number" min="1" max="50" name="auth.email_daily_per_ip" value="${a.email_daily_per_ip}"></label>
+        </div>
+      </section>
+      <section class="admin-settings-section">
+        <div class="admin-settings-title"><b>AI 使用策略</b><span>对话需 Lv.10 与每日挑战次数；错因分析对所有注册用户开放</span></div>
+        <div class="admin-settings-grid">
+          <label class="admin-check"><input type="checkbox" name="ai.enabled" ${ai.enabled ? 'checked' : ''}> 启用 AI 服务</label>
+          <label class="admin-check"><input type="checkbox" name="ai.byok_enabled" ${ai.byok_enabled ? 'checked' : ''}> 允许 BYOK（自带密钥，仍受等级与次数限制）</label>
+          <label class="admin-check"><input type="checkbox" name="ai.allow_guest" ${ai.allow_guest ? 'checked' : ''}> 允许未登录用户使用 AI（默认关闭）</label>
+          <label class="field"><span>默认供应商</span><select class="select" name="ai.default_provider"><option value="">自动选择首个启用项</option>${providers.map((p) => `<option value="${escapeHtml(p.id)}" ${p.id === ai.default_provider ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}</select></label>
+          <label class="field"><span>普通用户每日 AI 总调用上限</span><input class="input" type="number" min="0" max="10000" name="ai.daily_limit" value="${ai.daily_limit}"></label>
+          <label class="field"><span>AI 对话解锁等级</span><input class="input" type="number" min="1" max="20" name="ai.level_required" value="${ai.level_required}"></label>
+          <label class="field"><span>每日打卡基础对话次数</span><input class="input" type="number" min="0" max="100" name="ai.credit_base" value="${ai.credit_base}"></label>
+          <label class="field"><span>对话次数上限</span><input class="input" type="number" min="1" max="100" name="ai.credit_cap" value="${ai.credit_cap}"></label>
+          <label class="field"><span>错因分析每日上限</span><input class="input" type="number" min="1" max="100" name="ai.analysis_daily_limit" value="${ai.analysis_daily_limit}"></label>
+          <label class="field"><span>提问最小间隔（秒）</span><input class="input" type="number" min="0" max="120" name="ai.min_interval_seconds" value="${ai.min_interval_seconds}"></label>
+          <label class="field"><span>每 IP 每日 AI 上限</span><input class="input" type="number" min="1" max="1000" name="ai.ip_daily_limit" value="${ai.ip_daily_limit}"></label>
+          <label class="field"><span>越界次数阈值</span><input class="input" type="number" min="1" max="20" name="ai.violation_limit" value="${ai.violation_limit}"></label>
+          <label class="field"><span>越界统计窗口（小时）</span><input class="input" type="number" min="1" max="720" name="ai.violation_window_hours" value="${ai.violation_window_hours}"></label>
+          <label class="field"><span>暂停时长（小时）</span><input class="input" type="number" min="1" max="720" name="ai.disabled_hours" value="${ai.disabled_hours}"></label>
+          <label class="field" style="grid-column:1/-1"><span>补充系统提示词（可选，最多 1000 字）</span><textarea class="input" name="ai.system_prompt_append" rows="3" maxlength="1000">${escapeHtml(ai.system_prompt_append)}</textarea></label>
+        </div>
+      </section>
+      <section class="admin-settings-section">
+        <div class="admin-settings-title"><b>站点信息</b><span>显示在页脚与关于页</span></div>
+        <div class="admin-settings-grid">
+          <label class="field"><span>GitHub 链接</span><input class="input" name="site.github_url" maxlength="180" value="${escapeHtml(site.github_url || '')}" placeholder="https://github.com/AndroidOL/ecg-academy"></label>
+          <label class="field"><span>许可证说明</span><input class="input" name="site.license" maxlength="180" value="${escapeHtml(site.license || '')}" placeholder="MIT（代码）· CC BY-SA 4.0（内容）"></label>
+          <label class="field"><span>版权信息</span><input class="input" name="site.copyright" maxlength="180" value="${escapeHtml(site.copyright || '')}" placeholder="© 2026 Tianhao Wu 等"></label>
+          <label class="field"><span>ICP 备案号</span><input class="input" name="site.icp" maxlength="180" value="${escapeHtml(site.icp || '')}" placeholder="例如：京ICP备xxxxxxxx号"></label>
+        </div>
+      </section>
+      <div class="admin-settings-actions"><button class="btn btn-primary" type="submit">保存站点设置</button><span class="muted">关闭两种管理员登录方式会被拒绝。</span></div>
     </form>
   </div>`;
 }
@@ -187,10 +203,13 @@ function aiCard(session) {
       <label class="field"><span>API Key（编辑时留空表示不修改）</span><input class="input" name="api_key" type="password" autocomplete="new-password" maxlength="300"></label>
       <label class="field"><span>模型（逗号分隔）</span><input class="input" name="models" required placeholder="deepseek-chat, deepseek-reasoner"></label>
       <label class="field"><span>默认模型</span><input class="input" name="default_model" placeholder="deepseek-chat"></label>
-      <div style="grid-column:1/-1">
-        <div class="spread"><span class="label">模型价格（每百万 tokens；可单独设置折扣时段）</span><button class="btn btn-xs btn-secondary" type="button" data-provider-pricing-build>按模型生成 / 刷新</button></div>
-        <div class="admin-table-wrap" style="margin-top:6px;max-height:260px;overflow:auto"><table class="admin-table"><thead><tr><th>模型</th><th>输入</th><th>输出</th><th>折扣开始</th><th>结束</th><th>比例</th></tr></thead><tbody data-provider-pricing></tbody></table></div>
-        <p class="muted" style="font-size:10px;margin-top:4px">价格留空按 0 计算；比例 1 = 原价，0.5 = 五折；折扣时段按服务器本地时间生效。</p>
+      <div class="admin-pricing-block">
+        <div class="spread admin-pricing-head">
+          <div><b>模型价格与折扣</b><span>单位：每百万 tokens；折扣按服务器本地时间生效</span></div>
+          <div class="row-wrap"><button class="btn btn-xs btn-ghost" type="button" data-provider-discount-preset>套用 DeepSeek 示例（每天 00:30–08:30 五折）</button><button class="btn btn-xs btn-secondary" type="button" data-provider-pricing-build>按模型刷新</button></div>
+        </div>
+        <div class="admin-table-wrap admin-pricing-table"><table class="admin-table"><thead><tr><th>模型</th><th>输入</th><th>输出</th><th>折扣日（周一–周日）</th><th>开始</th><th>结束</th><th>比例</th></tr></thead><tbody data-provider-pricing></tbody></table></div>
+        <p class="muted admin-pricing-note">价格留空按 0；比例 1 = 原价，0.5 = 五折；跨午夜可设 22:00–08:00。未选择任何星期时按每天生效。</p>
       </div>
       <label class="admin-check"><input type="checkbox" name="enabled" checked> 启用该供应商</label>
       <div style="grid-column:1/-1"><button class="btn btn-primary" type="submit">保存供应商</button><button class="btn btn-ghost" type="reset">清空</button></div>
@@ -377,7 +396,8 @@ export async function adminView() {
     });
     const drawTab = async (tab) => {
       el.querySelectorAll('[data-admin-tab]').forEach((b) => b.classList.toggle('active', b.dataset.adminTab === tab));
-      content.innerHTML = tab === 'overview' ? overview(session) + settingsCard(session) + smtpCard(session)
+      content.innerHTML = tab === 'overview' ? overview(session)
+        : tab === 'settings' ? settingsCard(session) + smtpCard(session)
         : tab === 'traffic' ? trafficCard()
           : tab === 'cost' ? costCard()
             : tab === 'packs' ? packsCard()
@@ -391,7 +411,7 @@ export async function adminView() {
       if (tab === 'traffic') await loadTraffic();
       if (tab === 'cost') await loadCost();
       if (tab === 'packs') await loadPacks();
-      if (tab === 'overview') { bindSettings(); bindSmtp(); }
+      if (tab === 'settings') { bindSettings(); bindSmtp(); }
       if (tab === 'ai') bindProviderForm();
       if (tab === 'conversations') { bindConversations(); await loadConversations(); }
       if (tab === 'assignments') {
@@ -412,6 +432,13 @@ export async function adminView() {
       }
     };
     el.querySelectorAll('[data-admin-tab]').forEach((button) => button.addEventListener('click', () => { activeTab = button.dataset.adminTab; drawTab(activeTab); }));
+    content.addEventListener('click', (event) => {
+      const jump = event.target.closest('[data-goto-tab]');
+      if (!jump) return;
+      event.preventDefault();
+      activeTab = jump.dataset.gotoTab;
+      drawTab(activeTab);
+    });
     el.querySelector('[data-admin-logout]')?.addEventListener('click', async () => {
       await api.adminLogout();
       toast('已退出后台');
@@ -731,80 +758,27 @@ export async function adminView() {
         if (recent) recent.innerHTML = data.recent.length
           ? `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>时间</th><th>用户</th><th>模型</th><th>模式</th><th>tokens</th><th>花费</th></tr></thead><tbody>${data.recent.map((item) => `<tr><td class="muted" style="font-size:10px">${escapeHtml(item.createdAt)}</td><td>${escapeHtml(item.user)}</td><td>${escapeHtml(item.model || '—')}<div class="muted" style="font-size:9px">${escapeHtml(item.provider || '')}</div></td><td>${escapeHtml(item.mode)}</td><td>${item.prompt} → ${item.completion}</td><td>${money(item.cost)}${item.discount ? `<div class="muted" style="font-size:9px">${escapeHtml(item.discount)}</div>` : ''}</td></tr>`).join('')}</tbody></table></div>`
           : '<div class="muted" style="font-size:12px">暂无调用记录</div>';
-        const pricingHost = content.querySelector('[data-cost-pricing]');
-        const renderPricing = (pricing) => {
-          const rows = Object.entries(pricing || {});
-          pricingHost.innerHTML = (rows.length ? rows : [['', { input: 0, output: 0 }]]).map(([model, rate]) => `<tr>
-            <td><input class="input" data-price-model value="${escapeHtml(model)}" placeholder="模型名（* 为默认价）"></td>
-            <td><input class="input" type="number" min="0" step="0.0001" data-price-input value="${Number(rate.input || 0)}"></td>
-            <td><input class="input" type="number" min="0" step="0.0001" data-price-output value="${Number(rate.output || 0)}"></td>
-            <td><button class="btn btn-xs btn-ghost" type="button" data-price-remove>删除</button></td>
-          </tr>`).join('');
-        };
-        const discountsHost = content.querySelector('[data-cost-discounts]');
-        const renderDiscounts = (list) => {
-          const rows = Array.isArray(list) ? list : [];
-          discountsHost.innerHTML = (rows.length ? rows : [{ label: '夜间', from: '22:00', to: '08:00', ratio: 0.5 }]).map((item) => `<tr>
-            <td><input class="input" data-disc-label value="${escapeHtml(item.label || '')}" placeholder="名称"></td>
-            <td><input class="input" data-disc-from value="${escapeHtml(item.from || '')}" placeholder="22:00" style="width:90px"></td>
-            <td><input class="input" data-disc-to value="${escapeHtml(item.to || '')}" placeholder="08:00" style="width:90px"></td>
-            <td><input class="input" type="number" min="0" max="1" step="0.05" data-disc-ratio value="${Number(item.ratio ?? 1)}" style="width:90px"></td>
-            <td><button class="btn btn-xs btn-ghost" type="button" data-disc-remove>删除</button></td>
-          </tr>`).join('');
-        };
-        renderPricing(data.settings.pricing || {});
-        renderDiscounts(data.settings.discounts || []);
-        content.querySelector('[data-cost-currency]').value = currency;
-        content.querySelector('[data-cost-maxtokens]').value = String(data.settings.maxTokens || 1200);
-        content.querySelector('[data-cost-add-model]')?.addEventListener('click', () => {
-          pricingHost.insertAdjacentHTML('beforeend', `<tr><td><input class="input" data-price-model placeholder="模型名"></td><td><input class="input" type="number" min="0" step="0.0001" data-price-input value="0"></td><td><input class="input" type="number" min="0" step="0.0001" data-price-output value="0"></td><td><button class="btn btn-xs btn-ghost" type="button" data-price-remove>删除</button></td></tr>`);
-        });
-        content.querySelector('[data-cost-add-discount]')?.addEventListener('click', () => {
-          discountsHost.insertAdjacentHTML('beforeend', `<tr><td><input class="input" data-disc-label placeholder="名称"></td><td><input class="input" data-disc-from placeholder="22:00" style="width:90px"></td><td><input class="input" data-disc-to placeholder="08:00" style="width:90px"></td><td><input class="input" type="number" min="0" max="1" step="0.05" data-disc-ratio value="1" style="width:90px"></td><td><button class="btn btn-xs btn-ghost" type="button" data-disc-remove>删除</button></td></tr>`);
-        });
-        content.addEventListener('click', (event) => {
-          if (event.target.closest('[data-price-remove]')) event.target.closest('tr')?.remove();
-          if (event.target.closest('[data-disc-remove]')) event.target.closest('tr')?.remove();
-        });
-        content.querySelector('[data-cost-save]')?.addEventListener('click', async (event) => {
+        const currencyInput = content.querySelector('[data-cost-currency]');
+        if (currencyInput) currencyInput.value = currency;
+        const maxTokensInput = content.querySelector('[data-cost-maxtokens]');
+        if (maxTokensInput) maxTokensInput.value = String(data.settings.maxTokens || 1200);
+        const costSaveButton = content.querySelector('[data-cost-save]');
+        if (costSaveButton) costSaveButton.onclick = async (event) => {
           const button = event.currentTarget;
-          const pricing = {};
-          pricingHost.querySelectorAll('tr').forEach((row) => {
-            const model = String(row.querySelector('[data-price-model]')?.value || '').trim();
-            if (!model) return;
-            pricing[model] = {
-              input: Number(row.querySelector('[data-price-input]')?.value || 0),
-              output: Number(row.querySelector('[data-price-output]')?.value || 0),
-            };
-          });
-          const discounts = [];
-          discountsHost.querySelectorAll('tr').forEach((row) => {
-            const from = String(row.querySelector('[data-disc-from]')?.value || '').trim();
-            const to = String(row.querySelector('[data-disc-to]')?.value || '').trim();
-            if (!from || !to) return;
-            discounts.push({
-              label: String(row.querySelector('[data-disc-label]')?.value || '').trim() || '折扣',
-              from,
-              to,
-              ratio: Number(row.querySelector('[data-disc-ratio]')?.value || 1),
-            });
-          });
           button.disabled = true;
           try {
             await api.adminAiSaveCost({
-              pricing,
-              discounts,
               currency: String(content.querySelector('[data-cost-currency]')?.value || '¥').trim() || '¥',
               maxTokens: Number(content.querySelector('[data-cost-maxtokens]')?.value || 1200),
             });
-            toast('价格与折扣已保存', 'success');
+            toast('计费显示已保存', 'success');
             await loadCost();
           } catch (error) {
             toast(error.message || '保存失败', 'error');
           } finally {
             button.disabled = false;
           }
-        });
+        };
       } catch (error) {
         host.innerHTML = `<div class="callout danger">${escapeHtml(error.message || '成本数据加载失败')}</div>`;
       }
@@ -838,26 +812,31 @@ export async function adminView() {
         body.querySelectorAll('tr').forEach((row) => {
           const model = String(row.querySelector('[data-price-model]')?.value || '').trim();
           if (!model) return;
+          const days = [...row.querySelectorAll('[data-price-day]:checked')].map((input) => Number(input.value));
           previous[model] = {
             input: row.querySelector('[data-price-input]')?.value || 0,
             output: row.querySelector('[data-price-output]')?.value || 0,
-            discount_from: row.querySelector('[data-price-from]')?.value || '',
-            discount_to: row.querySelector('[data-price-to]')?.value || '',
-            discount_ratio: row.querySelector('[data-price-ratio]')?.value || '',
+            days,
+            from: row.querySelector('[data-price-from]')?.value || '',
+            to: row.querySelector('[data-price-to]')?.value || '',
+            ratio: row.querySelector('[data-price-ratio]')?.value || 1,
           };
         });
+        const dayLabels = [['1', '一'], ['2', '二'], ['3', '三'], ['4', '四'], ['5', '五'], ['6', '六'], ['7', '日']];
         body.innerHTML = models.map((model) => {
           const rate = pricing[model] || previous[model] || {};
-          const discount = rate.discount || {};
+          const window = Array.isArray(rate.discounts) ? (rate.discounts[0] || {}) : (rate.discount || {});
+          const days = Array.isArray(rate.days) ? rate.days : (Array.isArray(window.days) ? window.days : [1, 2, 3, 4, 5, 6, 7]);
           return `<tr>
             <td><input class="input" data-price-model value="${escapeHtml(model)}" readonly></td>
             <td><input class="input" type="number" min="0" step="0.0001" data-price-input value="${Number(rate.input ?? 0)}"></td>
             <td><input class="input" type="number" min="0" step="0.0001" data-price-output value="${Number(rate.output ?? 0)}"></td>
-            <td><input class="input" data-price-from value="${escapeHtml(discount.from || rate.discount_from || '')}" placeholder="22:00" style="width:80px"></td>
-            <td><input class="input" data-price-to value="${escapeHtml(discount.to || rate.discount_to || '')}" placeholder="08:00" style="width:80px"></td>
-            <td><input class="input" type="number" min="0" max="1" step="0.05" data-price-ratio value="${Number(discount.ratio ?? rate.discount_ratio ?? 1)}" style="width:70px"></td>
+            <td><div class="pricing-days">${dayLabels.map(([value, label]) => `<label><input type="checkbox" data-price-day value="${value}" ${days.includes(Number(value)) ? 'checked' : ''}><span>${label}</span></label>`).join('')}</div></td>
+            <td><input class="input" data-price-from value="${escapeHtml(rate.from || window.from || '')}" placeholder="00:30" style="width:78px"></td>
+            <td><input class="input" data-price-to value="${escapeHtml(rate.to || window.to || '')}" placeholder="08:30" style="width:78px"></td>
+            <td><input class="input" type="number" min="0" max="1" step="0.05" data-price-ratio value="${Number(rate.ratio ?? window.ratio ?? 1)}" style="width:66px"></td>
           </tr>`;
-        }).join('') || '<tr><td colspan="6" class="muted">先填写模型列表</td></tr>';
+        }).join('') || '<tr><td colspan="7" class="muted">先填写模型列表</td></tr>';
       };
       form?.addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -867,16 +846,36 @@ export async function adminView() {
         f.querySelectorAll('[data-provider-pricing] tr').forEach((row) => {
           const model = String(row.querySelector('[data-price-model]')?.value || '').trim();
           if (!model) return;
+          const days = [...row.querySelectorAll('[data-price-day]:checked')].map((input) => Number(input.value));
+          const from = String(row.querySelector('[data-price-from]')?.value || '').trim();
+          const to = String(row.querySelector('[data-price-to]')?.value || '').trim();
+          const discounts = from && to ? [{
+            label: '时段折扣',
+            days: days.length ? days : [1, 2, 3, 4, 5, 6, 7],
+            from,
+            to,
+            ratio: Number(row.querySelector('[data-price-ratio]')?.value || 1),
+          }] : [];
           model_pricing[model] = {
             input: Number(row.querySelector('[data-price-input]')?.value || 0),
             output: Number(row.querySelector('[data-price-output]')?.value || 0),
-            discount_from: String(row.querySelector('[data-price-from]')?.value || '').trim(),
-            discount_to: String(row.querySelector('[data-price-to]')?.value || '').trim(),
-            discount_ratio: Number(row.querySelector('[data-price-ratio]')?.value || 1),
+            discounts,
           };
         });
         const provider = { id: val('id'), name: val('name'), base_url: val('base_url'), api_key: f.querySelector('[name="api_key"]')?.value || '', models: val('models'), default_model: val('default_model'), model_pricing, enabled: Boolean(f.querySelector('[name="enabled"]')?.checked) };
         try { await api.adminProviderSave(provider); toast('供应商已保存'); await reloadSession(); } catch (err) { toast(err.message || '保存失败', 'error'); }
+      });
+      form?.querySelector('[data-provider-discount-preset]')?.addEventListener('click', () => {
+        form.querySelectorAll('[data-provider-pricing] tr').forEach((row) => {
+          row.querySelectorAll('[data-price-day]').forEach((input) => { input.checked = true; });
+          const from = row.querySelector('[data-price-from]');
+          const to = row.querySelector('[data-price-to]');
+          const ratio = row.querySelector('[data-price-ratio]');
+          if (from) from.value = '00:30';
+          if (to) to.value = '08:30';
+          if (ratio) ratio.value = '0.5';
+        });
+        toast('已套用示例：每天 00:30–08:30 五折', 'info');
       });
       form?.addEventListener('reset', () => { const idField = form.querySelector('[name="id"]'); if (idField) idField.value = ''; fillPricing({}); });
       content.querySelectorAll('[data-provider-edit]').forEach((b) => b.addEventListener('click', () => {
@@ -902,7 +901,7 @@ export async function adminView() {
         try { await api.adminProviderDelete(b.dataset.providerDelete); toast('已删除'); await reloadSession(); } catch (err) { toast(err.message, 'error'); }
       }));
     };
-    if (el.querySelector('[data-provider-form]')) bindProviderForm();
+    if (el.querySelector('[data-provider-form]')) { bindProviderForm(); fillPricing({}); }
     // Security passkey
     registerPasskey = async () => {
       try {
@@ -971,29 +970,21 @@ function costCard() {
       <div class="stat"><div class="stat-value">—</div><div class="stat-label">今日调用</div></div>
       <div class="stat"><div class="stat-value">—</div><div class="stat-label">30 天 tokens</div></div>
     </div>
-    <p class="muted" style="font-size:10.5px;margin-top:6px">价格单位为“每百万 tokens”，由你自行填写，币种符号可配置；折扣按每日时间段自动套用到输入与输出费用。</p>
+    <p class="muted" style="font-size:10.5px;margin-top:6px">模型价格与折扣在「AI 供应商」中按供应商/模型配置，成本中心只负责统计。</p>
   </section>
   <section class="card card-pad" style="margin-bottom:12px">
     <h3 style="margin:0 0 6px;font-size:16px">30 天花费</h3>
     <div class="traffic-bars" data-cost-bars><div class="muted">加载中…</div></div>
   </section>
-  <div class="admin-two-col">
-    <section class="card card-pad"><h3 style="margin:0 0 8px;font-size:16px">模型花费</h3><div data-cost-models></div></section>
-    <section class="card card-pad"><h3 style="margin:0 0 8px;font-size:16px">最近调用</h3><div data-cost-recent></div></section>
-  </div>
-  <section class="card card-pad" style="margin-top:12px">
-    <div class="section-head"><h3 style="margin:0;font-size:16px">模型价格</h3><button class="btn btn-sm btn-secondary" type="button" data-cost-add-model>添加模型</button></div>
-    <div class="admin-table-wrap" style="margin-top:8px"><table class="admin-table"><thead><tr><th>模型</th><th>输入 / 百万 tokens</th><th>输出 / 百万 tokens</th><th></th></tr></thead><tbody data-cost-pricing></tbody></table></div>
-    <div class="row-wrap" style="margin-top:8px">
+  <section class="card card-pad" style="margin-bottom:12px"><h3 style="margin:0 0 8px;font-size:16px">模型花费</h3><div data-cost-models></div></section>
+  <section class="card card-pad" style="margin-bottom:12px"><h3 style="margin:0 0 8px;font-size:16px">最近调用</h3><div data-cost-recent></div></section>
+  <section class="card card-pad">
+    <div class="section-head"><h3 style="margin:0;font-size:16px">计费显示</h3><button class="btn btn-sm btn-secondary" type="button" data-goto-tab="ai">去 AI 供应商设置价格与折扣 →</button></div>
+    <div class="admin-settings-grid" style="align-items:end;margin-top:8px">
       <label class="field" style="margin:0"><span class="label">币种符号</span><input class="input" data-cost-currency style="width:90px" value="¥"></label>
       <label class="field" style="margin:0"><span class="label">最大输出 tokens</span><input class="input" type="number" min="128" max="4000" data-cost-maxtokens style="width:140px" value="1200"></label>
-      <button class="btn btn-primary btn-sm" type="button" data-cost-save>保存价格与折扣</button>
+      <button class="btn btn-primary btn-sm" type="button" data-cost-save>保存计费显示</button>
     </div>
-  </section>
-  <section class="card card-pad" style="margin-top:12px">
-    <div class="section-head"><h3 style="margin:0;font-size:16px">折扣时间段</h3><button class="btn btn-sm btn-secondary" type="button" data-cost-add-discount>添加时段</button></div>
-    <div class="admin-table-wrap" style="margin-top:8px"><table class="admin-table"><thead><tr><th>名称</th><th>开始</th><th>结束</th><th>折扣比例</th><th></th></tr></thead><tbody data-cost-discounts></tbody></table></div>
-    <p class="muted" style="font-size:10px;margin-top:6px">比例 1 = 不打折，0.5 = 五折；跨午夜时段可设 22:00–08:00。</p>
   </section>`;
 }
 

@@ -1173,3 +1173,28 @@
 .special-card small { font-size:9.5px; color:var(--faint); }
 .special-card.locked { opacity:.6; }
 @media (max-width:719px) { .special-grid { grid-template-columns:1fr; } }
+
+/* ---------- admin settings organization ---------- */
+.admin-settings-section { padding: 14px 0; border-top: 1px solid var(--line); }
+.admin-settings-section:first-of-type { padding-top: 4px; border-top: none; }
+.admin-settings-title { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 14px; margin-bottom: 8px; }
+.admin-settings-title b { font-size: 13px; color: var(--ink); }
+.admin-settings-title span { color: var(--muted); font-size: 10px; }
+.admin-settings-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+.admin-settings-actions .muted { font-size: 10px; }
+.admin-pricing-block { grid-column: 1 / -1; margin-top: 4px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg-elev); }
+.admin-pricing-head { align-items: flex-start; margin-bottom: 7px; }
+.admin-pricing-head b { display: block; font-size: 12px; color: var(--ink); }
+.admin-pricing-head span { display: block; margin-top: 2px; color: var(--muted); font-size: 9.5px; }
+.admin-pricing-table { margin-top: 4px; max-height: 420px; overflow: auto; }
+.admin-pricing-table .admin-table { min-width: 900px; }
+.pricing-days { display: flex; flex-wrap: nowrap; gap: 2px; min-width: 205px; }
+.pricing-days label { display: inline-flex; align-items: center; gap: 1px; padding: 2px 3px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); color: var(--muted); font-size: 9px; cursor: pointer; }
+.pricing-days label:has(input:checked) { border-color: var(--brand); background: var(--brand-soft); color: var(--brand-ink); }
+.pricing-days input { width: 10px; height: 10px; margin: 0; accent-color: var(--brand); }
+.admin-pricing-note { margin: 6px 0 0; color: var(--muted); font-size: 9.5px; line-height: 1.6; }
+@media (max-width: 719px) {
+  .admin-settings-section { padding: 12px 0; }
+  .admin-settings-actions { align-items: flex-start; flex-direction: column; }
+  .admin-pricing-head { flex-direction: column; }
+}

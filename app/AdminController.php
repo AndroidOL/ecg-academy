@@ -395,21 +395,42 @@ final class AdminController
         foreach ((array) ($input['model_pricing'] ?? []) as $model => $rate) {
             $model = trim((string) $model);
             if ($model === '' || !in_array($model, $models, true) || !is_array($rate)) continue;
-            $from = (string) ($rate['discount_from'] ?? '');
-            $to = (string) ($rate['discount_to'] ?? '');
-            $discount = null;
-            if (preg_match('/^\d{1,2}:\d{2}$/', $from) && preg_match('/^\d{1,2}:\d{2}$/', $to)) {
-                $discount = [
-                    'label' => mb_substr(trim((string) ($rate['discount_label'] ?? '折扣')), 0, 20, 'UTF-8') ?: '折扣',
+            $windows = [];
+            $rawWindows = $rate['discounts'] ?? [];
+            if (!is_array($rawWindows)) $rawWindows = [];
+            // Legacy single-window fields are still accepted.
+            if (isset($rate['discount_from']) || isset($rate['discount_to'])) {
+                $rawWindows[] = [
+                    'label' => $rate['discount_label'] ?? '折扣',
+                    'days' => $rate['discount_days'] ?? [],
+                    'from' => $rate['discount_from'] ?? '',
+                    'to' => $rate['discount_to'] ?? '',
+                    'ratio' => $rate['discount_ratio'] ?? 1,
+                ];
+            }
+            foreach (array_slice($rawWindows, 0, 8) as $window) {
+                if (!is_array($window)) continue;
+                $from = trim((string) ($window['from'] ?? ''));
+                $to = trim((string) ($window['to'] ?? ''));
+                if (!preg_match('/^\d{1,2}:\d{2}$/', $from) || !preg_match('/^\d{1,2}:\d{2}$/', $to)) continue;
+                $days = [];
+                foreach ((array) ($window['days'] ?? []) as $day) {
+                    $day = (int) $day;
+                    if ($day >= 1 && $day <= 7 && !in_array($day, $days, true)) $days[] = $day;
+                }
+                sort($days);
+                $windows[] = [
+                    'label' => mb_substr(trim((string) ($window['label'] ?? '折扣')), 0, 20, 'UTF-8') ?: '折扣',
+                    'days' => $days !== [] ? $days : [1, 2, 3, 4, 5, 6, 7],
                     'from' => $from,
                     'to' => $to,
-                    'ratio' => max(0.0, min(1.0, (float) ($rate['discount_ratio'] ?? 1))),
+                    'ratio' => max(0.0, min(1.0, (float) ($window['ratio'] ?? 1))),
                 ];
             }
             $modelPricing[$model] = [
                 'input' => max(0, min(1000000, (float) ($rate['input'] ?? 0))),
                 'output' => max(0, min(1000000, (float) ($rate['output'] ?? 0))),
-                'discount' => $discount,
+                'discounts' => $windows,
             ];
         }
         if ($name === '' || mb_strlen($name, 'UTF-8') > 80) throw new ApiError(422, 'invalid_provider', '供应商名称需为 1–80 字');
