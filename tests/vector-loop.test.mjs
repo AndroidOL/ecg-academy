@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { LOOP_MAIN, LOOP_POINTS, loopPoint } from '../public/static/js/vector-loop-model.js';
+import { LOOP_MAIN, LOOP_POINTS, loopPoint, normalLoopMetrics } from '../public/static/js/vector-loop-model.js';
 
 let passed = 0;
 function check(name, fn) {
@@ -107,6 +107,17 @@ check('QRS horizontal plane matches anterior and right-posterior limits', () => 
 check('T loop length-to-width ratio is close to 2.5', () => {
   const ratio = principalRatio('T');
   assert.ok(ratio > 2.2 && ratio < 2.8, `T ratio ${ratio}`);
+});
+
+check('normal metrics match published vectorcardiogram ranges', () => {
+  const m = normalLoopMetrics();
+  assert.ok(m.qrsHorizontalAngle >= -40 && m.qrsHorizontalAngle <= 60, `horizontal ${m.qrsHorizontalAngle}`);
+  assert.ok(m.qrsFrontalAngle >= 10 && m.qrsFrontalAngle <= 90, `frontal ${m.qrsFrontalAngle}`);
+  assert.ok(m.qrsAnteriorArea < 33, `anterior ${m.qrsAnteriorArea}`);
+  assert.ok(m.qrsRightPosteriorArea < 20, `right posterior ${m.qrsRightPosteriorArea}`);
+  assert.ok(m.tLengthWidth >= 2.2 && m.tLengthWidth <= 2.8, `T ratio ${m.tLengthWidth}`);
+  assert.ok(m.tQrsRatio < 4, `T/QRS ${m.tQrsRatio}`);
+  assert.ok(m.pQrsRatio < 0.2, `P/QRS ${m.pQrsRatio}`);
 });
 
 check('limb-lead projection keeps normal P/QRS/T polarity', () => {

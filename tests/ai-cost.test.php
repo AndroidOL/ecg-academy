@@ -44,8 +44,8 @@ try {
             'maxTokens' => 900,
         ]);
         assert($settings['pricing']['unit-test-model']['input'] === 2.5);
-        assert($settings['pricing']['bad']['input'] === 0.0);
-        assert($settings['pricing']['bad']['output'] === 1000000.0);
+        assert((float) $settings['pricing']['bad']['input'] === 0.0);
+        assert((float) $settings['pricing']['bad']['output'] === 1000000.0);
         assert(count($settings['discounts']) === 1);
         assert($settings['discounts'][0]['label'] === '测试时段');
         assert($settings['maxTokens'] === 900);
@@ -81,12 +81,12 @@ try {
         assert(($method->invoke(null, [$midnight]) !== null) === $expected);
     });
 
-    check('empty log yields zero totals without warnings', function (): void {
+    check('removing the test model leaves no test rows', function (): void {
         Db::pdo()->exec("DELETE FROM ai_usage_log WHERE model = 'unit-test-model'");
         $summary = Ai::costSummary(7);
         assert($summary['today']['cost'] >= 0);
         assert(count($summary['series']) === 7);
-        assert($summary['recent'] === []);
+        assert(array_values(array_filter($summary['recent'], static fn (array $row): bool => ($row['model'] ?? '') === 'unit-test-model')) === []);
     });
 } finally {
     Settings::setMany($saved);

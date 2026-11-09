@@ -336,6 +336,34 @@ export function strongestRepeat(entry) {
   return best;
 }
 
+export function wrongConfusionPairs(limit = 5) {
+  const pairs = new Map();
+  reviewEntries().forEach((entry) => {
+    if (!Number(entry.wrong || 0)) return;
+    Object.values(entry.wrongChoices || {}).forEach((choice) => {
+      if (!choice || typeof choice !== 'object') return;
+      const wrongId = String(choice.id || '');
+      const wrongName = String(choice.name || '');
+      if (!wrongId || !wrongName || wrongId === entry.id) return;
+      const key = `${entry.id}>${wrongId}`;
+      const current = pairs.get(key) || {
+        correctId: entry.id,
+        correctName: entry.name || entry.id,
+        wrongId,
+        wrongName,
+        count: 0,
+        lastAt: 0,
+      };
+      current.count += Number(choice.count || 0);
+      current.lastAt = Math.max(current.lastAt, Number(choice.lastAt || 0));
+      pairs.set(key, current);
+    });
+  });
+  return [...pairs.values()]
+    .sort((a, b) => (b.count - a.count) || (b.lastAt - a.lastAt))
+    .slice(0, Math.max(1, limit));
+}
+
 export function mistakeContext(entry) {
   if (!entry || typeof entry !== 'object') return null;
   return {

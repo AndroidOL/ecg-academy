@@ -1,10 +1,10 @@
 import {
   reviewEntries, favoriteEntries, reviewSummary, dueReviews, wrongReviews, weakDiagnosisIds,
   rateReview, toggleFavorite, exportStudyData, importStudyData, clearLocalStudyData,
-  wrongChoiceSummary, strongestRepeat, mistakeContext,
+  wrongChoiceSummary, strongestRepeat, mistakeContext, wrongConfusionPairs,
 } from '../study-store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109an';
+const __asset = __isNode ? '' : '?v=20261109aq';
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
@@ -64,6 +64,7 @@ export async function reviewView() {
     const summary = reviewSummary();
     const entries = tab === 'due' ? dueReviews(100) : tab === 'wrong' ? wrongReviews(100) : favoriteEntries();
     const weak = weakDiagnosisIds(8);
+    const confusions = tab === 'wrong' ? wrongConfusionPairs(5) : [];
     el.innerHTML = `
       <header class="page-head">
         <div><div class="page-eyebrow">${icon('target', 14)} SPACED REVIEW</div><h1 class="page-title">错题本与间隔复习</h1><p class="page-sub">错题按自适应间隔重现（首答 1 天，之后 1 → 3 → 8 → 20 天，封顶 90 天）；忘记会立即回到复习队列。系统会记录你每次错选的干扰项；同一道题反复错时，AI 讲解会针对该选项与正确诊断的鉴别点展开。${store.user?.isGuest ? '记录保存在本设备，不上传服务器。' : '记录已同步到你的账号，可跨设备继续复习。'}</p></div>
@@ -74,6 +75,14 @@ export async function reviewView() {
         <div class="row-wrap"><button class="btn btn-primary btn-sm" type="button" data-smart-quiz ${weak.length ? '' : 'disabled'}>${icon('sparkles', 14)} 按薄弱诊断组卷</button><a class="btn btn-secondary btn-sm" href="#/read${weak.length ? `?focus=${encodeURIComponent(weak.join(','))}` : ''}">${icon('target', 14)} 系统判读</a><button class="btn btn-secondary btn-sm" type="button" data-review-ai>${icon('sparkles', 14)} AI 分析薄弱项</button><button class="btn btn-secondary btn-sm" type="button" data-export>${icon('arrowUpRight', 13)} 导出本地记录</button><label class="btn btn-ghost btn-sm" for="review-import">导入</label><input id="review-import" type="file" accept="application/json" hidden></div>
       </div>
       <div class="card card-pad ai-answer" data-review-ai-panel hidden></div>
+      ${confusions.length ? `<section class="card card-pad review-confusions">
+        <div class="section-head"><h2 class="section-title" style="font-size:16px">最常混淆</h2><span class="badge badge-warn">${confusions.length} 组</span></div>
+        <p class="muted" style="font-size:10.5px;margin:4px 0 8px">按你在判读练习中的实际错选项聚合；点“练这组”会围绕正确诊断与该干扰项重新组卷。</p>
+        <div class="review-confusion-list">${confusions.map((pair) => `<div class="review-confusion-item">
+          <div class="review-confusion-copy"><b>${escapeHtml(pair.correctName)}</b><span>常被误选为 ${escapeHtml(pair.wrongName)} ×${pair.count}</span></div>
+          <div class="row-wrap"><a class="btn btn-xs btn-ghost" href="#/learn/${encodeURIComponent(pair.correctId)}">重读正确诊断</a><button class="btn btn-xs btn-secondary" type="button" data-confusion-practice="${escapeHtml(pair.correctId)},${escapeHtml(pair.wrongId)}">练这组</button></div>
+        </div>`).join('')}</div>
+      </section>` : ''}
       <div class="review-list">
         ${entries.length ? entries.map((entry) => entryCard(entry, tab)).join('') : `<div class="learn-empty"><b>${tab === 'favorites' ? '还没有收藏' : tab === 'due' ? '今日复习已清空' : '还没有错题'}</b><span>${tab === 'favorites' ? '在文章右侧点击“收藏”，把重要章节留在这里。' : tab === 'due' ? '完成一次错题自评或做一局练习，系统会安排下一次复习。' : '做一局判读练习，答错的诊断会自动进入错题本。'}</span><a class="btn btn-primary btn-sm" href="#/practice" style="margin-top:12px">开始练习</a></div>`}
       </div>
@@ -94,6 +103,11 @@ export async function reviewView() {
       if (!focus.length) return toast('暂无可组卷的薄弱诊断', 'warn');
       navigate(`/practice?focus=${encodeURIComponent(focus.join(','))}&auto=1&level=2`);
     });
+    el.querySelectorAll('[data-confusion-practice]').forEach((button) => button.addEventListener('click', () => {
+      const focus = String(button.dataset.confusionPractice || '').split(',').map((id) => id.trim()).filter(Boolean).slice(0, 2);
+      if (!focus.length) return;
+      navigate(`/practice?focus=${encodeURIComponent(focus.join(','))}&auto=1`);
+    }));
     el.querySelectorAll('[data-mistake-ai]').forEach((button) => button.addEventListener('click', async () => {
       if (store.user?.isGuest) return toast('登录后可使用 AI 错因分析', 'warn');
       const id = button.dataset.mistakeAi;

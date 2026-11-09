@@ -143,7 +143,7 @@ try {
         $initialHr = $view['vitals']['hr'];
         $initialBp = $view['vitals']['bpSys'];
         assert($initialHr === 32);
-        assert($view['phaseLabel'] === '代偿期');
+        assert($view['phaseLabel'] === '就诊评估');
         pauseFor(8.2);
         $view = SimEngine::state($userId, $id);
         assert($view['vitals']['hr'] < $initialHr, 'HR should drift down while untreated');

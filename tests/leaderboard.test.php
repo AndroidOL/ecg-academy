@@ -23,15 +23,15 @@ try {
         $uid = (int) $pdo->lastInsertId();
         $ids[] = $uid;
         $pdo->prepare('INSERT INTO practice_daily_scores (user_id, day, score, correct, wrong) VALUES (?, CURDATE(), ?, ?, ?)')
-            ->execute([$uid, [10, 5, -20][$i - 1], [12, 6, 2][$i - 1], [2, 1, 8][$i - 1]]);
+            ->execute([$uid, [2000000000, 1999999999, 1999999998][$i - 1], [12, 6, 2][$i - 1], [2, 1, 8][$i - 1]]);
     }
 
     check('leaderboard ranks by score then correct answers', function () use ($ids) {
         $data = Learning::practiceLeaderboardData($ids[1], 'today');
         assert($data['total'] >= 3);
-        assert($data['items'][0]['points'] === 10);
+        assert($data['items'][0]['points'] === 2000000000);
         assert($data['items'][0]['rank'] === 1);
-        assert($data['items'][1]['points'] === 5);
+        assert($data['items'][1]['points'] === 1999999999);
         assert($data['me']['rank'] === 2);
         assert($data['me']['accuracy'] === 86);
     });

@@ -72,6 +72,96 @@ export const LOOPS = {
   T: (angle) => loopPoint('T', angle),
 };
 
+function sampleLoop(key, count = 720) {
+  return Array.from({ length: count }, (_, index) => loopPoint(key, (index / count) * Math.PI * 2));
+}
+
+function polygonArea(points) {
+  let area = 0;
+  for (let i = 0; i < points.length; i += 1) {
+    const [x, y] = points[i];
+    const [x2, y2] = points[(i + 1) % points.length];
+    area += x * y2 - x2 * y;
+  }
+  return area / 2;
+}
+
+function inside(point, polygon) {
+  let hit = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
+    const [xi, yi] = polygon[i];
+    const [xj, yj] = polygon[j];
+    if (((yi > point[1]) !== (yj > point[1])) && (point[0] < ((xj - xi) * (point[1] - yi)) / (yj - yi) + xi)) hit = !hit;
+  }
+  return hit;
+}
+
+function maxMagnitude(key) {
+  return Math.max(...sampleLoop(key).map((point) => Math.hypot(point[0], point[1], point[2])));
+}
+
+function principalRatio(key) {
+  const points = sampleLoop(key, 360);
+  const center = [0, 1, 2].map((axis) => points.reduce((sum, point) => sum + point[axis], 0) / points.length);
+  const cov = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+  points.forEach((point) => {
+    const d = [point[0] - center[0], point[1] - center[1], point[2] - center[2]];
+    for (let i = 0; i < 3; i += 1) for (let j = 0; j < 3; j += 1) cov[i][j] += (d[i] * d[j]) / points.length;
+  });
+  const a = cov.map((row) => row.slice());
+  for (let iter = 0; iter < 32; iter += 1) {
+    let p = 0; let q = 1; let max = Math.abs(a[p][q]);
+    [[0, 2], [1, 2]].forEach(([i, j]) => { if (Math.abs(a[i][j]) > max) { max = Math.abs(a[i][j]); p = i; q = j; } });
+    if (max < 1e-12) break;
+    const phi = 0.5 * Math.atan2(2 * a[p][q], a[q][q] - a[p][p]);
+    const c = Math.cos(phi); const s = Math.sin(phi);
+    const app = a[p][p]; const aqq = a[q][q]; const apq = a[p][q];
+    a[p][p] = c * c * app - 2 * s * c * apq + s * s * aqq;
+    a[q][q] = s * s * app + 2 * s * c * apq + c * c * aqq;
+    a[p][q] = 0; a[q][p] = 0;
+    for (let k = 0; k < 3; k += 1) {
+      if (k === p || k === q) continue;
+      const akp = a[k][p]; const akq = a[k][q];
+      a[k][p] = a[p][k] = c * akp - s * akq;
+      a[k][q] = a[q][k] = s * akp + c * akq;
+    }
+  }
+  const eigenvalues = [a[0][0], a[1][1], a[2][2]].sort((x, y) => y - x);
+  return Math.sqrt(eigenvalues[0] / Math.max(1e-12, eigenvalues[1]));
+}
+
+export function normalLoopMetrics() {
+  const qrs = sampleLoop('QRS');
+  const horizontal = qrs.map(([x, , z]) => [x, z]);
+  const minX = Math.min(...horizontal.map(([x]) => x));
+  const maxX = Math.max(...horizontal.map(([x]) => x));
+  const minZ = Math.min(...horizontal.map(([, z]) => z));
+  const maxZ = Math.max(...horizontal.map(([, z]) => z));
+  let total = 0; let anterior = 0; let rightPosterior = 0;
+  for (let i = 0; i <= 180; i += 1) {
+    for (let j = 0; j <= 180; j += 1) {
+      const x = minX + ((maxX - minX) * i) / 180;
+      const z = minZ + ((maxZ - minZ) * j) / 180;
+      if (!inside([x, z], horizontal)) continue;
+      total += 1;
+      if (z > 0) anterior += 1;
+      if (x < 0 && z < 0) rightPosterior += 1;
+    }
+  }
+  const maxPoint = qrs.reduce((best, point) => (Math.hypot(...point) > Math.hypot(...best) ? point : best), [0, 0, 0]);
+  const p = maxMagnitude('P'); const q = maxMagnitude('QRS'); const t = maxMagnitude('T');
+  return {
+    qrsHorizontalAngle: Math.round((Math.atan2(maxPoint[2], maxPoint[0]) * 180) / Math.PI),
+    qrsFrontalAngle: Math.round((Math.atan2(-maxPoint[1], maxPoint[0]) * 180) / Math.PI),
+    qrsAnteriorArea: total > 0 ? Math.round((anterior / total) * 100) : 0,
+    qrsRightPosteriorArea: total > 0 ? Math.round((rightPosterior / total) * 100) : 0,
+    pQrsRatio: q > 0 ? p / q : 0,
+    tQrsRatio: q > 0 ? t / q : 0,
+    tLengthWidth: principalRatio('T'),
+    qrsArea: polygonArea(horizontal),
+  };
+}
+
 export function activeLoopAt(phase) {
   if (phase >= LOOP_WINDOWS.P[0] && phase < LOOP_WINDOWS.P[1]) return 'P';
   if (phase >= LOOP_WINDOWS.QRS[0] && phase < LOOP_WINDOWS.QRS[1]) return 'QRS';

@@ -666,6 +666,16 @@
 .vector-axis-controls [data-vector-axis-value] { min-width:38px; text-align:right; color:var(--brand); font-family:var(--font-mono); }
 [data-vector-canvas], [data-limb-canvas] { touch-action:none; cursor:grab; user-select:none; }
 [data-vector-canvas]:active, [data-limb-canvas]:active, [data-vector-canvas].is-dragging { cursor:grabbing; }
+.loop-normal-panel { margin-top:12px; padding-top:10px; border-top:1px dashed var(--line); }
+.loop-normal-panel h3 { margin:0; font-size:12px; }
+.loop-normal-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; }
+.loop-normal-item { padding:6px 7px; border:1px solid var(--line); border-radius:7px; background:var(--bg-elev); }
+.loop-normal-item b { display:block; font-size:13px; line-height:1.1; color:var(--ink); }
+.loop-normal-item span { display:block; margin-top:2px; font-size:9px; color:var(--muted); }
+.loop-normal-item em { display:block; margin-top:1px; font-size:8.5px; font-style:normal; color:var(--faint); }
+.loop-normal-item.ok b { color:var(--ok); }
+.loop-normal-item.warn b { color:var(--danger); }
+@media (max-width:719px) { .loop-normal-grid { grid-template-columns:minmax(0,1fr); } }
 .vector-figure-note { display:flex; flex-wrap:wrap; gap:4px 8px; align-items:baseline; padding:8px 10px; border-bottom:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.045); color:var(--muted); font-size:9px; line-height:1.5; }
 .vector-figure-note b { color:var(--ink); font-size:9.5px; white-space:nowrap; }
 .vector-figure-note span { opacity:.9; }
@@ -744,6 +754,14 @@
 .review-wrong-log li span { display:block; color:var(--faint); font-size:9px; }
 .review-wrong-log li b { display:block; color:var(--danger); font-weight:600; }
 .review-wrong-log li em { display:block; color:var(--ok); font-style:normal; }
+.review-confusions { margin-bottom:12px; border-color:color-mix(in srgb,var(--warn) 35%,var(--line)); }
+.review-confusion-list { display:grid; gap:7px; }
+.review-confusion-item { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px; border:1px solid var(--line); border-radius:9px; background:var(--bg-elev); }
+.review-confusion-copy { min-width:0; }
+.review-confusion-copy b { display:block; font-size:12px; color:var(--ink); }
+.review-confusion-copy span { display:block; margin-top:2px; font-size:10px; color:var(--muted); }
+.review-confusion-item .row-wrap { flex:0 0 auto; }
+@media (max-width:719px) { .review-confusion-item { align-items:flex-start; flex-direction:column; } }
 .review-mistake-panel { border-color:color-mix(in srgb,var(--brand) 35%,var(--line)); }
 .review-mistake-panel h4 { margin:0 0 4px; font-size:12px; }
 .review-card-main { min-width:0; }

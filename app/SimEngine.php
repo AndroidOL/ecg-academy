@@ -814,6 +814,7 @@ final class SimEngine
         $state['etco2'] = 35;
         $state['responsive'] = true;
         $state['pulse'] = true;
+        self::setPhase($state, 'stabilized', '起搏后稳定');
         self::event($state, '开启经皮起搏（TCP）', 'good');
         $state['dirty'] = true;
     }

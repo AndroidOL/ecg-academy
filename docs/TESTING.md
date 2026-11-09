@@ -3,6 +3,14 @@
 测试日期：2026-11-07 ～ 2026-11-09
 环境：PHP 8.4.27 · MySQL 8.4.13 · nginx 1.30.6 · Node 22.23.4 · 内存 3.5 GB
 
+## 2026-11-09 v3.0.14 回归（20261109ao）
+
+- PHP 全量 **92 项通过**（`zend.assertions=1`，含 ai-cost/ai-guard/leaderboard/sim/assignment）。
+- 共享生产库隔离：ai-cost 只断言测试模型行；leaderboard 使用独立高值用户；ai-guard 验证越界请求不消耗次数；sim 起搏/泵入立即进入稳定阶段。
+- JS：engine 17、read 6、study/BYOK/混淆对 9、vector-loop 6。
+- 发布前审计：1920 诊断题/9920 选项 0 问题；48 ECG × 12 导联 0 波形问题；1765 章节题 0 冲突。
+- Chrome 实测：错题本“最常混淆”可见并可组卷；向量页“模型正常范围自检”可见；0 JS 错误。
+
 ## 2026-11-09 v3.0.13 回归（20261109an）
 
 - 统一计分：`tests/scoring.test.php` 7/7；等级阈值 +50% 后 `tests/level.test.php` 5/5；慢答/错题扣分 `tests/slow.test.php` 3/3；学习/考试/每日挑战回归全部通过。
@@ -169,7 +177,7 @@
 | 章节答案准确性 | `php scripts/audit_section_bank.php` | **1765 道，0 冲突** |
 | ECG 波形引擎 | `node tests/engine.test.mjs` | **15/15 通过** |
 | ACLS 状态机 | `php tests/sim.test.php` | **14/14 通过** |
-| 本地复习/BYOK/错选项记录 | `node tests/study.test.mjs` | **8/8 通过** |
+| 本地复习/BYOK/错选项/混淆对 | `node tests/study.test.mjs` | **9/9 通过** |
 | 班级作业 | `php tests/assignment.test.php` | **3/3 通过** |
 | 学习考试/评级/锁定 | `php tests/learning.test.php` | **7/7 通过** |
 | 排行榜排序/当前名次 | `php tests/leaderboard.test.php` | **2/2 通过** |
@@ -180,7 +188,8 @@
 | 扣分/不熟练判定 | `php tests/slow.test.php` | **3/3 通过** |
 | 等级与难度解锁 | `php tests/level.test.php` | **5/5 通过** |
 | 统一计分/双轨 XP/自由练习 | `php tests/scoring.test.php` | **8/8 通过** |
-| 向量环正常值与极性 | `node tests/vector-loop.test.mjs` | **5/5 通过** |
+| PHP 全量（assertions on） | `for f in tests/*.test.php; do php -d zend.assertions=1 -d assert.exception=1 "$f"; done` | **92/92 通过** |
+| 向量环正常值/极性/自检 | `node tests/vector-loop.test.mjs` | **6/6 通过** |
 | 账号学习数据同步（含错选项） | `php tests/study-sync.test.php` | **5/5 通过** |
 | 课程包校验/导入/发布 | `php tests/coursepack.test.php` | **4/4 通过** |
 | AI 出题/解析/错题上下文 | `php tests/ai-quiz.test.php` | **6/6 通过** |

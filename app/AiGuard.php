@@ -65,6 +65,17 @@ final class AiGuard
         if (!$admin && !empty($user['ai_disabled_until'])) {
             throw new ApiError(403, 'ai_temporarily_disabled', 'AI 权限已被暂停，请联系管理员恢复');
         }
+        // Validate the prompt before reserving credits/quota: a blocked request
+        // must not consume a daily AI credit.
+        if (!$admin && $message !== '') {
+            $verdict = self::inspect($message, $diagnosisId);
+            if ($verdict !== null) {
+                $count = self::violation($user, $verdict['reason'], $message);
+                $limit = max(1, Settings::int('ai.violation_limit', 5));
+                $tail = $count >= $limit ? '已暂停 AI 权限，请联系管理员恢复。' : '连续越界将暂停 AI 权限。';
+                throw new ApiError(403, 'ai_scope_blocked', 'AI 导师只回答心电图与心血管电生理教学问题。' . $tail, ['violations' => $count]);
+            }
+        }
         $receipt = [
             'user' => $user,
             'admin' => $admin,
@@ -101,15 +112,6 @@ final class AiGuard
                 }
             }
             if (!$byok) self::consumeAccountAndIp($userId, $receipt['ip_hash']);
-        }
-        if (!$admin && $message !== '') {
-            $verdict = self::inspect($message, $diagnosisId);
-            if ($verdict !== null) {
-                $count = self::violation($user, $verdict['reason'], $message);
-                $limit = max(1, Settings::int('ai.violation_limit', 5));
-                $tail = $count >= $limit ? '已暂停 AI 权限，请联系管理员恢复。' : '连续越界将暂停 AI 权限。';
-                throw new ApiError(403, 'ai_scope_blocked', 'AI 导师只回答心电图与心血管电生理教学问题。' . $tail, ['violations' => $count]);
-            }
         }
         return $receipt;
     }

@@ -81,6 +81,24 @@ check('repeated wrong answers on the same question are counted per question', ()
   assert.ok(context.history.length >= 2, `history length ${context.history.length}`);
 });
 
+check('confusion pairs aggregate the most frequent wrong choice per diagnosis', () => {
+  const attempt = (selected) => study.recordAttempt({
+    correct: false,
+    correctIds: ['afib'],
+    selectedIds: [selected],
+    names: { afib: '心房颤动', svt: '室上速', 'atrial-tachy': '房性心动过速' },
+    chapters: { afib: 'tachy' },
+    source: 'practice',
+    questionKey: 'q-confusion',
+  });
+  attempt('svt'); attempt('svt'); attempt('atrial-tachy');
+  const pairs = study.wrongConfusionPairs(5);
+  assert.equal(pairs[0].correctId, 'afib');
+  assert.equal(pairs[0].wrongId, 'svt');
+  assert.equal(pairs[0].count, 2);
+  assert.equal(pairs[1].wrongId, 'atrial-tachy');
+});
+
 check('exam-style attempts record option text and labels without catalog ids', () => {
   study.recordAttempt({
     correct: false,

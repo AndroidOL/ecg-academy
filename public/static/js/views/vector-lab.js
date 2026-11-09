@@ -1,8 +1,26 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109an';
+const __asset = __isNode ? '' : '?v=20261109aq';
 const { getLocale } = await import(`../i18n.js${__asset}`);
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
-const { LOOPS, LOOP_MAIN, LOOP_WINDOWS, loopPoint } = await import(`../vector-loop-model.js${__asset}`);
+const { LOOPS, LOOP_MAIN, LOOP_WINDOWS, loopPoint, normalLoopMetrics } = await import(`../vector-loop-model.js${__asset}`);
+
+function unitVector([x, y, z]) {
+  const n = Math.hypot(x, y, z) || 1;
+  return [x / n, y / n, z / n];
+}
+
+function dotVector(a, b) {
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+function rotateForAxis(vector, key, axes = {}) {
+  const d = ((axes[key] ?? 60) - 60) * Math.PI / 180;
+  return [
+    vector[0] * Math.cos(d) - vector[1] * Math.sin(d),
+    vector[0] * Math.sin(d) + vector[1] * Math.cos(d),
+    vector[2],
+  ];
+}
 
 const LEADS = {
   I:   { angle: 0,   vec: [1, 0, 0],     name: 'I 导联',   note: '左臂-右臂，观察左右方向' },
@@ -430,6 +448,8 @@ function updateProjectionBars(host, state, t) {
 }
 
 function vectorLoopsPanel() {
+  const metrics = normalLoopMetrics();
+  const metric = (value, label, range, ok) => `<div class="loop-normal-item ${ok ? 'ok' : 'warn'}"><b>${value}</b><span>${label}</span><em>${range}</em></div>`;
   return `<div class="visual-grid">
     <div class="visual-card visual-card-dark">
       <div class="vector-figure-note"><b>教学示意，不是真实心电向量</b><span>单箭头是用于理解导联投影的简化合成向量；真实向量是无数心肌细胞瞬时电偶向量的空间叠加。</span></div>
@@ -471,6 +491,19 @@ function vectorLoopsPanel() {
       <p class="muted">体表每个导联只记录该环在自身导联轴上的投影：投影为正，波形向上；投影为负，波形向下。向量环越“朝向”某个导联，该导联的波幅越大。</p>
       <p class="muted"><b>关于 P/T 电轴：</b>临床上说“电轴偏转”通常指 QRS 额面电轴，正常约 −30° 至 +90°；P 波电轴也可测量（正常约 0° 至 +75°，异常提示异位房律等），T 波电轴通常与 QRS 主向量大致一致，缺血、电解质紊乱、肥厚/劳损时可改变。本页三个环可分别调节，仅用于理解向量方向与投影，不把 P/T 偏转直接等同于 QRS 电轴诊断。</p>
       <div class="visual-tip">${icon('sparkles', 14)} 旋转模型，观察心电轴：正常 QRS 环主向量指向<b>左下、略向后</b>；电轴左偏 = 更朝上/左，电轴右偏 = 更朝下/右。把水平视角拖到 −180° 可从后方观察“向后”的分量。</div>
+      <section class="loop-normal-panel">
+        <div class="section-head" style="margin-bottom:6px"><h3>模型正常范围自检</h3><span class="badge badge-ok">文献参考</span></div>
+        <div class="loop-normal-grid">
+          ${metric(`${metrics.qrsHorizontalAngle}°`, 'QRS 横面最大向量', '正常 −40°～+60°', metrics.qrsHorizontalAngle >= -40 && metrics.qrsHorizontalAngle <= 60)}
+          ${metric(`${metrics.qrsFrontalAngle}°`, 'QRS 额面最大向量', '正常 +10°～+90°', metrics.qrsFrontalAngle >= 10 && metrics.qrsFrontalAngle <= 90)}
+          ${metric(`${metrics.qrsAnteriorArea}%`, 'QRS 环前方面积', '正常 <33%', metrics.qrsAnteriorArea < 33)}
+          ${metric(`${metrics.qrsRightPosteriorArea}%`, 'QRS 环右后面积', '正常 <20%', metrics.qrsRightPosteriorArea < 20)}
+          ${metric(metrics.tLengthWidth.toFixed(1), 'T 环长宽比', '正常约 2.5', metrics.tLengthWidth >= 2.2 && metrics.tLengthWidth <= 2.8)}
+          ${metric(metrics.tQrsRatio.toFixed(2), 'T/QRS 最大向量比', '正常 <4', metrics.tQrsRatio < 4)}
+          ${metric(metrics.pQrsRatio.toFixed(2), 'P/QRS 最大向量比', '正常 <0.2', metrics.pQrsRatio < 0.2)}
+        </div>
+        <p class="muted" style="font-size:9.5px;margin-top:7px">由当前教学模型实时计算；P/T 电轴可单独调节，调节后仅方向变化，正常范围自检仍按原始正常模型显示。参考 Frank 向量图正常值。</p>
+      </section>
     </aside>
   </div>
   <div class="vector-extra-grid vector-extra-single">
