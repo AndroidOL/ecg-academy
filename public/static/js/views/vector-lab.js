@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109ai';
+const __asset = __isNode ? '' : '?v=20261109aj';
 const { getLocale } = await import(`../i18n.js${__asset}`);
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 
@@ -480,7 +480,7 @@ function vectorLoopsPanel() {
       <div class="visual-controls">
         <button class="btn btn-primary btn-sm" type="button" data-vector-play>${icon('pause', 13)} 暂停</button>
         <label class="visual-range">水平视角 <input type="range" min="-180" max="180" value="24" data-vector-rotate></label>
-        <label class="visual-range">缩放 <input type="range" min="50" max="350" value="100" data-vector-zoom></label>
+        <label class="visual-range">缩放 <input type="range" min="40" max="350" value="45" data-vector-zoom></label>
         <button class="btn btn-ghost btn-xs" type="button" data-vector-zoom-out aria-label="缩小">−</button><button class="btn btn-ghost btn-xs" type="button" data-vector-zoom-in aria-label="放大">＋</button>
         <label class="visual-range">俯仰视角 <input type="range" min="-89" max="89" value="18" data-vector-pitch></label>
         <label class="visual-range">速度 <select class="select" data-vector-speed><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×（1 秒/周期）</option><option value="2">2×</option></select></label>
@@ -1106,7 +1106,7 @@ export async function vectorLabView() {
   let raf = 0;
   let cleanup = [];
   let start = performance.now();
-  const state = { rotate: 24, pitch: 18, zoom: 1, playing: true, loop: 'all', lead: 'II', axes: { P: 60, QRS: 60, T: 60 }, axis: 60, angle: 60, magnitude: 1, auto: true, speed: 1, phase: 0, qrsPhase: 0, qrsPlaying: true };
+  const state = { rotate: 24, pitch: 18, zoom: 0.45, playing: true, loop: 'all', lead: 'II', axes: { P: 60, QRS: 60, T: 60 }, axis: 60, angle: 60, magnitude: 1, auto: true, speed: 1, phase: 0, qrsPhase: 0, qrsPlaying: true };
   el.innerHTML = `<div class="page-eyebrow">${icon('compass', 14)} VECTOR & ELECTROPHYSIOLOGY</div>
     <div class="vector-head"><div><h1 class="page-title">心脏向量实验室</h1><p class="page-sub">把“背图形”变成“看方向”：P/QRS/T 环、肢体/胸导联投影、激活顺序一次串起来。</p></div><div class="row-wrap"><a class="btn btn-secondary btn-sm" href="#/learn/ecg-vector-waveform-theory">理论阅读 ${icon('bookOpen', 13)}</a><a class="btn btn-ghost btn-sm" href="#/learn/ecg-calibration-paper">${icon('arrowRight', 13)} 基础课程</a></div></div>
     <div class="vector-safety-note">${icon('info', 14)} <span>向量方向与导联投影仅供教学参考，用于理解“投影”和“向量大小”，<b>不代表任何患者实际情况</b>，不用于诊断或治疗。</span></div>
@@ -1214,7 +1214,7 @@ export async function vectorLabView() {
     content.querySelector('[data-vector-rotate]')?.addEventListener('input', (e) => { state.rotate = Number(e.target.value); });
     content.querySelector('[data-vector-pitch]')?.addEventListener('input', (e) => { state.pitch = Number(e.target.value); });
     const setZoom = (value) => {
-      state.zoom = Math.max(0.5, Math.min(3.5, Number(value) || 1));
+      state.zoom = Math.max(0.4, Math.min(3.5, Number(value) || 1));
       const slider = content.querySelector('[data-vector-zoom]');
       if (slider) slider.value = String(Math.round(state.zoom * 100));
       renderLoopState();
@@ -1223,9 +1223,9 @@ export async function vectorLabView() {
     content.querySelector('[data-vector-zoom-in]')?.addEventListener('click', () => setZoom(state.zoom * 1.2));
     content.querySelector('[data-vector-zoom-out]')?.addEventListener('click', () => setZoom(state.zoom / 1.2));
     content.querySelector('[data-vector-reset-view]')?.addEventListener('click', () => {
-      state.rotate = 24; state.pitch = 18; state.zoom = 1;
+      state.rotate = 24; state.pitch = 18; state.zoom = 0.45;
       const rx = content.querySelector('[data-vector-rotate]'); const py = content.querySelector('[data-vector-pitch]'); const zm = content.querySelector('[data-vector-zoom]');
-      if (zm) zm.value = '100';
+      if (zm) zm.value = '45';
       if (rx) rx.value = '24'; if (py) py.value = '18';
       renderLoopState();
     });
