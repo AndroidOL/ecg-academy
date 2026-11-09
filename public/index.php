@@ -29,6 +29,10 @@ if (str_starts_with($path, '/api/')) {
         $router->post('/api/admin/logout', [AdminController::class, 'logout']);
         $router->get('/api/admin/session', [AdminController::class, 'session']);
         $router->post('/api/admin/settings', [AdminController::class, 'saveSettings']);
+        $router->post('/api/admin/mail/test', [AdminController::class, 'mailTest']);
+        $router->get('/api/admin/user/detail', [AdminController::class, 'userDetail']);
+        $router->post('/api/admin/user/ai-reset', [AdminController::class, 'userAiReset']);
+        $router->get('/api/admin/ai/conversations', [AdminController::class, 'aiConversations']);
         $router->get('/api/admin/users', [AdminController::class, 'users']);
         $router->post('/api/admin/user', [AdminController::class, 'updateUser']);
         $router->post('/api/admin/user/create', [AdminController::class, 'createUser']);
@@ -73,6 +77,7 @@ if (str_starts_with($path, '/api/')) {
         $router->post('/api/daily/complete', [ApiController::class, 'dailyComplete']);
         $router->get('/api/stats', [ApiController::class, 'stats']);
         $router->get('/api/leaderboard', [ApiController::class, 'leaderboard']);
+        $router->post('/api/auth/register/code', [ApiController::class, 'registerCode']);
         $router->post('/api/auth/register', [ApiController::class, 'register']);
         $router->post('/api/auth/login', [ApiController::class, 'login']);
         $router->get('/api/auth/passkey/options', [ApiController::class, 'passkeyLoginOptions']);

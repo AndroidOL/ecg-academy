@@ -10,9 +10,6 @@ try {
       return (await import(url.href)).default || {};
     };
     GENERATED = await load('./i18n.map.js');
-    let stored = null;
-    try { stored = localStorage.getItem(KEY); } catch { /* private mode */ }
-    if (stored === 'en') CONTENT = await load('./i18n.content.js');
   }
 } catch { /* generated catalogs are optional */ }
 
@@ -141,6 +138,26 @@ const OVERRIDES = {
   '部分正确，但诊断组合不完整': 'Partially correct; the diagnosis combination is incomplete', '需要再读一遍': 'Re-read this ECG',
   '结论正确': 'Correct conclusion', '结论需要修正': 'Conclusion needs correction',
   'Fixed HTML sanitization accidentally removing medical comparison symbols such as <40 次/分; audit of 1735 answers found 0 conflicts.': 'Fixed HTML sanitization that could remove medical comparison symbols such as <40 bpm; an audit of 1735 answers found 0 conflicts.',
+  '邮箱': 'Email', '邮箱验证码': 'Email verification code', '发送验证码': 'Send code',
+  '6 位数字': '6-digit code', '6 位邮箱验证码': '6-digit email code', '昵称（可选）': 'Display name (optional)',
+  '免费开源 · 邮箱验证后保存进度': 'Free and open source · verify email to save progress',
+  '每日注册上限': 'Daily registration limit', '验证码有效期（秒）': 'Verification code TTL (seconds)',
+  '每邮箱每日验证码上限': 'Codes per email per day', '每 IP 每日验证码上限': 'Codes per IP per day',
+  '邮件 / 注册验证': 'Email / registration verification', '已配置': 'Configured', '未配置': 'Not configured',
+  'SMTP 主机': 'SMTP host', '端口': 'Port', '加密方式': 'Encryption', 'SMTP 用户名': 'SMTP username',
+  'SMTP 密码（留空不修改）': 'SMTP password (leave blank to keep)', '发件邮箱': 'From email', '发件人名称': 'From name',
+  '保存邮件设置': 'Save email settings', '发送测试邮件': 'Send test email',
+  'AI 对话解锁等级': 'AI chat unlock level', '每日打卡基础对话次数': 'Base chat credits per daily check-in',
+  '对话次数上限': 'Credit cap', '错因分析每日上限': 'Daily analysis limit',
+  '提问最小间隔（秒）': 'Minimum question interval (seconds)', '每 IP 每日 AI 上限': 'Daily AI limit per IP',
+  '越界次数阈值': 'Violation threshold', '越界统计窗口（小时）': 'Violation window (hours)', '暂停时长（小时）': 'Suspension duration (hours)',
+  '普通用户每日 AI 总调用上限': 'Daily AI calls per user', 'AI 对话次数 +': 'AI chat credits +',
+  '管理员不限': 'Admin unlimited', '对话次数': 'Chat credits', '今日错因分析': 'Analysis today',
+  '次数上限': 'Credit cap', '达到 Lv.': 'Reach Lv.', '后解锁 AI 对话': 'to unlock AI chat',
+  '暂停中': 'Suspended', '恢复 AI': 'Restore AI', '详情': 'Details', '设置': 'Set',
+  '用户详情': 'User details', '永久对话记录': 'Permanent conversation log', '审计保留 · 不提供删除': 'Audit retention · deletion disabled',
+  'AI 对话': 'AI conversations', '违规记录': 'Violation log', '次数变动（最近 50 条）': 'Credit changes (last 50)',
+  '永久对话记录（最近 100 条）': 'Permanent conversations (last 100)', '恢复 AI 权限': 'Restore AI access',
   '心迹 ECG Lab': 'ECG Lab', '心迹 ECG Lab 首页': 'ECG Lab home',
   '12 导联': '12-lead', '12 导联较宽，可左右滑动查看。': 'The 12-lead view is wider; scroll horizontally to inspect.',
   'II 导联': 'Lead II', 'V1 导联': 'Lead V1', 'V5 导联': 'Lead V5',
@@ -219,7 +236,19 @@ function translatePhrase(value) {
   if (guest && ADJ_EN[guest[1]] && NOUN_EN[guest[2]]) return `${ADJ_EN[guest[1]]} ${NOUN_EN[guest[2]]} · ${guest[3]}`;
   return null;
 }
-const TEXT = { en: { ...EN_TEXT, ...GENERATED, ...CONTENT, ...OVERRIDES } };
+let TEXT = { en: { ...EN_TEXT, ...GENERATED, ...CONTENT, ...OVERRIDES } };
+
+export async function loadContentCatalog() {
+  if (TEXT.en['__content_loaded']) return;
+  try {
+    const version = new URL(import.meta.url).searchParams.get('v');
+    const url = new URL('./i18n.content.js', import.meta.url);
+    if (version) url.searchParams.set('v', version);
+    CONTENT = (await import(url.href)).default || {};
+    TEXT = { en: { ...EN_TEXT, ...GENERATED, ...CONTENT, ...OVERRIDES, '__content_loaded': true } };
+    applyLocale(document.body);
+  } catch { /* optional */ }
+}
 
 const SKIP = '.ai-bubble, .ai-stream-text, .ai-answer, .ai-quiz-panel, canvas, svg, script, style, [data-no-i18n]';
 

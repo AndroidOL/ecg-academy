@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bj';
+const __asset = __isNode ? '' : '?v=20261109aa';
 const { api } = await import(`./api.js${__asset}`);
 const { store } = await import(`./store.js${__asset}`);
 const { openModal, icon, escapeHtml, setButtonLoading, toast } = await import(`./ui.js${__asset}`);
@@ -23,8 +23,10 @@ export function openAuth(mode = 'register') {
   }
   const content = `
     <div class="form-grid">
-      <div class="auth-note">${isRegister ? '当前为访客账号。注册后，已读进度与答题记录会保留，并可用于跨设备登录。' : '登录后会合并当前访客设备的已读进度。'}</div>
-      ${isRegister ? `<div class="field"><label for="auth-name">昵称（可选）</label><input class="input" id="auth-name" maxlength="20" autocomplete="nickname" placeholder="例如：心电图小白"></div>` : ''}
+      <div class="auth-note">${isRegister ? `当前为访客账号。注册需邮箱验证，注册后已读进度与答题记录会保留。${store.features?.emailConfigured === false ? ' 站点邮件服务尚未配置，请联系管理员。' : ''}` : '登录后会合并当前访客设备的已读进度。'}</div>
+      ${isRegister ? `<div class="field"><label for="auth-email">邮箱</label><input class="input" id="auth-email" type="email" maxlength="190" autocomplete="email" placeholder="用于接收验证码"><div class="row-wrap" style="margin-top:6px"><button class="btn btn-secondary btn-sm" type="button" id="auth-send-code">发送验证码</button><span class="muted" style="font-size:10px">每个邮箱每日 3 封，每个网络每日 5 次</span></div></div>
+      <div class="field"><label for="auth-code">邮箱验证码</label><input class="input" id="auth-code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6 位数字"></div>
+      <div class="field"><label for="auth-name">昵称（可选）</label><input class="input" id="auth-name" maxlength="20" autocomplete="nickname" placeholder="例如：心电图小白"></div>` : ''}
       <div class="field"><label for="auth-username">用户名</label><input class="input" id="auth-username" maxlength="24" autocomplete="username" placeholder="3–24 位字母、数字或下划线"></div>
       <div class="field"><label for="auth-password">密码</label><input class="input" id="auth-password" type="password" maxlength="72" autocomplete="${isRegister ? 'new-password' : 'current-password'}" placeholder="至少 8 位"></div>
       ${isRegister ? `<div class="field"><label for="auth-password2">确认密码</label><input class="input" id="auth-password2" type="password" maxlength="72" autocomplete="new-password" placeholder="再次输入密码"></div>` : ''}
@@ -36,7 +38,7 @@ export function openAuth(mode = 'register') {
   let modal;
   modal = openModal({
     title: isRegister ? '保存你的学习进度' : '登录心迹',
-    sub: isRegister ? '免费开源 · 无需邮箱' : '继续你的心电图学习',
+    sub: isRegister ? '免费开源 · 邮箱验证后保存进度' : '继续你的心电图学习',
     content,
     onClose: () => {},
   });
@@ -52,13 +54,17 @@ export function openAuth(mode = 'register') {
     const password = form.querySelector('#auth-password').value;
     const displayName = form.querySelector('#auth-name')?.value.trim() || '';
     const password2 = form.querySelector('#auth-password2')?.value;
+    const email = form.querySelector('#auth-email')?.value.trim().toLowerCase() || '';
+    const code = form.querySelector('#auth-code')?.value.trim() || '';
     errorBox.style.display = 'none';
+    if (isRegister && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showError('请输入有效的邮箱地址');
+    if (isRegister && !/^\d{6}$/.test(code)) return showError('请输入 6 位邮箱验证码');
     if (!/^[a-z0-9_]{3,24}$/.test(username)) return showError('用户名需为 3–24 位字母、数字或下划线');
     if (password.length < 8) return showError('密码至少 8 位');
     if (isRegister && password !== password2) return showError('两次输入的密码不一致');
     setButtonLoading(submit, true, isRegister ? '正在保存' : '正在登录');
     try {
-      if (isRegister) await api.register({ username, password, displayName });
+      if (isRegister) await api.register({ email, code, username, password, displayName });
       else await api.login({ username, password });
       await store.refresh();
       window.dispatchEvent(new CustomEvent('auth:changed'));
@@ -69,6 +75,28 @@ export function openAuth(mode = 'register') {
       setButtonLoading(submit, false);
     }
   };
+  const sendCode = form.querySelector('#auth-send-code');
+  if (sendCode) {
+    let cooldown = 0;
+    const tick = () => {
+      if (cooldown <= 0) { sendCode.disabled = false; sendCode.textContent = '发送验证码'; return; }
+      sendCode.disabled = true; sendCode.textContent = `${cooldown}s 后重发`; cooldown -= 1; setTimeout(tick, 1000);
+    };
+    sendCode.addEventListener('click', async () => {
+      const email = form.querySelector('#auth-email').value.trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showError('请输入有效的邮箱地址');
+      errorBox.style.display = 'none';
+      setButtonLoading(sendCode, true, '发送中');
+      try {
+        const result = await api.registerCode(email);
+        toast(result.message || '如果该邮箱可用，验证码已发送', 'info');
+        cooldown = 60; tick();
+      } catch (error) {
+        showError(error.message || '验证码发送失败');
+        setButtonLoading(sendCode, false);
+      }
+    });
+  }
   submit?.addEventListener('click', doSubmit);
   form.querySelector('#auth-passkey')?.addEventListener('click', async () => {
     const username = form.querySelector('#auth-username').value.trim().toLowerCase();

@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bj';
+const __asset = __isNode ? '' : '?v=20261109aa';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, escapeHtml, toast, openModal } = await import(`../ui.js${__asset}`);
@@ -16,6 +16,7 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
       <span class="ai-spark">${icon('sparkles', 17)}</span>
       <div class="grow"><div class="ai-panel-title">AI 导师</div><div class="ai-panel-sub">${store.ai?.configured ? '在线 · 基于本页知识库' : '本地知识库 · 未配置外部模型'}</div></div>
       ${store.ai?.byokEnabled ? `<button class="icon-btn" type="button" data-byok-config aria-label="配置 BYOK API 密钥" title="使用自己的 API Key">${icon('key', 16)}</button>` : ''}
+      <span class="badge badge-brand" data-ai-credits>${store.ai?.admin ? '管理员不限' : `${store.ai?.credits ?? 0} 次`}</span>
       <span class="badge ${store.ai?.configured || store.ai?.byokEnabled ? 'badge-brand' : ''}">${store.ai?.byokEnabled && getByok() ? 'BYOK' : store.ai?.configured ? 'AI' : 'LOCAL'}</span>
     </div>
     <div class="ai-messages" data-ai-messages aria-live="polite">
@@ -31,6 +32,17 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
   const input = el.querySelector('[data-ai-input]');
   const send = el.querySelector('[data-ai-send]');
   let busy = false;
+  const locked = store.ai && store.ai.levelUnlocked === false && !store.ai.admin;
+  const noCredits = store.ai && !store.ai.admin && Number(store.ai.credits || 0) <= 0;
+  if (locked) {
+    input.disabled = true;
+    send.disabled = true;
+    input.placeholder = `AI 对话需 Lv.${store.ai.levelRequired || 10} 解锁`;
+  } else if (noCredits) {
+    input.disabled = true;
+    send.disabled = true;
+    input.placeholder = '对话次数已用完：完成每日挑战获得次数';
+  }
 
   const addBubble = (text, type = 'assistant', extra = '') => {
     const bubble = document.createElement('div');
@@ -77,6 +89,8 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
   const submit = async (override = null) => {
     const message = (override ?? input.value).trim();
     if (!message || busy) return;
+    if (locked) return toast(`AI 对话需 Lv.${store.ai.levelRequired || 10} 解锁`, 'warn');
+    if (noCredits) return toast('对话次数已用完，完成每日挑战可获得次数', 'warn');
     input.value = '';
     addBubble(message, 'user');
     const bubble = addBubble('', 'assistant', 'streaming');
@@ -98,6 +112,11 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
           messages.scrollTop = messages.scrollHeight;
         },
         onDone: (done, text) => {
+          if (done?.source === 'ai' && !getByok() && !store.ai?.admin) {
+            store.ai.credits = Math.max(0, Number(store.ai?.credits || 0) - 1);
+            const creditsBadge = el.querySelector('[data-ai-credits]');
+            if (creditsBadge) creditsBadge.textContent = `${store.ai.credits} 次`;
+          }
           bubble.classList.remove('streaming');
           bubble.classList.toggle('local', Boolean(done?.fallback));
           bubble.innerHTML = `${contextHtml ? `<div class="ai-context">${contextHtml}</div>` : ''}${renderMarkdown(text)}`;

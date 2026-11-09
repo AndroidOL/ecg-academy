@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bj';
+const __asset = __isNode ? '' : '?v=20261109aa';
 const { api } = await import(`../api.js${__asset}`);
 const { store, applyTheme, getThemeMode } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -9,11 +9,12 @@ const { reviewSummary } = await import(`../study-store.js${__asset}`);
 const { isLowBandwidth, setLowBandwidth, installPrompt, clearInstallPrompt } = await import(`../bandwidth.js${__asset}`);
 const { getLocale, setLocale, LOCALES } = await import(`../i18n.js${__asset}`);
 const { createPasskey } = await import(`../webauthn.js${__asset}`);
-const { levelInfo, ADVANCED_UNLOCK, CHALLENGE_UNLOCK } = await import(`../levels.js${__asset}`);
+const { levelInfo, ADVANCED_UNLOCK, CHALLENGE_UNLOCK, AI_UNLOCK } = await import(`../levels.js${__asset}`);
 
 function accountCard(user) {
   return `<section class="card card-pad account-card">
     <div class="section-head"><h2 class="section-title">账号与安全</h2><span class="badge badge-brand">@${escapeHtml(user.username || '')}${user.isAdmin ? ' · 管理员' : ''}</span></div>
+    ${user.email ? `<div class="settings-row" style="padding:4px 0"><div><div class="settings-name">${escapeHtml(user.email)}</div><div class="settings-sub">${user.emailVerified ? '邮箱已验证' : '邮箱未验证'}</div></div><span class="badge ${user.emailVerified ? 'badge-ok' : 'badge-warn'}">${user.emailVerified ? '已验证' : '未验证'}</span></div>` : ''}
     <div class="field"><label for="profile-name">昵称</label><div class="row-wrap"><input class="input" id="profile-name" data-profile-name maxlength="20" value="${escapeHtml(user.displayName || '')}" autocomplete="nickname"><button class="btn btn-secondary btn-sm" type="button" data-profile-save>保存昵称</button></div></div>
     <details class="account-details">
       <summary>修改密码</summary>
@@ -104,7 +105,12 @@ export async function meView() {
           <div class="section-head"><h2 class="section-title" style="font-size:16px">成长等级</h2><span class="badge badge-brand">Lv.${level.level}</span></div>
           <div class="row-wrap" style="justify-content:space-between;margin-top:6px"><b>${level.xp || 0} XP</b><span class="muted" style="font-size:10.5px">${level.nextXp ? `距 Lv.${level.level + 1} 还差 ${Math.max(0, level.nextXp - (level.xp || 0))} XP` : '已达最高等级'}</span></div>
           <div class="progress" style="margin-top:6px"><div class="progress-bar" style="width:${level.progress || 0}%"></div></div>
-          <p class="muted" style="font-size:10.5px;margin-top:8px;line-height:1.7">Lv.${ADVANCED_UNLOCK} 解锁进阶难度、Lv.${CHALLENGE_UNLOCK} 解锁挑战；答错扣分导致 XP 下降时，等级会同步下降。</p>
+          <p class="muted" style="font-size:10.5px;margin-top:8px;line-height:1.7">Lv.${ADVANCED_UNLOCK} 解锁进阶难度、Lv.${CHALLENGE_UNLOCK} 解锁挑战、Lv.${AI_UNLOCK} 解锁 AI 对话；答错扣分导致 XP 下降时，等级会同步下降。</p>
+        </section>
+        <section class="card card-pad">
+          <div class="section-head"><h2 class="section-title" style="font-size:16px">AI 导师</h2><span class="badge ${store.ai?.disabledUntil ? 'badge-danger' : 'badge-brand'}">${store.ai?.disabledUntil ? '暂停中' : `Lv.${store.ai?.level || level.level}`}</span></div>
+          ${user.isGuest ? `<p class="muted" style="font-size:11px;line-height:1.7">注册并达到 Lv.${store.ai?.levelRequired || AI_UNLOCK} 后解锁 AI 对话；每日挑战可获得对话次数。</p><a class="btn btn-secondary btn-sm" href="#/daily" style="margin-top:8px">去每日挑战</a>` : store.ai?.levelUnlocked === false ? `<p class="muted" style="font-size:11px;line-height:1.7">达到 Lv.${store.ai?.levelRequired || AI_UNLOCK} 后解锁 AI 对话。每日挑战每次奖励基础次数 + 答对题数。</p><a class="btn btn-secondary btn-sm" href="#/daily" style="margin-top:8px">去每日挑战</a>` : `<div class="review-me-grid"><div><b>${store.ai?.admin ? '不限' : (store.ai?.credits ?? 0)}</b><span>对话次数</span></div><div><b>${store.ai?.analysisRemaining ?? 0}/${store.ai?.analysisLimit ?? 0}</b><span>今日错因分析</span></div><div><b>${store.ai?.creditCap ?? 100}</b><span>次数上限</span></div></div><p class="muted" style="font-size:10.5px;margin-top:8px">次数仅通过每日挑战获得；每日 ${store.ai?.creditBase ?? 10} 次 + 答对题数，最多保留 ${store.ai?.creditCap ?? 100} 次。</p><a class="btn btn-secondary btn-sm" href="#/ai" style="margin-top:8px">${icon('sparkles', 13)} 打开 AI 导师</a>`}
+          ${store.ai?.disabledUntil ? `<p class="muted" style="font-size:10px;color:var(--danger)">暂停至 ${escapeHtml(store.ai.disabledUntil)}，请联系管理员恢复。</p>` : ''}
         </section>
         <section class="card card-pad">
           <div class="section-head"><h2 class="section-title" style="font-size:16px">排行榜</h2><div class="segmented"><button class="segment active" type="button" data-scope="week">本周</button><button class="segment" type="button" data-scope="all">总榜</button></div></div>

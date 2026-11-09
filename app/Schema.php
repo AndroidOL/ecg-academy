@@ -19,12 +19,19 @@ final class Schema
                 is_active TINYINT(1) NOT NULL DEFAULT 1,
                 ai_daily_limit INT NULL,
                 level_override TINYINT NULL,
+                email VARCHAR(190) NULL,
+                email_verified_at DATETIME NULL,
+                ai_credits INT NOT NULL DEFAULT 0,
+                ai_violations INT NOT NULL DEFAULT 0,
+                ai_disabled_until DATETIME NULL,
+                ai_last_request_at DATETIME NULL,
                 xp INT NOT NULL DEFAULT 0,
                 theme VARCHAR(8) NOT NULL DEFAULT 'auto',
                 created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 last_seen_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 UNIQUE KEY uk_users_public_id (public_id),
                 UNIQUE KEY uk_users_username (username),
+                UNIQUE KEY uk_users_email (email),
                 KEY idx_users_guest (is_guest),
                 KEY idx_users_xp (xp)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
@@ -273,6 +280,80 @@ final class Schema
                 KEY idx_pack_status (status)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
+            "CREATE TABLE IF NOT EXISTS ai_conversations (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                user_id BIGINT UNSIGNED NULL,
+                ip_hash CHAR(64) NOT NULL DEFAULT '',
+                mode VARCHAR(24) NOT NULL DEFAULT 'chat',
+                question MEDIUMTEXT NOT NULL,
+                answer MEDIUMTEXT NOT NULL,
+                source VARCHAR(8) NOT NULL DEFAULT 'ai',
+                account_charge TINYINT(1) NOT NULL DEFAULT 0,
+                prompt_tokens INT UNSIGNED NOT NULL DEFAULT 0,
+                completion_tokens INT UNSIGNED NOT NULL DEFAULT 0,
+                cost_micro BIGINT NOT NULL DEFAULT 0,
+                flags JSON NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                KEY idx_conv_user_time (user_id, created_at),
+                KEY idx_conv_time (created_at),
+                KEY idx_conv_mode (mode)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+            "CREATE TABLE IF NOT EXISTS ai_violation_log (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                user_id BIGINT UNSIGNED NULL,
+                ip_hash CHAR(64) NOT NULL DEFAULT '',
+                reason VARCHAR(80) NOT NULL DEFAULT '',
+                snippet VARCHAR(320) NOT NULL DEFAULT '',
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                KEY idx_violation_user_time (user_id, created_at),
+                KEY idx_violation_time (created_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+            "CREATE TABLE IF NOT EXISTS ai_credit_log (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                user_id BIGINT UNSIGNED NOT NULL,
+                delta INT NOT NULL,
+                balance INT NOT NULL,
+                reason VARCHAR(80) NOT NULL DEFAULT '',
+                ref_day DATE NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                KEY idx_credit_user_time (user_id, created_at),
+                CONSTRAINT fk_credit_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+            "CREATE TABLE IF NOT EXISTS ai_ip_usage (
+                ip_hash CHAR(64) NOT NULL,
+                usage_day DATE NOT NULL,
+                used_count INT UNSIGNED NOT NULL DEFAULT 0,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (ip_hash, usage_day)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+            "CREATE TABLE IF NOT EXISTS ai_analysis_usage (
+                user_id BIGINT UNSIGNED NOT NULL,
+                usage_day DATE NOT NULL,
+                used_count INT UNSIGNED NOT NULL DEFAULT 0,
+                updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (user_id, usage_day),
+                CONSTRAINT fk_analysis_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+            "CREATE TABLE IF NOT EXISTS email_verification_codes (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                email VARCHAR(190) NOT NULL,
+                purpose VARCHAR(24) NOT NULL DEFAULT 'register',
+                code_hash CHAR(64) NOT NULL,
+                ip_hash CHAR(64) NOT NULL DEFAULT '',
+                attempts INT UNSIGNED NOT NULL DEFAULT 0,
+                expires_at DATETIME NOT NULL,
+                used_at DATETIME NULL,
+                created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                KEY idx_email_code_email (email, created_at),
+                KEY idx_email_code_ip (ip_hash, created_at),
+                KEY idx_email_code_expiry (expires_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
             "CREATE TABLE IF NOT EXISTS admin_audit (
                 id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
                 user_id BIGINT UNSIGNED NULL,
@@ -294,14 +375,42 @@ final class Schema
         self::ensureColumn($pdo, 'users', 'ai_daily_limit', 'INT NULL AFTER is_active');
         self::ensureColumn($pdo, 'learning_events', 'time_ms', 'INT NULL AFTER correct');
         self::ensureColumn($pdo, 'users', 'level_override', 'TINYINT NULL AFTER ai_daily_limit');
+        self::ensureColumn($pdo, 'users', 'email', 'VARCHAR(190) NULL AFTER level_override');
+        self::ensureColumn($pdo, 'users', 'email_verified_at', 'DATETIME NULL AFTER email');
+        self::ensureColumn($pdo, 'users', 'ai_credits', 'INT NOT NULL DEFAULT 0 AFTER email_verified_at');
+        self::ensureColumn($pdo, 'users', 'ai_violations', 'INT NOT NULL DEFAULT 0 AFTER ai_credits');
+        self::ensureColumn($pdo, 'users', 'ai_disabled_until', 'DATETIME NULL AFTER ai_violations');
+        self::ensureColumn($pdo, 'users', 'ai_last_request_at', 'DATETIME NULL AFTER ai_disabled_until');
+        self::ensureUniqueIndex($pdo, 'users', 'uk_users_email', 'email');
 
         $defaults = [
             'auth.registration_enabled' => true,
             'auth.user_login_enabled' => true,
+            'auth.registration_daily_limit' => 5,
+            'auth.email_code_ttl' => 600,
+            'auth.email_daily_per_address' => 3,
+            'auth.email_daily_per_ip' => 5,
+            'smtp.enabled' => false,
+            'smtp.host' => '',
+            'smtp.port' => 587,
+            'smtp.secure' => 'tls',
+            'smtp.username' => '',
+            'smtp.password_enc' => '',
+            'smtp.from_email' => '',
+            'smtp.from_name' => '心迹 ECG Lab',
             'admin.password_login_enabled' => true,
             'admin.passkey_login_enabled' => true,
             'ai.enabled' => false,
             'ai.daily_limit' => 30,
+            'ai.level_required' => 10,
+            'ai.credit_base' => 10,
+            'ai.credit_cap' => 100,
+            'ai.analysis_daily_limit' => 5,
+            'ai.min_interval_seconds' => 5,
+            'ai.ip_daily_limit' => 60,
+            'ai.violation_limit' => 5,
+            'ai.violation_window_hours' => 24,
+            'ai.disabled_hours' => 24,
             'ai.default_provider' => '',
             'ai.system_prompt_append' => '',
             'ai.byok_enabled' => false,
@@ -313,6 +422,19 @@ final class Schema
         $stmt = $pdo->prepare('INSERT IGNORE INTO app_settings (setting_key, setting_value) VALUES (?, ?)');
         foreach ($defaults as $key => $value) {
             $stmt->execute([$key, json_encode($value, JSON_UNESCAPED_UNICODE)]);
+        }
+    }
+
+    private static function ensureUniqueIndex(\PDO $pdo, string $table, string $index, string $column): void
+    {
+        $stmt = $pdo->prepare('SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?');
+        $stmt->execute([$table, $index]);
+        if ((int) $stmt->fetchColumn() === 0) {
+            try {
+                $pdo->exec("ALTER TABLE `{$table}` ADD UNIQUE KEY `{$index}` (`{$column}`)");
+            } catch (\Throwable $e) {
+                error_log('[schema] unique index skipped: ' . $e->getMessage());
+            }
         }
     }
 

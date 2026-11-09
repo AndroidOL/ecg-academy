@@ -1,7 +1,8 @@
 export const LEVEL_THRESHOLDS = [0, 80, 200, 400, 700, 1100, 1600, 2200, 3000, 4000, 5200, 6600, 8200, 10000, 12000, 14500, 17500, 21000, 25000, 30000];
 export const MAX_LEVEL = LEVEL_THRESHOLDS.length;
-export const ADVANCED_UNLOCK = 3;
-export const CHALLENGE_UNLOCK = 5;
+export const ADVANCED_UNLOCK = 5;
+export const CHALLENGE_UNLOCK = 8;
+export const AI_UNLOCK = 10;
 
 export function levelFromXp(xp) {
   const value = Math.max(0, Number(xp) || 0);
@@ -27,5 +28,6 @@ export function levelInfo(xp) {
     isMax: next === null,
     advancedOpen: level >= ADVANCED_UNLOCK,
     challengeOpen: level >= CHALLENGE_UNLOCK,
+    aiOpen: level >= AI_UNLOCK,
   };
 }

@@ -3,7 +3,7 @@ import {
   rateReview, toggleFavorite, exportStudyData, importStudyData, clearLocalStudyData,
 } from '../study-store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bj';
+const __asset = __isNode ? '' : '?v=20261109aa';
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
@@ -28,6 +28,7 @@ function entryCard(entry, mode = 'due') {
     </div>
     <div class="review-card-actions">
       <a class="btn btn-sm btn-secondary" href="#/learn/${encodeURIComponent(entry.id)}">${icon('bookOpen', 13)} 重读</a>
+      <a class="btn btn-sm btn-ghost" href="#/read?focus=${encodeURIComponent(entry.id)}">${icon('target', 13)} 五步重读</a>
       ${favorite ? `<button class="btn btn-sm btn-ghost" type="button" data-unfavorite="${escapeHtml(entry.id)}">${icon('star', 13)} 取消收藏</button>` : `<div class="review-rate" aria-label="复习评分"><button type="button" data-rate="0" data-id="${escapeHtml(entry.id)}">忘记</button><button type="button" data-rate="1" data-id="${escapeHtml(entry.id)}">模糊</button><button type="button" data-rate="2" data-id="${escapeHtml(entry.id)}">记得</button><button type="button" data-rate="3" data-id="${escapeHtml(entry.id)}">轻松</button></div>`}
     </div>
   </article>`;

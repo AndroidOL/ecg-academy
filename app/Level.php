@@ -12,8 +12,9 @@ final class Level
         16 => 14500, 17 => 17500, 18 => 21000, 19 => 25000, 20 => 30000,
     ];
     public const MAX = 20;
-    public const ADVANCED_UNLOCK = 3;
-    public const CHALLENGE_UNLOCK = 5;
+    public const ADVANCED_UNLOCK = 5;
+    public const CHALLENGE_UNLOCK = 8;
+    public const AI_UNLOCK = 10;
 
     public static function levelFrom(int $xp, ?int $override = null): int
     {
@@ -44,8 +45,10 @@ final class Level
             'unlocks' => [
                 'advanced' => self::ADVANCED_UNLOCK,
                 'challenge' => self::CHALLENGE_UNLOCK,
+                'ai' => self::AI_UNLOCK,
                 'advancedOpen' => $level >= self::ADVANCED_UNLOCK,
                 'challengeOpen' => $level >= self::CHALLENGE_UNLOCK,
+                'aiOpen' => $level >= self::AI_UNLOCK,
             ],
         ];
     }

@@ -21,6 +21,11 @@ final class Secret
         return $raw;
     }
 
+    public static function fingerprint(string $value): string
+    {
+        return hash_hmac('sha256', $value, self::key());
+    }
+
     public static function encrypt(string $plain): string
     {
         if ($plain === '') return '';

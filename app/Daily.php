@@ -203,6 +203,11 @@ final class Daily
         }
         if (!$isGuest) {
             Db::pdo()->prepare('UPDATE users SET xp = xp + ? WHERE id = ?')->execute([$xp, $userId]);
+            $baseCredit = max(0, Settings::int('ai.credit_base', 10));
+            $grant = AiGuard::grant($userId, $baseCredit + $correctCount, 'daily-challenge', $day);
+            $result['aiCreditsGranted'] = $grant['granted'];
+            $result['aiCredits'] = $grant['credits'];
+            $result['aiCreditRule'] = '每日挑战：基础 ' . $baseCredit . ' 次 + 答对题数；上限 ' . max(1, Settings::int('ai.credit_cap', 100)) . ' 次';
         }
 
         $result['streak'] = self::streak($userId);

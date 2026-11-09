@@ -874,6 +874,8 @@
 /* ---------- guided reading ---------- */
 .read-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:14px; }
 .read-ecg-card { position:sticky; top:8px; z-index:2; }
+.read-ecg-card #read-ecg.is-12lead #read-ecg-canvas { max-height:340px; overflow-y:auto; overscroll-behavior:contain; border-top:1px solid var(--line); }
+.read-ecg-card #read-ecg.is-12lead #read-ecg-canvas .ecg-canvas-shell { overflow-x:auto; }
 .read-steps { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
 .read-step { display:flex; flex-direction:column; gap:8px; }
 .read-step-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
@@ -909,6 +911,7 @@
 .read-entry-text b { display:block; font-size:12px; }
 .read-entry-text span { display:block; margin-top:1px; color:var(--muted); font-size:10px; line-height:1.45; }
 @media (max-width:900px) { .read-steps { grid-template-columns:minmax(0,1fr); } .read-ecg-card { position:static; } }
+@media (max-width:719px) { .read-ecg-card #read-ecg.is-12lead #read-ecg-canvas { max-height:46vh; } }
 @media (max-width:600px) { .read-diagnosis { grid-template-columns:minmax(0,1fr); } .read-score-row { grid-template-columns:repeat(3,minmax(0,1fr)); } }
 /* ---------- leaderboard ---------- */
 .leaderboard-page { max-width: 1020px; }

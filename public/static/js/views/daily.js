@@ -1,6 +1,6 @@
 
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bj';
+const __asset = __isNode ? '' : '?v=20261109aa';
 const { localizedName } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -345,6 +345,7 @@ function resultMarkup() {
         <div><b>${fmtClock(result.timeMs || 0)}</b><span>总用时</span></div>
       </div>
       <div class="daily-result-streak">${icon('flame', 17)} 连续打卡 <b>${result.streak}</b> 天 · 最佳 <b>${result.bestStreak}</b> 天</div>
+      ${Number.isFinite(Number(result.aiCreditsGranted)) ? `<div class="callout brand" style="margin-top:12px">${icon('sparkles', 14)} AI 对话次数 +${result.aiCreditsGranted}，当前可用 ${result.aiCredits} 次。${result.aiCreditRule ? `<span class="muted">${escapeHtml(result.aiCreditRule)}</span>` : ''} <a href="#/ai">去 AI 导师</a></div>` : (result.isGuest ? '<div class="muted" style="font-size:10px;margin-top:8px">注册且达到 Lv.10 后，每日挑战可累积 AI 对话次数。</div>' : '')}
       <div class="row-wrap" style="justify-content:center;margin-top:14px">
         <button class="btn btn-secondary" type="button" data-home>${icon('arrowLeft', 15)} 返回每日挑战</button>
         <button class="btn btn-ghost" type="button" data-share>${icon('sparkles', 15)} 分享成绩</button>

@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bj';
+const __asset = __isNode ? '' : '?v=20261109aa';
 const { localizedName, getLocale, translate } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -175,11 +175,13 @@ export async function readView({ query } = {}) {
     };
     el.querySelector('[data-read-rhythm]').onclick = () => {
       state.viewer?.setMode('rhythm');
+      el.querySelector('#read-ecg').classList.remove('is-12lead');
       el.querySelector('[data-read-rhythm]').classList.add('active');
       el.querySelector('[data-read-12lead]').classList.remove('active');
     };
     el.querySelector('[data-read-12lead]').onclick = () => {
       state.viewer?.setMode('12lead');
+      el.querySelector('#read-ecg').classList.add('is-12lead');
       el.querySelector('[data-read-12lead]').classList.add('active');
       el.querySelector('[data-read-rhythm]').classList.remove('active');
     };

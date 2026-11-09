@@ -194,3 +194,11 @@ php scripts/migrate.php
 ```
 
 迁移会创建 `learning_events`、`learning_status`、`practice_daily_scores`；部署前请先备份数据库。`data/section_bank.php` 是随代码发布的静态题库，无需导入数据库。
+
+## 3.0 注册、邮件与 AI 治理
+
+- 运行 `php scripts/migrate.php` 时使用具备 `CREATE/ALTER` 权限的 MySQL 账号；站点运行账号保持仅 DML 最小权限。
+- 注册必须配置 SMTP；后台可发送测试邮件。建议使用独立子域名与 SPF/DKIM，避免验证码进入垃圾箱。
+- AI 导师默认要求 Lv.10，对话次数仅由每日挑战发放（基础 10 + 答对题数，上限 100）；错因分析对所有注册用户开放，每日上限可配置。
+- 账户与 IP 双重日限额、提问间隔、越界检测与 5 次违规暂停均在服务端执行；管理员可在用户详情页手动恢复。
+- `ai_conversations` 永久保留对话记录用于审计，不提供删除入口；请按隐私政策告知用户。

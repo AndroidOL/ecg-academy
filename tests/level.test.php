@@ -46,7 +46,15 @@ try {
         $info = Level::forXp(700);
         assert($info['level'] === 5);
         assert($info['unlocks']['advancedOpen'] === true);
+        assert($info['unlocks']['challengeOpen'] === false);
+        assert($info['unlocks']['aiOpen'] === false);
+        $info = Level::forXp(2200);
+        assert($info['level'] === 8);
         assert($info['unlocks']['challengeOpen'] === true);
+        assert($info['unlocks']['aiOpen'] === false);
+        $info = Level::forXp(4000);
+        assert($info['level'] === 10);
+        assert($info['unlocks']['aiOpen'] === true);
     });
 
     check('manual override wins and clamps', function (): void {
@@ -68,7 +76,7 @@ try {
         $pdo->prepare('UPDATE users SET xp = 200 WHERE id = ?')->execute([$GLOBALS['userId']]);
         assert(Level::canUseQuizLevel($user, 2) === true);
         assert(Level::canUseQuizLevel($user, 3) === false);
-        $pdo->prepare('UPDATE users SET xp = 700 WHERE id = ?')->execute([$GLOBALS['userId']]);
+        $pdo->prepare('UPDATE users SET xp = 2200 WHERE id = ?')->execute([$GLOBALS['userId']]);
         assert(Level::canUseQuizLevel($user, 3) === true);
         $admin = ['id' => 999999, 'is_guest' => 0, 'is_admin' => 1];
         assert(Level::canUseQuizLevel($admin, 3) === true);

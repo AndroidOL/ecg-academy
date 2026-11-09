@@ -36,6 +36,8 @@ final class ApiController
             'features' => [
                 'registrationEnabled' => Settings::bool('auth.registration_enabled', true),
                 'userLoginEnabled' => Settings::bool('auth.user_login_enabled', true),
+                'emailConfigured' => Mailer::configured(),
+                'registrationDailyLimit' => max(1, Settings::int('auth.registration_daily_limit', 5)),
             ],
             'site' => [
                 'githubUrl' => (string) Settings::get('site.github_url', ''),
@@ -214,9 +216,14 @@ final class ApiController
         Http::ok(['items' => Stats::leaderboard((string) ($_GET['scope'] ?? 'week'))]);
     }
 
+    public static function registerCode(array $params = []): void
+    {
+        Http::ok(Registration::requestCode((string) (Http::input()['email'] ?? '')));
+    }
+
     public static function register(array $params = []): void
     {
-        $user = Auth::register(Http::input());
+        $user = Registration::register(Http::input());
         Http::ok(['user' => Auth::publicUser($user), 'csrf' => Auth::csrf()]);
     }
 

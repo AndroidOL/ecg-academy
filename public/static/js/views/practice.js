@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bj';
+const __asset = __isNode ? '' : '?v=20261109aa';
 const { localizedName, getLocale, translate } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -764,7 +764,7 @@ function feedbackHtml(result, multiple, isLast = false) {
     <p class="feedback-text">${escapeHtml(result.localExplanation || '')}</p>
     ${(result.explanation || []).map((item) => `<div class="explain-block"><h4>${escapeHtml(item.name)}</h4><p>${escapeHtml(item.specificity || item.oneLiner || '')}</p><ul>${(item.criteria || []).map((c) => `<li>${escapeHtml(c)}</li>`).join('')}</ul></div>`).join('')}
     ${aiUiAvailable() ? `<div class="ai-ask-row"><input class="input" data-ai-question maxlength="120" placeholder="简短追问（≤120 字）：为什么排除某个选项？"><button class="btn btn-secondary btn-sm" type="button" data-ai-ask>${icon('sparkles', 14)} 问 AI</button></div><div class="ai-ask-hint">追问限 120 字；复杂或跨主题问题请到文章页的「AI 导师」提问。</div>` : ''}
-    <div class="row-wrap" style="margin-top:12px">${aiUiAvailable() ? `<button class="btn btn-secondary btn-sm" type="button" data-ai-explain>${icon('sparkles', 14)} AI 解释错因</button>` : ''}<button class="btn btn-primary btn-sm" type="button" data-next>${icon('arrowRight', 14)} ${isLast ? '查看本轮结果' : '下一题'}</button></div>
+    <div class="row-wrap" style="margin-top:12px">${!result.correct && (result.correctIds || []).length ? `<a class="btn btn-secondary btn-sm" href="#/read?focus=${encodeURIComponent((result.correctIds || []).join(','))}">${icon('target', 14)} 用五步法重读</a>` : ''}${aiUiAvailable() ? `<button class="btn btn-secondary btn-sm" type="button" data-ai-explain>${icon('sparkles', 14)} AI 解释错因</button>` : ''}<button class="btn btn-primary btn-sm" type="button" data-next>${icon('arrowRight', 14)} ${isLast ? '查看本轮结果' : '下一题'}</button></div>
     <div data-ai-explain-panel></div>
   </div>`;
 }

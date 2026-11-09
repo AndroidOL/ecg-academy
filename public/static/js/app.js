@@ -1,7 +1,7 @@
 // Cache-busted dynamic imports: keep Node tests query-free while forcing
 // browsers with immutable 7-day static caching to load the current modules.
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bj';
+const __asset = __isNode ? '' : '?v=20261109aa';
 const { api } = await import(`./api.js${__asset}`);
 const { store, initTheme, applyTheme, toggleTheme } = await import(`./store.js${__asset}`);
 const { practiceView } = await import(`./views/practice.js${__asset}`);
@@ -28,7 +28,7 @@ const { introView } = await import(`./views/intro.js${__asset}`);
 const { packsView } = await import(`./views/packs.js${__asset}`);
 const { aiTutorView } = await import(`./views/ai-tutor.js${__asset}`);
 const { applyLowBandwidth } = await import(`./bandwidth.js${__asset}`);
-const { t, navKey, getLocale, setLocale, applyLocale, startLocaleObserver, LOCALES } = await import(`./i18n.js${__asset}`);
+const { t, navKey, getLocale, setLocale, applyLocale, startLocaleObserver, loadContentCatalog, LOCALES } = await import(`./i18n.js${__asset}`);
 const { pullStudy, scheduleStudyPush } = await import(`./study-sync.js${__asset}`);
 
 const routes = [
@@ -170,6 +170,9 @@ function navLabel(path) {
   if (path === '/') return { label: '首页', active: '/' };
   if (path.startsWith('/intro')) return { label: '导论', active: '/intro' };
   if (path.startsWith('/packs')) return { label: '课程包', active: '/packs' };
+  if (path.startsWith('/glossary')) return { label: '术语表', active: '/glossary' };
+  if (path.startsWith('/guidelines')) return { label: '指南差异', active: '/guidelines' };
+  if (path.startsWith('/about')) return { label: '关于 / 勘误', active: '/about' };
   if (path.startsWith('/ai')) return { label: 'AI 导师', active: '/ai' };
   if (path.startsWith('/learn')) return { label: '学习', active: '/learn' };
   if (path.startsWith('/practice')) return { label: '练习', active: '/practice' };
@@ -269,6 +272,7 @@ async function boot() {
     });
     router.start();
     startLocaleObserver();
+    if (getLocale() === 'en') setTimeout(() => loadContentCatalog(), 120);
     store.subscribe((type) => {
       if (['user', 'progress', 'stats', 'bootstrap'].includes(type)) updateShell();
       if (type === 'theme') {

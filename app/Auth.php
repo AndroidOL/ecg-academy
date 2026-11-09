@@ -291,6 +291,8 @@ final class Auth
             'id' => $user['public_id'],
             'displayName' => $user['display_name'],
             'username' => $user['username'],
+            'email' => $user['email'] ?? null,
+            'emailVerified' => !empty($user['email_verified_at']),
             'isGuest' => (int) $user['is_guest'] === 1,
             'isAdmin' => (int) ($user['is_admin'] ?? 0) === 1,
             'xp' => (int) $user['xp'],

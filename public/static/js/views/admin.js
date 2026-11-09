@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261108bj';
+const __asset = __isNode ? '' : '?v=20261109aa';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, escapeHtml, toast, confirmDialog, openModal } = await import(`../ui.js${__asset}`);
@@ -12,6 +12,7 @@ const TABS = [
   ['users', '用户'],
   ['assignments', '班级作业'],
   ['ai', 'AI 供应商'],
+  ['conversations', 'AI 对话'],
   ['security', '安全与登录'],
   ['audit', '审计日志'],
 ];
@@ -104,14 +105,27 @@ function settingsCard(session) {
   return `<div class="card card-pad">
     <h2 class="section-title" style="font-size:17px">站点开关与 AI 默认值</h2>
     <form data-settings-form class="admin-settings-grid">
-      <label class="admin-check"><input type="checkbox" name="auth.registration_enabled" ${a.registration_enabled ? 'checked' : ''}> 允许新用户注册</label>
+      <label class="admin-check"><input type="checkbox" name="auth.registration_enabled" ${a.registration_enabled ? 'checked' : ''}> 允许新用户注册（邮箱验证）</label>
       <label class="admin-check"><input type="checkbox" name="auth.user_login_enabled" ${a.user_login_enabled ? 'checked' : ''}> 允许普通用户登录</label>
+      <label class="field"><span>每日注册上限</span><input class="input" type="number" min="1" max="1000" name="auth.registration_daily_limit" value="${a.registration_daily_limit}"></label>
+      <label class="field"><span>验证码有效期（秒）</span><input class="input" type="number" min="300" max="1800" name="auth.email_code_ttl" value="${a.email_code_ttl}"></label>
+      <label class="field"><span>每邮箱每日验证码上限</span><input class="input" type="number" min="1" max="20" name="auth.email_daily_per_address" value="${a.email_daily_per_address}"></label>
+      <label class="field"><span>每 IP 每日验证码上限</span><input class="input" type="number" min="1" max="50" name="auth.email_daily_per_ip" value="${a.email_daily_per_ip}"></label>
       <label class="admin-check"><input type="checkbox" name="admin.password_login_enabled" ${ad.password_login_enabled ? 'checked' : ''}> 允许管理员密码登录</label>
       <label class="admin-check"><input type="checkbox" name="admin.passkey_login_enabled" ${ad.passkey_login_enabled ? 'checked' : ''}> 允许管理员 Passkey 登录</label>
       <label class="admin-check"><input type="checkbox" name="ai.enabled" ${ai.enabled ? 'checked' : ''}> 启用 AI 服务</label>
       <label class="admin-check"><input type="checkbox" name="ai.allow_guest" ${ai.allow_guest ? 'checked' : ''}> 允许未登录用户使用 AI</label>
       <label class="admin-check"><input type="checkbox" name="ai.byok_enabled" ${ai.byok_enabled ? 'checked' : ''}> 允许 BYOK 演示（用户自带密钥，仅存当前浏览器）</label>
-      <label class="field"><span>普通用户每日 AI 额度</span><input class="input" type="number" min="0" max="10000" name="ai.daily_limit" value="${ai.daily_limit}"></label>
+      <label class="field"><span>普通用户每日 AI 总调用上限</span><input class="input" type="number" min="0" max="10000" name="ai.daily_limit" value="${ai.daily_limit}"></label>
+      <label class="field"><span>AI 对话解锁等级</span><input class="input" type="number" min="1" max="20" name="ai.level_required" value="${ai.level_required}"></label>
+      <label class="field"><span>每日打卡基础对话次数</span><input class="input" type="number" min="0" max="100" name="ai.credit_base" value="${ai.credit_base}"></label>
+      <label class="field"><span>对话次数上限</span><input class="input" type="number" min="1" max="100" name="ai.credit_cap" value="${ai.credit_cap}"></label>
+      <label class="field"><span>错因分析每日上限</span><input class="input" type="number" min="1" max="100" name="ai.analysis_daily_limit" value="${ai.analysis_daily_limit}"></label>
+      <label class="field"><span>提问最小间隔（秒）</span><input class="input" type="number" min="0" max="120" name="ai.min_interval_seconds" value="${ai.min_interval_seconds}"></label>
+      <label class="field"><span>每 IP 每日 AI 上限</span><input class="input" type="number" min="1" max="1000" name="ai.ip_daily_limit" value="${ai.ip_daily_limit}"></label>
+      <label class="field"><span>越界次数阈值</span><input class="input" type="number" min="1" max="20" name="ai.violation_limit" value="${ai.violation_limit}"></label>
+      <label class="field"><span>越界统计窗口（小时）</span><input class="input" type="number" min="1" max="720" name="ai.violation_window_hours" value="${ai.violation_window_hours}"></label>
+      <label class="field"><span>暂停时长（小时）</span><input class="input" type="number" min="1" max="720" name="ai.disabled_hours" value="${ai.disabled_hours}"></label>
       <label class="field"><span>默认供应商</span><select class="select" name="ai.default_provider"><option value="">自动选择首个启用项</option>${providers.map((p) => `<option value="${escapeHtml(p.id)}" ${p.id === ai.default_provider ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}</select></label>
       <label class="field" style="grid-column:1/-1"><span>补充系统提示词（可选，最多 1000 字）</span><textarea class="input" name="ai.system_prompt_append" rows="3" maxlength="1000">${escapeHtml(ai.system_prompt_append)}</textarea></label>
       <label class="field"><span>GitHub 链接</span><input class="input" name="site.github_url" maxlength="180" value="${escapeHtml(site.github_url || '')}" placeholder="https://github.com/AndroidOL/ecg-academy"></label>
@@ -119,6 +133,25 @@ function settingsCard(session) {
       <label class="field"><span>版权信息</span><input class="input" name="site.copyright" maxlength="180" value="${escapeHtml(site.copyright || '')}" placeholder="© 2026 Tianhao Wu 等"></label>
       <label class="field"><span>ICP 备案号</span><input class="input" name="site.icp" maxlength="180" value="${escapeHtml(site.icp || '')}" placeholder="例如：京ICP备xxxxxxxx号"></label>
       <div style="grid-column:1/-1"><button class="btn btn-primary" type="submit">保存设置</button><span class="muted" style="font-size:10px;margin-left:8px">关闭两种管理员登录方式会被拒绝。</span></div>
+    </form>
+  </div>`;
+}
+
+function smtpCard(session) {
+  const smtp = session.settings.smtp || {};
+  return `<div class="card card-pad">
+    <div class="section-head"><h2 class="section-title" style="font-size:17px">邮件 / 注册验证</h2><span class="badge ${smtp.configured ? 'badge-ok' : 'badge-warn'}">${smtp.configured ? '已配置' : '未配置'}</span></div>
+    <p class="muted" style="font-size:11px;line-height:1.7">注册必须验证邮箱。支持 SMTP（TLS/SSL），密码使用 AES-256-GCM 加密保存。每个邮箱每日 3 封、每个 IP 每日 5 次，可在上方调整。</p>
+    <form data-smtp-form class="admin-settings-grid">
+      <label class="admin-check"><input type="checkbox" name="smtp.enabled" ${smtp.enabled ? 'checked' : ''}> 启用邮件服务</label>
+      <label class="field"><span>SMTP 主机</span><input class="input" name="smtp.host" value="${escapeHtml(smtp.host || '')}" placeholder="smtp.example.com"></label>
+      <label class="field"><span>端口</span><input class="input" type="number" min="1" max="65535" name="smtp.port" value="${smtp.port || 587}"></label>
+      <label class="field"><span>加密方式</span><select class="select" name="smtp.secure"><option value="tls" ${smtp.secure === 'tls' ? 'selected' : ''}>STARTTLS</option><option value="ssl" ${smtp.secure === 'ssl' ? 'selected' : ''}>SSL</option><option value="none" ${smtp.secure === 'none' ? 'selected' : ''}>无（不推荐）</option></select></label>
+      <label class="field"><span>SMTP 用户名</span><input class="input" name="smtp.username" value="${escapeHtml(smtp.username || '')}" autocomplete="off"></label>
+      <label class="field"><span>SMTP 密码（留空不修改）</span><input class="input" name="smtp.password" type="password" value="" autocomplete="new-password" placeholder="${escapeHtml(smtp.password || '')}"></label>
+      <label class="field"><span>发件邮箱</span><input class="input" type="email" name="smtp.from_email" value="${escapeHtml(smtp.from_email || '')}" placeholder="noreply@example.com"></label>
+      <label class="field"><span>发件人名称</span><input class="input" name="smtp.from_name" value="${escapeHtml(smtp.from_name || '')}" maxlength="80"></label>
+      <div style="grid-column:1/-1" class="row-wrap"><button class="btn btn-primary" type="submit">保存邮件设置</button><button class="btn btn-secondary" type="button" data-mail-test>发送测试邮件</button><span class="muted" style="font-size:10px">测试邮件需先保存发件配置。</span></div>
     </form>
   </div>`;
 }
@@ -144,6 +177,10 @@ function aiCard(session) {
         <option value="openrouter" data-base="https://openrouter.ai/api/v1" data-models="openai/gpt-4o-mini, anthropic/claude-3.5-sonnet">OpenRouter</option>
         <option value="dashscope" data-base="https://dashscope.aliyuncs.com/compatible-mode/v1" data-models="qwen-plus, qwen-turbo">通义千问（兼容模式）</option>
         <option value="siliconflow" data-base="https://api.siliconflow.cn/v1" data-models="Qwen/Qwen2.5-7B-Instruct, deepseek-ai/DeepSeek-V3">硅基流动</option>
+        <option value="moonshot" data-base="https://api.moonshot.cn/v1" data-models="moonshot-v1-8k, moonshot-v1-32k">Moonshot / Kimi</option>
+        <option value="zhipu" data-base="https://open.bigmodel.cn/api/paas/v4" data-models="glm-4-flash, glm-4-plus">智谱 GLM</option>
+        <option value="groq" data-base="https://api.groq.com/openai/v1" data-models="llama-3.3-70b-versatile, mixtral-8x7b-32768">Groq</option>
+        <option value="mistral" data-base="https://api.mistral.ai/v1" data-models="mistral-small-latest, mistral-large-latest">Mistral</option>
       </select></label>
       <label class="field"><span>名称</span><input class="input" name="name" required maxlength="80" placeholder="例如 DeepSeek"></label>
       <label class="field"><span>Base URL</span><input class="input" name="base_url" required placeholder="https://api.deepseek.com/v1"></label>
@@ -158,6 +195,14 @@ function aiCard(session) {
       <label class="admin-check"><input type="checkbox" name="enabled" checked> 启用该供应商</label>
       <div style="grid-column:1/-1"><button class="btn btn-primary" type="submit">保存供应商</button><button class="btn btn-ghost" type="reset">清空</button></div>
     </form>
+  </div>`;
+}
+
+function conversationsCard() {
+  return `<div class="card card-pad">
+    <div class="section-head"><h2 class="section-title" style="font-size:17px">永久对话记录</h2><span class="badge">审计保留 · 不提供删除</span></div>
+    <form class="row" data-conv-search><input class="input" name="q" placeholder="搜索问题或回答" style="min-height:34px;width:280px"><button class="btn btn-secondary btn-sm" type="submit">搜索</button></form>
+    <div data-conv-list style="margin-top:12px"></div>
   </div>`;
 }
 
@@ -332,21 +377,23 @@ export async function adminView() {
     });
     const drawTab = async (tab) => {
       el.querySelectorAll('[data-admin-tab]').forEach((b) => b.classList.toggle('active', b.dataset.adminTab === tab));
-      content.innerHTML = tab === 'overview' ? overview(session) + settingsCard(session)
+      content.innerHTML = tab === 'overview' ? overview(session) + settingsCard(session) + smtpCard(session)
         : tab === 'traffic' ? trafficCard()
           : tab === 'cost' ? costCard()
             : tab === 'packs' ? packsCard()
             : tab === 'users' ? usersCard()
               : tab === 'assignments' ? assignmentsCard()
                 : tab === 'ai' ? aiCard(session)
+              : tab === 'conversations' ? conversationsCard()
                   : tab === 'security' ? securityCard(session)
                     : auditCard(session);
       if (tab === 'users') await loadUsers();
       if (tab === 'traffic') await loadTraffic();
       if (tab === 'cost') await loadCost();
       if (tab === 'packs') await loadPacks();
-      if (tab === 'overview') bindSettings();
+      if (tab === 'overview') { bindSettings(); bindSmtp(); }
       if (tab === 'ai') bindProviderForm();
+      if (tab === 'conversations') { bindConversations(); await loadConversations(); }
       if (tab === 'assignments') {
         content.querySelector('[data-assignment-form]')?.addEventListener('submit', async (event) => {
           event.preventDefault();
@@ -379,13 +426,10 @@ export async function adminView() {
         event.preventDefault();
         const form = event.currentTarget;
         const payload = {};
-        form.querySelectorAll('input[type="checkbox"]').forEach((input) => { payload[input.name] = input.checked; });
-        payload['ai.byok_enabled'] = form.querySelector('[name="ai.byok_enabled"]').checked;
-        payload['ai.daily_limit'] = Number(form.querySelector('[name="ai.daily_limit"]').value) || 0;
-        payload['ai.default_provider'] = form.querySelector('[name="ai.default_provider"]').value;
-        payload['ai.system_prompt_append'] = form.querySelector('[name="ai.system_prompt_append"]').value;
-        ['site.github_url','site.license','site.copyright','site.icp'].forEach((key) => {
-          payload[key] = form.querySelector(`[name="${key}"]`)?.value || '';
+        form.querySelectorAll('input[name],select[name],textarea[name]').forEach((input) => {
+          if (input.type === 'checkbox') payload[input.name] = input.checked;
+          else if (input.type === 'number') payload[input.name] = Number(input.value) || 0;
+          else payload[input.name] = input.value;
         });
         try {
           await api.adminSaveSettings(payload);
@@ -394,25 +438,82 @@ export async function adminView() {
         } catch (err) { toast(err.message || '保存失败', 'error'); }
       });
     };
+    const bindSmtp = () => {
+      content.querySelector('[data-smtp-form]')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const payload = {};
+        form.querySelectorAll('input[name],select[name]').forEach((input) => {
+          if (input.type === 'checkbox') payload[input.name] = input.checked;
+          else if (input.type === 'number') payload[input.name] = Number(input.value) || 0;
+          else if (input.name === 'smtp.password' && input.value === '') return;
+          else payload[input.name] = input.value;
+        });
+        try {
+          await api.adminSaveSettings(payload);
+          toast('邮件设置已保存');
+          await reloadSession();
+        } catch (err) { toast(err.message || '保存失败', 'error'); }
+      });
+      content.querySelector('[data-mail-test]')?.addEventListener('click', async () => {
+        const to = window.prompt('输入接收测试邮件的邮箱：');
+        if (!to) return;
+        try {
+          const result = await api.adminMailTest(to);
+          toast(result.message || (result.ok ? '测试邮件已发送' : '发送失败'), result.ok ? 'success' : 'error');
+        } catch (err) { toast(err.message || '发送失败', 'error'); }
+      });
+    };
     const loadUsers = async (query = '') => {
       const host = content.querySelector('[data-users-list]');
       if (!host) return;
       try {
         const data = await api.adminUsers({ q: query });
-        host.innerHTML = `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>用户</th><th>角色</th><th>状态</th><th>AI 额度</th><th>XP</th><th>最近活动</th><th></th></tr></thead><tbody>${(data.items || []).map((u) => `<tr>
-          <td><b>${escapeHtml(u.display_name)}</b><div class="muted" style="font-size:10px">${u.username ? '@' + escapeHtml(u.username) : 'guest'} · ${escapeHtml(u.public_id)}</div></td>
-          <td>${u.is_admin ? badge('管理员', 'badge-brand') : '用户'}</td>
+        host.innerHTML = `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>用户</th><th>等级 / 角色</th><th>状态</th><th>AI 次数</th><th>违规</th><th>最近活动</th><th></th></tr></thead><tbody>${(data.items || []).map((u) => `<tr>
+          <td><b>${escapeHtml(u.display_name)}</b><div class="muted" style="font-size:10px">${u.username ? '@' + escapeHtml(u.username) : 'guest'} · ${escapeHtml(u.email || u.public_id)}</div></td>
+          <td>Lv.${u.level || 1}${u.level_override ? ' · 手动' : ''}<div class="muted" style="font-size:9px">${u.is_admin ? '管理员' : u.is_guest ? '访客' : '用户'}</div></td>
           <td>${u.is_active ? badge('启用', 'badge-ok') : badge('停用', 'badge-danger')}</td>
-          <td>${u.ai_daily_limit === null ? '默认' : u.ai_daily_limit}</td>
-          <td>${u.xp}<div class="muted" style="font-size:9px">Lv.${u.level || 1}${u.level_override ? ' · 手动' : ''}</div></td>
+          <td><b>${u.ai_credits || 0}</b> 次可用<div class="muted" style="font-size:9px">今日调用 ${u.ai_used_today || 0} · 记录 ${u.ai_conversation_count || 0}</div></td>
+          <td>${u.ai_disabled_until ? `<span class="badge badge-danger">暂停至 ${escapeHtml(String(u.ai_disabled_until).slice(0, 16))}</span>` : `<span class="muted">${u.ai_violations || 0} 次</span>`}</td>
           <td class="muted" style="font-size:10px">${escapeHtml(u.last_seen_at || '')}</td>
-          <td><div class="row-wrap" style="justify-content:flex-end;gap:3px"><button class="btn btn-xs btn-ghost" data-user-active="${u.id}" data-value="${u.is_active ? 0 : 1}">${u.is_active ? '停用' : '启用'}</button><button class="btn btn-xs btn-ghost" data-user-admin="${u.id}" data-value="${u.is_admin ? 0 : 1}">${u.is_admin ? '移除管理员' : '设为管理员'}</button><button class="btn btn-xs btn-ghost" data-user-level="${u.id}">设置等级</button><button class="btn btn-xs btn-ghost" data-user-limit="${u.id}">AI 额度</button><button class="btn btn-xs btn-ghost" data-user-password="${u.id}">重置密码</button></div></td>
+          <td><div class="row-wrap" style="justify-content:flex-end;gap:3px"><button class="btn btn-xs btn-secondary" data-user-detail="${u.id}">详情</button><button class="btn btn-xs btn-ghost" data-user-ai-reset="${u.id}">恢复 AI</button>${u.is_admin ? '' : `<button class="btn btn-xs btn-ghost" data-user-active="${u.id}" data-value="${u.is_active ? 0 : 1}">${u.is_active ? '停用' : '启用'}</button><button class="btn btn-xs btn-ghost" data-user-admin="${u.id}" data-value="1">设为管理员</button>`}<button class="btn btn-xs btn-ghost" data-user-level="${u.id}">等级</button><button class="btn btn-xs btn-ghost" data-user-limit="${u.id}">上限</button><button class="btn btn-xs btn-ghost" data-user-credits="${u.id}" data-credits="${u.ai_credits || 0}">次数</button><button class="btn btn-xs btn-ghost" data-user-password="${u.id}">密码</button></div></td>
         </tr>`).join('')}</tbody></table></div><div class="pager-info" style="margin-top:8px">共 ${data.total} 个用户，显示第 ${data.page} 页</div>`;
         host.querySelectorAll('[data-user-active]').forEach((b) => b.addEventListener('click', async () => {
           try { await api.adminUpdateUser({ userId: Number(b.dataset.userActive), is_active: b.dataset.value === '1' }); toast('状态已更新'); await loadUsers(query); } catch (e) { toast(e.message, 'error'); }
         }));
         host.querySelectorAll('[data-user-admin]').forEach((b) => b.addEventListener('click', async () => {
           try { await api.adminUpdateUser({ userId: Number(b.dataset.userAdmin), is_admin: b.dataset.value === '1' }); toast('角色已更新'); await loadUsers(query); } catch (e) { toast(e.message, 'error'); }
+        }));
+        host.querySelectorAll('[data-user-detail]').forEach((b) => b.addEventListener('click', async () => {
+          try {
+            const detail = await api.adminUserDetail(Number(b.dataset.userDetail));
+            const u = detail.user;
+            const conv = (detail.conversations || []).map((row) => `<div class="settings-row" style="align-items:flex-start"><div><div class="settings-name">${escapeHtml(row.mode)} · ${escapeHtml(row.source)} · ${escapeHtml(row.created_at)}</div><div class="settings-sub" style="white-space:pre-wrap">问：${escapeHtml(row.question)}</div><details style="margin-top:4px"><summary class="muted" style="font-size:10px;cursor:pointer">查看回答</summary><div class="settings-sub" style="white-space:pre-wrap">${escapeHtml(row.answer)}</div></details></div></div>`).join('') || '<div class="muted" style="font-size:11px">暂无对话记录</div>';
+            const usage = (detail.usage || []).map((row) => `<span class="badge">${escapeHtml(row.usage_day)} · ${row.used_count}</span>`).join('') || '<span class="muted">无</span>';
+            const credits = (detail.credits || []).map((row) => `<div class="settings-sub">${escapeHtml(row.created_at)} · ${row.delta > 0 ? '+' : ''}${row.delta} → ${row.balance} · ${escapeHtml(row.reason)}</div>`).join('') || '<div class="muted" style="font-size:11px">无次数变动</div>';
+            const violations = (detail.violations || []).map((row) => `<div class="settings-sub">${escapeHtml(row.created_at)} · ${escapeHtml(row.reason)} · ${escapeHtml(row.snippet)}</div>`).join('') || '<div class="muted" style="font-size:11px">无违规记录</div>';
+            openModal({
+              title: `用户详情 · ${u.display_name}`,
+              sub: `${u.username ? '@' + u.username : '访客'} · ${u.email || '无邮箱'} · Lv.${u.level} · 今日调用 ${detail.todayUsed} 次`,
+              content: `<div class="stack">
+                <div class="row-wrap"><span class="badge badge-brand">可用 ${u.ai_credits} 次</span><span class="badge">违规 ${u.ai_violations} 次</span>${u.ai_disabled_until ? `<span class="badge badge-danger">暂停至 ${escapeHtml(u.ai_disabled_until)}</span>` : ''}<button class="btn btn-xs btn-secondary" type="button" data-detail-reset="${u.id}">恢复 AI 权限</button></div>
+                <div><b>AI 每日调用</b><div class="row-wrap" style="margin-top:4px">${usage}</div></div>
+                <div><b>次数变动（最近 50 条）</b><div style="max-height:150px;overflow:auto;margin-top:4px">${credits}</div></div>
+                <div><b>违规记录</b><div style="max-height:150px;overflow:auto;margin-top:4px">${violations}</div></div>
+                <div><b>永久对话记录（最近 100 条）</b><div style="max-height:320px;overflow:auto;margin-top:4px">${conv}</div></div>
+              </div>`,
+            }).el.querySelector('[data-detail-reset]')?.addEventListener('click', async () => {
+              try { await api.adminUserAiReset(u.id); toast('AI 权限已恢复'); await loadUsers(query); } catch (e) { toast(e.message, 'error'); }
+            });
+          } catch (err) { toast(err.message || '加载失败', 'error'); }
+        }));
+        host.querySelectorAll('[data-user-ai-reset]').forEach((b) => b.addEventListener('click', async () => {
+          try { await api.adminUserAiReset(Number(b.dataset.userAiReset)); toast('AI 权限已恢复'); await loadUsers(query); } catch (e) { toast(e.message, 'error'); }
+        }));
+        host.querySelectorAll('[data-user-credits]').forEach((b) => b.addEventListener('click', async () => {
+          const raw = window.prompt('设置可用 AI 次数（0–100）：', b.dataset.credits);
+          if (raw === null) return;
+          try { await api.adminUpdateUser({ userId: Number(b.dataset.userCredits), ai_credits: Number(raw) }); toast('次数已更新'); await loadUsers(query); } catch (e) { toast(e.message, 'error'); }
         }));
         host.querySelectorAll('[data-user-level]').forEach((b) => b.addEventListener('click', async () => {
           const raw = window.prompt('设置用户等级（1–20；留空恢复按 XP 自动计算）：');
@@ -434,6 +535,20 @@ export async function adminView() {
           try { await api.adminUpdateUser({ userId: Number(b.dataset.userPassword), new_password: password }); toast('密码已重置'); } catch (e) { toast(e.message, 'error'); }
         }));
       } catch (err) { host.innerHTML = `<div class="callout danger">${escapeHtml(err.message)}</div>`; }
+    };
+    const loadConversations = async (q = '') => {
+      const host = content.querySelector('[data-conv-list]');
+      if (!host) return;
+      try {
+        const data = await api.adminAiConversations({ q, page: 1 });
+        host.innerHTML = `<div class="muted" style="font-size:10px;margin-bottom:6px">共 ${data.total} 条 · 仅显示最近 30 条</div>${(data.items || []).map((row) => `<div class="settings-row" style="align-items:flex-start"><div style="min-width:0"><div class="settings-name">${escapeHtml(row.mode)} · ${escapeHtml(row.source)} · ${row.user_id || '—'} · ${escapeHtml(row.created_at)}</div><div class="settings-sub" style="white-space:pre-wrap">问：${escapeHtml(row.question)}</div><details style="margin-top:3px"><summary class="muted" style="font-size:10px;cursor:pointer">查看回答</summary><div class="settings-sub" style="white-space:pre-wrap">${escapeHtml(row.answer)}</div></details></div></div>`).join('') || '<div class="muted" style="font-size:11px">暂无记录</div>'}`;
+      } catch (err) { host.innerHTML = `<div class="callout danger">${escapeHtml(err.message)}</div>`; }
+    };
+    const bindConversations = () => {
+      content.querySelector('[data-conv-search]')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        await loadConversations((event.currentTarget.querySelector('[name="q"]')?.value || '').trim());
+      });
     };
     const loadAssignments = async () => {
       const host = content.querySelector('[data-assignments-list]');

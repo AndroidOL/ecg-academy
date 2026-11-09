@@ -79,16 +79,20 @@ final class AdminController
         $where = '';
         $bind = [];
         if ($q !== '') {
-            $where = 'WHERE username LIKE ? OR display_name LIKE ? OR public_id LIKE ?';
+            $where = 'WHERE username LIKE ? OR display_name LIKE ? OR public_id LIKE ? OR email LIKE ?';
             $like = '%' . $q . '%';
-            $bind = [$like, $like, $like];
+            $bind = [$like, $like, $like, $like];
         }
         $countStmt = Db::pdo()->prepare('SELECT COUNT(*) FROM users ' . $where);
         $countStmt->execute($bind);
         $total = (int) $countStmt->fetchColumn();
         $stmt = Db::pdo()->prepare(
-            'SELECT id, public_id, username, display_name, is_guest, is_admin, is_active, ai_daily_limit, level_override, xp, created_at, last_seen_at
-             FROM users ' . $where . ' ORDER BY id DESC LIMIT ' . $size . ' OFFSET ' . (($page - 1) * $size)
+            'SELECT u.id, u.public_id, u.username, u.display_name, u.email, u.email_verified_at, u.is_guest, u.is_admin, u.is_active,
+                    u.ai_daily_limit, u.level_override, u.xp, u.ai_credits, u.ai_violations, u.ai_disabled_until,
+                    u.created_at, u.last_seen_at,
+                    (SELECT used_count FROM ai_usage x WHERE x.user_id = u.id AND x.usage_day = CURDATE()) AS ai_used_today,
+                    (SELECT COUNT(*) FROM ai_conversations c WHERE c.user_id = u.id) AS ai_conversation_count
+             FROM users u ' . $where . ' ORDER BY u.id DESC LIMIT ' . $size . ' OFFSET ' . (($page - 1) * $size)
         );
         $stmt->execute($bind);
         $items = $stmt->fetchAll();
@@ -139,6 +143,11 @@ final class AdminController
             $limit = ($raw === null || $raw === '') ? null : max(0, min(10000, (int) $raw));
             $fields[] = 'ai_daily_limit = ?';
             $values[] = $limit;
+        }
+        if (array_key_exists('ai_credits', $input)) {
+            $credits = max(0, min(100, (int) $input['ai_credits']));
+            $fields[] = 'ai_credits = ?';
+            $values[] = $credits;
         }
         if (array_key_exists('new_password', $input) && (string) $input['new_password'] !== '') {
             $password = (string) $input['new_password'];
@@ -213,6 +222,85 @@ final class AdminController
         $id = (int) $pdo->lastInsertId();
         AdminAuth::audit((int) $admin['id'], 'admin.user.create', ['userId' => $id, 'username' => $username, 'isAdmin' => $isAdmin]);
         Http::ok(['userId' => $id, 'username' => $username, 'displayName' => $displayName, 'isAdmin' => $isAdmin]);
+    }
+
+    public static function mailTest(array $params = []): void
+    {
+        $admin = AdminAuth::requireAdmin();
+        $to = trim((string) (Http::input()['to'] ?? ''));
+        if (filter_var($to, FILTER_VALIDATE_EMAIL) === false) throw new ApiError(422, 'invalid_email', '收件邮箱无效');
+        $result = Mailer::send($to, '心迹 ECG Lab 邮件配置测试', "这是一封来自心迹 ECG Lab 的测试邮件。
+
+如果您收到本邮件，说明 SMTP 配置可用。
+
+" . date('Y-m-d H:i:s'));
+        AdminAuth::audit((int) $admin['id'], 'admin.mail.test', ['to' => $to, 'ok' => $result['ok']]);
+        Http::ok($result);
+    }
+
+    public static function userDetail(array $params = []): void
+    {
+        AdminAuth::requireAdmin();
+        $userId = (int) ($_GET['id'] ?? 0);
+        $stmt = Db::pdo()->prepare('SELECT id, public_id, username, display_name, email, email_verified_at, is_guest, is_admin, is_active, xp, level_override, ai_daily_limit, ai_credits, ai_violations, ai_disabled_until, ai_last_request_at, created_at, last_seen_at FROM users WHERE id = ? LIMIT 1');
+        $stmt->execute([$userId]);
+        $user = $stmt->fetch();
+        if (!$user) throw new ApiError(404, 'user_not_found', '用户不存在');
+        $user['level'] = Level::levelFrom((int) $user['xp'], $user['level_override'] === null ? null : (int) $user['level_override']);
+        $usage = Db::pdo()->prepare('SELECT usage_day, used_count FROM ai_usage WHERE user_id = ? ORDER BY usage_day DESC LIMIT 30');
+        $usage->execute([$userId]);
+        $analysis = Db::pdo()->prepare('SELECT usage_day, used_count FROM ai_analysis_usage WHERE user_id = ? ORDER BY usage_day DESC LIMIT 30');
+        $analysis->execute([$userId]);
+        $credits = Db::pdo()->prepare('SELECT delta, balance, reason, ref_day, created_at FROM ai_credit_log WHERE user_id = ? ORDER BY id DESC LIMIT 50');
+        $credits->execute([$userId]);
+        $conversations = Db::pdo()->prepare('SELECT id, mode, question, answer, source, account_charge, prompt_tokens, completion_tokens, cost_micro, flags, created_at FROM ai_conversations WHERE user_id = ? ORDER BY id DESC LIMIT 100');
+        $conversations->execute([$userId]);
+        $violations = Db::pdo()->prepare('SELECT reason, snippet, ip_hash, created_at FROM ai_violation_log WHERE user_id = ? ORDER BY id DESC LIMIT 50');
+        $violations->execute([$userId]);
+        $today = Db::pdo()->prepare('SELECT COALESCE(used_count,0) FROM ai_usage WHERE user_id = ? AND usage_day = CURDATE()');
+        $today->execute([$userId]);
+        Http::ok([
+            'user' => $user,
+            'usage' => $usage->fetchAll(),
+            'analysis' => $analysis->fetchAll(),
+            'credits' => $credits->fetchAll(),
+            'conversations' => $conversations->fetchAll(),
+            'violations' => $violations->fetchAll(),
+            'todayUsed' => (int) ($today->fetchColumn() ?: 0),
+        ]);
+    }
+
+    public static function userAiReset(array $params = []): void
+    {
+        $admin = AdminAuth::requireAdmin();
+        $userId = (int) (Http::input()['userId'] ?? 0);
+        if ($userId <= 0) throw new ApiError(422, 'invalid_user', '用户 ID 无效');
+        AiGuard::reset($userId);
+        AdminAuth::audit((int) $admin['id'], 'admin.ai.reset', ['userId' => $userId]);
+        Http::ok(['ok' => true]);
+    }
+
+    public static function aiConversations(array $params = []): void
+    {
+        AdminAuth::requireAdmin();
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $size = 30;
+        $where = '';
+        $bind = [];
+        if (!empty($_GET['userId'])) {
+            $where = 'WHERE c.user_id = ?';
+            $bind[] = (int) $_GET['userId'];
+        } elseif (trim((string) ($_GET['q'] ?? '')) !== '') {
+            $where = 'WHERE c.question LIKE ? OR c.answer LIKE ?';
+            $like = '%' . trim((string) $_GET['q']) . '%';
+            $bind = [$like, $like];
+        }
+        $count = Db::pdo()->prepare('SELECT COUNT(*) FROM ai_conversations c ' . $where);
+        $count->execute($bind);
+        $total = (int) $count->fetchColumn();
+        $stmt = Db::pdo()->prepare('SELECT c.*, u.username, u.display_name FROM ai_conversations c LEFT JOIN users u ON u.id = c.user_id ' . $where . ' ORDER BY c.id DESC LIMIT ' . $size . ' OFFSET ' . (($page - 1) * $size));
+        $stmt->execute($bind);
+        Http::ok(['items' => $stmt->fetchAll(), 'total' => $total, 'page' => $page, 'pageSize' => $size]);
     }
 
     public static function assignments(array $params = []): void

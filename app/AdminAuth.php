@@ -109,6 +109,21 @@ final class AdminAuth
             'auth' => [
                 'registration_enabled' => (bool) $settings['auth.registration_enabled'],
                 'user_login_enabled' => (bool) $settings['auth.user_login_enabled'],
+                'registration_daily_limit' => (int) $settings['auth.registration_daily_limit'],
+                'email_code_ttl' => (int) $settings['auth.email_code_ttl'],
+                'email_daily_per_address' => (int) $settings['auth.email_daily_per_address'],
+                'email_daily_per_ip' => (int) $settings['auth.email_daily_per_ip'],
+            ],
+            'smtp' => [
+                'enabled' => (bool) $settings['smtp.enabled'],
+                'host' => (string) $settings['smtp.host'],
+                'port' => (int) $settings['smtp.port'],
+                'secure' => (string) $settings['smtp.secure'],
+                'username' => (string) $settings['smtp.username'],
+                'from_email' => (string) $settings['smtp.from_email'],
+                'from_name' => (string) $settings['smtp.from_name'],
+                'password' => Secret::mask(Secret::decrypt((string) $settings['smtp.password_enc'])),
+                'configured' => Mailer::configured(),
             ],
             'admin' => [
                 'password_login_enabled' => (bool) $settings['admin.password_login_enabled'],
@@ -120,6 +135,16 @@ final class AdminAuth
                 'default_provider' => (string) $settings['ai.default_provider'],
                 'system_prompt_append' => (string) $settings['ai.system_prompt_append'],
                 'allow_guest' => (bool) $settings['ai.allow_guest'],
+                'byok_enabled' => (bool) $settings['ai.byok_enabled'],
+                'level_required' => (int) $settings['ai.level_required'],
+                'credit_base' => (int) $settings['ai.credit_base'],
+                'credit_cap' => (int) $settings['ai.credit_cap'],
+                'analysis_daily_limit' => (int) $settings['ai.analysis_daily_limit'],
+                'min_interval_seconds' => (int) $settings['ai.min_interval_seconds'],
+                'ip_daily_limit' => (int) $settings['ai.ip_daily_limit'],
+                'violation_limit' => (int) $settings['ai.violation_limit'],
+                'violation_window_hours' => (int) $settings['ai.violation_window_hours'],
+                'disabled_hours' => (int) $settings['ai.disabled_hours'],
             ],
             'site' => [
                 'github_url' => (string) $settings['site.github_url'],
@@ -135,20 +160,28 @@ final class AdminAuth
     {
         $admin = self::requireAdmin();
         $allowed = [
-            'auth.registration_enabled', 'auth.user_login_enabled',
-            'admin.password_login_enabled', 'admin.passkey_login_enabled',
-            'ai.enabled', 'ai.daily_limit', 'ai.default_provider', 'ai.system_prompt_append', 'ai.allow_guest',
+            'auth.registration_enabled', 'auth.user_login_enabled', 'auth.registration_daily_limit',
+            'auth.email_code_ttl', 'auth.email_daily_per_address', 'auth.email_daily_per_ip',
+            'smtp.enabled', 'smtp.host', 'smtp.port', 'smtp.secure', 'smtp.username', 'smtp.from_email', 'smtp.from_name',
+            'ai.enabled', 'ai.daily_limit', 'ai.default_provider', 'ai.system_prompt_append', 'ai.allow_guest', 'ai.byok_enabled',
+            'ai.level_required', 'ai.credit_base', 'ai.credit_cap', 'ai.analysis_daily_limit',
+            'ai.min_interval_seconds', 'ai.ip_daily_limit', 'ai.violation_limit', 'ai.violation_window_hours', 'ai.disabled_hours',
             'site.github_url', 'site.license', 'site.copyright', 'site.icp',
         ];
         $updates = [];
         foreach ($allowed as $key) {
             if (!array_key_exists($key, $input)) continue;
             $value = $input[$key];
-            if (in_array($key, ['auth.registration_enabled','auth.user_login_enabled','admin.password_login_enabled','admin.passkey_login_enabled','ai.enabled','ai.allow_guest'], true)) {
+            if (in_array($key, ['auth.registration_enabled','auth.user_login_enabled','admin.password_login_enabled','admin.passkey_login_enabled','ai.enabled','ai.allow_guest','ai.byok_enabled','smtp.enabled'], true)) {
                 $value = filter_var($value, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
                 if ($value === null) throw new ApiError(422, 'invalid_setting', $key . ' 需为布尔值');
-            } elseif ($key === 'ai.daily_limit') {
-                $value = max(0, min(10000, (int) $value));
+            } elseif (in_array($key, ['ai.daily_limit','auth.registration_daily_limit','auth.email_daily_per_address','auth.email_daily_per_ip','auth.email_code_ttl','smtp.port','ai.level_required','ai.credit_base','ai.credit_cap','ai.analysis_daily_limit','ai.min_interval_seconds','ai.ip_daily_limit','ai.violation_limit','ai.violation_window_hours','ai.disabled_hours'], true)) {
+                $max = in_array($key, ['smtp.port'], true) ? 65535 : (in_array($key, ['auth.email_code_ttl','ai.violation_window_hours','ai.disabled_hours'], true) ? 720 : 1000);
+                $value = max(0, min($max, (int) $value));
+            } elseif ($key === 'smtp.secure') {
+                $value = in_array((string) $value, ['tls', 'ssl', 'none'], true) ? (string) $value : 'tls';
+            } elseif (in_array($key, ['smtp.host','smtp.username','smtp.from_email','smtp.from_name'], true)) {
+                $value = mb_substr(trim((string) $value), 0, 190, 'UTF-8');
             } elseif (in_array($key, ['ai.system_prompt_append','site.github_url','site.license','site.copyright','site.icp'], true)) {
                 $value = mb_substr(trim((string) $value), 0, $key === 'ai.system_prompt_append' ? 1000 : 180, 'UTF-8');
             } else {
@@ -165,8 +198,16 @@ final class AdminAuth
             $count = (int) Db::pdo()->query('SELECT COUNT(*) FROM admin_passkeys')->fetchColumn();
             if ($count === 0) throw new ApiError(422, 'passkey_required', '关闭密码登录前请先注册至少一个 Passkey');
         }
+        $smtpPassword = (string) ($input['smtp.password'] ?? '');
+        if ($smtpPassword !== '' && strpos($smtpPassword, '••') === false) {
+            if (strlen($smtpPassword) > 300) throw new ApiError(422, 'invalid_setting', 'SMTP 密码过长');
+            $updates['smtp.password_enc'] = Secret::encrypt($smtpPassword);
+        }
+        if (!empty($updates['smtp.from_email']) && filter_var($updates['smtp.from_email'], FILTER_VALIDATE_EMAIL) === false) {
+            throw new ApiError(422, 'invalid_setting', '发件邮箱格式无效');
+        }
         Settings::setMany($updates);
-        self::audit((int) $admin['id'], 'admin.settings.update', $updates);
+        self::audit((int) $admin['id'], 'admin.settings.update', array_diff_key($updates, ['smtp.password_enc' => true]));
         return self::settingsPayload();
     }
 
