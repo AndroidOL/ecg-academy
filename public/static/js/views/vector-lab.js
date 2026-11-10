@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261110ab';
+const __asset = __isNode ? '' : '?v=20261110ac';
 const { getLocale } = await import(`../i18n.js${__asset}`);
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 const { LOOPS, LOOP_MAIN, LOOP_WINDOWS, loopPoint, normalLoopMetrics } = await import(`../vector-loop-model.js${__asset}`);
@@ -50,6 +50,17 @@ const CHEST_VECTOR = {
 };
 
 const CHEST_VECTOR_KEYS = ['V1', 'V5', 'V6'];
+
+// 胸导联也参与向量环投影：x = 患者左，z = 前。
+const PROJECTION_LEADS = {
+  ...LEADS,
+  ...Object.fromEntries(Object.entries(CHEST_VECTOR).map(([id, p]) => [id, {
+    angle: null,
+    vec: [p.x, 0, p.z],
+    name: `${id} 导联`,
+    note: p.note,
+  }])),
+};
 
 const LEADS_12 = {
   I: { label: 'I', vec: [1, 0, 0], angle: 0 },
@@ -217,6 +228,15 @@ function drawVectorCanvas(canvas, state, t) {
     ctx.fillStyle = selected ? c.brand : c.muted;
     ctx.fillText(id, tip[0] + 3, tip[1] - 3);
   });
+  // 胸导联投影轴：与肢体导联轴不同，它位于水平面（x-z），单独画出来。
+  const chestLead = PROJECTION_LEADS[state.lead];
+  if (chestLead && !LEADS[state.lead]) {
+    const tip = project(unitVector(chestLead.vec).map((value) => value * 1.2));
+    ctx.strokeStyle = c.brand; ctx.globalAlpha = .9; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(...tip); ctx.stroke();
+    ctx.globalAlpha = 1; ctx.fillStyle = c.brand;
+    ctx.fillText(chestLead.name.replace(' 导联', ''), tip[0] + 3, tip[1] - 3);
+  }
   const loops = LOOPS;
   const loopColors = { P: c.brand, QRS: c.accent, T: c.gold };
   const loopAxes = state.axes || { P: 60, QRS: 60, T: 60 };
@@ -251,7 +271,7 @@ function drawVectorCanvas(canvas, state, t) {
   const phase = active === selected ? (cycle - windows[selected][0]) / (windows[selected][1] - windows[selected][0]) : 0;
   const vec = loops[selected](Math.max(0, Math.min(1, phase)) * Math.PI * 2);
   const rotatedVec = rotateAxis(selected, vec);
-  const lead = LEADS[state.lead];
+  const lead = PROJECTION_LEADS[state.lead] || LEADS.II;
   const p0 = project([0, 0, 0]);
   const p1 = project(rotatedVec);
   if (state.loop === 'all' ? (active && active === selected) : true) {
@@ -453,7 +473,7 @@ function drawChestWaveCanvas(canvas, state) {
     }
     ctx.stroke();
     const cursorX = left + (state.phase ?? 0) * plotW;
-    ctx.strokeStyle = '#fff'; ctx.globalAlpha = 0.45;
+    ctx.strokeStyle = c.brand; ctx.globalAlpha = 0.92; ctx.lineWidth = 1.2;
     ctx.beginPath(); ctx.moveTo(cursorX, y + 2); ctx.lineTo(cursorX, y + rowH - 2); ctx.stroke();
     ctx.globalAlpha = 1;
     const cursorV = leadWaveAt(lead, state.phase ?? 0, axes, amps[index]);
@@ -1197,12 +1217,17 @@ function chestWavePanel() {
   return `<div class="visual-grid">
     <div class="visual-card visual-card-dark">
       <div class="vector-figure-note"><b>V1–V6 胸导联投影</b><span>同一 P/QRS/T 向量环投影到六个胸前导联；调整三环电轴，观察 R 波递增与形态变化。</span></div>
+      <div class="visual-sync chest-loop-sync">
+        <div class="visual-sync-head"><span>P/QRS/T 向量环 · 大图</span><span data-chest-loop-label>投影到 V5</span></div>
+        <canvas data-chest-loop-canvas data-height="320" aria-label="P QRS T 向量环与胸导联投影大图"></canvas>
+      </div>
       <div class="visual-sync chest-wave-sync">
         <div class="visual-sync-head"><span>胸导联同步波形</span><span>V1–V6 · 时间光标</span></div>
         <canvas data-chest-wave-canvas data-height="396" aria-label="V1 到 V6 胸导联同步波形"></canvas>
       </div>
       <div class="visual-controls">
         <button class="btn btn-primary btn-sm" type="button" data-chest-wave-play>${icon('pause', 13)} 暂停</button>
+        <select class="select" data-chest-loop-lead aria-label="选择胸导联投影">${['V1','V2','V3','V4','V5','V6'].map((id) => `<option value="${id}" ${id === 'V5' ? 'selected' : ''}>${id} 导联投影</option>`).join('')}</select>
         <label class="visual-range">时间 <input type="range" min="0" max="1000" value="0" data-chest-wave-phase><span data-chest-wave-phase-label>0%</span></label>
         <div class="chest-wave-axes">
           ${['P', 'QRS', 'T'].map((key) => `<label class="chest-wave-axis-row"><b>${key}</b><input type="range" min="-180" max="180" value="60" data-chest-wave-axis="${key}" aria-label="${key} 环电轴"><span data-chest-wave-axis-value="${key}">+60°</span></label>`).join('')}
@@ -1234,7 +1259,7 @@ export async function vectorLabView() {
   let raf = 0;
   let cleanup = [];
   let start = performance.now();
-  const state = { rotate: 24, pitch: 18, zoom: 1.7, playing: true, chestPlaying: true, loop: 'all', lead: 'II', axes: { P: 60, QRS: 60, T: 60 }, axis: 60, angle: 60, magnitude: 1, auto: true, speed: 0.25, phase: 0, qrsPhase: 0, qrsPlaying: true };
+  const state = { rotate: 24, pitch: 18, zoom: 1.7, playing: true, chestPlaying: true, chestLead: 'V5', loop: 'all', lead: 'II', axes: { P: 60, QRS: 60, T: 60 }, axis: 60, angle: 60, magnitude: 1, auto: true, speed: 0.25, phase: 0, qrsPhase: 0, qrsPlaying: true };
   el.innerHTML = `<div class="page-eyebrow">${icon('compass', 14)} VECTOR & ELECTROPHYSIOLOGY</div>
     <div class="vector-head"><div><h1 class="page-title">心脏向量实验室</h1><p class="page-sub">把“背图形”变成“看方向”：P/QRS/T 环、肢体/胸导联投影、激活顺序一次串起来。</p></div><div class="row-wrap"><a class="btn btn-secondary btn-sm" href="#/learn/ecg-vector-waveform-theory">理论阅读 ${icon('bookOpen', 13)}</a><a class="btn btn-ghost btn-sm" href="#/learn/ecg-calibration-paper">${icon('arrowRight', 13)} 基础课程</a></div></div>
     <div class="vector-safety-note">${icon('info', 14)} <span>向量方向与导联投影仅供教学参考，用于理解“投影”和“向量大小”，<b>不代表任何患者实际情况</b>，不用于诊断或治疗。</span></div>
@@ -1470,7 +1495,25 @@ export async function vectorLabView() {
         setZoom(state.zoom * Math.exp(-e.deltaY * 0.0015));
       }, { passive: false });
     }
+    // The 12-lead canvas is static, so redraw after flex/grid layout settles and
+    // whenever its container changes width; otherwise it stays at the initial
+    // 300px backing store and looks blurry when stretched by CSS.
+    let twelveRaf = 0;
+    const schedule12Lead = () => {
+      if (twelveRaf) return;
+      twelveRaf = requestAnimationFrame(() => { twelveRaf = 0; render12Lead(); });
+    };
     render12Lead();
+    schedule12Lead();
+    const twelveHost = content.querySelector('[data-vector-12lead]')?.parentElement;
+    if (twelveHost && 'ResizeObserver' in window) {
+      const observer = new ResizeObserver(schedule12Lead);
+      observer.observe(twelveHost);
+      cleanup.push(() => observer.disconnect());
+    }
+    window.addEventListener('resize', schedule12Lead);
+    cleanup.push(() => window.removeEventListener('resize', schedule12Lead));
+    cleanup.push(() => { if (twelveRaf) cancelAnimationFrame(twelveRaf); });
     raf = requestAnimationFrame(drawLoopFrame);
   };
   const bindLimb = () => {
@@ -1534,6 +1577,10 @@ export async function vectorLabView() {
   };
   const bindChestWave = () => {
     const redraw = () => {
+      const loopCanvas = content.querySelector('[data-chest-loop-canvas]');
+      if (loopCanvas) drawVectorCanvas(loopCanvas, { ...state, lead: state.chestLead, loop: 'all' }, 0);
+      const loopLabel = content.querySelector('[data-chest-loop-label]');
+      if (loopLabel) loopLabel.textContent = `投影到 ${state.chestLead}`;
       const canvas = content.querySelector('[data-chest-wave-canvas]');
       if (canvas) drawChestWaveCanvas(canvas, state);
       const phaseSlider = content.querySelector('[data-chest-wave-phase]');
@@ -1552,6 +1599,10 @@ export async function vectorLabView() {
     play?.addEventListener('click', () => {
       state.chestPlaying = !state.chestPlaying;
       play.innerHTML = state.chestPlaying ? `${icon('pause', 13)} 暂停` : `${icon('play', 13)} 播放`;
+    });
+    content.querySelector('[data-chest-loop-lead]')?.addEventListener('change', (e) => {
+      state.chestLead = e.target.value;
+      redraw();
     });
     content.querySelector('[data-chest-wave-phase]')?.addEventListener('input', (e) => {
       state.chestPlaying = false;
