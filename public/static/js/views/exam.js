@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109av';
+const __asset = __isNode ? '' : '?v=20261110aa';
 const { localizedName } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -44,7 +44,7 @@ function homeMarkup() {
   const percent = Math.min(100, Math.round((learned / unlockAt) * 100));
   return `<header class="page-head">
       <div><div class="page-eyebrow">${icon('trophy', 14)} LEARN & EXAM</div><h1 class="page-title">学习考试</h1><p class="page-sub">每个板块先完成 10 道随机学习题；通过 8 题记为“已学习”。至少 8 个板块已学习后解锁综合考试。评级来自最近 50 题，样本超过 10 题才显示等级。</p></div>
-      <div class="row-wrap"><span class="badge ${status?.examUnlocked ? 'badge-ok' : 'badge-brand'}">${icon('target', 12)} 已学习 ${learned} / ${unlockAt}</span><span class="badge">${status?.bankTotal || 0} 道章节题</span><span class="badge">最近 ${status?.window || 50} 题评级</span></div>
+      <div class="row-wrap"><span class="badge ${status?.examUnlocked ? 'badge-ok' : 'badge-brand'}">${icon('target', 12)} 已学习 ${learned} / ${unlockAt}</span><span class="badge">${status?.bankTotal || 0} 道章节题</span><span class="badge">最近 ${status?.window || 50} 题评级</span><a class="btn btn-secondary btn-sm" href="#/leaderboard">${icon('trophy', 12)} 测试排行榜</a></div>
     </header>
     <div class="exam-unlock card card-pad">
       <div><div class="page-eyebrow">EXAM UNLOCK</div><h2>${status?.examUnlocked ? '综合考试已解锁' : `再完成 ${unlockAt - learned} 个板块`}</h2><p>${status?.examUnlocked ? '考试题目从已学习板块随机抽取，只对当前账号可见，不进入排行榜。' : '完成学习关卡后，已学习板块会显示在左侧；不足 8 个时考试入口会保持锁定。'}</p></div>

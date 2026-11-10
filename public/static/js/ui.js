@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109av';
+const __asset = __isNode ? '' : '?v=20261110aa';
 const { renderMiniECG } = await import(`./ecg-renderer.js${__asset}`);
 
 const paths = {
@@ -73,7 +73,6 @@ export const NAV_ITEMS = [
   { path: '/read', label: '系统判读', icon: 'target', bottom: false },
   { path: '/daily', label: '每日', icon: 'flame' },
   { path: '/exam', label: '考试', icon: 'target' },
-  { path: '/leaderboard', label: '排行', icon: 'trophy', bottom: false },
   { path: '/sim', label: '急救', icon: 'zap' },
   { path: '/lab', label: '实验室', icon: 'flask' },
   { path: '/me', label: '我的', icon: 'user' },

@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109av';
+const __asset = __isNode ? '' : '?v=20261110aa';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -31,6 +31,7 @@ export async function simListView() {
         <h2 class="scenario-name">${escapeHtml(scenario.name)}</h2>
         <p class="scenario-sub">${escapeHtml(scenario.subtitle)}</p>
         <div class="scenario-patient">${escapeHtml(String(scenario.patient?.age || ''))} 岁 · ${escapeHtml(scenario.patient?.sex || '')} · ${escapeHtml(scenario.patient?.complaint || '')}</div>
+        ${scenario.pearls?.[0] ? `<p class="scenario-pearl">${icon('sparkles', 11)} ${escapeHtml(scenario.pearls[0])}</p>` : ''}
         <div class="scenario-foot"><span class="muted" style="font-size:10px">${(scenario.guideline || []).length} 条关键提示</span><button class="btn btn-primary btn-sm" type="button" data-start-scenario="${escapeHtml(scenario.id)}">${icon('play', 13)} 开始推演</button></div>
       </article>`).join('')}
     </div>

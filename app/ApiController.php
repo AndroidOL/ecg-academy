@@ -389,7 +389,8 @@ final class ApiController
         $diagnosisId = isset($input['diagnosisId']) ? (string) $input['diagnosisId'] : null;
         $byok = is_array($input['byok'] ?? null) ? $input['byok'] : null;
         $mistake = is_array($input['mistake'] ?? null) ? $input['mistake'] : null;
-        Http::ok(Ai::chat((int) $user['id'], (string) ($input['message'] ?? ''), $diagnosisId, $byok, $mistake));
+        $history = is_array($input['history'] ?? null) ? $input['history'] : null;
+        Http::ok(Ai::chat((int) $user['id'], (string) ($input['message'] ?? ''), $diagnosisId, $byok, $mistake, $history));
     }
 
     public static function aiQuiz(array $params = []): void

@@ -233,8 +233,22 @@ try {
         assert((bool) array_filter($labels, static fn (string $l): bool => str_contains($l, '电击')));
         SimEngine::action($userId, $id, 'finish', []);
     });
+    check('VF monitor seed differs between sessions and evolves in-session', function () use ($userId): void {
+        $first = SimEngine::start($userId, 'vf-arrest');
+        $second = SimEngine::start($userId, 'vf-arrest');
+        assert($first['monitor']['seed'] !== $second['monitor']['seed'], 'fresh VF sessions must not replay the same waveform');
+        $id = $first['sessionId'];
+        $seed = $first['monitor']['seed'];
+        pauseFor(1.2);
+        $view = SimEngine::state($userId, $id);
+        assert($view['monitor']['seed'] !== $seed, 'VF waveform should evolve while the session runs');
+        assert($view['monitor']['vfAmplitude'] >= 0.35 && $view['monitor']['vfAmplitude'] <= 1.4);
+        SimEngine::action($userId, $id, 'finish', []);
+        SimEngine::action($userId, (string) $second['sessionId'], 'finish', []);
+    });
+
     check('new reversible-cause scenarios expose and accept special action', function () use ($userId) {
-        foreach (['pea-hypovolemia', 'hypothermia-vf', 'last-arrest', 'pregnancy-arrest'] as $scenarioId) {
+        foreach (['pea-hypovolemia', 'hypothermia-vf', 'last-arrest', 'pregnancy-arrest', 'refractory-vf', 'stemi-vf'] as $scenarioId) {
             $view = SimEngine::start($userId, $scenarioId);
             $id = $view['sessionId'];
             $special = false;
@@ -245,7 +259,7 @@ try {
             }
             assert($special, $scenarioId . ' should expose special action');
             $view = SimEngine::action($userId, $id, 'special', []);
-            assert((bool) array_filter($view['events'], static fn (array $e): bool => str_contains((string) $e['label'], '补液') || str_contains((string) $e['label'], '复温') || str_contains((string) $e['label'], '脂肪乳') || str_contains((string) $e['label'], '剖宫产')));
+            assert((bool) array_filter($view['events'], static fn (array $e): bool => str_contains((string) $e['label'], '补液') || str_contains((string) $e['label'], '复温') || str_contains((string) $e['label'], '脂肪乳') || str_contains((string) $e['label'], '剖宫产') || str_contains((string) $e['label'], 'ECPR') || str_contains((string) $e['label'], '再灌注')));
             SimEngine::action($userId, $id, 'finish', []);
         }
     });

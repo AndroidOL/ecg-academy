@@ -4,6 +4,7 @@ declare(strict_types=1);
 require dirname(__DIR__) . '/app/bootstrap.php';
 
 use App\Ai;
+use App\Content;
 use App\Db;
 use App\Settings;
 
@@ -94,6 +95,52 @@ try {
         assert(count($questions) === 1);
         assert($questions[0]['answerIndex'] === 0);
         assert(str_starts_with($questions[0]['explanation'], '窦房结'));
+    });
+
+    check('chat messages keep a stable cached prefix and bounded history', function (): void {
+        $method = new ReflectionMethod(Ai::class, 'chatMessages');
+        $method->setAccessible(true);
+        $built = $method->invoke(null, '如何与房扑鉴别？', Content::find('afib'), null, [
+            ['role' => 'user', 'content' => '上一问：最重要的线索？'],
+            ['role' => 'assistant', 'content' => '上一答：不规则 RR。'],
+            ['role' => 'system', 'content' => '不应保留'],
+        ]);
+        assert(count($built['messages']) === 4);
+        assert($built['messages'][0]['role'] === 'system');
+        assert(str_contains($built['messages'][0]['content'], '教学上下文'));
+        assert($built['messages'][1]['content'] === '上一问：最重要的线索？');
+        assert($built['messages'][2]['role'] === 'assistant');
+        assert(str_starts_with($built['messages'][3]['content'], '学生问题：如何与房扑鉴别？'));
+
+        $normalize = new ReflectionMethod(Ai::class, 'normalizeHistory');
+        $normalize->setAccessible(true);
+        $history = $normalize->invoke(null, [
+            ['role' => 'assistant', 'content' => '开头不是用户'],
+            ['role' => 'user', 'content' => str_repeat('心', 5000)],
+            ['role' => 'tool', 'content' => '不应保留'],
+        ]);
+        assert(count($history) === 1);
+        assert(mb_strlen($history[0]['content'], 'UTF-8') === 1200);
+    });
+
+    check('server response cache is keyed, expiring and skipped for BYOK', function (): void {
+        $keyMethod = new ReflectionMethod(Ai::class, 'cacheKey');
+        $keyMethod->setAccessible(true);
+        $messages = [['role' => 'user', 'content' => '缓存键测试']];
+        assert($keyMethod->invoke(null, 'chat', $messages, ['apiKey' => 'x']) === null, 'BYOK must not use shared cache');
+        $key = (string) $keyMethod->invoke(null, 'chat', $messages, null);
+        assert(strlen($key) === 64);
+
+        $put = new ReflectionMethod(Ai::class, 'cachePut');
+        $put->setAccessible(true);
+        $get = new ReflectionMethod(Ai::class, 'cacheGet');
+        $get->setAccessible(true);
+        $put->invoke(null, $key, ['text' => '缓存答案', 'usage' => ['prompt' => 12, 'completion' => 34]]);
+        $hit = $get->invoke(null, $key);
+        assert($hit['text'] === '缓存答案');
+        assert($hit['usage']['prompt'] === 0 && $hit['usage']['completion'] === 0, 'cache hits must report zero billable tokens');
+        @unlink(BASE_PATH . '/storage/cache/ai/' . $key . '.json');
+        assert($get->invoke(null, $key) === null);
     });
 
     check('mistake context resolves catalog names and rejects unknown ids', function (): void {

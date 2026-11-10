@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109av';
+const __asset = __isNode ? '' : '?v=20261110aa';
 const { api } = await import(`../api.js${__asset}`);
 const { hasByok } = await import(`../byok.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -31,8 +31,7 @@ export async function simSessionView({ params }) {
   let monitorSig = '';
   let lastActionsSig = '';
   let shockEnergy = 200;
-  let shockSync = false;
-  let shockSyncTouched = false;
+  let shockSync = null;
 
   const clearPoll = () => {
     if (pollTimer) window.clearInterval(pollTimer);
@@ -76,8 +75,6 @@ export async function simSessionView({ params }) {
   function renderShell() {
     const scenario = scenarioMeta();
     const monitor = state.monitor || {};
-    const defaultShock = state.actions?.flatMap((g) => g.actions || []).find((a) => a.id === 'shock');
-    if (defaultShock && !shockSyncTouched) shockSync = Boolean(defaultShock.sync);
     el.innerHTML = `
       <div class="sim-session-head">
         <div><div class="page-eyebrow">${icon('zap', 14)} LIVE SIMULATION · ${escapeHtml(state.status === 'active' ? '进行中' : '已结束')}</div><h1 class="sim-session-title">${escapeHtml(scenario.name || '急救推演')}</h1><p class="sim-session-sub">${escapeHtml(scenario.subtitle || '')} · 患者 ${escapeHtml(String(scenario.patient?.age || ''))} 岁 ${escapeHtml(scenario.patient?.sex || '')}</p></div>
@@ -110,6 +107,7 @@ export async function simSessionView({ params }) {
           <div class="card card-pad" style="font-size:11px">
             <div class="row" style="gap:6px;margin-bottom:5px">${icon('info', 14)}<b>场景提示</b></div>
             <div class="muted" style="line-height:1.7">${(scenario.guideline || []).slice(0, 3).map((g) => `· ${escapeHtml(g)}`).join('<br>')}</div>
+            ${(scenario.pearls || []).length ? `<div class="sim-pearls"><b>${icon('sparkles', 12)} 训练要点</b>${scenario.pearls.map((p) => `<span>${escapeHtml(p)}</span>`).join('')}</div>` : ''}
           </div>
         </aside>
       </div>`;
@@ -251,8 +249,6 @@ export async function simSessionView({ params }) {
   function renderActions() {
     const host = el.querySelector('[data-actions]');
     if (!host || !state) return;
-    const shockAction = state.actions?.flatMap((group) => group.actions || []).find((action) => action.id === 'shock');
-    if (shockAction && !shockSyncTouched) shockSync = Boolean(shockAction.sync);
     const energies = state.rhythm === 'svt' ? [50, 100, 150, 200] : [120, 150, 200];
     if (!energies.includes(shockEnergy)) shockEnergy = energies[0];
     const flags = state.flags || {};
@@ -264,24 +260,28 @@ export async function simSessionView({ params }) {
         const chargeReady = Boolean(flags.chargeReady);
         const chargeProgress = Boolean(flags.chargeInProgress);
         const chargeLocked = chargeReady || chargeProgress;
+        const selectedSync = flags.chargeSync ?? shockSync;
+        const hasMode = selectedSync === true || selectedSync === false;
         const blocked = Boolean(state.cpr) || Boolean(flags.postShock) || state.status !== 'active';
         const shockBlocked = blocked || !chargeReady;
         const reason = state.cpr
           ? '先停止按压，再放电'
           : flags.postShock
             ? '电击后观察期，约 2 秒'
-            : chargeProgress
-              ? `充电中 · 约 ${flags.chargeReadyIn ?? 0}s；需切换能量/同步模式请先解除充电`
-              : chargeReady
-                ? '已充电：能量/同步模式已锁定；确认无人接触后放电，或先解除充电再切换'
-                : '先选择能量并充电';
+            : !hasMode
+              ? '先判断当前心律：有脉且规则/不稳定需要同步复律，无脉或心室颤动/无脉性室速需要非同步除颤'
+              : chargeProgress
+                ? `充电中 · 约 ${flags.chargeReadyIn ?? 0}s；需切换能量/同步模式请先解除充电`
+                : chargeReady
+                  ? '已充电：能量/同步模式已锁定；确认无人接触后放电，或先解除充电再切换'
+                  : '先选择能量并充电';
         const chargeText = chargeReady ? `已充电 ${flags.chargeEnergy ?? shockEnergy} J` : chargeProgress ? `充电中 ${flags.chargeReadyIn ?? 0}s` : '充电';
         return `<div class="action-group"><div class="action-group-title">${escapeHtml(group.label)}</div>
           <div class="shock-controls">
             <div class="row"><span class="muted" style="font-size:10px">能量</span><select class="select" data-shock-energy ${chargeLocked || state.status !== 'active' ? 'disabled' : ''}>${energies.map((e) => `<option value="${e}" ${e === (flags.chargeEnergy ?? shockEnergy) ? 'selected' : ''}>${e} J</option>`).join('')}</select></div>
-            <div class="row" style="justify-content:space-between"><span class="muted" style="font-size:10px">模式</span><div class="sync-switch"><button type="button" class="${(flags.chargeSync ?? shockSync) ? 'active' : ''}" data-sync="1" ${chargeLocked ? 'disabled' : ''}>同步</button><button type="button" class="${!(flags.chargeSync ?? shockSync) ? 'active danger' : ''}" data-sync="0" ${chargeLocked ? 'disabled' : ''}>非同步</button></div></div>
+            <div class="row" style="justify-content:space-between"><span class="muted" style="font-size:10px">模式</span><div class="sync-switch"><button type="button" class="${selectedSync === true ? 'active' : ''}" data-sync="1" ${chargeLocked ? 'disabled' : ''}>同步</button><button type="button" class="${selectedSync === false ? 'active danger' : ''}" data-sync="0" ${chargeLocked ? 'disabled' : ''}>非同步</button></div></div>
             <div class="charge-row">
-              <button class="btn btn-secondary btn-sm" type="button" data-action="charge" ${chargeLocked || flags.postShock || state.status !== 'active' ? 'disabled' : ''}>${icon('bolt', 13)} ${chargeText}</button>
+              <button class="btn btn-secondary btn-sm" type="button" data-action="charge" ${chargeLocked || flags.postShock || state.status !== 'active' || !hasMode ? 'disabled' : ''}>${icon('bolt', 13)} ${chargeText}</button>
               <button class="btn btn-danger btn-sm" type="button" data-action="shock" ${shockBlocked ? 'disabled' : ''}>${icon('zap', 14)} 放电</button>
               ${chargeReady || chargeProgress ? `<button class="btn btn-ghost btn-sm" type="button" data-action="disarm">${icon('rotate', 13)} 解除充电</button>` : ''}
             </div>
@@ -310,7 +310,6 @@ export async function simSessionView({ params }) {
     host.querySelectorAll('[data-sync]').forEach((button) => {
       button.addEventListener('click', () => {
         shockSync = button.dataset.sync === '1';
-        shockSyncTouched = true;
         renderActions();
       });
     });
@@ -320,6 +319,10 @@ export async function simSessionView({ params }) {
     host.querySelectorAll('[data-action]').forEach((button) => {
       button.addEventListener('click', async () => {
         const action = button.dataset.action;
+        if ((action === 'charge' || action === 'shock') && shockSync === null) {
+          toast('请先判断并选择同步或非同步模式', 'warn');
+          return;
+        }
         if (action === 'finish') {
           const ok = await confirmDialog({ title: '结束并复盘？', message: '将按当前时间线生成评分与复盘，之后不能继续操作。', confirmText: '结束并复盘' });
           if (!ok) return;

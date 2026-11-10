@@ -115,6 +115,14 @@ check('ventricular fibrillation has no NaN and bounded amplitude', () => {
   assert.ok(max > 0.2 && max < 1.6, `max=${max}`);
 });
 
+check('VF morphology varies with the session seed instead of replaying one waveform', () => {
+  const one = generateLead({ ...base, rhythm: 'vf', rate: 0, p: 'absent', seed: 101, extras: ['fibrillatory'] }, 'II').samples;
+  const two = generateLead({ ...base, rhythm: 'vf', rate: 0, p: 'absent', seed: 202, extras: ['fibrillatory'] }, 'II').samples;
+  let diff = 0;
+  for (let i = 0; i < Math.min(one.length, two.length); i += 1) diff += Math.abs(one[i] - two[i]);
+  assert.ok(diff / one.length > 0.01, 'two VF seeds should not produce near-identical traces');
+});
+
 check('torsades produces twisting waveform', () => {
   const result = generateLead({ ...base, rhythm: 'torsades', rate: 210, qrs: 0.18, morphology: 'wide' }, 'II');
   noNaN(result);

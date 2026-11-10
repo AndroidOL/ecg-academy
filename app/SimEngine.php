@@ -85,6 +85,8 @@ final class SimEngine
             'penalties' => [],
             'flags' => [],
             'rng' => random_int(100000, 2000000000),
+            'monitorSeed' => random_int(1000, 900000000),
+            'vfScale' => 0.88 + random_int(0, 32) / 100,
             'hr' => 0, 'bpSys' => 0, 'bpDia' => 0, 'spo2' => 0, 'etco2' => 0,
             'responsive' => false, 'pulse' => false,
             'lastPhysiologyAt' => $now, 'phase' => 'arrival', 'stage' => 0, 'lastStageAt' => $now,
@@ -1250,7 +1252,7 @@ final class SimEngine
             ]);
         }
         return match ($state['rhythm']) {
-            'vf' => array_replace($base, ['rhythm' => 'vf', 'rate' => 0, 'p' => 'absent', 'extras' => ['fibrillatory'], 'seed' => 37 + (int) $elapsed, 'cprArtifact' => $cprArtifact, 'vfAmplitude' => !empty($state['flags']['vf_fine']) ? 0.55 : 1, 'description' => !empty($state['flags']['vf_fine']) ? '细颤：振幅低、频率快，除颤成功率下降。' : '粗颤：振幅较高，立即 CPR 并尽快除颤。']),
+            'vf' => array_replace($base, ['rhythm' => 'vf', 'rate' => 0, 'p' => 'absent', 'extras' => ['fibrillatory'], 'seed' => ((int) ($state['monitorSeed'] ?? 37) + (int) $elapsed) % 2000000000, 'cprArtifact' => $cprArtifact, 'vfAmplitude' => !empty($state['flags']['vf_fine']) ? 0.55 : (float) ($state['vfScale'] ?? 1), 'description' => !empty($state['flags']['vf_fine']) ? '细颤：振幅低、频率快，除颤成功率下降。' : '粗颤：振幅较高，立即 CPR 并尽快除颤。']),
             'pvt' => array_replace($base, ['rhythm' => 'vt', 'rate' => 200, 'qrs' => 0.17, 'morphology' => 'wide', 'p' => 'absent', 't' => ['shape' => 'discordant', 'amp' => 1.1], 'description' => '宽 QRS 心动过速，无脉。']),
             'svt' => array_replace($base, ['rhythm' => 'svt', 'rate' => (int) ($state['hr'] ?? 190), 'atrialRate' => (int) ($state['hr'] ?? 190), 'p' => 'hidden', 'qrs' => 0.07, 'seed' => 61 + intdiv((int) $elapsed, 4), 'description' => '窄 QRS 规则心动过速。']),
             'af_fast' => array_replace($base, ['rhythm' => 'af', 'rate' => (int) ($state['hr'] ?? 152), 'atrialRate' => 400, 'irregularity' => 0.24, 'p' => 'absent', 'extras' => ['fibrillatory'], 'seed' => 71 + intdiv((int) $elapsed, 4), 'description' => '快速心房颤动。']),
@@ -1376,6 +1378,9 @@ final class SimEngine
         }
         if ($algorithm === 'vf') {
             if (!$state['cpr']) return '患者无脉。立即开始高质量胸外按压；除颤前必须先停止按压。';
+            $etco2 = (int) ($state['etco2'] ?? 0);
+            if ($etco2 > 0 && $etco2 < 10) return 'ETCO₂ 偏低：检查按压深度/频率、回弹与通气，避免过度通气；按压质量差时除颤成功率下降。';
+            if ($etco2 >= 40) return 'ETCO₂ 突然升高：立即检查脉搏与心律，可能是自主循环恢复（ROSC）的最早信号。';
             if ($state['shocks'] === 0) return '可除颤心律：尽快非同步除颤（双相 120–200 J），除颤后立即恢复按压。';
             if ($state['shocks'] < 2) return '继续 CPR 2 分钟；第二次除颤后考虑肾上腺素 1 mg。';
             if ($state['epi'] === 0) return '可给予肾上腺素 1 mg IV/IO，每 3–5 分钟重复。';
