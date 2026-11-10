@@ -4,7 +4,7 @@ import {
   wrongChoiceSummary, strongestRepeat, mistakeContext, wrongConfusionPairs,
 } from '../study-store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109as';
+const __asset = __isNode ? '' : '?v=20261109at';
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);

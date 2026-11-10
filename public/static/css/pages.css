@@ -1183,6 +1183,21 @@
 /* ---------- AI tutor ---------- */
 .ai-tutor-layout { display:grid; grid-template-columns:320px minmax(0,1fr); gap:14px; margin-top:16px; align-items:start; }
 .ai-tutor-main { min-width:0; }
+/* Chat height follows the viewport instead of a fixed 340px message box. */
+.ai-tutor-main .ai-panel { display:flex; flex-direction:column; height:clamp(420px, calc(100vh - 250px), 780px); height:clamp(420px, calc(100dvh - 250px), 780px); }
+.ai-tutor-main .ai-panel-head,
+.ai-tutor-main .ai-suggestions,
+.ai-tutor-main .ai-input-row,
+.ai-tutor-main .ai-disclaimer { flex:0 0 auto; }
+.ai-tutor-main .ai-messages { flex:1 1 auto; min-height:200px; max-height:none; scrollbar-gutter:stable; }
+@media (max-width: 900px) {
+  .ai-tutor-main .ai-panel { height:clamp(390px, calc(100vh - 300px), 680px); height:clamp(390px, calc(100dvh - 300px), 680px); }
+  .ai-tutor-main .ai-messages { min-height:170px; }
+}
+@media (max-width: 719px) {
+  .ai-tutor-main .ai-panel { height:clamp(360px, calc(100vh - 330px), 600px); height:clamp(360px, calc(100dvh - 330px), 600px); }
+  .ai-tutor-main .ai-messages { min-height:150px; }
+}
 .ai-wrong-groups { display:flex; flex-direction:column; gap:5px; margin-top:8px; max-height:380px; overflow:auto; }
 .ai-wrong-group { border:1px solid var(--line); border-radius:9px; background:var(--bg-elev); }
 .ai-wrong-group summary { display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:pointer; padding:7px 9px; font-size:11.5px; color:var(--ink-2); list-style:none; }
