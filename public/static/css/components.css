@@ -34,14 +34,14 @@
   font-weight: 600;
   letter-spacing: 0.17em;
 }
-.sidebar-nav { display: flex; flex-direction: column; gap: 3px; }
+.sidebar-nav { display: flex; flex-direction: column; gap: 2px; }
 .nav-link {
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-height: 44px;
-  padding: 9px 12px;
-  border-radius: 12px;
+  gap: 10px;
+  min-height: 42px;
+  padding: 8px 11px;
+  border-radius: 11px;
   color: var(--ink-2);
   font-size: 14px;
   font-weight: 570;
@@ -107,10 +107,10 @@
 .topbar .brand-sub { display: none; }
 .topbar-links { display: flex; align-items: center; gap: 3px; margin-left: 14px; }
 .topbar-links a {
-  padding: 8px 11px;
-  border-radius: 10px;
+  padding: 7px 10px;
+  border-radius: 9px;
   color: var(--ink-2);
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
 }
 .topbar-links a:hover, .topbar-links a.active { background: var(--surface-2); color: var(--ink); }

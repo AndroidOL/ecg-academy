@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261110ai';
+const __asset = __isNode ? '' : '?v=20261110aj';
 const { store } = await import(`../store.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { getByok, hasByok } = await import(`../byok.js${__asset}`);
@@ -163,7 +163,11 @@ export async function aiTutorView() {
     const entry = entries.find((item) => item.id === button.dataset.aiWrong);
     const name = button.dataset.name;
     const detail = entry ? mistakeContext(entry) : null;
-    const picked = (detail?.choices || []).slice(0, 3).map((choice) => `${choice.name}×${choice.count}`).join('、');
+    const recovered = detail?.choices?.length
+      ? detail.choices
+      : [...new Set((detail?.history || []).flatMap((item) => (item.picked || []).map((choice) => choice.name)).filter(Boolean))]
+        .map((name) => ({ name, count: 1 }));
+    const picked = recovered.slice(0, 3).map((choice) => `${choice.name}${choice.count > 1 ? `×${choice.count}` : ''}`).join('、');
     const repeat = detail?.repeat;
     let prompt = `请分析我在「${name}」上的错题。`;
     if (picked) prompt += `我实际错选的选项是：${picked}。请逐项解释每个干扰项为什么容易被误认为正确诊断。`;

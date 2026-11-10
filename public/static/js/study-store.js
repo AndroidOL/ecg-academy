@@ -331,8 +331,21 @@ export function wrongReviews(limit = 100) {
     .slice(0, Math.max(1, limit));
 }
 
+function recoverWrongChoices(entry) {
+  const choices = { ...(entry?.wrongChoices || {}) };
+  (Array.isArray(entry?.wrongLog) ? entry.wrongLog : []).forEach((log) => {
+    normalizePicked(log?.picked).forEach((option) => {
+      const key = option.id || `name:${option.name}`;
+      if (!choices[key]) {
+        choices[key] = { id: option.id || '', name: option.name, count: 1, lastAt: Number(log?.at || 0) };
+      }
+    });
+  });
+  return choices;
+}
+
 export function wrongChoiceSummary(entry, limit = 3) {
-  return sortWrongChoices(entry?.wrongChoices).slice(0, Math.max(1, limit)).map((choice) => ({
+  return sortWrongChoices(recoverWrongChoices(entry)).slice(0, Math.max(1, limit)).map((choice) => ({
     id: choice.id || '',
     name: choice.name || choice.id || '',
     count: Number(choice.count || 0),
@@ -496,7 +509,17 @@ export function mergeStudyData(remote = {}) {
       return;
     }
     if (Number(entry.lastSeen || 0) > Number(existing.lastSeen || 0)) {
-      reviews[id] = { ...entry, id };
+      const preferred = wrongDetailScore(entry) >= wrongDetailScore(existing) ? entry : existing;
+      reviews[id] = {
+        ...entry,
+        id,
+        wrong: Math.max(Number(existing.wrong || 0), Number(entry.wrong || 0)),
+        lapses: Math.max(Number(existing.lapses || 0), Number(entry.lapses || 0)),
+        wrongChoices: preferred.wrongChoices || existing.wrongChoices || {},
+        wrongLog: preferred.wrongLog || existing.wrongLog || [],
+        repeatWrongs: preferred.repeatWrongs || existing.repeatWrongs || {},
+        lastSeen: Math.max(Number(existing.lastSeen || 0), Number(entry.lastSeen || 0)),
+      };
       return;
     }
     if (wrongDetailScore(entry) > wrongDetailScore(existing)) {

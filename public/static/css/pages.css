@@ -52,6 +52,14 @@
 .ai-inline { margin-top: 16px; }
 .ai-inline .ai-panel { border-radius: 15px; }
 
+/* Article-embedded AI chat keeps a stable panel height while streaming. */
+.ai-inline .ai-panel { display: flex; flex-direction: column; height: clamp(420px, 54vh, 620px); }
+.ai-inline .ai-panel .ai-messages { flex: 1 1 auto; min-height: 0; max-height: none; scrollbar-gutter: stable; }
+@media (max-width: 719px) {
+  .ai-inline .ai-panel { height: clamp(360px, 58dvh, 560px); }
+}
+
+
 .practice-setup { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr); gap: 18px; align-items: start; }
 .level-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .level-card { padding: 13px; border: 1px solid var(--line); border-radius: 13px; background: var(--bg-elev); text-align: left; transition: border-color var(--t-fast), background var(--t-fast), transform var(--t-fast); }

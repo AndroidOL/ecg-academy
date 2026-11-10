@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261110ai';
+const __asset = __isNode ? '' : '?v=20261110aj';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, escapeHtml, toast, openModal } = await import(`../ui.js${__asset}`);
@@ -118,7 +118,7 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
           },
         });
         bubble.classList.remove('streaming');
-        bubble.innerHTML = `<div class="ai-context">${contextHtml}</div>${renderMarkdown(finalText)}`;
+        bubble.innerHTML = `<div class="ai-context">${contextHtml}</div><div class="ai-stream-text">${renderMarkdown(finalText)}</div>`;
         history.push({ role: 'user', content: message }, { role: 'assistant', content: String(finalText || '') });
       } else {
         await streamAi({ mode: 'chat', message, diagnosisId: activeDiagnosisId, ...(mistake ? { mistake } : {}), ...(priorTurns.length ? { history: priorTurns } : {}) }, {
@@ -141,7 +141,7 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
             }
             bubble.classList.remove('streaming');
             bubble.classList.toggle('local', Boolean(done?.fallback));
-            bubble.innerHTML = `${contextHtml ? `<div class="ai-context">${contextHtml}</div>` : ''}${renderMarkdown(text)}`;
+            bubble.innerHTML = `${contextHtml ? `<div class="ai-context">${contextHtml}</div>` : ''}<div class="ai-stream-text">${renderMarkdown(text)}</div>`;
             if (String(text || '').trim()) history.push({ role: 'user', content: message }, { role: 'assistant', content: String(text) });
             if (done?.cost) {
               const tail = document.createElement('div');

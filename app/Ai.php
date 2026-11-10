@@ -270,8 +270,14 @@ final class Ai
             if (!is_array($option)) continue;
             $id = trim((string) ($option['id'] ?? ''));
             $diagnosis = $id !== '' ? ($all[$id] ?? null) : null;
-            if ($id !== '' && $diagnosis === null) continue;
-            $name = $diagnosis ? (string) $diagnosis['name'] : self::safeText($option['name'] ?? '', 80);
+            $fallbackName = self::safeText($option['name'] ?? '', 80);
+            if ($id !== '' && $diagnosis === null) {
+                if ($fallbackName === '') continue;
+                $verdict = AiGuard::inspect($fallbackName, 'mistake-option');
+                if ($verdict !== null && ($verdict['reason'] ?? '') === 'jailbreak_or_offtopic') continue;
+                $id = '';
+            }
+            $name = $diagnosis ? (string) $diagnosis['name'] : $fallbackName;
             if ($name === '') continue;
             $label = self::safeText($option['label'] ?? '', 4);
             $out[] = ($label !== '' ? $label . ' ' : '') . $name;
@@ -293,8 +299,16 @@ final class Ai
             $id = mb_substr(trim((string) ($choice['id'] ?? '')), 0, 64, 'UTF-8');
             if ($id !== '' && $id === $entryId) continue;
             $known = $id !== '' ? ($all[$id] ?? null) : null;
-            if ($id !== '' && $known === null) continue;
-            $name = $known ? (string) $known['name'] : self::safeText($choice['name'] ?? '', 80);
+            $fallbackName = self::safeText($choice['name'] ?? '', 80);
+            if ($id !== '' && $known === null) {
+                // Course packs and AI-generated options may use non-catalog ids;
+                // keep a safe display name instead of silently dropping the option.
+                if ($fallbackName === '') continue;
+                $verdict = AiGuard::inspect($fallbackName, 'mistake-option');
+                if ($verdict !== null && ($verdict['reason'] ?? '') === 'jailbreak_or_offtopic') continue;
+                $id = '';
+            }
+            $name = $known ? (string) $known['name'] : $fallbackName;
             if ($name === '') continue;
             $key = $id !== '' ? $id : 'name:' . $name;
             $choices[$key] = [

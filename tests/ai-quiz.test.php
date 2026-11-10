@@ -152,6 +152,7 @@ try {
                 ['id' => 'atrial-tachy', 'name' => '伪造名称', 'count' => 2],
                 ['id' => 'not-real', 'name' => '不应保留', 'count' => 9],
                 ['id' => '', 'name' => 'AI 题干扰项', 'count' => 1],
+                ['id' => 'custom-xyz', 'name' => '右束支传导阻滞', 'count' => 2],
             ],
             'repeat' => ['n' => 3, 'picked' => ['房性心动过速'], 'q' => '同一道题'],
             'history' => [['at' => 1, 'q' => '题目', 'picked' => [['id' => 'atrial-tachy', 'name' => 'x']], 'correct' => [['id' => 'afib']]]],
@@ -160,6 +161,7 @@ try {
         assert($mistake['choices']['atrial-tachy']['name'] === '房性心动过速');
         assert(!isset($mistake['choices']['not-real']));
         assert($mistake['choices']['name:AI 题干扰项']['count'] === 1);
+        assert(isset($mistake['choices']['name:右束支传导阻滞']), 'safe non-catalog option names must be kept');
         assert($mistake['repeat']['n'] === 3);
         assert($mistake['history'][0]['picked'] === ['房性心动过速']);
         assert($mistake['history'][0]['correct'] === ['心房颤动']);

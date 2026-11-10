@@ -53,6 +53,55 @@ check('wrong answer keeps the correct diagnosis and records what the user picked
   assert.equal(entry.wrongLog[0].src, 'practice');
 });
 
+check('wrong choices are recovered from the recent log when the map is missing', () => {
+  study.recordAttempt({
+    correct: false,
+    correctIds: ['afib'],
+    selectedIds: ['svt'],
+    names: { afib: '心房颤动', svt: '室上速' },
+    chapters: { afib: 'tachy', svt: 'tachy' },
+    source: 'practice',
+    questionKey: 'q-recover',
+    questionText: '恢复错选项测试',
+  });
+  const stored = JSON.parse(local.getItem('ecg-review-v1'));
+  delete stored.afib.wrongChoices;
+  local.setItem('ecg-review-v1', JSON.stringify(stored));
+  const entry = entryOf('afib');
+  const summary = study.wrongChoiceSummary(entry, 5);
+  assert.equal(summary[0].name, '室上速');
+  const context = study.mistakeContext(entry);
+  assert.equal(context.choices[0].name, '室上速');
+});
+
+check('server merge keeps local wrong details when the remote snapshot is sparse', () => {
+  study.recordAttempt({
+    correct: false,
+    correctIds: ['afib'],
+    selectedIds: ['svt'],
+    names: { afib: '心房颤动', svt: '室上速' },
+    chapters: { afib: 'tachy', svt: 'tachy' },
+    source: 'practice',
+    questionKey: 'q-merge',
+  });
+  const localEntry = entryOf('afib');
+  study.mergeStudyData({
+    reviews: {
+      afib: {
+        ...localEntry,
+        wrongChoices: {},
+        wrongLog: [],
+        repeatWrongs: {},
+        lastSeen: Number(localEntry.lastSeen || 0) + 1000,
+      },
+    },
+    favorites: {},
+  });
+  const merged = entryOf('afib');
+  assert.equal(merged.wrongChoices.svt.name, '室上速');
+  assert.equal(merged.wrongLog[0].picked[0].name, '室上速');
+});
+
 check('repeated wrong answers on the same question are counted per question', () => {
   const base = {
     correct: false,
