@@ -599,23 +599,30 @@ function addSpecialRhythm(samples, sampleRate, spec, lead, rng) {
   const n = samples.length;
   const leadFactor = lead === 'V1' ? 1.1 : lead === 'aVR' ? -0.8 : 1;
   if (spec.rhythm === 'vf') {
-    // 每次会话用种子生成一组主频/谐波/权重，模拟真实 VF 的随机多形性，而不是重放固定波形。
-    const dominant = 3.6 + rng() * 2.2;
-    const freqs = [dominant, dominant * 1.28 + rng() * 0.4, dominant * 1.63 + rng() * 0.5, dominant * 2.05 + rng() * 0.7, dominant * 2.55 + rng() * 0.9, 7.8 + rng() * 2.2];
+    // 每次会话用种子生成一组主频/谐波/权重，模拟真实 VF 的随机多形性。
+    // 频率量化为片段基频的整数倍，使 4 秒监护窗口首尾相接，循环播放时不跳变。
+    const segment = n / sampleRate;
+    const base = 1 / Math.max(0.5, segment);
+    const periodic = (freq) => Math.max(1, Math.round(freq / base)) * base;
+    const dominant = periodic(3.6 + rng() * 2.2);
+    const freqs = [dominant, dominant * 1.28 + rng() * 0.4, dominant * 1.63 + rng() * 0.5, dominant * 2.05 + rng() * 0.7, dominant * 2.55 + rng() * 0.9, 7.8 + rng() * 2.2].map(periodic);
     const weights = freqs.map((_, k) => (0.115 - k * 0.012) * (0.65 + rng() * 0.7));
     const phases = freqs.map(() => rng() * Math.PI * 2);
     const drift = freqs.map(() => rng() * Math.PI * 2);
+    const slow = [0.23, 0.6, 0.31, 0.11, 0.47, 0.08].map(periodic);
+    const noisePhase = rng() * Math.PI * 2;
+    const noiseFreq = periodic(18 + rng() * 4);
     const wander = 0.16 + rng() * 0.14;
     const amp = clamp(Number(spec.vfAmplitude ?? 1), 0.35, 1.4);
     for (let i = 0; i < n; i += 1) {
       const t = i / sampleRate;
       let v = 0;
       for (let k = 0; k < freqs.length; k += 1) {
-        const mod = 1 + 0.18 * Math.sin(2 * Math.PI * (0.23 + k * 0.07) * t + phases[k]) + 0.07 * Math.sin(2 * Math.PI * (0.6 + k * 0.11) * t + drift[k]);
-        v += weights[k] * mod * Math.sin(2 * Math.PI * freqs[k] * t + phases[k] + 0.4 * Math.sin(2 * Math.PI * 0.31 * t + drift[k]));
+        const mod = 1 + 0.18 * Math.sin(2 * Math.PI * slow[k % slow.length] * t + phases[k]) + 0.07 * Math.sin(2 * Math.PI * slow[(k + 1) % slow.length] * t + drift[k]);
+        v += weights[k] * mod * Math.sin(2 * Math.PI * freqs[k] * t + phases[k] + 0.4 * Math.sin(2 * Math.PI * slow[(k + 2) % slow.length] * t + drift[k]));
       }
-      const envelope = 1 + wander * Math.sin(2 * Math.PI * 0.11 * t + drift[0]) + 0.09 * Math.sin(2 * Math.PI * 0.47 * t + drift[1]);
-      samples[i] = (v * envelope * leadFactor) * amp + 0.02 * Math.sin(2 * Math.PI * 0.08 * t + 0.7) + (rng() - 0.5) * 0.01;
+      const envelope = 1 + wander * Math.sin(2 * Math.PI * slow[3] * t + drift[0]) + 0.09 * Math.sin(2 * Math.PI * slow[4] * t + drift[1]);
+      samples[i] = (v * envelope * leadFactor) * amp + 0.02 * Math.sin(2 * Math.PI * slow[5] * t + 0.7) + 0.004 * Math.sin(2 * Math.PI * noiseFreq * t + noisePhase);
     }
     return;
   }

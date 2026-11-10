@@ -42,6 +42,7 @@ final class SimEngine
             'runId' => null,
             'cpr' => false,
             'cprStartedAt' => null,
+            'cprPendingUntil' => null,
             'cprSeconds' => 0.0,
             'cprEpisodes' => 0,
             'firstCprAt' => null,
@@ -150,7 +151,7 @@ final class SimEngine
             'atropine' => self::atropine($state, $scenario, $now),
             'pacing' => self::pacing($state, $scenario, $now),
             'epi_infusion' => self::epiInfusion($state, $scenario, $now),
-            'iv' => self::iv($state),
+            'iv' => self::iv($state, $now),
             'oxygen' => self::oxygen($state, $scenario, $now),
             'sedate' => self::sedate($state, $scenario),
             'calcium' => self::calcium($state, $scenario, $now),
@@ -393,9 +394,13 @@ final class SimEngine
             $state['spo2'] = max(20, (int) round(62 - $elapsed * 0.35));
             $state['etco2'] = 0;
             self::setPhase($state, 'arrest', '心脏骤停');
-            if ($elapsed > 90 && empty($state['flags']['vf_fine'])) {
+            if ($elapsed > 30 && empty($state['flags']['vf_fine'])) {
                 $state['flags']['vf_fine'] = true;
                 self::event($state, 'VF 振幅逐渐降低，转为细颤；除颤成功率下降', 'bad');
+            }
+            if ($elapsed > 45 && empty($state['flags']['vf_critical'])) {
+                $state['flags']['vf_critical'] = true;
+                self::event($state, 'VF 持续 45 秒：心肌缺血、酸中毒加重，除颤成功率进一步下降', 'bad');
             }
         }
         $lastCprEnd = (float) ($state['lastCprEnd'] ?? $state['startedAt']);
@@ -426,6 +431,10 @@ final class SimEngine
         $elapsed = max(0, $now - (float) $state['startedAt']);
         $algorithm = $scenario['algorithm'];
         $cpr = (bool) $state['cpr'];
+
+        if (!empty($state['cprPendingUntil']) && $now >= (float) $state['cprPendingUntil']) {
+            self::completeCprStart($state, $now);
+        }
 
         if (!empty($state['ivPendingUntil']) && $now >= (float) $state['ivPendingUntil']) {
             $state['iv'] = true;
@@ -543,18 +552,41 @@ final class SimEngine
         if ($state['cpr']) {
             throw new ApiError(422, 'cpr_active', '胸外按压已在进行');
         }
+        if (!empty($state['cprPendingUntil'])) {
+            $remaining = max(0, (int) ceil($state['cprPendingUntil'] - $now));
+            throw new ApiError(422, 'cpr_pending', "正在准备胸外按压，约需 {$remaining} 秒");
+        }
+        $delay = random_int(3, 5);
+        $state['cprPendingUntil'] = $now + $delay;
+        self::event($state, "准备开始高质量胸外按压（约 {$delay} 秒，按压前确认环境与体位）", 'neutral');
+        $state['dirty'] = true;
+    }
+
+    private static function completeCprStart(array &$state, float $now): void
+    {
+        $state['cprPendingUntil'] = null;
         $state['cpr'] = true;
         $state['cprStartedAt'] = $now;
         $state['cprEpisodes']++;
         if (!$state['firstCprAt']) $state['firstCprAt'] = $now;
         $state['lastCprEnd'] = null;
         unset($state['flags']['no_cpr_10'], $state['flags']['no_cpr_30'], $state['flags']['vf_hypoxia']);
-        self::event($state, '开始高质量胸外按压（100–120 次/分）', 'good');
+        self::event($state, '高质量胸外按压开始（100–120 次/分）', 'good');
+        if (!empty($state['ivPendingUntil'])) {
+            $state['ivPendingUntil'] = max((float) $state['ivPendingUntil'], $now + 8);
+            self::event($state, '按压开始后 IV/IO 建立变慢，通路预计还需约 8 秒', 'warn');
+        }
         $state['dirty'] = true;
     }
 
     private static function cprStop(array &$state, array $payload, float $now): void
     {
+        if (!empty($state['cprPendingUntil'])) {
+            $state['cprPendingUntil'] = null;
+            self::event($state, '取消胸外按压准备', 'neutral');
+            $state['dirty'] = true;
+            return;
+        }
         if (!$state['cpr']) {
             throw new ApiError(422, 'cpr_inactive', '当前未在按压');
         }
@@ -624,8 +656,17 @@ final class SimEngine
         if ($state['cpr']) {
             throw new ApiError(422, 'stop_cpr_first', '请先暂停胸外按压，再除颤/复律');
         }
+        if (!empty($state['cprPendingUntil'])) {
+            throw new ApiError(422, 'cpr_pending', '胸外按压准备中，暂缓电击');
+        }
         if (!empty($state['postShockUntil'])) {
             throw new ApiError(422, 'post_shock', '电击后观察期，请等待心律稳定并立即恢复按压');
+        }
+        if (!empty($state['ivPendingUntil'])) {
+            self::penalty($state, 8, 'IV/IO 建立过程中除颤，通路建立中断，需要重新建立');
+            $state['ivPendingUntil'] = null;
+            self::event($state, '除颤中断了 IV/IO 建立，静脉通路需从头重新建立', 'bad');
+            $state['dirty'] = true;
         }
         $algorithm = $scenario['algorithm'];
         if (!in_array($algorithm, ['vf', 'tachy'], true)) {
@@ -668,7 +709,10 @@ final class SimEngine
             self::event($state, "非同步除颤 {$energy} J", 'good');
             self::event($state, '电击后短暂心室静止，观察约 2 秒；若未恢复立即恢复按压', 'warn');
             $chance = [0.30, 0.55, 0.75, 0.86, 0.92][min(4, $state['shocks'] - 1)] ?? 0.92;
+            $elapsed = $now - (float) $state['startedAt'];
             if (!empty($state['flags']['vf_fine'])) $chance -= 0.12;
+            if ($elapsed > 45) $chance -= 0.08;
+            if ($elapsed > 60) $chance -= 0.08;
             if ($state['epi'] > 0) $chance += 0.04;
             if ($state['amio'] > 0) $chance += 0.04;
             if (!empty($state['specialAt'])) $chance += 0.08;
@@ -839,19 +883,21 @@ final class SimEngine
         $state['dirty'] = true;
     }
 
-    private static function iv(array &$state): void
+    private static function iv(array &$state, float $now): void
     {
         if ($state['iv']) {
             self::event($state, '静脉通路已建立', 'neutral');
             return;
         }
         if (!empty($state['ivPendingUntil'])) {
-            $remaining = max(0, (int) ceil($state['ivPendingUntil'] - microtime(true)));
+            $remaining = max(0, (int) ceil($state['ivPendingUntil'] - $now));
             self::event($state, "IV/IO 正在建立，还需约 {$remaining} 秒", 'neutral');
             return;
         }
-        $state['ivPendingUntil'] = microtime(true) + 6;
-        self::event($state, '开始建立 IV/IO 通路（约 6 秒，期间不能给静脉药）', 'neutral');
+        $duringCpr = $state['cpr'] || !empty($state['cprPendingUntil']);
+        $seconds = $duringCpr ? 12 : 6;
+        $state['ivPendingUntil'] = $now + $seconds;
+        self::event($state, $duringCpr ? '开始建立 IV/IO 通路（按压中约 12 秒，期间不能给静脉药）' : '开始建立 IV/IO 通路（约 6 秒，期间不能给静脉药）', 'neutral');
         $state['dirty'] = true;
     }
 
@@ -1056,11 +1102,10 @@ final class SimEngine
             $score = $processScore;
             $grade = $score >= 85 ? 'A' : ($score >= 70 ? 'B' : ($score >= 55 ? 'C' : 'D'));
         } else {
-            // 结局优先：超时/未复苏/提前结束不能用流程分“洗白”。
-            $cap = $outcome === 'aborted' ? 45 : 35;
-            $score = min($cap, (int) round($processScore * ($outcome === 'aborted' ? 0.45 : 0.25)));
+            // 抢救失败/提前终止一律 0 分，不能用流程分“洗白”结局。
+            $score = 0;
             $grade = 'D';
-            self::event($state, $outcome === 'timeout' ? '结局：时限内未恢复自主循环，患者死亡' : '结局：未恢复自主循环/提前终止', 'bad');
+            self::event($state, $outcome === 'timeout' ? '结局：时限内未恢复自主循环，患者死亡（0 分）' : '结局：未恢复自主循环/提前终止（0 分）', 'bad');
         }
         $state['score'] = $score;
         $state['grade'] = $grade;
@@ -1087,7 +1132,8 @@ final class SimEngine
                 $duration,
             ]);
             $runId = (int) $pdo->lastInsertId();
-            $pdo->prepare('UPDATE users SET xp = xp + ? WHERE id = ?')->execute([max(5, (int) round($score / 4)), $userId]);
+            $xp = $successfulOutcome ? max(5, (int) round($score / 4)) : 0;
+            if ($xp > 0) $pdo->prepare('UPDATE users SET xp = xp + ? WHERE id = ?')->execute([$xp, $userId]);
         }
         $state['runId'] = $runId;
         self::saveSession($state['id'], $state, 'ended');
@@ -1119,6 +1165,8 @@ final class SimEngine
                 'iv' => (bool) $state['iv'],
                 'ivPending' => !empty($state['ivPendingUntil']),
                 'ivReadyIn' => !empty($state['ivPendingUntil']) ? max(0, (int) ceil($state['ivPendingUntil'] - $now)) : 0,
+                'cprPending' => !empty($state['cprPendingUntil']),
+                'cprReadyIn' => !empty($state['cprPendingUntil']) ? max(0, (int) ceil($state['cprPendingUntil'] - $now)) : 0,
                 'oxygen' => (bool) $state['oxygen'],
                 'ventilations' => (int) ($state['ventilations'] ?? 0),
                 'sedated' => (bool) $state['sedated'],
@@ -1252,7 +1300,7 @@ final class SimEngine
             ]);
         }
         return match ($state['rhythm']) {
-            'vf' => array_replace($base, ['rhythm' => 'vf', 'rate' => 0, 'p' => 'absent', 'extras' => ['fibrillatory'], 'seed' => ((int) ($state['monitorSeed'] ?? 37) + (int) $elapsed) % 2000000000, 'cprArtifact' => $cprArtifact, 'vfAmplitude' => !empty($state['flags']['vf_fine']) ? 0.55 : (float) ($state['vfScale'] ?? 1), 'description' => !empty($state['flags']['vf_fine']) ? '细颤：振幅低、频率快，除颤成功率下降。' : '粗颤：振幅较高，立即 CPR 并尽快除颤。']),
+            'vf' => array_replace($base, ['rhythm' => 'vf', 'rate' => 0, 'p' => 'absent', 'extras' => ['fibrillatory'], 'seed' => ((int) ($state['monitorSeed'] ?? 37)) % 2000000000, 'cprArtifact' => $cprArtifact, 'vfAmplitude' => !empty($state['flags']['vf_fine']) ? 0.55 : (float) ($state['vfScale'] ?? 1), 'description' => !empty($state['flags']['vf_fine']) ? '细颤：振幅低、频率快，除颤成功率下降。' : '粗颤：振幅较高，立即 CPR 并尽快除颤。']),
             'pvt' => array_replace($base, ['rhythm' => 'vt', 'rate' => 200, 'qrs' => 0.17, 'morphology' => 'wide', 'p' => 'absent', 't' => ['shape' => 'discordant', 'amp' => 1.1], 'description' => '宽 QRS 心动过速，无脉。']),
             'svt' => array_replace($base, ['rhythm' => 'svt', 'rate' => (int) ($state['hr'] ?? 190), 'atrialRate' => (int) ($state['hr'] ?? 190), 'p' => 'hidden', 'qrs' => 0.07, 'seed' => 61 + intdiv((int) $elapsed, 4), 'description' => '窄 QRS 规则心动过速。']),
             'af_fast' => array_replace($base, ['rhythm' => 'af', 'rate' => (int) ($state['hr'] ?? 152), 'atrialRate' => 400, 'irregularity' => 0.24, 'p' => 'absent', 'extras' => ['fibrillatory'], 'seed' => 71 + intdiv((int) $elapsed, 4), 'description' => '快速心房颤动。']),

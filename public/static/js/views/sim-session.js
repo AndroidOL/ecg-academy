@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261110ad';
+const __asset = __isNode ? '' : '?v=20261110ae';
 const { api } = await import(`../api.js${__asset}`);
 const { hasByok } = await import(`../byok.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -179,7 +179,7 @@ export async function simSessionView({ params }) {
       pulse.className = `badge ${state.vitals?.pulse ? 'badge-ok' : 'badge-danger'}`;
     }
     const cprLabel = el.querySelector('[data-cpr-label]');
-    if (cprLabel) cprLabel.textContent = state.cpr ? '按压中' : '未按压';
+    if (cprLabel) cprLabel.textContent = state.cpr ? '按压中' : state.flags?.cprPending ? `准备按压 ${state.flags.cprReadyIn ?? 0}s` : '未按压';
     el.querySelector('.cpr-flag')?.classList.toggle('off', !state.cpr);
     renderCprDock();
     const etco2 = el.querySelector('[data-etco2]');
@@ -241,9 +241,10 @@ export async function simSessionView({ params }) {
     }
     host.hidden = false;
     host.classList.toggle('active', Boolean(state.cpr));
-    const disabled = state.status !== 'active' ? 'disabled' : '';
-    host.innerHTML = `<div class="cpr-dock-info"><span class="cpr-kicker"><i class="cpr-pulse"></i> HIGH-QUALITY CPR</span><strong>${state.cpr ? '按压进行中' : 'CPR 未开始'}</strong><span>${state.cpr ? '保持 100–120 次/分，深度 5–6 cm，完全回弹；除颤前先停止。' : '患者无脉？点击开始胸外按压；除颤前必须先停止。'}</span></div><button class="btn ${state.cpr ? 'btn-secondary' : 'btn-secondary'}" type="button" data-cpr-toggle ${disabled}>${state.cpr ? '停止 CPR' : '开始 CPR'}</button>`;
-    host.querySelector('[data-cpr-toggle]')?.addEventListener('click', () => act(state.cpr ? 'cpr_stop' : 'cpr_start', {}));
+    const pending = Boolean(state.flags?.cprPending);
+    const disabled = state.status !== 'active' || pending ? 'disabled' : '';
+    host.innerHTML = `<div class="cpr-dock-info"><span class="cpr-kicker"><i class="cpr-pulse"></i> HIGH-QUALITY CPR</span><strong>${state.cpr ? '按压进行中' : pending ? `准备按压 · ${state.flags?.cprReadyIn ?? 0}s` : 'CPR 未开始'}</strong><span>${state.cpr ? '保持 100–120 次/分，深度 5–6 cm，完全回弹；除颤前先停止。' : pending ? '正在确认环境、体位与按压位置，3–5 秒后开始有效按压。' : '患者无脉？点击开始胸外按压；除颤前必须先停止。'}</span></div><button class="btn btn-secondary" type="button" data-cpr-toggle ${disabled}>${state.cpr ? '停止 CPR' : pending ? `准备中 ${state.flags?.cprReadyIn ?? 0}s` : '开始 CPR'}</button>`;
+    host.querySelector('[data-cpr-toggle]')?.addEventListener('click', () => { if (!pending) act(state.cpr ? 'cpr_stop' : 'cpr_start', {}); });
   }
 
   function renderActions() {
@@ -254,7 +255,7 @@ export async function simSessionView({ params }) {
     const flags = state.flags || {};
     const ivClass = flags.iv ? 'ready' : flags.ivPending ? 'pending' : 'off';
     const ivText = flags.iv ? 'IV/IO 已建立' : flags.ivPending ? `IV/IO 建立中 · ${flags.ivReadyIn ?? 0}s` : 'IV/IO 未建立';
-    const ivStatus = `<div class="iv-status ${ivClass}"><span class="iv-dot"></span><span>${ivText}</span>${!flags.iv ? '<small>建立通路需要约 6 秒；完成前不能给静脉药</small>' : ''}</div>`;
+    const ivStatus = `<div class="iv-status ${ivClass}"><span class="iv-dot"></span><span>${ivText}</span>${!flags.iv ? `<small>${flags.ivPending ? '按压中建立更慢；完成前不能给静脉药' : '建立通路约需 6 秒；完成前不能给静脉药'}</small>` : ''}</div>`;
     const groups = (state.actions || []).map((group) => {
       if (group.actions?.some((a) => a.id === 'shock')) {
         const chargeReady = Boolean(flags.chargeReady);
@@ -262,10 +263,10 @@ export async function simSessionView({ params }) {
         const chargeLocked = chargeReady || chargeProgress;
         const selectedSync = flags.chargeSync ?? shockSync;
         const hasMode = selectedSync === true || selectedSync === false;
-        const blocked = Boolean(state.cpr) || Boolean(flags.postShock) || state.status !== 'active';
+        const blocked = Boolean(state.cpr) || Boolean(flags.cprPending) || Boolean(flags.postShock) || state.status !== 'active';
         const shockBlocked = blocked || !chargeReady;
         const reason = state.cpr
-          ? '先停止按压，再放电'
+          ? '先停止按压/等待按压准备完成，再放电'
           : flags.postShock
             ? '电击后观察期，约 2 秒'
             : !hasMode

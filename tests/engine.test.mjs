@@ -115,6 +115,12 @@ check('ventricular fibrillation has no NaN and bounded amplitude', () => {
   assert.ok(max > 0.2 && max < 1.6, `max=${max}`);
 });
 
+check('VF monitor window loops without a visible boundary jump', () => {
+  const result = generateLead({ ...base, rhythm: 'vf', rate: 0, p: 'absent', duration: 4, seed: 12345, extras: ['fibrillatory'] }, 'II');
+  const samples = result.samples;
+  assert.ok(Math.abs(samples[0] - samples[samples.length - 1]) < 0.01, 'VF loop boundary should be nearly continuous');
+});
+
 check('VF morphology varies with the session seed instead of replaying one waveform', () => {
   const one = generateLead({ ...base, rhythm: 'vf', rate: 0, p: 'absent', seed: 101, extras: ['fibrillatory'] }, 'II').samples;
   const two = generateLead({ ...base, rhythm: 'vf', rate: 0, p: 'absent', seed: 202, extras: ['fibrillatory'] }, 'II').samples;

@@ -53,13 +53,14 @@ try {
         pauseFor(6.5);
         $view = SimEngine::state($userId, $id);
         assert($view['flags']['iv'] === true, 'IV should become ready after ~6s');
-        assert($view['monitor']['seed'] !== $GLOBALS['vfSeed'], 'VF waveform seed should evolve over time');
+        assert($view['monitor']['seed'] === $GLOBALS['vfSeed'], 'VF waveform seed must stay stable in a session to avoid jumps');
         $GLOBALS['vfReady'] = true;
     });
 
     check('shock requires CPR to be stopped; post-shock monitor changes', function () use ($userId) {
         $id = $GLOBALS['vfSession'];
         SimEngine::action($userId, $id, 'cpr_start', []);
+        pauseFor(5.2);
         $blocked = false;
         try { SimEngine::action($userId, $id, 'shock', ['energy' => 200, 'sync' => false]); }
         catch (ApiError $e) { $blocked = $e->errorCode === 'stop_cpr_first'; }
@@ -168,10 +169,10 @@ try {
         $view = SimEngine::state($userId, $id);
         assert($view['status'] === 'ended', 'timeout should end the session');
         assert($view['outcome'] === 'timeout');
-        assert($view['score'] <= 35, 'death/timeout must not score above 35');
+        assert($view['score'] === 0, 'death/timeout must score zero');
         assert($view['grade'] === 'D');
         $debrief = SimEngine::debrief($userId, (int) $view['runId']);
-        assert($debrief['run']['score'] <= 35);
+        assert($debrief['run']['score'] === 0);
         assert($debrief['run']['grade'] === 'D');
     });
 
@@ -222,7 +223,7 @@ try {
         assert($view['outcome'] === 'timeout');
         assert($view['rhythm'] === 'asystole');
         assert($view['vitals']['spo2'] === 0);
-        assert($view['score'] <= 35);
+        assert($view['score'] === 0);
     });
 
     check('shock on bradycardia is rejected with penalty event', function () use ($userId) {
@@ -233,7 +234,35 @@ try {
         assert((bool) array_filter($labels, static fn (string $l): bool => str_contains($l, '电击')));
         SimEngine::action($userId, $id, 'finish', []);
     });
-    check('VF monitor seed differs between sessions and evolves in-session', function () use ($userId): void {
+    check('CPR and IV setup are time-bound; shock interrupts IV setup', function () use ($userId): void {
+        $view = SimEngine::start($userId, 'vf-arrest');
+        $id = $view['sessionId'];
+        SimEngine::action($userId, $id, 'cpr_start', []);
+        $view = SimEngine::state($userId, $id);
+        assert($view['cpr'] === false);
+        assert($view['flags']['cprPending'] === true);
+        assert($view['flags']['cprReadyIn'] >= 3 && $view['flags']['cprReadyIn'] <= 5);
+        $blocked = false;
+        try { SimEngine::action($userId, $id, 'shock', ['energy' => 200, 'sync' => false]); }
+        catch (ApiError $e) { $blocked = $e->errorCode === 'cpr_pending'; }
+        assert($blocked, 'shock must wait until CPR setup completes');
+        pauseFor(5.2);
+        $view = SimEngine::state($userId, $id);
+        assert($view['cpr'] === true, 'CPR should become active after 3-5 seconds');
+        SimEngine::action($userId, $id, 'iv', []);
+        $view = SimEngine::state($userId, $id);
+        assert($view['flags']['ivPending'] === true);
+        assert($view['flags']['ivReadyIn'] >= 10, 'IV setup should be slower during CPR');
+        SimEngine::action($userId, $id, 'cpr_stop', []);
+        SimEngine::action($userId, $id, 'charge', ['energy' => 200, 'sync' => false]);
+        pauseFor(3.3);
+        $view = SimEngine::action($userId, $id, 'shock', ['energy' => 200, 'sync' => false]);
+        assert($view['flags']['ivPending'] === false, 'shock during IV setup must reset the pending line');
+        assert((bool) array_filter($view['events'], static fn (array $e): bool => str_contains((string) $e['label'], '中断了 IV/IO')));
+        SimEngine::action($userId, $id, 'finish', []);
+    });
+
+    check('VF monitor seed differs between sessions and stays stable in-session', function () use ($userId): void {
         $first = SimEngine::start($userId, 'vf-arrest');
         $second = SimEngine::start($userId, 'vf-arrest');
         assert($first['monitor']['seed'] !== $second['monitor']['seed'], 'fresh VF sessions must not replay the same waveform');
@@ -241,7 +270,7 @@ try {
         $seed = $first['monitor']['seed'];
         pauseFor(1.2);
         $view = SimEngine::state($userId, $id);
-        assert($view['monitor']['seed'] !== $seed, 'VF waveform should evolve while the session runs');
+        assert($view['monitor']['seed'] === $seed, 'VF waveform seed should stay fixed while the session runs');
         assert($view['monitor']['vfAmplitude'] >= 0.35 && $view['monitor']['vfAmplitude'] <= 1.4);
         SimEngine::action($userId, $id, 'finish', []);
         SimEngine::action($userId, (string) $second['sessionId'], 'finish', []);
@@ -267,9 +296,10 @@ try {
     check('PEA hypovolemia reaches ROSC after CPR, epinephrine, fluids and time', function () use ($userId, $pdo) {
         $view = SimEngine::start($userId, 'pea-hypovolemia');
         $id = $view['sessionId'];
-        SimEngine::action($userId, $id, 'cpr_start', []);
         SimEngine::action($userId, $id, 'iv', []);
         pauseFor(6.5);
+        SimEngine::action($userId, $id, 'cpr_start', []);
+        pauseFor(5.2);
         SimEngine::action($userId, $id, 'epi', []);
         SimEngine::action($userId, $id, 'special', []);
         $stmt = $pdo->prepare('SELECT state FROM sim_sessions WHERE id = ?');
