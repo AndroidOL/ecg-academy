@@ -754,6 +754,9 @@
 .review-page { max-width:1080px; }
 .review-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
 .review-list { display:flex; flex-direction:column; gap:9px; }
+.review-group { display:flex; flex-direction:column; gap:7px; }
+.review-group-head { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:3px 2px 5px; border-bottom:1px dashed var(--line); color:var(--muted); font-size:10.5px; letter-spacing:.02em; }
+.review-group-head b { min-width:18px; text-align:center; padding:1px 6px; border-radius:999px; background:var(--brand-soft); color:var(--brand); font-size:9px; }
 .review-item { display:flex; flex-direction:column; gap:7px; }
 .review-card { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:13px 15px; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
 .review-wrong-picks { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin:4px 0 0; color:var(--danger); font-size:9.5px; }

@@ -3,6 +3,14 @@
 测试日期：2026-11-07 ～ 2026-11-09
 环境：PHP 8.4.27 · MySQL 8.4.13 · nginx 1.30.6 · Node 22.23.4 · 内存 3.5 GB
 
+## 2026-11-09 v3.1.0 回归（20261109au）
+
+- 五步重读：`QuestionBank::pick` 专注诊断优先级测试通过；高级诊断在 level=1 仍返回目标诊断。
+- 错题本分类：按章节分组、不折叠；复习/错题/收藏共用分类头。
+- AI 面板：齿轮图标、管理员 `∞ 次`、普通用户 `x 次`；移除多余 AI 标识。
+- PHP 全量 96/96；JS engine 17、read 6、study 10、vector-loop 6。
+- 版本策略与路线图已固化到 `docs/VERSIONING.md`、`docs/ROADMAP.md`。
+
 ## 2026-11-09 v3.0.17 回归（20261109at）
 
 - AI 导师面板高度：1280×1000 = 750px、390×844 = 514px、390×700 = 370px；消息区 flex-grow=1，输入区固定。
@@ -209,10 +217,10 @@
 | 访客统计/游客清理 | `php tests/traffic.test.php` | **5/5 通过** |
 | AI 成本/折扣计算 | `php tests/ai-cost.test.php` | **3/3 通过** |
 | 扣分/不熟练判定 | `php tests/slow.test.php` | **3/3 通过** |
-| 等级与难度解锁 | `php tests/level.test.php` | **5/5 通过** |
+| 等级/专注诊断选择 | `php tests/level.test.php` | **6/6 通过** |
 | 统一计分/双轨 XP/自由练习 | `php tests/scoring.test.php` | **8/8 通过** |
 | 指南内容/免责声明 | `php tests/guideline.test.php` | **2/2 通过** |
-| PHP 全量（assertions on） | `for f in tests/*.test.php; do php -d zend.assertions=1 -d assert.exception=1 "$f"; done` | **95/95 通过** |
+| PHP 全量（assertions on） | `for f in tests/*.test.php; do php -d zend.assertions=1 -d assert.exception=1 "$f"; done` | **96/96 通过** |
 | 向量环正常值/极性/自检 | `node tests/vector-loop.test.mjs` | **6/6 通过** |
 | 账号学习数据同步（含错选项） | `php tests/study-sync.test.php` | **5/5 通过** |
 | 课程包校验/导入/发布 | `php tests/coursepack.test.php` | **4/4 通过** |

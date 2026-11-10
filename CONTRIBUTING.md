@@ -13,6 +13,7 @@
 ## 相关协议与流程
 
 - [贡献者协议（简版）](docs/CONTRIBUTOR_AGREEMENT.md)
+- [版本与发布策略](docs/VERSIONING.md)
 - [内容审阅台账](docs/REVIEW.md)
 - [勘误流程](docs/CORRECTIONS.md)
 - [医学顾问招募](docs/MEDICAL_ADVISORS.md)

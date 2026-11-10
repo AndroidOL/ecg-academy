@@ -6,6 +6,7 @@ require dirname(__DIR__) . '/app/bootstrap.php';
 use App\ApiError;
 use App\Db;
 use App\Level;
+use App\QuestionBank;
 use App\Quiz;
 
 $passed = 0;
@@ -74,6 +75,15 @@ try {
         $user = ['id' => 999997, 'is_guest' => 0, 'is_admin' => 0];
         assert(Level::canUseQuizLevel($user, 2) === true);
         assert(Level::canUseQuizLevel($user, 3) === true);
+    });
+
+    check('focused reading keeps the requested diagnosis regardless of level', function (): void {
+        foreach (['lbbb', 'stemi-anterior', 'afib'] as $id) {
+            $entry = QuestionBank::pick(1, 'all', [$id]);
+            assert($entry !== null, $id . ' entry missing');
+            $ids = [(string) ($entry['primary'] ?? ''), (string) ($entry['secondary'] ?? '')];
+            assert(in_array($id, $ids, true), $id . ' focus was discarded');
+        }
     });
 
     check('quiz endpoint allows every difficulty for registered users', function (): void {

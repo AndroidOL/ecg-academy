@@ -89,3 +89,59 @@
 3. 每章保留“边界与陷阱”，明确正常变异、伪差与鉴别诊断。
 4. 新增/修改内容先跑 `scripts/validate_curriculum.php` 与相关测试，再提交审阅。
 5. 明确区分“编辑核对”与“临床同行审阅”；未完成的审阅不写成已完成。
+
+## v3.1 之后：调研后的优先路线
+
+> 调研依据：间隔重复/刻意练习对心电图判读的证据、案例式/混合式教学、能力评估与现有 ECG 学习产品的功能（原始波形、自测、回放、标注）。详见文末参考。
+
+### 3.1.x（当前批次）
+
+- [x] 错题实际选项、AI 按章节分组、针对干扰项的讲解。
+- [x] 特征导联标注、指南化检查/处理与免责声明。
+- [x] AI 面板随视口高度自适应、移动端性能优化。
+- [x] 五步重读聚焦到错题对应诊断。
+
+### 3.2.0 自适应学习与能力评估
+
+- [ ] 以“正确诊断 + 实际错选项”为单元的混淆项训练，而不是只按诊断名称组卷。
+- [ ] 复习算法升级：记录信心评分、复习用时与同题重复，逐步从固定间隔过渡到 FSRS/SM-2。
+- [ ] 个人学习周报：按章节/导联/错误类型展示趋势、薄弱项与下周计划。
+- [ ] 能力评估：形成性测验、掌握阈值、综合考试蓝图与可解释的等级说明。
+- [ ] 教师视角：匿名班级掌握度与题目质量反馈（不做个人排名）。
+
+### 3.3.0 临床推理与急救模拟
+
+- [ ] ACLS 场景扩展：高钾、PE、起搏失败、ROSC 后管理、产科/低温/LAST 等。
+- [ ] 团队角色与闭环沟通、时间关键决策、可配置复盘量表。
+- [ ] 从 ECG 发现到检查/处理路径的病例串：ECG → 化验/影像 → 处置 → 复盘。
+- [ ] 复盘分享卡（只含教学数据，默认不含任何患者信息）。
+
+### 3.4.0 指南与内容治理
+
+- [ ] 指南版本表：每个诊断绑定指南名称、年份、适用人群与最后核对日期。
+- [ ] 临床同行审阅工作流：审阅状态、意见、修订记录与勘误闭环。
+- [ ] 区域指南差异（ESC/AHA/中国）与“本地流程优先”提示。
+- [ ] 内容变更影响分析：修改某诊断时提示关联题目、标注和文章。
+
+### 3.5.0 可及性、离线与多语言
+
+- [ ] 低端设备模式：自动降低 DPR/帧率、减少阴影与大画布重绘。
+- [ ] 离线病例包与后台同步；断网时仍可复习和做已缓存病例。
+- [ ] 屏幕阅读器、键盘全流程、色盲友好配色与 reduced-motion 回归。
+- [ ] 课程正文英文/多语言社区翻译与审校工作流。
+
+### 4.0.0 平台化（需评估）
+
+- [ ] 机构课程包、LMS/SCORM 或 xAPI 集成、教师仪表盘。
+- [ ] CME 学分需求与合规评审（当前不授予学分）。
+- [ ] 公开只读 API、WFDB/SCP-ECG/DICOM 波形适配器。
+- [ ] 任何数据库/API 不兼容变更在此版本集中处理。
+
+### 调研参考
+
+- [Spaced repetition for clinical problem solving（BMC/PMC 2024）](https://pmc.ncbi.nlm.nih.gov/articles/PMC11186069/)
+- [Evidence-based learning strategies in medical education（PMC 2023）](https://pmc.ncbi.nlm.nih.gov/articles/PMC10368606/)
+- [ECG interpretation education systematic review（BMC Med Educ 2024）](https://bmcmededuc.biomedcentral.com/articles/10.1186/s12909-024-05960-8)
+- [Designing and evaluating ECG interpretation software（PMC 2024）](https://pmc.ncbi.nlm.nih.gov/articles/PMC11562660/)
+- [ECG competency assessment（PMC 2022）](https://pmc.ncbi.nlm.nih.gov/articles/PMC9179219/)
+- [EAL ECG learning app 功能参考](https://apps.apple.com/cn/app/%E5%BF%83%E7%94%B5%E5%9B%BE%E6%8C%87%E5%8D%97-eal/id6476483829)

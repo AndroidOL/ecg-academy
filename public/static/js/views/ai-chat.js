@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109at';
+const __asset = __isNode ? '' : '?v=20261109au';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, escapeHtml, toast, openModal } = await import(`../ui.js${__asset}`);
@@ -15,10 +15,9 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
   el.innerHTML = `
     <div class="ai-panel-head">
       <span class="ai-spark">${icon('sparkles', 17)}</span>
-      <div class="grow"><div class="ai-panel-title">AI 导师</div><div class="ai-panel-sub">${store.ai?.configured ? '在线 · 基于本页知识库' : '本地知识库 · 未配置外部模型'}</div></div>
-      ${store.ai?.byokEnabled ? `<button class="icon-btn" type="button" data-byok-config aria-label="配置 BYOK API 密钥" title="使用自己的 API Key">${icon('key', 16)}</button>` : ''}
-      <span class="badge badge-brand" data-ai-credits>${store.ai?.admin ? '管理员不限' : `${store.ai?.credits ?? 0} 次`}</span>
-      <span class="badge ${store.ai?.configured || store.ai?.byokEnabled ? 'badge-brand' : ''}">${store.ai?.byokEnabled && getByok() ? 'BYOK' : store.ai?.configured ? 'AI' : 'LOCAL'}</span>
+      <div class="grow"><div class="ai-panel-title">AI 导师</div><div class="ai-panel-sub">${store.ai?.configured ? '在线 · 可追问心电图与判读' : '本地知识库 · 未配置外部模型'}</div></div>
+      ${store.ai?.byokEnabled ? `<button class="icon-btn" type="button" data-byok-config aria-label="AI 设置 / BYOK" title="AI 设置（BYOK）">${icon('gear', 16)}</button>` : ''}
+      <span class="badge badge-brand" data-ai-credits>${store.ai?.admin ? '∞ 次' : `${store.ai?.credits ?? 0} 次`}</span>
     </div>
     <div class="ai-messages" data-ai-messages aria-live="polite">
       <div class="ai-bubble assistant">${escapeHtml(welcome || '我可以帮你把这张心电图的关键线索、鉴别点和处理原则串起来。仅用于教学。')}</div>
@@ -57,14 +56,10 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
   const contextLine = (context) => (context || []).map((item) => `<span>${escapeHtml(item)}</span>`).join('');
 
   const refreshByokLabel = () => {
-    const badge = el.querySelector('.ai-panel-head .badge');
-    if (!badge) return;
     const configured = Boolean(store.ai?.configured);
     const active = Boolean(getByok());
-    badge.textContent = active ? 'BYOK' : configured ? 'AI' : 'LOCAL';
-    badge.classList.toggle('badge-brand', active || configured);
     const sub = el.querySelector('.ai-panel-sub');
-    if (sub) sub.textContent = active ? `BYOK · ${getByok().model}` : configured ? '在线 · 基于本页知识库' : '本地知识库 · 可在设置中配置 BYOK';
+    if (sub) sub.textContent = active ? `BYOK · ${getByok().model}` : configured ? '在线 · 可追问心电图与判读' : '本地知识库 · 可在设置中配置 BYOK';
   };
   el.querySelector('[data-byok-config]')?.addEventListener('click', () => {
     const current = getByok() || { baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini', apiKey: '' };

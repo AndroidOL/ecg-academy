@@ -38,19 +38,34 @@ final class QuestionBank
     {
         $all = self::all();
         if ($all === []) return null;
-        $matches = static function (array $entry) use ($level, $chapter, $focus): bool {
-            if ($level > 0 && (int) ($entry['level'] ?? 1) !== $level) return false;
-            if ($chapter !== '' && $chapter !== 'all' && (string) ($entry['chapter'] ?? '') !== $chapter) return false;
-            if ($focus !== []) {
-                $ids = [(string) ($entry['primary'] ?? '')];
-                if (!empty($entry['secondary'])) $ids[] = (string) $entry['secondary'];
-                if (array_intersect($ids, $focus) === []) return false;
+        $matchesFocus = static function (array $entry) use ($focus): bool {
+            $ids = [(string) ($entry['primary'] ?? '')];
+            if (!empty($entry['secondary'])) $ids[] = (string) $entry['secondary'];
+            return array_intersect($ids, $focus) !== [];
+        };
+        $matchesChapter = static function (array $entry) use ($chapter): bool {
+            return $chapter === '' || $chapter === 'all' || (string) ($entry['chapter'] ?? '') === $chapter;
+        };
+        // A focused read must stay on the requested diagnosis. Try level+chapter
+        // first, then the chapter, then the whole bank; never silently discard focus.
+        if ($focus !== []) {
+            $pools = [
+                array_filter($all, static fn (array $e): bool => (int) ($e['level'] ?? 1) === $level && $matchesChapter($e) && $matchesFocus($e)),
+                array_filter($all, static fn (array $e): bool => $matchesChapter($e) && $matchesFocus($e)),
+                array_filter($all, $matchesFocus),
+            ];
+            foreach ($pools as $pool) {
+                $pool = array_values($pool);
+                if ($pool !== []) return $pool[array_rand($pool)];
             }
-            return true;
+        }
+        $matches = static function (array $entry) use ($level, $chapter): bool {
+            if ($level > 0 && (int) ($entry['level'] ?? 1) !== $level) return false;
+            return $chapter === '' || $chapter === 'all' || (string) ($entry['chapter'] ?? '') === $chapter;
         };
         $pool = array_values(array_filter($all, $matches));
         if ($pool === []) {
-            // 章节/专项没有匹配时，优先保住难度，再退回全库。
+            // 章节没有匹配时，优先保住难度，再退回全库。
             $pool = array_values(array_filter($all, static fn (array $e): bool => (int) ($e['level'] ?? 1) === $level));
         }
         if ($pool === []) $pool = $all;

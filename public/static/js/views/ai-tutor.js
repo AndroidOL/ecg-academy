@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109at';
+const __asset = __isNode ? '' : '?v=20261109au';
 const { store } = await import(`../store.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { getByok, hasByok } = await import(`../byok.js${__asset}`);
@@ -42,7 +42,7 @@ export async function aiTutorView() {
   });
   el.innerHTML = `<header class="page-head">
       <div><div class="page-eyebrow">${icon('sparkles', 14)} AI TUTOR</div><h1 class="page-title">AI 导师</h1><p class="page-sub">仅回答心电图、心血管电生理与判读相关问题；回答为教学用途，不替代临床判断。错题与复习数据会作为上下文，方便分析薄弱项。</p></div>
-      <div class="row-wrap"><span class="badge badge-brand">${ai.admin ? '管理员不限' : hasByok() ? 'BYOK' : `${ai.credits} 次可用`}</span><span class="badge">错因分析 ${ai.analysisRemaining}/${ai.analysisLimit}</span><span class="badge">${ai.configured ? '在线' : '本地知识库'}</span></div>
+      <div class="row-wrap"><span class="badge badge-brand">${ai.admin ? '∞ 次' : hasByok() ? 'BYOK' : `${ai.credits} 次可用`}</span><span class="badge">错因分析 ${ai.analysisRemaining}/${ai.analysisLimit}</span><span class="badge">${ai.configured ? '在线' : '本地知识库'}</span></div>
     </header>
     ${ai.credits <= 0 ? `<div class="callout brand" style="margin-bottom:12px">${icon('flame', 14)} 对话次数已用完。完成每日挑战可获得 ${ai.creditBase || 10} 次 + 答对题数，最多保留 ${ai.creditCap || 100} 次。<a href="#/daily">去打卡</a></div>` : ''}
     <div class="ai-tutor-layout">

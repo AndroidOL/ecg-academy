@@ -1,10 +1,10 @@
 import {
   reviewEntries, favoriteEntries, reviewSummary, dueReviews, wrongReviews, weakDiagnosisIds,
   rateReview, toggleFavorite, exportStudyData, importStudyData, clearLocalStudyData,
-  wrongChoiceSummary, strongestRepeat, mistakeContext, wrongConfusionPairs,
+  wrongChoiceSummary, strongestRepeat, mistakeContext, wrongConfusionPairs, groupReviewsByChapter,
 } from '../study-store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109at';
+const __asset = __isNode ? '' : '?v=20261109au';
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
@@ -30,6 +30,8 @@ function entryCard(entry, mode = 'due') {
   const choices = canExplain ? wrongChoiceSummary(entry, 3) : [];
   const repeat = canExplain ? strongestRepeat(entry) : null;
   const logs = canExplain && Array.isArray(entry.wrongLog) ? entry.wrongLog.slice(-3).reverse() : [];
+  const meta = (store.diagnosesCache?.items || []).find((item) => item.id === entry.id);
+  const canRead = !meta || (meta.hasEcg !== false && meta.quizEligible !== false);
   return `<div class="review-item" data-review-item="${escapeHtml(entry.id)}">
   <article class="review-card" data-entry="${escapeHtml(entry.id)}">
     <div class="review-card-main">
@@ -46,7 +48,7 @@ function entryCard(entry, mode = 'due') {
     </div>
     <div class="review-card-actions">
       <a class="btn btn-sm btn-secondary" href="#/learn/${encodeURIComponent(entry.id)}">${icon('bookOpen', 13)} 重读</a>
-      <a class="btn btn-sm btn-ghost" href="#/read?focus=${encodeURIComponent(entry.id)}">${icon('target', 13)} 五步重读</a>
+      ${canRead ? `<a class="btn btn-sm btn-ghost" href="#/read?focus=${encodeURIComponent(entry.id)}">${icon('target', 13)} 五步重读</a>` : ''}
       ${canExplain ? `<button class="btn btn-sm btn-secondary" type="button" data-mistake-ai="${escapeHtml(entry.id)}">${icon('sparkles', 13)} AI 讲错因</button>` : ''}
       ${favorite ? `<button class="btn btn-sm btn-ghost" type="button" data-unfavorite="${escapeHtml(entry.id)}">${icon('star', 13)} 取消收藏</button>` : `<div class="review-rate" aria-label="复习评分"><button type="button" data-rate="0" data-id="${escapeHtml(entry.id)}">忘记</button><button type="button" data-rate="1" data-id="${escapeHtml(entry.id)}">模糊</button><button type="button" data-rate="2" data-id="${escapeHtml(entry.id)}">记得</button><button type="button" data-rate="3" data-id="${escapeHtml(entry.id)}">轻松</button></div>`}
     </div>
@@ -65,6 +67,8 @@ export async function reviewView() {
     const entries = tab === 'due' ? dueReviews(100) : tab === 'wrong' ? wrongReviews(100) : favoriteEntries();
     const weak = weakDiagnosisIds(8);
     const confusions = tab === 'wrong' ? wrongConfusionPairs(5) : [];
+    const chapterName = (id) => store.chapters?.find((chapter) => chapter.id === id)?.name || id || '未分类';
+    const groupedEntries = groupReviewsByChapter(entries);
     el.innerHTML = `
       <header class="page-head">
         <div><div class="page-eyebrow">${icon('target', 14)} SPACED REVIEW</div><h1 class="page-title">错题本与间隔复习</h1><p class="page-sub">错题按自适应间隔重现（首答 1 天，之后 1 → 3 → 8 → 20 天，封顶 90 天）；忘记会立即回到复习队列。系统会记录你每次错选的干扰项；同一道题反复错时，AI 讲解会针对该选项与正确诊断的鉴别点展开。${store.user?.isGuest ? '记录保存在本设备，不上传服务器。' : '记录已同步到你的账号，可跨设备继续复习。'}</p></div>
@@ -84,7 +88,7 @@ export async function reviewView() {
         </div>`).join('')}</div>
       </section>` : ''}
       <div class="review-list">
-        ${entries.length ? entries.map((entry) => entryCard(entry, tab)).join('') : `<div class="learn-empty"><b>${tab === 'favorites' ? '还没有收藏' : tab === 'due' ? '今日复习已清空' : '还没有错题'}</b><span>${tab === 'favorites' ? '在文章右侧点击“收藏”，把重要章节留在这里。' : tab === 'due' ? '完成一次错题自评或做一局练习，系统会安排下一次复习。' : '做一局判读练习，答错的诊断会自动进入错题本。'}</span><a class="btn btn-primary btn-sm" href="#/practice" style="margin-top:12px">开始练习</a></div>`}
+        ${entries.length ? groupedEntries.map((group) => `<section class="review-group"><div class="review-group-head"><span>${escapeHtml(chapterName(group.id))}</span><b>${group.items.length}</b></div>${group.items.map((entry) => entryCard(entry, tab)).join('')}</section>`).join('') : `<div class="learn-empty"><b>${tab === 'favorites' ? '还没有收藏' : tab === 'due' ? '今日复习已清空' : '还没有错题'}</b><span>${tab === 'favorites' ? '在文章右侧点击“收藏”，把重要章节留在这里。' : tab === 'due' ? '完成一次错题自评或做一局练习，系统会安排下一次复习。' : '做一局判读练习，答错的诊断会自动进入错题本。'}</span><a class="btn btn-primary btn-sm" href="#/practice" style="margin-top:12px">开始练习</a></div>`}
       </div>
       ${summary.total ? `<div class="review-footer"><span class="muted">${store.user?.isGuest ? '复习记录仅存在当前浏览器；清除站点数据会丢失。' : '复习记录已同步到你的账号。'}</span><button class="btn btn-ghost btn-xs" type="button" data-clear>清空本地学习记录</button></div>` : ''}
       ${medicalDisclaimer()}`;
