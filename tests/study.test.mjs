@@ -156,12 +156,24 @@ check('favorites toggle and export/import round-trip keeps wrong selections', ()
   assert.equal(study.toggleFavorite({ id: 'afib', name: '心房颤动', chapter: 'tachy' }), true);
   assert.equal(study.isFavorite('afib'), true);
   const data = study.exportStudyData();
-  assert.equal(data.version, 2);
+  assert.equal(data.version, 3);
   assert.equal(data.reviews.afib.wrongChoices.svt.count, 1);
   local.clear();
   assert.equal(study.importStudyData(data), true);
   assert.equal(study.isFavorite('afib'), true);
   assert.equal(entryOf('afib').wrongChoices.svt.name, '室上速');
+});
+
+check('weekly report aggregates local attempts and weak chapters', () => {
+  study.recordAttempt({ correct: true, correctIds: ['x'], names: { x: '正常窦性心律' }, chapters: { x: 'foundation' } });
+  study.recordAttempt({ correct: false, correctIds: ['afib'], selectedIds: ['svt'], names: { afib: '心房颤动', svt: '室上速' }, chapters: { afib: 'tachy', svt: 'tachy' } });
+  const report = study.weeklyReport(7);
+  assert.equal(report.attempts, 2);
+  assert.equal(report.correct, 1);
+  assert.equal(report.wrong, 1);
+  assert.equal(report.accuracy, 50);
+  assert.equal(report.byDay.length, 7);
+  assert.equal(report.weakChapters[0].chapter, 'tachy');
 });
 
 check('merge keeps newer reviews and unions favorites', () => {

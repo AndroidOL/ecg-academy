@@ -14,6 +14,7 @@ final class Quiz
         $level = max(1, min(3, (int) ($params['level'] ?? 1)));
         $chapter = (string) ($params['chapter'] ?? 'all');
         $focus = array_values(array_filter((array) ($params['focus'] ?? []), 'is_string'));
+        $confusionId = trim((string) ($params['confusion'] ?? ''));
         $assignment = null;
         $assignmentCode = trim((string) ($params['assignment'] ?? ''));
         if ($assignmentCode !== '') {
@@ -130,7 +131,8 @@ final class Quiz
             $spec['show12Lead'] = true;
         }
 
-        $options = self::buildOptions($primary, $secondary, count($correctIds) > 1);
+        if ($confusionId !== '' && (!Content::find($confusionId) || in_array($confusionId, $correctIds, true))) $confusionId = '';
+        $options = self::buildOptions($primary, $secondary, count($correctIds) > 1, '', $confusionId !== '' ? $confusionId : null);
         $optionIds = array_column($options, 'id');
         $caseKey = $bankId ?? implode('+', $correctIds);
         $payload = [
@@ -228,7 +230,7 @@ final class Quiz
         }
     }
 
-    public static function buildOptions(array $primary, ?array $secondary, bool $multiple, string $salt = ''): array
+    public static function buildOptions(array $primary, ?array $secondary, bool $multiple, string $salt = '', ?string $forcedDistractorId = null): array
     {
         $all = Content::all();
         $correct = [$primary];
@@ -246,6 +248,9 @@ final class Quiz
                 }
             }
         }
+        if ($forcedDistractorId !== null && isset($all[$forcedDistractorId]) && !in_array($forcedDistractorId, $ids, true)) {
+            array_unshift($candidates, $forcedDistractorId);
+        }
         foreach ($all as $diagnosis) {
             if (!in_array($diagnosis['id'], $ids, true) && ($diagnosis['quizEligible'] ?? true)) {
                 $candidates[] = $diagnosis['id'];
@@ -261,6 +266,12 @@ final class Quiz
         foreach ($candidates as $id) {
             if (count($ids) >= $wanted) break;
             if (!in_array($id, $ids, true)) $ids[] = $id;
+        }
+        if ($forcedDistractorId !== null && isset($all[$forcedDistractorId]) && !in_array($forcedDistractorId, $correctIds, true) && !in_array($forcedDistractorId, $ids, true)) {
+            for ($i = count($ids) - 1; $i >= 0; $i -= 1) {
+                if (!in_array($ids[$i], $correctIds, true)) { $ids[$i] = $forcedDistractorId; break; }
+            }
+            if (!in_array($forcedDistractorId, $ids, true)) $ids[] = $forcedDistractorId;
         }
 
         $options = [];

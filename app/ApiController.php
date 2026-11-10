@@ -141,6 +141,7 @@ final class ApiController
             'level' => (int) ($_GET['level'] ?? 1),
             'chapter' => (string) ($_GET['chapter'] ?? 'all'),
             'focus' => $focus,
+            'confusion' => (string) ($_GET['confusion'] ?? ''),
             'assignment' => (string) ($_GET['assignment'] ?? ''),
             'device' => (string) ($_GET['device'] ?? ''),
         ]);

@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109au';
+const __asset = __isNode ? '' : '?v=20261109av';
 const { localizedName, getLocale, translate } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -60,6 +60,7 @@ const state = {
   chapter: 'all',
   total: 5,
   focus: [],
+  confusion: '',
   quiz: null,
   index: 0,
   correct: 0,
@@ -124,6 +125,9 @@ export async function practiceView({ query } = {}) {
   state.result = null;
   state.focus = [];
   const initialFocus = String(query?.get('focus') || '').split(',').map((x) => x.trim()).filter(Boolean);
+  const initialConfusion = String(query?.get('confusion') || '').trim();
+  state.focus = initialFocus;
+  state.confusion = initialConfusion;
   const assignmentCode = String(query?.get('assignment') || '').trim().toLowerCase();
   let assignmentError = '';
   state.assignmentCode = assignmentCode;
@@ -141,7 +145,7 @@ export async function practiceView({ query } = {}) {
   }
   const initialLevel = Number(query?.get('level') || 1);
   const initialChapter = String(query?.get('chapter') || 'all');
-  const autoStart = Boolean(state.assignmentMeta) || (query?.get('auto') === '1' && initialFocus.length > 0);
+  const autoStart = Boolean(state.assignmentMeta) || (query?.get('auto') === '1' && (initialFocus.length > 0 || initialConfusion !== ''));
   const shared = query?.get('share') === '1';
   if (!state.assignmentMeta) {
     if ([1, 2, 3].includes(initialLevel)) state.level = initialLevel;
@@ -339,12 +343,14 @@ export async function practiceView({ query } = {}) {
   async function startQuiz(focus = []) {
     clearSpeedTimer();
     state.focus = focus;
+    const requestedConfusion = state.confusion;
+    state.confusion = '';
     state.answeredCount = 0;
     state.roundOver = false;
     state.lives = 3;
     state.speedRemaining = 60;
     state.roundTotal = state.gameMode === 'classic' ? state.total : 0;
-    const quiz = await api.quizNew({ level: state.level, chapter: state.chapter, focus, assignment: state.assignmentCode, device: state.assignmentCode ? deviceId() : undefined });
+    const quiz = await api.quizNew({ level: state.level, chapter: state.chapter, focus, confusion: requestedConfusion || undefined, assignment: state.assignmentCode, device: state.assignmentCode ? deviceId() : undefined });
     state.quiz = quiz;
     state.index = 0;
     state.correct = 0;

@@ -2,9 +2,10 @@ import {
   reviewEntries, favoriteEntries, reviewSummary, dueReviews, wrongReviews, weakDiagnosisIds,
   rateReview, toggleFavorite, exportStudyData, importStudyData, clearLocalStudyData,
   wrongChoiceSummary, strongestRepeat, mistakeContext, wrongConfusionPairs, groupReviewsByChapter,
+  weeklyReport,
 } from '../study-store.js';
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109au';
+const __asset = __isNode ? '' : '?v=20261109av';
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
@@ -69,11 +70,19 @@ export async function reviewView() {
     const confusions = tab === 'wrong' ? wrongConfusionPairs(5) : [];
     const chapterName = (id) => store.chapters?.find((chapter) => chapter.id === id)?.name || id || '未分类';
     const groupedEntries = groupReviewsByChapter(entries);
+    const report = weeklyReport(7);
+    const maxDayAttempts = Math.max(1, ...report.byDay.map((day) => day.attempts));
     el.innerHTML = `
       <header class="page-head">
         <div><div class="page-eyebrow">${icon('target', 14)} SPACED REVIEW</div><h1 class="page-title">错题本与间隔复习</h1><p class="page-sub">错题按自适应间隔重现（首答 1 天，之后 1 → 3 → 8 → 20 天，封顶 90 天）；忘记会立即回到复习队列。系统会记录你每次错选的干扰项；同一道题反复错时，AI 讲解会针对该选项与正确诊断的鉴别点展开。${store.user?.isGuest ? '记录保存在本设备，不上传服务器。' : '记录已同步到你的账号，可跨设备继续复习。'}</p></div>
         <div class="row-wrap"><span class="badge badge-brand">${summary.due} 个待复习</span><span class="badge">${summary.wrong} 个错题</span><span class="badge">${summary.favorites} 个收藏</span></div>
       </header>
+      ${report.attempts ? `<section class="card card-pad review-weekly">
+        <div class="section-head"><h2 class="section-title" style="font-size:16px">本周学习概览</h2><span class="badge badge-brand">${report.attempts} 次 · ${report.accuracy}%</span></div>
+        <div class="weekly-bars" aria-label="最近 7 天练习次数">${report.byDay.map((day) => `<div class="weekly-day"><i style="height:${day.attempts ? Math.max(8, Math.round((day.attempts / maxDayAttempts) * 100)) : 2}%"></i><b>${day.attempts || ''}</b><span>${day.label}</span></div>`).join('')}</div>
+        <div class="weekly-summary"><span>答对 <b>${report.correct}</b> · 答错 <b>${report.wrong}</b></span>${report.weakChapters.length ? `<span>薄弱：${report.weakChapters.map((item) => `${escapeHtml(chapterName(item.chapter))} ×${item.count}`).join('、')}</span>` : '<span>本周没有记录到新的错题。</span>'}</div>
+        <p class="muted" style="font-size:9.5px;margin-top:6px">基于本设备最近的练习记录；注册账号的错题与复习间隔会同步，但这份周报暂不跨设备合并。</p>
+      </section>` : ''}
       <div class="review-toolbar">
         <div class="segmented" role="tablist" aria-label="复习分类"><button class="segment ${tab === 'due' ? 'active' : ''}" type="button" data-review-tab="due">今日待复习</button><button class="segment ${tab === 'wrong' ? 'active' : ''}" type="button" data-review-tab="wrong">错题本</button><button class="segment ${tab === 'favorites' ? 'active' : ''}" type="button" data-review-tab="favorites">收藏</button></div>
         <div class="row-wrap"><button class="btn btn-primary btn-sm" type="button" data-smart-quiz ${weak.length ? '' : 'disabled'}>${icon('sparkles', 14)} 按薄弱诊断组卷</button><a class="btn btn-secondary btn-sm" href="#/read${weak.length ? `?focus=${encodeURIComponent(weak.join(','))}` : ''}">${icon('target', 14)} 系统判读</a><button class="btn btn-secondary btn-sm" type="button" data-review-ai>${icon('sparkles', 14)} AI 分析薄弱项</button><button class="btn btn-secondary btn-sm" type="button" data-export>${icon('arrowUpRight', 13)} 导出本地记录</button><label class="btn btn-ghost btn-sm" for="review-import">导入</label><input id="review-import" type="file" accept="application/json" hidden></div>
@@ -108,9 +117,11 @@ export async function reviewView() {
       navigate(`/practice?focus=${encodeURIComponent(focus.join(','))}&auto=1&level=2`);
     });
     el.querySelectorAll('[data-confusion-practice]').forEach((button) => button.addEventListener('click', () => {
-      const focus = String(button.dataset.confusionPractice || '').split(',').map((id) => id.trim()).filter(Boolean).slice(0, 2);
-      if (!focus.length) return;
-      navigate(`/practice?focus=${encodeURIComponent(focus.join(','))}&auto=1`);
+      const [correctId, wrongId] = String(button.dataset.confusionPractice || '').split(',').map((id) => id.trim()).filter(Boolean);
+      if (!correctId) return;
+      const params = new URLSearchParams({ focus: correctId, auto: '1' });
+      if (wrongId) params.set('confusion', wrongId);
+      navigate(`/practice?${params.toString()}`);
     }));
     el.querySelectorAll('[data-mistake-ai]').forEach((button) => button.addEventListener('click', async () => {
       if (store.user?.isGuest) return toast('登录后可使用 AI 错因分析', 'warn');

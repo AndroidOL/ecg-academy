@@ -1,6 +1,8 @@
 // Local-first study records. Guest mode never writes quiz_attempts to the database.
 const REVIEW_KEY = 'ecg-review-v1';
 const FAVORITE_KEY = 'ecg-favorites-v1';
+const ACTIVITY_KEY = 'ecg-activity-v1';
+const ACTIVITY_LIMIT = 800;
 const DAY = 86400000;
 const WRONG_LOG_LIMIT = 12;
 const WRONG_CHOICE_LIMIT = 8;
@@ -31,6 +33,16 @@ function readReviews() {
 function readFavorites() {
   const value = safeRead(FAVORITE_KEY, {});
   return value && !Array.isArray(value) ? value : {};
+}
+
+function readActivity() {
+  const value = safeRead(ACTIVITY_KEY, []);
+  return Array.isArray(value) ? value : [];
+}
+
+function writeActivity(activity) {
+  if (typeof localStorage === 'undefined') return;
+  try { localStorage.setItem(ACTIVITY_KEY, JSON.stringify(activity.slice(-ACTIVITY_LIMIT))); } catch { /* quota / private mode */ }
 }
 
 function clampText(value, max) {
@@ -185,6 +197,16 @@ export function recordAttempt({
   const reviews = readReviews();
   const now = Date.now();
   const correctSet = new Set(correctIds.map(String));
+  const activityChapter = correctIds.map((id) => chapters[id]).find(Boolean) || '';
+  const activity = readActivity();
+  activity.push({
+    at: now,
+    correct: Boolean(correct),
+    source: clampText(source, 16),
+    chapter: clampText(activityChapter, 64),
+    wrong: correct ? 0 : Math.max(0, selectedIds.filter((id) => !correctSet.has(String(id))).length),
+  });
+  writeActivity(activity);
 
   if (correct) {
     correctIds.forEach((rawId) => {
@@ -406,10 +428,49 @@ export function weakDiagnosisIds(limit = 8) {
     .map((entry) => entry.id);
 }
 
+export function weeklyReport(days = 7) {
+  const span = Math.max(1, Math.min(30, Number(days) || 7));
+  const now = Date.now();
+  const start = now - span * DAY;
+  const entries = readActivity().filter((item) => Number(item.at || 0) >= start);
+  const byDay = [];
+  for (let offset = span - 1; offset >= 0; offset -= 1) {
+    const date = new Date(now - offset * DAY);
+    const key = date.toISOString().slice(0, 10);
+    byDay.push({ key, label: `${date.getMonth() + 1}/${date.getDate()}`, attempts: 0, correct: 0 });
+  }
+  const dayMap = new Map(byDay.map((day) => [day.key, day]));
+  const chapters = new Map();
+  let correctCount = 0;
+  entries.forEach((item) => {
+    const key = new Date(Number(item.at || now)).toISOString().slice(0, 10);
+    const day = dayMap.get(key);
+    if (day) {
+      day.attempts += 1;
+      if (item.correct) { day.correct += 1; correctCount += 1; }
+    }
+    if (!item.correct && item.chapter) chapters.set(item.chapter, (chapters.get(item.chapter) || 0) + 1);
+  });
+  const attempts = entries.length;
+  return {
+    days: span,
+    attempts,
+    correct: correctCount,
+    wrong: attempts - correctCount,
+    accuracy: attempts ? Math.round((correctCount / attempts) * 100) : 0,
+    byDay,
+    weakChapters: [...chapters.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([chapter, count]) => ({ chapter, count })),
+  };
+}
+
 export function clearLocalStudyData() {
   if (typeof localStorage === 'undefined') return;
   localStorage.removeItem(REVIEW_KEY);
   localStorage.removeItem(FAVORITE_KEY);
+  localStorage.removeItem(ACTIVITY_KEY);
   if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('ecg-study-change'));
 }
 
@@ -465,10 +526,11 @@ export function mergeStudyData(remote = {}) {
 
 export function exportStudyData() {
   return {
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     reviews: readReviews(),
     favorites: readFavorites(),
+    activity: readActivity(),
   };
 }
 
@@ -476,6 +538,7 @@ export function importStudyData(data) {
   if (!data || typeof data !== 'object') return false;
   if (data.reviews && typeof data.reviews === 'object') safeWrite(REVIEW_KEY, data.reviews);
   if (data.favorites && typeof data.favorites === 'object') safeWrite(FAVORITE_KEY, data.favorites);
+  if (Array.isArray(data.activity)) writeActivity(data.activity);
   return true;
 }
 

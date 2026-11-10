@@ -3,6 +3,13 @@
 测试日期：2026-11-07 ～ 2026-11-09
 环境：PHP 8.4.27 · MySQL 8.4.13 · nginx 1.30.6 · Node 22.23.4 · 内存 3.5 GB
 
+## 2026-11-09 v3.2.0 回归（20261109av）
+
+- 混淆组卷：`focus=lbbb&confusion=rbbb&auto=1` 实测选项同时包含 LBBB 与 RBBB，且 RBBB 不是正确答案。
+- 学习周报：本地活动记录 7 天柱状图、正确率与薄弱章节；study/BYOK/周报 11/11。
+- PHP 全量 97/97；新增 confusion-focus 1 项；engine 17、read 6、vector-loop 6。
+- Chrome：错题本周报卡与分类组、练习页定向选项均正常，0 JS 错误。
+
 ## 2026-11-09 v3.1.0 回归（20261109au）
 
 - 五步重读：`QuestionBank::pick` 专注诊断优先级测试通过；高级诊断在 level=1 仍返回目标诊断。
@@ -208,7 +215,7 @@
 | 章节答案准确性 | `php scripts/audit_section_bank.php` | **1765 道，0 冲突** |
 | ECG 波形引擎 | `node tests/engine.test.mjs` | **15/15 通过** |
 | ACLS 状态机 | `php tests/sim.test.php` | **14/14 通过** |
-| 本地复习/BYOK/错选项/混淆对/章节分组 | `node tests/study.test.mjs` | **10/10 通过** |
+| 本地复习/BYOK/错选项/混淆对/周报 | `node tests/study.test.mjs` | **11/11 通过** |
 | 班级作业 | `php tests/assignment.test.php` | **3/3 通过** |
 | 学习考试/评级/锁定 | `php tests/learning.test.php` | **7/7 通过** |
 | 排行榜排序/当前名次 | `php tests/leaderboard.test.php` | **2/2 通过** |
@@ -220,7 +227,7 @@
 | 等级/专注诊断选择 | `php tests/level.test.php` | **6/6 通过** |
 | 统一计分/双轨 XP/自由练习 | `php tests/scoring.test.php` | **8/8 通过** |
 | 指南内容/免责声明 | `php tests/guideline.test.php` | **2/2 通过** |
-| PHP 全量（assertions on） | `for f in tests/*.test.php; do php -d zend.assertions=1 -d assert.exception=1 "$f"; done` | **96/96 通过** |
+| PHP 全量（assertions on） | `for f in tests/*.test.php; do php -d zend.assertions=1 -d assert.exception=1 "$f"; done` | **97/97 通过** |
 | 向量环正常值/极性/自检 | `node tests/vector-loop.test.mjs` | **6/6 通过** |
 | 账号学习数据同步（含错选项） | `php tests/study-sync.test.php` | **5/5 通过** |
 | 课程包校验/导入/发布 | `php tests/coursepack.test.php` | **4/4 通过** |
