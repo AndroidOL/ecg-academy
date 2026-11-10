@@ -9,6 +9,7 @@
 - 首页 ECG 外壳非滚动模式同时设置 `overflow-x/y: visible`，`scrollWidth == clientWidth`，无幽灵滚动条。
 - PHP 全量 106/106（sim 17 项）；JS engine 19、read 6、study 11、vector-loop 6。
 - 本地浏览器：首页 ECG 外壳无横向溢出；CPR 检查后停止；错误模式充电后可放电并扣分；0 JS 错误。
+- 生产已验证：`/api/version` 返回 `3.3.5 / 20261110af`；首页 ECG 外壳 `clientWidth == scrollWidth`；CPR 中检查心律后按钮恢复“开始 CPR”并记录中断扣分；0 JS 错误。
 - 资源版本 `20261110af`。
 
 ## 2026-11-10 v3.3.4 回归（20261110ae）
