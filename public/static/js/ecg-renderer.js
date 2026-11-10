@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261110ae';
+const __asset = __isNode ? '' : '?v=20261110af';
 const { ECGSession, LEAD_NAMES } = await import(`./ecg-engine.js${__asset}`);
 
 const COLUMNS = [
@@ -124,8 +124,15 @@ export class ECGViewer {
     this.cssHeight = height;
     this.canvas.style.width = `${width}px`;
     this.canvas.style.height = `${height}px`;
-    this.shell.style.overflowX = mode === '12lead' && width > parentWidth ? 'auto' : 'visible';
-    if (mini) this.shell.style.overflowX = 'visible';
+    const scrollable = mode === '12lead' && width > parentWidth;
+    this.shell.style.overflowX = scrollable ? 'auto' : 'visible';
+    // CSS has overflow-y:hidden; visible+hidden computes to auto and creates a
+    // phantom horizontal scrollbar. Set both axes explicitly when not scrolling.
+    this.shell.style.overflowY = scrollable ? 'hidden' : 'visible';
+    if (mini) {
+      this.shell.style.overflowX = 'visible';
+      this.shell.style.overflowY = 'visible';
+    }
     this.prepareCanvas();
     this.draw();
   }

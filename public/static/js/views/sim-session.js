@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261110ae';
+const __asset = __isNode ? '' : '?v=20261110af';
 const { api } = await import(`../api.js${__asset}`);
 const { hasByok } = await import(`../byok.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -270,7 +270,7 @@ export async function simSessionView({ params }) {
           : flags.postShock
             ? '电击后观察期，约 2 秒'
             : !hasMode
-              ? '先判断当前心律：有脉且规则/不稳定需要同步复律，无脉或心室颤动/无脉性室速需要非同步除颤'
+              ? '请先判断当前心律，再选择同步或非同步模式后充电'
               : chargeProgress
                 ? `充电中 · 约 ${flags.chargeReadyIn ?? 0}s；需切换能量/同步模式请先解除充电`
                 : chargeReady

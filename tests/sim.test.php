@@ -262,6 +262,26 @@ try {
         SimEngine::action($userId, $id, 'finish', []);
     });
 
+    check('checking rhythm stops CPR and wrong mode is penalized only after shock', function () use ($userId): void {
+        $view = SimEngine::start($userId, 'vf-arrest');
+        $id = $view['sessionId'];
+        SimEngine::action($userId, $id, 'cpr_start', []);
+        pauseFor(5.2);
+        $view = SimEngine::action($userId, $id, 'check_rhythm', []);
+        assert($view['cpr'] === false, 'checking rhythm must actually stop compressions');
+        assert((bool) array_filter($view['events'], static fn (array $e): bool => str_contains((string) $e['label'], '已暂停按压')));
+        SimEngine::action($userId, $id, 'finish', []);
+
+        $view = SimEngine::start($userId, 'vf-arrest');
+        $id = $view['sessionId'];
+        SimEngine::action($userId, $id, 'charge', ['energy' => 200, 'sync' => true]);
+        pauseFor(3.3);
+        $view = SimEngine::action($userId, $id, 'shock', ['energy' => 200, 'sync' => true]);
+        assert($view['rhythm'] === 'vf', 'wrong mode must not deliver a shock');
+        assert((bool) array_filter($view['events'], static fn (array $e): bool => str_contains((string) $e['label'], '使用同步模式')));
+        SimEngine::action($userId, $id, 'finish', []);
+    });
+
     check('VF monitor seed differs between sessions and stays stable in-session', function () use ($userId): void {
         $first = SimEngine::start($userId, 'vf-arrest');
         $second = SimEngine::start($userId, 'vf-arrest');

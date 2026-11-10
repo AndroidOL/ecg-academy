@@ -330,7 +330,7 @@ final class SimEngine
             $state['pulse'] = true;
             if ($elapsed < 30) self::setPhase($state, 'unstable', '血流动力学不稳定');
             elseif ($elapsed < 90) self::setPhase($state, 'decompensated', '失代偿：低血压/意识改变');
-            else self::setPhase($state, 'critical', '濒危：需立即同步复律');
+            else self::setPhase($state, 'critical', '濒危：需立即起搏/药物支持');
             if ($elapsed > 45 && !isset($state['flags']['tachy_worse'])) {
                 $state['flags']['tachy_worse'] = true;
                 self::event($state, '患者出现意识模糊、末梢湿冷', 'bad');
@@ -616,15 +616,9 @@ final class SimEngine
             if (!in_array($state['rhythm'], ['vf', 'pvt'], true)) {
                 throw new ApiError(422, 'not_shockable', '当前心律不是可除颤心律');
             }
-            if ((bool) ($payload['sync'] ?? false)) {
-                throw new ApiError(422, 'sync_invalid', 'VF/无脉性 VT 必须使用非同步除颤');
-            }
         } elseif ($algorithm === 'tachy') {
             if (!in_array($state['rhythm'], ['svt', 'af_fast'], true)) {
                 throw new ApiError(422, 'not_tachy', '当前心律不是快速性心律失常');
-            }
-            if (!(bool) ($payload['sync'] ?? false)) {
-                throw new ApiError(422, 'sync_required', '有脉快速心律必须使用同步电复律');
             }
         } else {
             throw new ApiError(422, 'not_shockable', '当前场景不适合电击/复律');
@@ -1026,8 +1020,13 @@ final class SimEngine
     private static function check(array &$state, string $label, float $now): void
     {
         if ($state['cpr']) {
+            // 检查心律/脉搏必须先停止按压；不能只提示“中断”却继续按压。
+            $state['cprSeconds'] = (float) $state['cprSeconds'] + max(0, $now - (float) $state['cprStartedAt']);
+            $state['cpr'] = false;
+            $state['cprStartedAt'] = null;
+            $state['lastCprEnd'] = $now;
             self::penalty($state, 5, '按压过程中不应停顿检查脉搏/心律');
-            self::event($state, $label . '：按压中断', 'bad');
+            self::event($state, $label . '：已暂停按压，检查后需重新开始 CPR', 'bad');
         } else {
             self::event($state, $label . '：无脉搏' . ($state['rhythm'] === 'vf' ? '，仍为 VF' : ''), 'neutral');
         }
@@ -1422,23 +1421,23 @@ final class SimEngine
             if (!empty($state['lastAtropineAt']) && microtime(true) - $state['lastAtropineAt'] > 45) return '阿托品作用开始衰减：评估起搏或肾上腺素泵入。';
         }
         if ($algorithm === 'tachy' && (int) ($state['bpSys'] ?? 82) < 65) {
-            return '低血压进行性加重：立即同步电复律，不要只等待药物起效。';
+            return '低血压进行性加重：立即电复律，不要只等待药物起效。';
         }
         if ($algorithm === 'vf') {
             if (!$state['cpr']) return '患者无脉。立即开始高质量胸外按压；除颤前必须先停止按压。';
             $etco2 = (int) ($state['etco2'] ?? 0);
             if ($etco2 > 0 && $etco2 < 10) return 'ETCO₂ 偏低：检查按压深度/频率、回弹与通气，避免过度通气；按压质量差时除颤成功率下降。';
             if ($etco2 >= 40) return 'ETCO₂ 突然升高：立即检查脉搏与心律，可能是自主循环恢复（ROSC）的最早信号。';
-            if ($state['shocks'] === 0) return '可除颤心律：尽快非同步除颤（双相 120–200 J），除颤后立即恢复按压。';
+            if ($state['shocks'] === 0) return '可除颤心律：尽快选择电治疗并充电，放电后立即恢复按压。';
             if ($state['shocks'] < 2) return '继续 CPR 2 分钟；第二次除颤后考虑肾上腺素 1 mg。';
             if ($state['epi'] === 0) return '可给予肾上腺素 1 mg IV/IO，每 3–5 分钟重复。';
             if ($state['amio'] === 0) return '难治性 VF 可加胺碘酮 300 mg，同时寻找可逆病因。';
             return '持续高质量 CPR，减少按压中断，评估可逆病因。';
         }
         if ($algorithm === 'tachy') {
-            if (!$state['iv']) return '有脉但不稳定：先建立 IV、吸氧，并准备同步电复律。';
+            if (!$state['iv']) return '有脉但不稳定：先建立 IV、吸氧，并准备电复律。';
             if (!$state['sedated']) return '有意识患者电复律前应镇静。';
-            return '选择同步模式电复律：窄 QRS 规则 50–100 J，房颤 120–200 J。';
+            return '有脉但不稳定：选择电复律并充电，注意有意识者先镇静。';
         }
         if ($algorithm === 'brady') {
             if ($state['atropine'] === 0) return '症状性心动过缓：阿托品 1 mg IV，每 3–5 分钟可重复，最大 3 mg。';
