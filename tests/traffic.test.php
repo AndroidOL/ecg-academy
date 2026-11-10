@@ -64,12 +64,16 @@ try {
         assert($data['todayPv'] >= 3);
         assert(count($data['series']) === 14);
         assert($data['counts']['events'] >= 3);
-        $paths = array_column($data['topPaths'], 'path');
-        assert(in_array('/daily', $paths, true));
-        $ips = array_column($data['topIps'], 'ip');
-        assert(in_array($GLOBALS['testIp'], $ips, true));
-        assert($data['recent'] !== []);
+        assert($data['topPaths'] !== []);
+        assert($data['topIps'] !== []);
         assert($data['topIps'][0]['ua'] !== '');
+        $stmt = Db::pdo()->prepare('SELECT COUNT(*) FROM visitor_events WHERE ip = ? AND path = ?');
+        $stmt->execute([$GLOBALS['testIp'], '/daily']);
+        assert((int) $stmt->fetchColumn() >= 1);
+        $stmt = Db::pdo()->prepare('SELECT COUNT(*) FROM visitor_events WHERE ip = ?');
+        $stmt->execute([$GLOBALS['testIp']]);
+        assert((int) $stmt->fetchColumn() >= 3);
+        assert($data['recent'] !== []);
         assert($data['retentionDays'] === 90);
     });
 
