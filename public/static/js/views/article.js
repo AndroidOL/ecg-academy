@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109ar';
+const __asset = __isNode ? '' : '?v=20261109as';
 const { localizedName } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -51,6 +51,7 @@ export async function articleView({ params }) {
   let mastered = status === 'mastered';
   const favorited = isFavorite(detail.id);
   const review = detail.review || {};
+  const tocSections = detail.guideline ? [...SECTIONS, ['guideline', '指南规范']] : SECTIONS;
 
   el.innerHTML = `
     <div class="breadcrumb"><a href="#/learn">诊断图谱</a><span>/</span><a href="#/learn?chapter=${encodeURIComponent(detail.chapter)}">${escapeHtml(localizedName(chapter))}</a><span>/</span><span>${escapeHtml(localizedName(detail))}</span></div>
@@ -149,6 +150,16 @@ export async function articleView({ params }) {
         <section class="article-section" id="reading"><h2>判读步骤</h2>${list(detail.reading)}</section>
         <section class="article-section" id="redFlags"><h2>危险信号</h2><div class="callout danger"><strong>${icon('alert', 13)} 需要立即处理或升级监护：</strong>${list(detail.redFlags).replace('<ul', '<ul style="margin-top:6px"')}</div></section>
         <section class="article-section" id="management"><h2>处理原则</h2><div class="callout brand">${list(detail.management)}</div></section>
+        ${detail.guideline ? `<section class="article-section guideline-section" id="guideline">
+          <div class="section-head"><div><div class="page-eyebrow">CLINICAL PATHWAY</div><h2>${escapeHtml(detail.guideline.title || '指南规范与检查流程（教学）')}</h2></div><span class="badge badge-warn">教学摘要</span></div>
+          <div class="guideline-grid">
+            <div><h3>${icon('flask', 14)} 关键检查 / 指标</h3>${list(detail.guideline.markers || [])}</div>
+            <div><h3>${icon('activity', 14)} 处理流程</h3>${list(detail.guideline.workflow || [])}</div>
+            <div><h3>${icon('shield', 14)} 安全边界</h3>${list(detail.guideline.safety || [])}</div>
+          </div>
+          <p class="guideline-sources"><b>参考指南：</b>${(detail.guideline.sources || []).map((source) => escapeHtml(source)).join(' · ')}</p>
+          <div class="callout danger guideline-disclaimer">${icon('alert', 14)} ${escapeHtml(detail.guideline.disclaimer || '以上为教学摘要，不是个体化医嘱；真实患者请由具备资质的医生评估、决策和指挥。')}</div>
+        </section>` : ''}
         <section class="article-section" id="pitfalls"><h2>易错点</h2>${list(detail.pitfalls)}</section>
         <section class="article-section" id="differential">
           <h2>鉴别诊断</h2>
@@ -195,7 +206,7 @@ export async function articleView({ params }) {
           <div class="toc-title">ON THIS PAGE</div>
           ${isTopic
             ? `<a class="toc-link" href="#topic-objectives" data-toc="topic-objectives">学习目标</a>${(detail.sections || []).map((section, index) => `<a class="toc-link" href="#topic-section-${index}" data-toc="topic-section-${index}">${escapeHtml(section.title || '')}</a>`).join('')}${(detail.references || []).length ? `<a class="toc-link" href="#topic-references" data-toc="topic-references">参考资料</a>` : ''}`
-            : SECTIONS.map(([id, name]) => `<a class="toc-link" href="#ecg-viewer-section" data-toc="${id}">${name}</a>`).join('')}
+            : tocSections.map(([id, name]) => `<a class="toc-link" href="#ecg-viewer-section" data-toc="${id}">${name}</a>`).join('')}
         </div>
         <div class="article-side-card">
           <h3>床旁速记</h3>

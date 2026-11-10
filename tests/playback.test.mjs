@@ -85,7 +85,11 @@ try {
   assert(viewer.playing === true, 'switching lead during playback keeps playing');
   assert(viewer.annotationLeads({ label: 'V1–V4 ST↑' }).join(',') === 'V1,V2,V3,V4', 'lead range expands for annotation filtering');
   assert(viewer.annotationLeads({ label: 'II、III、aVF 镜像 ST↓' }).join(',') === 'II,III,aVF', 'limb leads parse for annotation filtering');
-  assert(viewer.annotationLeads({ label: 'QRS 0.10 s' }).length === 0, 'global interval annotation stays on all leads');
+  assert(viewer.annotationLeads({ label: 'QRS 0.10 s' }).join(',') === 'II,V1', 'QRS interval annotation shows on II/V1');
+  assert(viewer.annotationLeads({ label: '弥漫凹面 ST↑' }).length === 0, 'diffuse ST annotation stays on all leads');
+  assert(viewer.annotationLeads({ label: 'T 波高尖' }).join(',') === 'V2,V3,V4', 'peaked T annotation shows on precordial leads');
+  assert(viewer.annotationLeads({ label: 'RR 0.47 s' }).join(',') === 'II', 'rate annotation stays on lead II');
+  assert(viewer.annotationLeads({ label: '窦性 P' }).join(',') === 'II,V1', 'sinus P annotation shows on II/V1');
   const pSnap = viewer.snapAnnotation({ kind: 'arrow', t: 0.42, label: 'P' });
   const rSnap = viewer.snapAnnotation({ kind: 'arrow', t: 0.84, label: 'T' });
   assert(Math.abs(pSnap.t - 0.42) < 0.06, 'P annotation snaps to actual P wave');

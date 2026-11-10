@@ -144,7 +144,24 @@ final class Content
         $diagnosis['rarity'] = (string) ($diagnosis['rarity'] ?? (in_array($diagnosis['chapter'], ['pacing','special','syndromes','pediatric','rhythm-competition','advanced'], true) ? 'uncommon' : 'common'));
         $diagnosis['hasEcg'] = isset($diagnosis['ecg']) && is_array($diagnosis['ecg']);
         $diagnosis['ecg'] = $diagnosis['hasEcg'] ? self::fullSpec($diagnosis) : null;
+        $guideline = self::guidelineFor((string) $diagnosis['id']);
+        if ($guideline !== null) $diagnosis['guideline'] = $guideline;
         return $diagnosis;
+    }
+
+    private static function guidelineFor(string $id): ?array
+    {
+        static $data = null;
+        if ($data === null) {
+            $file = BASE_PATH . '/data/guidelines.php';
+            $data = is_file($file) ? require $file : [];
+            if (!is_array($data)) $data = [];
+        }
+        $groupKey = (string) ($data['map'][$id] ?? '');
+        $group = $data['groups'][$groupKey] ?? null;
+        if (!is_array($group)) return null;
+        $group['disclaimer'] = (string) ($data['disclaimer'] ?? '');
+        return $group;
     }
 
     public static function reviewInfo(string $chapterId, string $diagnosisId): array

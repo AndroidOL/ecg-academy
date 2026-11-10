@@ -3,6 +3,14 @@
 测试日期：2026-11-07 ～ 2026-11-09
 环境：PHP 8.4.27 · MySQL 8.4.13 · nginx 1.30.6 · Node 22.23.4 · 内存 3.5 GB
 
+## 2026-11-09 v3.0.16 回归（20261109as）
+
+- 内容：新增 10 组指南摘要 / 23 个诊断映射；`validate_content` 校验指南映射、markers/workflow/safety/sources 与免责声明，0 错误。
+- 标注：新增/修正电解质、LVH、LBBB、MI、PE 标注；导联过滤规则覆盖 V1–V4、II/III/aVF、RR/QRS/PR/QT/T/U；Playback 测试新增规则断言。
+- AI：错题按章节分组；发送实际错选选项；提示词固定输出逐项鉴别、漏诊原因、排除顺序和下一步动作。
+- PHP 95/95；JS engine 17、read 6、study 10、vector-loop 6。
+- Chrome：MI 文章指南区块、免责声明正常；LBBB 单导联仅显示对应标注；0 JS 错误。
+
 ## 2026-11-09 v3.0.15 回归（20261109ar）
 
 - Passkey：无用户名登录返回 discoverable options（allowCredentials 空、userVerification=required）；profile 9/9。
@@ -186,7 +194,7 @@
 | 章节答案准确性 | `php scripts/audit_section_bank.php` | **1765 道，0 冲突** |
 | ECG 波形引擎 | `node tests/engine.test.mjs` | **15/15 通过** |
 | ACLS 状态机 | `php tests/sim.test.php` | **14/14 通过** |
-| 本地复习/BYOK/错选项/混淆对 | `node tests/study.test.mjs` | **9/9 通过** |
+| 本地复习/BYOK/错选项/混淆对/章节分组 | `node tests/study.test.mjs` | **10/10 通过** |
 | 班级作业 | `php tests/assignment.test.php` | **3/3 通过** |
 | 学习考试/评级/锁定 | `php tests/learning.test.php` | **7/7 通过** |
 | 排行榜排序/当前名次 | `php tests/leaderboard.test.php` | **2/2 通过** |
@@ -197,7 +205,8 @@
 | 扣分/不熟练判定 | `php tests/slow.test.php` | **3/3 通过** |
 | 等级与难度解锁 | `php tests/level.test.php` | **5/5 通过** |
 | 统一计分/双轨 XP/自由练习 | `php tests/scoring.test.php` | **8/8 通过** |
-| PHP 全量（assertions on） | `for f in tests/*.test.php; do php -d zend.assertions=1 -d assert.exception=1 "$f"; done` | **93/93 通过** |
+| 指南内容/免责声明 | `php tests/guideline.test.php` | **2/2 通过** |
+| PHP 全量（assertions on） | `for f in tests/*.test.php; do php -d zend.assertions=1 -d assert.exception=1 "$f"; done` | **95/95 通过** |
 | 向量环正常值/极性/自检 | `node tests/vector-loop.test.mjs` | **6/6 通过** |
 | 账号学习数据同步（含错选项） | `php tests/study-sync.test.php` | **5/5 通过** |
 | 课程包校验/导入/发布 | `php tests/coursepack.test.php` | **4/4 通过** |

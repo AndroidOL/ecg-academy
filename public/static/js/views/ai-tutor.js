@@ -1,10 +1,10 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109ar';
+const __asset = __isNode ? '' : '?v=20261109as';
 const { store } = await import(`../store.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { getByok, hasByok } = await import(`../byok.js${__asset}`);
 const { directQuiz } = await import(`../ai-direct.js${__asset}`);
-const { wrongReviews, weakDiagnosisIds, recordAttempt, questionSignature, wrongChoiceSummary, strongestRepeat, mistakeContext } = await import(`../study-store.js${__asset}`);
+const { wrongReviews, weakDiagnosisIds, recordAttempt, questionSignature, wrongChoiceSummary, strongestRepeat, mistakeContext, groupReviewsByChapter } = await import(`../study-store.js${__asset}`);
 const { icon, escapeHtml, toast, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 const { createAiChat } = await import(`./ai-chat.js${__asset}`);
 
@@ -32,7 +32,9 @@ export async function aiTutorView() {
     const repeat = strongestRepeat(entry);
     return `错 ${Number(entry.wrong || 0)} · 慢 ${Number(entry.slow || 0)} · 遗忘 ${Number(entry.lapses || 0)}${choice ? ` · 常选 ${choice.name} ×${choice.count}` : ''}${repeat ? ` · 同题错 ${repeat.n} 次` : ''}`;
   };
-  const entries = wrongReviews(12).filter((entry) => Number(entry.wrong || 0) > 0 || Number(entry.slow || 0) > 0);
+  const entries = wrongReviews(24).filter((entry) => Number(entry.wrong || 0) > 0 || Number(entry.slow || 0) > 0);
+  const chapterName = (id) => store.chapters?.find((chapter) => chapter.id === id)?.name || id || '未分类';
+  const groups = groupReviewsByChapter(entries).map((group) => ({ ...group, name: chapterName(group.id) }));
   const chat = createAiChat({
     suggestions: ['帮我梳理一次完整的判读顺序', '为什么我的错题集中在这些诊断？', '给我一个三天复习计划'],
     welcome: '我只回答心电图与心血管电生理相关问题。可以从左侧选择一道错题开始，或直接提问。',
@@ -46,8 +48,8 @@ export async function aiTutorView() {
     <div class="ai-tutor-layout">
       <aside class="stack">
         <section class="card card-pad">
-          <div class="section-head"><h2 class="section-title" style="font-size:15px">从错题开始</h2><span class="badge">${entries.length} 条</span></div>
-          ${entries.length ? `<div class="ai-wrong-list">${entries.map((entry) => `<button class="ai-wrong-chip" type="button" data-ai-wrong="${escapeHtml(entry.id)}" data-name="${escapeHtml(entry.name || entry.id)}"><b>${escapeHtml(entry.name || entry.id)}</b><span>${escapeHtml(entryMeta(entry))}</span></button>`).join('')}</div>` : '<p class="muted" style="font-size:11.5px">还没有错题记录。完成一局判读练习后，这里会列出常错诊断。</p>'}
+          <div class="section-head"><h2 class="section-title" style="font-size:15px">从错题开始</h2><span class="badge">${entries.length} 条 · ${groups.length} 章</span></div>
+          ${entries.length ? `<div class="ai-wrong-groups">${groups.map((group, index) => `<details class="ai-wrong-group" ${index === 0 ? 'open' : ''}><summary><span>${escapeHtml(group.name)}</span><b>${group.items.length}</b></summary><div class="ai-wrong-list">${group.items.map((entry) => `<button class="ai-wrong-chip" type="button" data-ai-wrong="${escapeHtml(entry.id)}" data-name="${escapeHtml(entry.name || entry.id)}"><b>${escapeHtml(entry.name || entry.id)}</b><span>${escapeHtml(entryMeta(entry))}</span></button>`).join('')}</div></details>`).join('')}</div>` : '<p class="muted" style="font-size:11.5px">还没有错题记录。完成一局判读练习后，这里会列出常错诊断。</p>'}
           <a class="btn btn-secondary btn-sm btn-block" href="#/review" style="margin-top:10px">${icon('target', 13)} 打开错题本</a>
         </section>
         <section class="card card-pad">
@@ -171,12 +173,12 @@ export async function aiTutorView() {
     const entry = entries.find((item) => item.id === button.dataset.aiWrong);
     const name = button.dataset.name;
     const detail = entry ? mistakeContext(entry) : null;
-    const topChoice = detail?.choices?.[0];
+    const picked = (detail?.choices || []).slice(0, 3).map((choice) => `${choice.name}×${choice.count}`).join('、');
     const repeat = detail?.repeat;
-    let prompt = `请分析我在「${name}」上的错误：`;
-    if (topChoice) prompt += `我最近常错选「${topChoice.name}」${Number(topChoice.count || 0) > 1 ? `（${topChoice.count} 次）` : ''}。`;
-    if (repeat) prompt += `同一道题已错 ${repeat.n} 次${repeat.picked?.length ? `，最常选「${repeat.picked[0]}」` : ''}。`;
-    prompt += ' 请解释我为什么会被这个干扰项吸引，它和正确诊断的决定性鉴别线索是什么，下次判读按什么顺序排除它。';
+    let prompt = `请分析我在「${name}」上的错题。`;
+    if (picked) prompt += `我实际错选的选项是：${picked}。请逐项解释每个干扰项为什么容易被误认为正确诊断。`;
+    if (repeat) prompt += ` 同一道题已错 ${repeat.n} 次${repeat.picked?.length ? `，最常选「${repeat.picked[0]}」` : ''}。`;
+    prompt += ' 请给出：1）每个错选项与正确诊断的关键鉴别线索（导联/间期/形态）；2）我为什么会漏掉决定性线索；3）下次固定排除顺序；4）一条下一次判读动作。';
     chat.ask(prompt, { diagnosisId: entry?.id || '', mistake: detail });
     chat.focus();
     toast('已把错题与错选记录带入对话', 'info');

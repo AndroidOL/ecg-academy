@@ -336,6 +336,16 @@ export function strongestRepeat(entry) {
   return best;
 }
 
+export function groupReviewsByChapter(entries = []) {
+  const groups = new Map();
+  entries.forEach((entry) => {
+    const key = String(entry?.chapter || 'uncategorized');
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(entry);
+  });
+  return [...groups.entries()].map(([id, items]) => ({ id, items }));
+}
+
 export function wrongConfusionPairs(limit = 5) {
   const pairs = new Map();
   reviewEntries().forEach((entry) => {

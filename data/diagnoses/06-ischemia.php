@@ -369,8 +369,8 @@ return [
             'annotations' => [
                 ['kind' => 'bracket', 't0' => 0.42, 't1' => 0.56, 'label' => 'PR 0.14 s', 'tone' => 'brand'],
                 ['kind' => 'arrow', 't' => 0.60, 'label' => '弥漫凹面 ST↑ 1–1.5 mm', 'tone' => 'danger', 'dir' => 'up'],
-                ['kind' => 'arrow', 't' => 1.32, 'label' => 'PR 段压低', 'tone' => 'warn', 'dir' => 'down'],
-                ['kind' => 'arrow', 't' => 2.00, 'label' => 'Spodick 征', 'tone' => 'teal', 'dir' => 'down'],
+                ['kind' => 'arrow', 't' => 1.32, 'label' => 'PR 段压低', 'tone' => 'warn', 'dir' => 'down', 'leads' => ['II', 'aVF', 'V4', 'V5', 'V6']],
+                ['kind' => 'arrow', 't' => 2.00, 'label' => 'Spodick 征', 'tone' => 'teal', 'dir' => 'down', 'leads' => ['II']],
             ],
             'duration' => 9,
             'seed' => 191,
@@ -466,7 +466,7 @@ return [
             'annotations' => [
                 ['kind' => 'arrow', 't' => 0.6, 'label' => 'V1–V3 ST↓ 2 mm（后壁镜像）', 'tone' => 'warn', 'dir' => 'down'],
                 ['kind' => 'arrow', 't' => 0.9, 'label' => 'V1–V2 R 波增高', 'tone' => 'danger', 'dir' => 'up'],
-                ['kind' => 'bracket', 't0' => 0.5, 't1' => 1.2, 'label' => '加做 V7–V9 可见 ST 抬高', 'tone' => 'gold'],
+                ['kind' => 'bracket', 't0' => 0.5, 't1' => 1.2, 'label' => '需加做 V7–V9 证实后壁梗死', 'tone' => 'gold', 'leads' => ['V1', 'V2', 'V3']],
             ],
             'duration' => 9,
             'seed' => 211,

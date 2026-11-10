@@ -83,6 +83,7 @@ return [
             'annotations' => [
                 ['kind' => 'arrow', 't' => 1.45, 'label' => 'T 波高尖对称', 'tone' => 'danger', 'dir' => 'up'],
                 ['kind' => 'arrow', 't' => 0.55, 'label' => 'P 波变平', 'tone' => 'warn', 'dir' => 'up'],
+                ['kind' => 'arrow', 't' => 0.58, 'label' => 'QRS 增宽', 'tone' => 'warn', 'dir' => 'up', 'leads' => ['II', 'V1']],
             ],
             'duration' => 8,
             'seed' => 179,
@@ -169,6 +170,7 @@ return [
             'annotations' => [
                 ['kind' => 'arrow', 't' => 1.55, 'label' => 'U 波', 'tone' => 'warn', 'dir' => 'up'],
                 ['kind' => 'bracket', 't0' => 0.55, 't1' => 1.1, 'label' => 'QT(U) 延长', 'tone' => 'danger'],
+                ['kind' => 'arrow', 't' => 0.9, 'label' => 'T 波低平', 'tone' => 'warn', 'dir' => 'down', 'leads' => ['II', 'V5']],
             ],
             'duration' => 8,
             'seed' => 181,
@@ -253,6 +255,7 @@ return [
             'extras' => [],
             'annotations' => [
                 ['kind' => 'bracket', 't0' => 0.55, 't1' => 0.83, 'label' => 'QT 0.28 s（缩短）', 'tone' => 'warn'],
+                ['kind' => 'arrow', 't' => 0.62, 'label' => 'ST 段缩短', 'tone' => 'warn', 'dir' => 'up', 'leads' => ['II', 'V5']],
             ],
             'duration' => 8,
             'seed' => 191,
@@ -337,7 +340,7 @@ return [
             'extras' => [],
             'annotations' => [
                 ['kind' => 'bracket', 't0' => 0.55, 't1' => 1.07, 'label' => 'QT 0.52 s（延长）', 'tone' => 'danger'],
-                ['kind' => 'arrow', 't' => 0.82, 'label' => 'ST 段延长', 'tone' => 'warn', 'dir' => 'up'],
+                ['kind' => 'arrow', 't' => 0.82, 'label' => 'ST 段延长', 'tone' => 'warn', 'dir' => 'up', 'leads' => ['II', 'V5']],
             ],
             'duration' => 8,
             'seed' => 193,

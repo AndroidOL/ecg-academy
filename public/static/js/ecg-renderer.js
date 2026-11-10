@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109ar';
+const __asset = __isNode ? '' : '?v=20261109as';
 const { ECGSession, LEAD_NAMES } = await import(`./ecg-engine.js${__asset}`);
 
 const COLUMNS = [
@@ -1021,7 +1021,28 @@ export class ECGViewer {
       return '';
     });
     const matches = text.match(/aVR|aVL|aVF|V[1-6]|III|II|I/g) || [];
-    return [...new Set([...expanded, ...matches])];
+    const parsed = [...new Set([...expanded, ...matches])];
+    if (parsed.length) return parsed;
+    const rules = [
+      [/PR\s*段压低/i, ['II', 'aVF', 'V4', 'V5', 'V6']],
+      [/Spodick/i, ['II']],
+      [/窦性搏动|窦性\s*P|P′|P'|异常\s*P|P\s*波消失|P\s*波隐藏|前无\s*P|无窦性\s*P|P\s*波变平|PR/i, ['II', 'V1']],
+      [/RR|心率|频率|窦速|心动过速|心动过缓|间歇|脱漏/, ['II']],
+      [/QRS|宽\s*QRS|室性逸搏|PVC|T\s*波反向|T\s*波与主波反向|振幅扭转|多形性|1:1\s*交替|代偿间歇|混沌|无组织/i, ['II', 'V1']],
+      [/U\s*波/, ['V2', 'V3']],
+      [/勺状\s*ST/, ['II', 'V5', 'V6']],
+      [/delta/i, ['V2', 'V5']],
+      [/穹隆型|Brugada/i, ['V1', 'V2']],
+      [/QT.*(延长|QTc)/i, ['II', 'V5']],
+      [/QT.*缩短|ST\s*段缩短|QT\s*0\.2/i, ['II', 'V5']],
+      [/T\s*波高尖|高尖对称\s*T|T\s*波高尖/i, ['V2', 'V3', 'V4']],
+      [/T\s*波低平/, ['II', 'V5']],
+      [/T\s*波双相|T\s*波切迹/, ['V2', 'V3']],
+      [/侧壁\s*ST|侧壁.*T\s*倒置|侧壁.*ST\s*压低/i, ['I', 'aVL', 'V5', 'V6']],
+      [/定标|纸速|校准|电轴/, ['II']],
+    ];
+    for (const [re, leads] of rules) if (re.test(text)) return leads;
+    return [];
   }
 
   drawAnnotations(colors, left, top, plotW, plotH, pxPerSec, result, yFor) {

@@ -81,6 +81,7 @@ return [
             'annotations' => [
                 ['kind' => 'arrow', 't' => 0.6, 'label' => 'V5 高 R 波', 'tone' => 'warn', 'dir' => 'up'],
                 ['kind' => 'arrow', 't' => 0.85, 'label' => '侧壁 ST 压低/T 倒置', 'tone' => 'danger', 'dir' => 'down'],
+                ['kind' => 'arrow', 't' => 0.62, 'label' => 'V1 深 S', 'tone' => 'teal', 'dir' => 'down', 'leads' => ['V1', 'V2']],
             ],
             'duration' => 8,
             'seed' => 211,
@@ -253,7 +254,7 @@ return [
             'primaryLead' => 'V1',
             'annotations' => [
                 ['kind' => 'arrow', 't' => 0.6, 'label' => '穹隆型 ST↑ ≥2 mm', 'tone' => 'danger', 'dir' => 'up'],
-                ['kind' => 'arrow', 't' => 0.85, 'label' => 'T 波倒置', 'tone' => 'warn', 'dir' => 'down'],
+                ['kind' => 'arrow', 't' => 0.85, 'label' => 'T 波倒置', 'tone' => 'warn', 'dir' => 'down', 'leads' => ['V1', 'V2']],
             ],
             'duration' => 8,
             'seed' => 227,
@@ -345,6 +346,7 @@ return [
             'annotations' => [
                 ['kind' => 'arrow', 't' => 0.6, 'label' => 'I 导联深 S', 'tone' => 'warn', 'dir' => 'down'],
                 ['kind' => 'bracket', 't0' => 0.5, 't1' => 1.04, 'label' => '窦速 ≈112 次/分', 'tone' => 'danger'],
+                ['kind' => 'arrow', 't' => 0.62, 'label' => 'III 导联 Q/T 倒置', 'tone' => 'warn', 'dir' => 'down', 'leads' => ['III']],
             ],
             'duration' => 7,
             'seed' => 229,

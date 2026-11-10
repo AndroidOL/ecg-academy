@@ -81,6 +81,34 @@ foreach ($all as $id => $item) {
     }
 }
 
+$guidelineFile = BASE_PATH . '/data/guidelines.php';
+if (!is_file($guidelineFile)) {
+    $errors[] = '缺少 data/guidelines.php';
+} else {
+    $guidelines = require $guidelineFile;
+    $groups = is_array($guidelines) ? ($guidelines['groups'] ?? []) : [];
+    $map = is_array($guidelines) ? ($guidelines['map'] ?? []) : [];
+    if (!is_array($groups) || !is_array($map)) {
+        $errors[] = 'guidelines.php 结构无效';
+    } else {
+        foreach ($map as $id => $groupKey) {
+            if (!isset($all[$id])) $errors[] = "guideline map 引用不存在诊断 {$id}";
+            if (!isset($groups[$groupKey])) $errors[] = "guideline map 引用不存在分组 {$groupKey}";
+        }
+        foreach ($groups as $groupKey => $group) {
+            foreach (['title', 'markers', 'workflow', 'safety', 'sources'] as $field) {
+                if (!isset($group[$field])) $errors[] = "guideline {$groupKey}: 缺少 {$field}";
+            }
+            foreach (['markers', 'workflow', 'safety'] as $field) {
+                if (!is_array($group[$field] ?? null) || count((array) $group[$field]) < 2) {
+                    $errors[] = "guideline {$groupKey}: {$field} 内容不足";
+                }
+            }
+        }
+        if (trim((string) ($guidelines['disclaimer'] ?? '')) === '') $errors[] = 'guideline 缺少免责声明';
+    }
+}
+
 $byChapter = [];
 foreach ($all as $item) {
     $byChapter[$item['chapter']] = ($byChapter[$item['chapter']] ?? 0) + 1;

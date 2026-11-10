@@ -99,6 +99,19 @@ check('confusion pairs aggregate the most frequent wrong choice per diagnosis', 
   assert.equal(pairs[1].wrongId, 'atrial-tachy');
 });
 
+check('wrong entries group by chapter for the AI tutor', () => {
+  const groups = study.groupReviewsByChapter([
+    { id: 'a', chapter: 'tachy' },
+    { id: 'b', chapter: 'tachy' },
+    { id: 'c', chapter: 'block' },
+    { id: 'd' },
+  ]);
+  assert.equal(groups.length, 3);
+  assert.equal(groups.find((group) => group.id === 'tachy').items.length, 2);
+  assert.equal(groups.find((group) => group.id === 'block').items.length, 1);
+  assert.equal(groups.find((group) => group.id === 'uncategorized').items.length, 1);
+});
+
 check('exam-style attempts record option text and labels without catalog ids', () => {
   study.recordAttempt({
     correct: false,
