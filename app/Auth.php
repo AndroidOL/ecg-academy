@@ -21,9 +21,12 @@ final class Auth
         if ($savePath !== '' && is_dir($savePath) && is_writable($savePath)) {
             session_save_path($savePath);
         }
+        // PHP defaults to deleting session files after 24 minutes. Keep files
+        // long enough for the 15-day hard cap, then enforce the real policy below.
+        @ini_set('session.gc_maxlifetime', (string) (self::maxTtl() + 86400));
         $secure = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
         session_set_cookie_params([
-            'lifetime' => (int) Config::get('session.lifetime', 0),
+            'lifetime' => self::cookieLifetime(),
             'path' => '/',
             'domain' => '',
             'secure' => $secure,
@@ -34,9 +37,93 @@ final class Auth
         if (session_status() !== PHP_SESSION_ACTIVE) {
             session_start();
         }
+        self::enforceSessionLifetime();
         if (empty($_SESSION['csrf'])) {
             $_SESSION['csrf'] = bin2hex(random_bytes(24));
         }
+    }
+
+    public static function markLoggedIn(): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) return;
+        $now = time();
+        $_SESSION['auth_login_at'] = $now;
+        $_SESSION['auth_last_seen'] = $now;
+        $_SESSION['auth_renewed_at'] = $now;
+        self::refreshSessionCookie();
+    }
+
+    private static function enforceSessionLifetime(): void
+    {
+        if (empty($_SESSION['uid'])) return;
+        $now = time();
+        $loginAt = (int) ($_SESSION['auth_login_at'] ?? 0);
+        $lastSeen = (int) ($_SESSION['auth_last_seen'] ?? 0);
+        if ($loginAt <= 0 || $lastSeen <= 0) {
+            // Sessions created before this policy was deployed: start a fresh
+            // absolute window on the first request instead of logging everyone out.
+            self::markLoggedIn();
+            return;
+        }
+        if ($loginAt > $now) $loginAt = $now;
+        if ($lastSeen > $now) $lastSeen = $now;
+        if (self::sessionExpired($loginAt, $lastSeen, $now)) {
+            self::expireSession();
+            return;
+        }
+        $_SESSION['auth_last_seen'] = $now;
+        $renewedAt = (int) ($_SESSION['auth_renewed_at'] ?? 0);
+        if ($renewedAt <= 0 || $now - $renewedAt >= self::renewInterval()) {
+            self::refreshSessionCookie();
+            $_SESSION['auth_renewed_at'] = $now;
+        }
+    }
+
+    private static function sessionExpired(int $loginAt, int $lastSeen, int $now): bool
+    {
+        return ($now - $lastSeen) >= self::idleTtl() || ($now - $loginAt) >= self::maxTtl();
+    }
+
+    private static function expireSession(): void
+    {
+        $_SESSION = [];
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
+        }
+    }
+
+    private static function refreshSessionCookie(): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE || headers_sent()) return;
+        $params = session_get_cookie_params();
+        setcookie(session_name(), session_id(), [
+            'expires' => time() + self::cookieLifetime(),
+            'path' => $params['path'] ?? '/',
+            'domain' => $params['domain'] ?? '',
+            'secure' => (bool) ($params['secure'] ?? false),
+            'httponly' => (bool) ($params['httponly'] ?? true),
+            'samesite' => $params['samesite'] ?? 'Lax',
+        ]);
+    }
+
+    private static function cookieLifetime(): int
+    {
+        return max(0, (int) Config::get('session.lifetime', 604800));
+    }
+
+    private static function idleTtl(): int
+    {
+        return max(60, (int) Config::get('session.idle_ttl', self::cookieLifetime()));
+    }
+
+    private static function maxTtl(): int
+    {
+        return max(self::idleTtl(), (int) Config::get('session.max_ttl', 1296000));
+    }
+
+    private static function renewInterval(): int
+    {
+        return max(60, (int) Config::get('session.renew_interval', 3600));
     }
 
     public static function user(bool $createGuest = false): ?array
@@ -146,6 +233,7 @@ final class Auth
         self::clearFailures('register:' . Http::clientIp());
         $_SESSION['uid'] = (int) $current['id'];
         session_regenerate_id(true);
+        self::markLoggedIn();
         self::$user = null;
         return self::user() ?? [];
     }
@@ -185,6 +273,7 @@ final class Auth
         self::clearFailures($throttleKey);
         session_regenerate_id(true);
         $_SESSION['uid'] = (int) $account['id'];
+        self::markLoggedIn();
         Db::pdo()->prepare('UPDATE users SET last_seen_at = NOW() WHERE id = ?')->execute([(int) $account['id']]);
         self::$user = null;
         return self::user() ?? [];
@@ -238,6 +327,7 @@ final class Auth
         self::clearFailures($throttleKey);
         session_regenerate_id(true);
         $_SESSION['uid'] = (int) $account['id'];
+        self::markLoggedIn();
         Db::pdo()->prepare('UPDATE users SET last_seen_at = NOW() WHERE id = ?')->execute([(int) $account['id']]);
         self::$user = null;
         return self::user() ?? [];

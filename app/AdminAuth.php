@@ -41,6 +41,7 @@ final class AdminAuth
         self::clear($key);
         session_regenerate_id(true);
         $_SESSION['uid'] = (int) $account['id'];
+        Auth::markLoggedIn();
         Auth::resetCache();
         Db::pdo()->prepare('UPDATE users SET last_seen_at = NOW() WHERE id = ?')->execute([(int) $account['id']]);
         self::audit((int) $account['id'], 'admin.login.password');
@@ -71,6 +72,7 @@ final class AdminAuth
         if (!$account) throw new ApiError(403, 'admin_required', 'Passkey 对应的管理员不可用');
         session_regenerate_id(true);
         $_SESSION['uid'] = $userId;
+        Auth::markLoggedIn();
         Auth::resetCache();
         Db::pdo()->prepare('UPDATE users SET last_seen_at = NOW() WHERE id = ?')->execute([$userId]);
         self::audit($userId, 'admin.login.passkey');

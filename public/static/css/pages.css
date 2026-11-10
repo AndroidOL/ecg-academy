@@ -1289,3 +1289,12 @@
   .discount-days { min-width: 0; flex-wrap: wrap; }
   .discount-rule .discount-days { grid-column: 1 / -1; }
 }
+
+/* ---------- vector chest waveform tab ---------- */
+.chest-wave-sync { border-radius: 12px; overflow: hidden; }
+.chest-wave-axes { flex: 1 1 100%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 12px; padding-top: 4px; }
+.chest-wave-axis-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) 38px; align-items: center; gap: 5px; color: var(--muted); font-family: var(--font-mono); font-size: 9px; }
+.chest-wave-axis-row b { color: var(--brand); font-size: 9.5px; }
+.chest-wave-axis-row span { text-align: right; color: var(--ink-2); }
+.chest-wave-axis-row input { width: 100%; min-width: 0; accent-color: var(--brand); }
+@media (max-width: 719px) { .chest-wave-axes { grid-template-columns: 1fr; } }

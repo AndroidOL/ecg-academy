@@ -4,8 +4,8 @@ declare(strict_types=1);
 return [
     'app' => [
         'name' => '心迹 ECG Lab',
-        'version' => '3.3.0',
-        'asset_version' => '20261110aa',
+        'version' => '3.3.1',
+        'asset_version' => '20261110ab',
         'env' => 'production',
         'debug' => false,
         'base_path' => '',
@@ -21,7 +21,11 @@ return [
     'session' => [
         'name' => 'ECGLABSESS',
         'save_path' => dirname(__DIR__) . '/storage/sessions',
-        'lifetime' => 0,
+        // 7-day idle window, sliding renewal, hard 15-day cap from login.
+        'lifetime' => 604800,
+        'idle_ttl' => 604800,
+        'max_ttl' => 1296000,
+        'renew_interval' => 3600,
     ],
     'security' => [
         'csrf' => true,

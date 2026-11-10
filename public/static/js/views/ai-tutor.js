@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261110aa';
+const __asset = __isNode ? '' : '?v=20261110ab';
 const { store } = await import(`../store.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { getByok, hasByok } = await import(`../byok.js${__asset}`);
@@ -17,7 +17,7 @@ export async function aiTutorView() {
     return { el };
   }
   const ai = store.ai || {};
-  if (ai.disabledUntil) {
+  if (ai.disabledUntil && !ai.admin) {
     el.innerHTML = `<header class="page-head"><div><div class="page-eyebrow">${icon('shield', 14)} AI TUTOR</div><h1 class="page-title">AI 导师</h1><p class="page-sub">AI 权限已被临时暂停，请联系管理员恢复。</p></div></header>
       <div class="learn-empty"><b>AI 权限暂停中</b><span>暂停至 ${escapeHtml(ai.disabledUntil)}。你仍可使用全部学习、练习与急救内容。</span><a class="btn btn-primary btn-sm" href="#/me" style="margin-top:12px">返回我的</a></div>${medicalDisclaimer()}`;
     return { el };
@@ -44,7 +44,7 @@ export async function aiTutorView() {
       <div><div class="page-eyebrow">${icon('sparkles', 14)} AI TUTOR</div><h1 class="page-title">AI 导师</h1><p class="page-sub">仅回答心电图、心血管电生理与判读相关问题；回答为教学用途，不替代临床判断。错题与复习数据会作为上下文，方便分析薄弱项。</p></div>
       <div class="row-wrap"><span class="badge badge-brand">${ai.admin ? '∞ 次' : hasByok() ? 'BYOK' : `${ai.credits} 次可用`}</span><span class="badge">错因分析 ${ai.analysisRemaining}/${ai.analysisLimit}</span><span class="badge">${ai.configured ? '在线' : '本地知识库'}</span></div>
     </header>
-    ${ai.credits <= 0 ? `<div class="callout brand" style="margin-bottom:12px">${icon('flame', 14)} 对话次数已用完。完成每日挑战可获得 ${ai.creditBase || 10} 次 + 答对题数，最多保留 ${ai.creditCap || 100} 次。<a href="#/daily">去打卡</a></div>` : ''}
+    ${!ai.admin && ai.credits <= 0 ? `<div class="callout brand" style="margin-bottom:12px">${icon('flame', 14)} 对话次数已用完。完成每日挑战可获得 ${ai.creditBase || 10} 次 + 答对题数，最多保留 ${ai.creditCap || 100} 次。<a href="#/daily">去打卡</a></div>` : ''}
     <div class="ai-tutor-layout">
       <aside class="stack">
         <section class="card card-pad">
@@ -61,16 +61,6 @@ export async function aiTutorView() {
             <select class="select" data-quiz-count aria-label="题数"><option value="3" selected>3 题</option><option value="5">5 题</option></select>
           </div>
           <button class="btn btn-primary btn-sm btn-block" type="button" data-quiz-generate style="margin-top:8px">${icon('sparkles', 13)} 生成题目</button>
-        </section>
-        <section class="card card-pad">
-          <h2 class="section-title" style="font-size:15px">提问范围</h2>
-          <ul class="ai-scope-list">
-            <li>心电图波形、间期、电轴与导联</li>
-            <li>心律失常与鉴别诊断</li>
-            <li>电解质、药物与急救流程</li>
-            <li>学习计划与判读路径</li>
-          </ul>
-          <p class="muted" style="font-size:10.5px;margin-top:8px">与心电图无关的问题会被礼貌拒绝。</p>
         </section>
       </aside>
       <section class="ai-tutor-main"><section class="card card-pad ai-quiz-panel" data-quiz-panel hidden></section></section>

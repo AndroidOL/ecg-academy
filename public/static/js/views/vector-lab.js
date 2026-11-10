@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261110aa';
+const __asset = __isNode ? '' : '?v=20261110ab';
 const { getLocale } = await import(`../i18n.js${__asset}`);
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 const { LOOPS, LOOP_MAIN, LOOP_WINDOWS, loopPoint, normalLoopMetrics } = await import(`../vector-loop-model.js${__asset}`);
@@ -251,6 +251,7 @@ function drawVectorCanvas(canvas, state, t) {
   const phase = active === selected ? (cycle - windows[selected][0]) / (windows[selected][1] - windows[selected][0]) : 0;
   const vec = loops[selected](Math.max(0, Math.min(1, phase)) * Math.PI * 2);
   const rotatedVec = rotateAxis(selected, vec);
+  const lead = LEADS[state.lead];
   const p0 = project([0, 0, 0]);
   const p1 = project(rotatedVec);
   if (state.loop === 'all' ? (active && active === selected) : true) {
@@ -260,6 +261,33 @@ function drawVectorCanvas(canvas, state, t) {
     ctx.fillStyle = '#ffffff';
     ctx.beginPath(); ctx.arc(...p1, 3.5, 0, Math.PI * 2); ctx.fill();
   }
+  // 选中导联的投影：用低透明度把当前环投到该导联轴上，帮助看出“环 → 波”的映射。
+  const leadUnit = unitVector(lead.vec);
+  const projectionValue = rotatedVec[0] * leadUnit[0] + rotatedVec[1] * leadUnit[1] + rotatedVec[2] * leadUnit[2];
+  const projectedTip = leadUnit.map((v) => v * projectionValue);
+  const projected = project(projectedTip);
+  ctx.save();
+  ctx.strokeStyle = loopColors[selected];
+  ctx.globalAlpha = 0.34;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 4]);
+  ctx.beginPath(); ctx.moveTo(...p1); ctx.lineTo(...projected); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 0.32;
+  ctx.fillStyle = loopColors[selected];
+  ctx.beginPath(); ctx.arc(projected[0], projected[1], 2.6, 0, Math.PI * 2); ctx.fill();
+  // 轻量投影扇：把选中环的若干采样点连到导联轴，展示整圈的投影范围。
+  ctx.globalAlpha = 0.11;
+  ctx.lineWidth = 0.9;
+  for (let i = 0; i < 18; i += 1) {
+    const a = (i / 18) * Math.PI * 2;
+    const point = rotateAxis(selected, loopPoint(selected, a));
+    const value = point[0] * leadUnit[0] + point[1] * leadUnit[1] + point[2] * leadUnit[2];
+    const target = project(leadUnit.map((v) => v * value));
+    const source = project(point);
+    ctx.beginPath(); ctx.moveTo(...source); ctx.lineTo(...target); ctx.stroke();
+  }
+  ctx.restore();
   const main = rotateAxis(selected, LOOP_MAIN[selected] || loops[selected](0.8));
   const pm = project(main);
   ctx.strokeStyle = c.gold;
@@ -280,7 +308,6 @@ function drawVectorCanvas(canvas, state, t) {
   ctx.fillStyle = c.muted;
   ctx.font = '9px ui-monospace, monospace';
   ctx.fillText('轴心 / 零点', origin[0] + 7, origin[1] - 7);
-  const lead = LEADS[state.lead];
   const dot = rotatedVec[0] * lead.vec[0] + rotatedVec[1] * lead.vec[1] + rotatedVec[2] * lead.vec[2];
   ctx.fillStyle = c.text;
   ctx.font = '600 11px ui-monospace, monospace';
@@ -317,8 +344,8 @@ function leadAmplitudes(lead, axes) {
   };
 }
 
-function leadWaveAt(lead, u, axes) {
-  const amp = leadAmplitudes(lead, axes);
+function leadWaveAt(lead, u, axes, amp = null) {
+  amp = amp || leadAmplitudes(lead, axes);
   // A lead can be nearly perpendicular to the loop plane. Keep a small
   // visible floor so the educational 12-lead view never collapses to a flat
   // line; exact projections remain available in the numeric readouts.
@@ -380,6 +407,63 @@ function draw12LeadCanvas(canvas, state) {
   ctx.fillText('V1–V6 为水平面近似示意；随三环电轴变化', left, height - 2);
 }
 
+function drawChestWaveCanvas(canvas, state) {
+  const { ctx, width, height } = canvas2d(canvas);
+  const c = palette();
+  const ids = ['V1', 'V2', 'V3', 'V4', 'V5', 'V6'];
+  const left = 42; const right = 14; const top = 12; const bottom = 12; const gap = 5;
+  const rowH = (height - top - bottom - gap * 5) / 6;
+  const plotW = width - left - right;
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = c.bg; ctx.fillRect(0, 0, width, height);
+  const axes = state.axes || { P: 60, QRS: 60, T: 60 };
+  const ampKey = `${axes.P ?? 60}|${axes.QRS ?? 60}|${axes.T ?? 60}`;
+  if (state.chestAmpKey !== ampKey) {
+    state.chestAmps = ids.map((id) => leadAmplitudes(LEADS_12[id], axes));
+    state.chestAmpKey = ampKey;
+  }
+  const amps = state.chestAmps;
+  const maxAmp = Math.max(0.18, ...amps.map((amp) => Math.max(Math.abs(amp.P), Math.abs(amp.QRS), Math.abs(amp.T))));
+  ctx.strokeStyle = c.grid; ctx.globalAlpha = 0.28;
+  for (let i = 0; i <= 10; i += 1) {
+    const x = left + (i / 10) * plotW;
+    ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, height - bottom); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  ids.forEach((id, index) => {
+    const lead = LEADS_12[id];
+    const y = top + index * (rowH + gap);
+    const base = y + rowH * 0.6;
+    const scale = (rowH * 0.34) / maxAmp;
+    ctx.fillStyle = c.brand;
+    ctx.font = '700 10px ui-monospace, monospace';
+    ctx.fillText(id, 9, y + rowH * 0.52);
+    ctx.strokeStyle = c.trace; ctx.globalAlpha = 0.38; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(left, base); ctx.lineTo(left + plotW, base); ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = c.trace; ctx.lineWidth = 1.45;
+    ctx.beginPath();
+    const points = 120;
+    for (let i = 0; i <= points; i += 1) {
+      const u = i / points;
+      const v = leadWaveAt(lead, u, axes, amps[index]);
+      const px = left + u * plotW;
+      const py = base - v * scale;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    const cursorX = left + (state.phase ?? 0) * plotW;
+    ctx.strokeStyle = '#fff'; ctx.globalAlpha = 0.45;
+    ctx.beginPath(); ctx.moveTo(cursorX, y + 2); ctx.lineTo(cursorX, y + rowH - 2); ctx.stroke();
+    ctx.globalAlpha = 1;
+    const cursorV = leadWaveAt(lead, state.phase ?? 0, axes, amps[index]);
+    ctx.fillStyle = c.trace;
+    ctx.beginPath(); ctx.arc(cursorX, base - cursorV * scale, 2.2, 0, Math.PI * 2); ctx.fill();
+  });
+  ctx.fillStyle = c.muted; ctx.font = '9px ui-monospace, monospace';
+  ctx.fillText('V1–V6：由 P/QRS/T 环实时投影；注意 R 波从 V1 到 V5 逐渐增高', left, height - 2);
+}
+
 function drawProjectionCanvas(canvas, state, t) {
   const { ctx, width, height } = canvas2d(canvas);
   const c = palette();
@@ -388,6 +472,12 @@ function drawProjectionCanvas(canvas, state, t) {
   const baseline = top + (height - top - bottom) * 0.62;
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = c.bg; ctx.fillRect(0, 0, width, height);
+  // 同步导联等电位线：与波形同色，标出零电位基线。
+  ctx.strokeStyle = c.trace;
+  ctx.globalAlpha = .42;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(padL, baseline); ctx.lineTo(padL + plotW, baseline); ctx.stroke();
+  ctx.globalAlpha = 1;
   ctx.strokeStyle = c.grid; ctx.globalAlpha = .35;
   for (let i = 0; i <= 10; i += 1) {
     const x = padL + (i / 10) * plotW;
@@ -493,7 +583,7 @@ function vectorLoopsPanel() {
       <h3>先理解“环”，再看“波”</h3>
       <p>心室除极不是一根箭头，而是随时间变化的瞬时向量。把所有瞬时向量的尖端连起来，就得到 <b>QRS 向量环</b>；P 环和 T 环分别代表心房除极、心室复极。</p>
       <div class="visual-legend"><span><i style="background:var(--brand)"></i>P 环</span><span><i style="background:var(--accent)"></i>QRS 环</span><span><i style="background:var(--gold)"></i>T 环</span></div>
-      <p class="muted">体表每个导联只记录该环在自身导联轴上的投影：投影为正，波形向上；投影为负，波形向下。向量环越“朝向”某个导联，该导联的波幅越大。</p>
+      <p class="muted">体表每个导联只记录该环在自身导联轴上的投影：投影为正，波形向上；投影为负，波形向下。向量环越“朝向”某个导联，该导联的波幅越大。图中的淡色扇形是当前选中环到所选导联轴的投影。</p>
       <p class="muted"><b>关于 P/T 电轴：</b>临床上说“电轴偏转”通常指 QRS 额面电轴，正常约 −30° 至 +90°；P 波电轴也可测量（正常约 0° 至 +75°，异常提示异位房律等），T 波电轴通常与 QRS 主向量大致一致，缺血、电解质紊乱、肥厚/劳损时可改变。本页三个环可分别调节，仅用于理解向量方向与投影，不把 P/T 偏转直接等同于 QRS 电轴诊断。</p>
       <div class="visual-tip">${icon('sparkles', 14)} 旋转模型，观察心电轴：正常 QRS 环主向量指向<b>左下、略向后</b>；电轴左偏 = 更朝上/左，电轴右偏 = 更朝下/右。把水平视角拖到 −180° 可从后方观察“向后”的分量。</div>
       <section class="loop-normal-panel">
@@ -696,9 +786,10 @@ function drawChestVectorCanvas(canvas, state, options = {}) {
   const { ctx, width, height } = canvas2d(canvas);
   const c = palette();
   const cx = width * 0.5;
-  const cy = height * 0.53;
-  const rx = width * 0.36;
-  const ry = height * 0.28;
+  const cy = height * 0.52;
+  // 胸廓横截面保持接近真实的比例；不能直接用画布宽/高当长短轴，否则会被压成扁椭圆。
+  const rx = Math.min(width * 0.34, height * 0.63);
+  const ry = Math.min(height * 0.36, rx * 0.72);
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = c.bg; ctx.fillRect(0, 0, width, height);
   // 胸廓横截面：上=前，下=后，左=患者右，右=患者左
@@ -709,20 +800,26 @@ function drawChestVectorCanvas(canvas, state, options = {}) {
   ctx.beginPath(); ctx.moveTo(cx - rx * .92, cy); ctx.lineTo(cx + rx * .92, cy); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(cx, cy - ry * .92); ctx.lineTo(cx, cy + ry * .92); ctx.stroke();
   ctx.globalAlpha = 1;
+  ctx.fillStyle = c.muted; ctx.globalAlpha = .7; ctx.fillText('中线', cx + 4, cy - ry * .78); ctx.globalAlpha = 1;
   // 胸骨与脊柱
   ctx.fillStyle = c.muted; ctx.font = '9px ui-monospace, monospace';
   ctx.fillText('前 / 胸骨', cx - 22, cy - ry - 9);
   ctx.fillText('后 / 脊柱', cx - 22, cy + ry + 16);
   ctx.fillText('患者右', 8, cy + 3);
   ctx.textAlign = 'right'; ctx.fillText('患者左', width - 8, cy + 3); ctx.textAlign = 'left';
-  // 心脏轮廓：RV 偏右前，LV 偏左后
-  ctx.fillStyle = 'rgba(240,120,104,.12)'; ctx.strokeStyle = c.accent; ctx.lineWidth = 1.2;
-  ctx.beginPath(); ctx.ellipse(cx - rx * .10, cy - ry * .10, rx * .20, ry * .30, -.25, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = 'rgba(20,184,166,.13)'; ctx.strokeStyle = c.brand;
-  ctx.beginPath(); ctx.ellipse(cx + rx * .16, cy + ry * .08, rx * .25, ry * .34, .25, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = c.muted; ctx.font = '9px ui-monospace, monospace';
-  ctx.fillText('RV', cx - rx * .24, cy - ry * .42);
-  ctx.fillText('LV', cx + rx * .18, cy + ry * .46);
+  // 心脏轮廓：整体偏患者左侧（屏幕右侧），RV 在前/右，LV 在后/左。
+  const heartCx = cx + rx * .20;
+  const heartCy = cy + ry * .02;
+  ctx.fillStyle = 'rgba(240,120,104,.14)'; ctx.strokeStyle = c.accent; ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.ellipse(heartCx - rx * .14, heartCy - ry * .08, rx * .18, ry * .27, -.35, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = 'rgba(20,184,166,.15)'; ctx.strokeStyle = c.brand;
+  ctx.beginPath(); ctx.ellipse(heartCx + rx * .13, heartCy + ry * .06, rx * .23, ry * .31, .30, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = c.muted; ctx.globalAlpha = .45; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(heartCx - rx * .04, heartCy - ry * .20); ctx.lineTo(heartCx + rx * .03, heartCy + ry * .20); ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = c.muted; ctx.font = '700 9px ui-monospace, monospace';
+  ctx.fillText('RV 右室', heartCx - rx * .42, heartCy - ry * .40);
+  ctx.fillText('LV 左室', heartCx + rx * .20, heartCy + ry * .47);
   // 激活区域高亮（仅激活顺序页启用）
   if (options.highlight) {
     const halo = activationHalos(cx, cy, rx, ry)[options.highlight];
@@ -737,6 +834,9 @@ function drawChestVectorCanvas(canvas, state, options = {}) {
       ctx.setLineDash([3, 3]);
       ctx.beginPath(); ctx.arc(hx, hy, hr * .82, 0, Math.PI * 2); ctx.stroke();
       ctx.setLineDash([]); ctx.globalAlpha = 1;
+      const currentStep = activationStepFor(state.qrsPhase ?? 0);
+      ctx.fillStyle = c.gold; ctx.font = '700 10px ui-monospace, monospace';
+      ctx.textAlign = 'center'; ctx.fillText(String(currentStep.index + 1), hx, hy + 3.5); ctx.textAlign = 'left';
     }
   }
   // 电极位置与连线
@@ -783,7 +883,7 @@ function drawChestVectorCanvas(canvas, state, options = {}) {
   const phaseLabel = options.caption ?? `${activation.label}：${activation.dir}`;
   ctx.fillText(phaseLabel, 12, 18);
   ctx.fillStyle = c.muted; ctx.font = '9px ui-monospace, monospace';
-  ctx.fillText('白色箭头 = 当前瞬时 QRS 向量；金色虚线 = 正常 QRS 主向量（左下、略向后）', 12, height - 10);
+  ctx.fillText('白色箭头 = 当前瞬时 QRS 向量；金色虚线 = 正常 QRS 主向量；金色高亮 = 当前激活区域', 12, height - 10);
 }
 
 function drawChestVectorWaves(canvas, state) {
@@ -963,6 +1063,8 @@ function activationSvgMarkup(state) {
   const cy = H * 0.40;
   const rx = W * 0.34;
   const ry = H * 0.255;
+  const heartCx = cx + rx * 0.20;
+  const heartCy = cy + ry * 0.02;
   const paper = '#fffaf5';
   const ink = '#1f2430';
   const muted = '#6b7280';
@@ -1029,11 +1131,11 @@ function activationSvgMarkup(state) {
   <ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#ffffff" stroke="${line}" stroke-width="1.6"/>
   <line x1="${cx}" y1="${cy - ry * .92}" x2="${cx}" y2="${cy + ry * .92}" stroke="${line}" stroke-dasharray="4 4"/>
   <line x1="${cx - rx * .92}" y1="${cy}" x2="${cx + rx * .92}" y2="${cy}" stroke="${line}" stroke-dasharray="4 4"/>
-  <ellipse cx="${cx - rx * 0.10}" cy="${cy - ry * 0.10}" rx="${rx * 0.20}" ry="${ry * 0.30}" transform="rotate(-14 ${cx - rx * 0.10} ${cy - ry * 0.10})" fill="#fde8e4" stroke="${accent}" stroke-width="1.2"/>
-  <ellipse cx="${cx + rx * 0.16}" cy="${cy + ry * 0.08}" rx="${rx * 0.25}" ry="${ry * 0.34}" transform="rotate(14 ${cx + rx * 0.16} ${cy + ry * 0.08})" fill="#dcf5f0" stroke="${brand}" stroke-width="1.2"/>
-  <text x="${cx - rx * .30}" y="${cy - ry * .50}" fill="${accent}" font-size="10" font-weight="700">RV</text>
-  <text x="${cx + rx * .32}" y="${cy + ry * .53}" fill="${brand}" font-size="10" font-weight="700">LV</text>
-  <text x="${cx - 18}" y="${cy + 4}" fill="${muted}" font-size="9">室间隔</text>
+  <ellipse cx="${heartCx - rx * 0.14}" cy="${heartCy - ry * 0.08}" rx="${rx * 0.18}" ry="${ry * 0.27}" transform="rotate(-20 ${heartCx - rx * 0.14} ${heartCy - ry * 0.08})" fill="#fde8e4" stroke="${accent}" stroke-width="1.2"/>
+  <ellipse cx="${heartCx + rx * 0.13}" cy="${heartCy + ry * 0.06}" rx="${rx * 0.23}" ry="${ry * 0.31}" transform="rotate(17 ${heartCx + rx * 0.13} ${heartCy + ry * 0.06})" fill="#dcf5f0" stroke="${brand}" stroke-width="1.2"/>
+  <text x="${heartCx - rx * .42}" y="${heartCy - ry * .40}" fill="${accent}" font-size="10" font-weight="700">RV 右室</text>
+  <text x="${heartCx + rx * .20}" y="${heartCy + ry * .47}" fill="${brand}" font-size="10" font-weight="700">LV 左室</text>
+  <text x="${heartCx - 18}" y="${heartCy + 4}" fill="${muted}" font-size="9">室间隔</text>
   ${zones}
   <circle cx="${halo[0]}" cy="${halo[1]}" r="${halo[2]}" fill="#f59e0b" fill-opacity="0.18" stroke="${gold}" stroke-dasharray="3 3"/>
   <polyline points="${electrodePath}" fill="none" stroke="${brand}" stroke-opacity="0.25" stroke-dasharray="3 3"/>
@@ -1060,8 +1162,8 @@ function downloadSvgFile(markup, filename) {
 }
 
 function drawActivationCanvas(canvas, state) {
-  const { step } = activationStepFor(state.qrsPhase ?? 0);
-  drawChestVectorCanvas(canvas, state, { highlight: step.region, caption: `${step.label}：${step.dir}` });
+  const { index, step } = activationStepFor(state.qrsPhase ?? 0);
+  drawChestVectorCanvas(canvas, state, { highlight: step.region, caption: `步骤 ${index + 1}/${ACTIVATION_STEPS.length} · ${step.label}：${step.dir} · ${step.time}` });
 }
 
 function chestPanel() {
@@ -1091,10 +1193,37 @@ function chestPanel() {
   </div>`;
 }
 
+function chestWavePanel() {
+  return `<div class="visual-grid">
+    <div class="visual-card visual-card-dark">
+      <div class="vector-figure-note"><b>V1–V6 胸导联投影</b><span>同一 P/QRS/T 向量环投影到六个胸前导联；调整三环电轴，观察 R 波递增与形态变化。</span></div>
+      <div class="visual-sync chest-wave-sync">
+        <div class="visual-sync-head"><span>胸导联同步波形</span><span>V1–V6 · 时间光标</span></div>
+        <canvas data-chest-wave-canvas data-height="396" aria-label="V1 到 V6 胸导联同步波形"></canvas>
+      </div>
+      <div class="visual-controls">
+        <button class="btn btn-primary btn-sm" type="button" data-chest-wave-play>${icon('pause', 13)} 暂停</button>
+        <label class="visual-range">时间 <input type="range" min="0" max="1000" value="0" data-chest-wave-phase><span data-chest-wave-phase-label>0%</span></label>
+        <div class="chest-wave-axes">
+          ${['P', 'QRS', 'T'].map((key) => `<label class="chest-wave-axis-row"><b>${key}</b><input type="range" min="-180" max="180" value="60" data-chest-wave-axis="${key}" aria-label="${key} 环电轴"><span data-chest-wave-axis-value="${key}">+60°</span></label>`).join('')}
+        </div>
+      </div>
+    </div>
+    <aside class="visual-explain">
+      <h3>胸导联看的是“横面”的变化</h3>
+      <p>V1–V6 从右胸排列到左腋中线，记录同一心室除极/复极向量在水平面上的不同投影。正常时 R 波从 V1 到 V5 逐渐增高，S 波逐渐变浅；V1–V3 以 rS 为主，V5–V6 常为 qR。</p>
+      <div class="visual-legend"><span><i style="background:var(--brand)"></i>V1–V6 导联</span><span><i style="background:var(--ecg-trace)"></i>投影波形</span></div>
+      <p class="muted">这张图与上方 P/QRS/T 环共用同一套向量模型。注意：胸前导联是水平面近似，不是真实患者 12 导联诊断图；出现 ST-T 改变时应结合临床和标准心电图。</p>
+      <div class="visual-tip">${icon('sparkles', 14)} 把 QRS 环电轴调向左侧，观察 V5/V6 的 R 波与 V1/V2 的 S 波如何变化；再把 P/T 环分别调开，比较 P 波和 T 波在各胸导联的差异。</div>
+    </aside>
+  </div>`;
+}
+
 const TABS = [
   ['loops', 'P/QRS/T 向量环'],
   ['limb', '肢体导联向量'],
   ['chest', '胸导联定位'],
+  ['chestwave', '胸导联波形'],
   ['activation', '激活顺序'],
 ];
 
@@ -1105,7 +1234,7 @@ export async function vectorLabView() {
   let raf = 0;
   let cleanup = [];
   let start = performance.now();
-  const state = { rotate: 24, pitch: 18, zoom: 1.7, playing: true, loop: 'all', lead: 'II', axes: { P: 60, QRS: 60, T: 60 }, axis: 60, angle: 60, magnitude: 1, auto: true, speed: 0.25, phase: 0, qrsPhase: 0, qrsPlaying: true };
+  const state = { rotate: 24, pitch: 18, zoom: 1.7, playing: true, chestPlaying: true, loop: 'all', lead: 'II', axes: { P: 60, QRS: 60, T: 60 }, axis: 60, angle: 60, magnitude: 1, auto: true, speed: 0.25, phase: 0, qrsPhase: 0, qrsPlaying: true };
   el.innerHTML = `<div class="page-eyebrow">${icon('compass', 14)} VECTOR & ELECTROPHYSIOLOGY</div>
     <div class="vector-head"><div><h1 class="page-title">心脏向量实验室</h1><p class="page-sub">把“背图形”变成“看方向”：P/QRS/T 环、肢体/胸导联投影、激活顺序一次串起来。</p></div><div class="row-wrap"><a class="btn btn-secondary btn-sm" href="#/learn/ecg-vector-waveform-theory">理论阅读 ${icon('bookOpen', 13)}</a><a class="btn btn-ghost btn-sm" href="#/learn/ecg-calibration-paper">${icon('arrowRight', 13)} 基础课程</a></div></div>
     <div class="vector-safety-note">${icon('info', 14)} <span>向量方向与导联投影仅供教学参考，用于理解“投影”和“向量大小”，<b>不代表任何患者实际情况</b>，不用于诊断或治疗。</span></div>
@@ -1403,6 +1532,57 @@ export async function vectorLabView() {
     content.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { const target = event.target.closest('[data-chest-lead]'); if (target) { event.preventDefault(); select(target.dataset.chestLead); } } });
     select('V1');
   };
+  const bindChestWave = () => {
+    const redraw = () => {
+      const canvas = content.querySelector('[data-chest-wave-canvas]');
+      if (canvas) drawChestWaveCanvas(canvas, state);
+      const phaseSlider = content.querySelector('[data-chest-wave-phase]');
+      if (phaseSlider) phaseSlider.value = String(Math.round((state.phase ?? 0) * 1000));
+      const phaseLabel = content.querySelector('[data-chest-wave-phase-label]');
+      if (phaseLabel) phaseLabel.textContent = `${Math.round((state.phase ?? 0) * 100)}%`;
+      ['P', 'QRS', 'T'].forEach((key) => {
+        const value = state.axes?.[key] ?? 60;
+        const slider = content.querySelector(`[data-chest-wave-axis="${key}"]`);
+        const label = content.querySelector(`[data-chest-wave-axis-value="${key}"]`);
+        if (slider) slider.value = String(value);
+        if (label) label.textContent = `${value >= 0 ? '+' : ''}${Math.round(value)}°`;
+      });
+    };
+    const play = content.querySelector('[data-chest-wave-play]');
+    play?.addEventListener('click', () => {
+      state.chestPlaying = !state.chestPlaying;
+      play.innerHTML = state.chestPlaying ? `${icon('pause', 13)} 暂停` : `${icon('play', 13)} 播放`;
+    });
+    content.querySelector('[data-chest-wave-phase]')?.addEventListener('input', (e) => {
+      state.chestPlaying = false;
+      state.phase = Math.max(0, Math.min(1, Number(e.target.value) / 1000));
+      if (play) play.innerHTML = `${icon('play', 13)} 播放`;
+      redraw();
+    });
+    content.querySelectorAll('[data-chest-wave-axis]').forEach((slider) => {
+      slider.addEventListener('input', (e) => {
+        const key = e.target.dataset.chestWaveAxis;
+        const value = Math.max(-180, Math.min(180, Number(e.target.value) || 0));
+        state.axes = { P: 60, QRS: 60, T: 60, ...(state.axes || {}), [key]: value };
+        redraw();
+      });
+    });
+    let lastPaint = 0;
+    const frame = (now) => {
+      if (!content.querySelector('[data-chest-wave-canvas]')) return;
+      if (document.hidden) { if (state.chestPlaying) raf = requestAnimationFrame(frame); return; }
+      if (state.chestPlaying) {
+        const dt = lastPaint ? Math.min(0.12, (now - lastPaint) / 1000) : 0;
+        state.phase = ((state.phase ?? 0) + dt / (cycleDuration(state) / 1000)) % 1;
+      }
+      lastPaint = now;
+      redraw();
+      if (state.chestPlaying) raf = requestAnimationFrame(frame);
+    };
+    redraw();
+    raf = requestAnimationFrame(frame);
+  };
+
   const bindActivation = () => {
     const play = content.querySelector('[data-activation-play]');
     const pauseAt = () => {
@@ -1455,10 +1635,12 @@ export async function vectorLabView() {
     content.innerHTML = tab === 'loops' ? vectorLoopsPanel()
       : tab === 'limb' ? limbPanel()
         : tab === 'chest' ? chestPanel()
-          : activationPanel();
+          : tab === 'chestwave' ? chestWavePanel()
+            : activationPanel();
     if (tab === 'loops') bindLoops();
     else if (tab === 'limb') bindLimb();
     else if (tab === 'chest') bindChest();
+    else if (tab === 'chestwave') bindChestWave();
     else bindActivation();
   };
   el.querySelectorAll('[data-visual-tab]').forEach((button) => button.addEventListener('click', () => renderTab(button.dataset.visualTab)));

@@ -134,6 +134,7 @@ final class Registration
         self::clearThrottle('register:' . Http::clientIp());
         if (session_status() === PHP_SESSION_ACTIVE) session_regenerate_id(true);
         $_SESSION['uid'] = $userId;
+        Auth::markLoggedIn();
         Auth::resetCache();
         return Auth::user() ?? [];
     }
