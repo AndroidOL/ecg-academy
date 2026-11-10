@@ -44,11 +44,11 @@
 
 ### 推演
 
-- **ACLS 急救模拟**：10 个服务端状态机场景，CPR 质量、除颤/复律、药物时序、可逆病因处理，按时间线复盘评分。
+- **ACLS 急救模拟**：12 个服务端状态机场景，CPR 质量、除颤/复律、药物时序、可逆病因处理，按时间线复盘评分；CPR 准备、IV/IO 建立与病情恶化均按时间推进。
 
 ### 工具
 
-- **心脏向量实验室**：P/QRS/T 三维向量环（0.1×/0.25×/0.5× 播放速度）、六轴与肢体导联投影、胸导联定位、四步激活顺序、向量图 SVG 导出。
+- **心脏向量实验室**：P/QRS/T 三维向量环（0.1×/0.25×/0.5× 播放速度）、六轴与肢体导联投影、胸导联定位、胸导联横面投影波形、五步激活顺序、向量图 SVG 导出。
 - **电解质实验室**：K⁺ / Ca²⁺ / Mg²⁺ 滑杆与实时波形变化。
 - **BYOK 自有 AI**：用户可在「我的」页填写自己的 Base URL / 模型 / API Key，密钥仅保存在本浏览器（session 或用户主动选择的 localStorage）；请求由浏览器直接发送到用户填写的 Base URL，不经过本站服务器，不写入服务器数据库或日志。使用自有配置不消耗本站 AI 次数；浏览器端做边界规则，直连对话不进入服务端审计。
 - **AI 导师（可选）**：管理后台配置 OpenAI / DeepSeek / Moonshot / 智谱 / Groq 等兼容供应商；仅回答心电图与心血管电生理问题。Lv.10 解锁对话，次数只能通过每日挑战获得（每日 10 次 + 答对题数，上限 100 次）；错因分析对所有注册用户开放，每日次数由后台配置。账户 + IP 双重限额、提问间隔、越界检测与 5 次违规自动暂停（管理员手动恢复）；对话记录永久保留用于审计。管理员调用不受额度限制。
@@ -67,7 +67,7 @@
 | ![系统判读训练](docs/screenshots/read.png) | ![电解质实验室](docs/screenshots/lab.png) |
 | ![每日挑战](docs/screenshots/daily.png) | ![向量实验室](docs/screenshots/vectors.png) |
 | ![课程图谱](docs/screenshots/learn.png) | ![双语术语表](docs/screenshots/glossary.png) |
-| ![判读练习](docs/screenshots/practice-quiz.png) | ![首页](docs/screenshots/home.png) |
+| ![判读练习](docs/screenshots/practice-quiz.png) | ![急救模拟](docs/screenshots/sim.png) |
 
 ## 快速开始
 

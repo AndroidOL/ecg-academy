@@ -1,7 +1,7 @@
 // Cache-busted dynamic imports: keep Node tests query-free while forcing
 // browsers with immutable 7-day static caching to load the current modules.
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261110ag';
+const __asset = __isNode ? '' : '?v=20261110ah';
 const [
   { api },
   { store, initTheme, applyTheme },
@@ -158,10 +158,10 @@ function shell(activePath = '/') {
           <div class="sidebar-card-meta"><span data-progress-read>${read}</span> / <span data-progress-total>${total}</span> 篇已读</div>
           <div class="progress" style="margin-top:8px"><div class="progress-bar" style="width:${percent}%" data-progress-bar></div></div>
         </div>
-        <div class="sidebar-card" style="padding:11px">
+        <a class="sidebar-card sidebar-ai-link ${activePath.startsWith('/ai') ? 'active' : ''}" href="#/ai" style="padding:11px" aria-label="打开 AI 导师">
           <div class="sidebar-card-title"><span style="display:inline-flex;align-items:center;gap:5px">${icon('sparkles', 14)} AI 导师</span><span class="badge ${store.ai?.configured ? 'badge-brand' : ''}" data-ai-mode>${store.ai?.configured ? '在线' : '本地'}</span></div>
           <div class="sidebar-card-meta">${store.ai?.configured ? '个性化组卷 · 错因解析' : '本地知识库降级可用'}</div>
-        </div>
+        </a>
         <div class="sidebar-card" style="padding:8px">
           <a class="sidebar-user" href="#/me">
             <span class="avatar" data-avatar>${initials(user.displayName)}</span>
