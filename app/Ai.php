@@ -30,18 +30,18 @@ final class Ai
         $gate = AiGuard::status($userId);
         $allowed = $gate['registered'] && !$gate['disabledUntil'];
         return [
-            'configured' => self::configured() && $gate['registered'],
+            'configured' => self::configured(),
             'allowed' => $allowed,
             'chatAllowed' => $gate['registered'] && !$gate['disabledUntil'] && ($gate['admin'] || ($gate['levelUnlocked'] && $gate['credits'] > 0)),
             'analysisAllowed' => $gate['registered'] && !$gate['disabledUntil'],
             'guestAllowed' => false,
             'byokEnabled' => Settings::bool('ai.byok_enabled', false),
-            'model' => self::configured() && $allowed ? (string) ($model ?: Config::get('ai.model', '')) : null,
-            'provider' => self::configured() && $allowed ? ($provider['name'] ?? '内置兼容接口') : null,
+            'model' => self::configured() ? (string) ($model ?: Config::get('ai.model', '')) : null,
+            'provider' => self::configured() ? ($provider['name'] ?? '内置兼容接口') : null,
             'dailyLimit' => $limit,
             'used' => $used,
             'remaining' => max(0, $limit - $used),
-            'mode' => self::configured() && $allowed ? 'ai' : 'local',
+            'mode' => self::configured() ? 'ai' : 'local',
             'level' => $gate['level'],
             'levelRequired' => $gate['levelRequired'],
             'levelUnlocked' => $gate['levelUnlocked'],

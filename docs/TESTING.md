@@ -3,6 +3,15 @@
 测试日期：2026-11-07 ～ 2026-11-09
 环境：PHP 8.4.27 · MySQL 8.4.13 · nginx 1.30.6 · Node 22.23.4 · 内存 3.5 GB
 
+## 2026-11-09 v3.0.15 回归（20261109ar）
+
+- Passkey：无用户名登录返回 discoverable options（allowCredentials 空、userVerification=required）；profile 9/9。
+- AI：生产供应商测试返回 OK；`Ai::status` 对已配置服务端返回 configured=true，访客仍不可对话。
+- 波形：48 条 ECG × 12 导联审计 0 NaN/平坦/异常振幅；房扑 ST/锯齿与 MI ST-T 平滑；引擎 17/17。
+- 标注：按导联过滤并解析 V1–V4 / II、III、aVF；LBBB 不一致性 ST-T 拆分到侧壁与 V1–V3 并修正时间。
+- 性能：向量页 ScriptDuration 约 0.48s/8s（优化前约 7.6s/8s）；移动端 DPR≤1.5、30fps；后台标签页跳过绘制。
+- PHP 全量 93/93；JS read 6、study 9、vector-loop 6。
+
 ## 2026-11-09 v3.0.14 回归（20261109ao）
 
 - PHP 全量 **92 项通过**（`zend.assertions=1`，含 ai-cost/ai-guard/leaderboard/sim/assignment）。
@@ -182,13 +191,13 @@
 | 学习考试/评级/锁定 | `php tests/learning.test.php` | **7/7 通过** |
 | 排行榜排序/当前名次 | `php tests/leaderboard.test.php` | **2/2 通过** |
 | 每日挑战/连续打卡 | `php tests/daily.test.php` | **9/9 通过** |
-| 账号资料/Passkey 参数 | `php tests/profile.test.php` | **8/8 通过** |
+| 账号资料/Passkey 参数 | `php tests/profile.test.php` | **9/9 通过** |
 | 访客统计/游客清理 | `php tests/traffic.test.php` | **5/5 通过** |
 | AI 成本/折扣计算 | `php tests/ai-cost.test.php` | **3/3 通过** |
 | 扣分/不熟练判定 | `php tests/slow.test.php` | **3/3 通过** |
 | 等级与难度解锁 | `php tests/level.test.php` | **5/5 通过** |
 | 统一计分/双轨 XP/自由练习 | `php tests/scoring.test.php` | **8/8 通过** |
-| PHP 全量（assertions on） | `for f in tests/*.test.php; do php -d zend.assertions=1 -d assert.exception=1 "$f"; done` | **92/92 通过** |
+| PHP 全量（assertions on） | `for f in tests/*.test.php; do php -d zend.assertions=1 -d assert.exception=1 "$f"; done` | **93/93 通过** |
 | 向量环正常值/极性/自检 | `node tests/vector-loop.test.mjs` | **6/6 通过** |
 | 账号学习数据同步（含错选项） | `php tests/study-sync.test.php` | **5/5 通过** |
 | 课程包校验/导入/发布 | `php tests/coursepack.test.php` | **4/4 通过** |

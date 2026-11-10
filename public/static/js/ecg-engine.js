@@ -140,7 +140,8 @@ function buildSchedule(spec) {
     let t = start + atrialRR * 0.6;
     while (t < duration - 0.1) {
       beats.push(makeBeat(t, null, 0, s.qrs, { type: 'flutter' }));
-      t += qrsRR;
+      // Tiny physiological RR variation keeps 2:1 flutter from looking synthetic.
+      t += qrsRR * (0.994 + rng() * 0.012);
     }
     return { spec: s, beats, pWaves, special, rng };
   }
@@ -422,6 +423,33 @@ function profileFor(spec, lead) {
   return prof;
 }
 
+function addSTSegment(samples, sampleRate, start, end, amp, shape, beatTime, lead) {
+  if (!amp || end <= start) return;
+  const edge = 0.018;
+  const a = Math.max(0, Math.floor((start - edge) * sampleRate));
+  const b = Math.min(samples.length - 1, Math.ceil((end + edge) * sampleRate));
+  const smooth = (x) => { const u = clamp(x, 0, 1); return u * u * (3 - 2 * u); };
+  const phase = Math.sin(beatTime * 2.9 + lead.charCodeAt(0) * 0.4);
+  for (let i = a; i <= b; i += 1) {
+    const t = i / sampleRate;
+    const u = clamp((t - start) / (end - start), 0, 1);
+    let env;
+    if (shape === 'convex') {
+      env = 0.55 + 0.45 * (u * u * (3 - 2 * u)) + 0.06 * Math.sin(Math.PI * u);
+    } else if (shape === 'concave') {
+      env = 0.82 + 0.18 * u - 0.12 * Math.sin(Math.PI * u);
+    } else {
+      env = 0.86 + 0.14 * u + 0.02 * Math.sin(Math.PI * u);
+    }
+    env *= 1 + 0.018 * Math.sin(2 * Math.PI * 0.9 * beatTime + phase);
+    let edgeFactor = 1;
+    if (t < start) edgeFactor = smooth((t - (start - edge)) / edge);
+    else if (t > end) edgeFactor = smooth(((end + edge) - t) / edge);
+    const tail = t > end - edge ? smooth(((end + edge) - t) / edge) : 1;
+    samples[i] += amp * env * edgeFactor * tail;
+  }
+}
+
 function addGaussian(samples, sampleRate, center, amp, sigma) {
   if (!amp || !sigma) return;
   const start = Math.max(0, Math.floor((center - 4 * sigma) * sampleRate));
@@ -520,8 +548,8 @@ function addQRS(samples, sampleRate, beat, prof, spec) {
 function addSTT(samples, sampleRate, beat, prof, spec, lead) {
   const widthScale = Math.max(0.8, (beat.qrsWidth || spec.qrs) / 0.08);
   const j = beat.t + 0.024 * widthScale;
-  const tCenter = beat.t + spec.qt * 0.66;
-  const tSigma = clamp(prof.tSigma + (spec.qt - 0.4) * 0.05, 0.032, 0.115);
+  const tCenter = beat.t + spec.qt * 0.66 + 0.006 * Math.sin(beat.t * 5.1);
+  const tSigma = clamp(prof.tSigma + (spec.qt - 0.4) * 0.05, 0.032, 0.115) * (1 + 0.025 * Math.sin(beat.t * 4.3));
   const tEnd = beat.t + spec.qt;
   const stMm = prof.stOverride !== null
     ? Number(prof.stOverride)
@@ -532,11 +560,12 @@ function addSTT(samples, sampleRate, beat, prof, spec, lead) {
   const shape = spec.st.shape;
 
   if (stAmp !== 0) {
+    const modulated = stAmp * (1 + 0.035 * Math.sin(beat.t * 3.7 + lead.charCodeAt(0) * 0.3));
     if (shape === 'scoop') {
-      addPlateau(samples, sampleRate, j, tCenter, stAmp * 0.35, 0.02);
-      addScoop(samples, sampleRate, j, tCenter, stAmp * 1.1);
+      addPlateau(samples, sampleRate, j, tCenter, modulated * 0.35, 0.02);
+      addScoop(samples, sampleRate, j, tCenter, modulated * 1.1);
     } else {
-      addPlateau(samples, sampleRate, j, tCenter + 0.02, stAmp, 0.018);
+      addSTSegment(samples, sampleRate, j, tCenter, modulated, shape, beat.t, lead);
     }
   }
 
@@ -550,6 +579,7 @@ function addSTT(samples, sampleRate, beat, prof, spec, lead) {
   } else if (spec.t.shape === 'peaked') {
     amp *= 1.1;
   }
+  amp *= 1 + 0.025 * Math.sin(beat.t * 4.7 + lead.charCodeAt(0) * 0.5);
 
   if (Math.abs(amp) > 0.002) {
     if (spec.t.shape === 'biphasic') {
@@ -677,11 +707,27 @@ function addSawtooth(samples, sampleRate, spec, lead) {
   const rate = spec.atrialRate || 300;
   const f = rate / 60;
   const polarity = lead === 'aVR' ? -1 : (['II', 'III', 'aVF', 'V1'].includes(lead) ? 1 : 0.55);
+  const phaseOffset = ((lead.charCodeAt(0) + lead.length * 3 + (spec.seed || 11)) % 13) * 0.017;
+  let phase = phaseOffset;
   for (let i = 0; i < n; i += 1) {
     const t = i / sampleRate;
-    const phase = (t * f) % 1;
-    const saw = 1 - 2 * phase;
-    samples[i] += 0.09 * saw * polarity;
+    // Slight rate/amplitude wobble: real flutter waves are not a perfect saw.
+    const wobble = 1 + 0.012 * Math.sin(2 * Math.PI * 0.13 * t + phaseOffset * 7)
+      + 0.006 * Math.sin(2 * Math.PI * 0.37 * t + 1.1);
+    phase += (f * wobble) / sampleRate;
+    const p = phase % 1;
+    const edge = 0.17;
+    let saw;
+    if (p < edge) {
+      const u = p / edge;
+      saw = -1 + 2 * (u * u * (3 - 2 * u));
+    } else {
+      const u = (p - edge) / (1 - edge);
+      saw = 1 - 2 * u - 0.10 * Math.sin(Math.PI * u);
+    }
+    const amp = 0.09 * (1 + 0.07 * Math.sin(2 * Math.PI * 0.22 * t + phaseOffset * 5))
+      * (0.97 + 0.03 * Math.sin(2 * Math.PI * 0.07 * t));
+    samples[i] += amp * saw * polarity;
   }
 }
 

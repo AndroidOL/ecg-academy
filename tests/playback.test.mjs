@@ -83,6 +83,9 @@ try {
   viewer.setLead('V1');
   await wait(60);
   assert(viewer.playing === true, 'switching lead during playback keeps playing');
+  assert(viewer.annotationLeads({ label: 'V1–V4 ST↑' }).join(',') === 'V1,V2,V3,V4', 'lead range expands for annotation filtering');
+  assert(viewer.annotationLeads({ label: 'II、III、aVF 镜像 ST↓' }).join(',') === 'II,III,aVF', 'limb leads parse for annotation filtering');
+  assert(viewer.annotationLeads({ label: 'QRS 0.10 s' }).length === 0, 'global interval annotation stays on all leads');
   const pSnap = viewer.snapAnnotation({ kind: 'arrow', t: 0.42, label: 'P' });
   const rSnap = viewer.snapAnnotation({ kind: 'arrow', t: 0.84, label: 'T' });
   assert(Math.abs(pSnap.t - 0.42) < 0.06, 'P annotation snaps to actual P wave');

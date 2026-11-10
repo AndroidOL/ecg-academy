@@ -183,9 +183,10 @@ return [
             'annotations' => [
                 ['kind' => 'bracket', 't0' => 0.45, 't1' => 0.63, 'label' => 'PR 0.18 s', 'tone' => 'brand'],
                 ['kind' => 'bracket', 't0' => 0.63, 't1' => 0.77, 'label' => 'QRS 0.14 s', 'tone' => 'warn'],
-                ['kind' => 'arrow', 't' => 0.70, 'label' => 'V1 深 S', 'tone' => 'teal', 'dir' => 'down'],
-                ['kind' => 'arrow', 't' => 1.45, 'label' => 'I、V5、V6 宽 R 无 q', 'tone' => 'brand', 'dir' => 'up'],
-                ['kind' => 'arrow', 't' => 2.20, 'label' => '不一致性 ST-T', 'tone' => 'gold', 'dir' => 'down'],
+                ['kind' => 'arrow', 't' => 0.70, 'label' => 'V1 深 S', 'tone' => 'teal', 'dir' => 'down', 'leads' => ['V1', 'V2', 'V3']],
+                ['kind' => 'arrow', 't' => 1.45, 'label' => 'I、V5、V6 宽 R 无 q', 'tone' => 'brand', 'dir' => 'up', 'leads' => ['I', 'aVL', 'V5', 'V6']],
+                ['kind' => 'arrow', 't' => 2.48, 'label' => 'I、aVL、V5、V6 ST↓ / T 倒置', 'tone' => 'gold', 'dir' => 'down', 'leads' => ['I', 'aVL', 'V5', 'V6']],
+                ['kind' => 'arrow', 't' => 2.48, 'label' => 'V1–V3 ST↑ / T 高尖', 'tone' => 'gold', 'dir' => 'up', 'leads' => ['V1', 'V2', 'V3']],
             ],
             'duration' => 8,
             'seed' => 127,

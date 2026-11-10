@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109aq';
+const __asset = __isNode ? '' : '?v=20261109ar';
 const { api } = await import(`./api.js${__asset}`);
 const { store } = await import(`./store.js${__asset}`);
 const { openModal, icon, escapeHtml, setButtonLoading, toast } = await import(`./ui.js${__asset}`);
@@ -27,7 +27,7 @@ export function openAuth(mode = 'register') {
       ${isRegister ? `<div class="field"><label for="auth-email">邮箱</label><div class="row-wrap" style="gap:6px"><input class="input" id="auth-email" type="email" maxlength="190" autocomplete="email" placeholder="用于接收验证码" style="flex:1;min-width:0"><button class="btn btn-secondary btn-sm" type="button" id="auth-send-code">发送验证码</button></div></div>
       <div class="field"><label for="auth-code">邮箱验证码</label><input class="input" id="auth-code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6 位数字"></div>
       <div class="field"><label for="auth-name">昵称（可选）</label><input class="input" id="auth-name" maxlength="20" autocomplete="nickname" placeholder="例如：心电图小白"></div>` : ''}
-      <div class="field"><label for="auth-username">用户名</label><input class="input" id="auth-username" maxlength="24" autocomplete="username" placeholder="3–24 位字母、数字或下划线"></div>
+      <div class="field"><label for="auth-username">${isRegister ? '用户名' : '用户名（Passkey 可留空）'}</label><input class="input" id="auth-username" maxlength="24" autocomplete="username" placeholder="${isRegister ? '3–24 位字母、数字或下划线' : '密码登录需填写；Passkey 可留空'}"></div>
       <div class="field"><label for="auth-password">密码</label><input class="input" id="auth-password" type="password" maxlength="72" autocomplete="${isRegister ? 'new-password' : 'current-password'}" placeholder="至少 8 位"></div>
       ${isRegister ? `<div class="field"><label for="auth-password2">确认密码</label><input class="input" id="auth-password2" type="password" maxlength="72" autocomplete="new-password" placeholder="再次输入密码"></div>` : ''}
       <div class="auth-note" id="auth-error" style="display:none;background:var(--danger-soft);color:var(--danger)"></div>
@@ -100,7 +100,6 @@ export function openAuth(mode = 'register') {
   submit?.addEventListener('click', doSubmit);
   form.querySelector('#auth-passkey')?.addEventListener('click', async () => {
     const username = form.querySelector('#auth-username').value.trim().toLowerCase();
-    if (!username) return showError('请先输入用户名，再使用 Passkey 登录');
     errorBox.style.display = 'none';
     const button = form.querySelector('#auth-passkey');
     setButtonLoading(button, true, '等待验证');

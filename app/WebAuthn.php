@@ -63,7 +63,7 @@ final class WebAuthn
             'challenge' => $challenge,
             'rpId' => self::rpId(),
             'timeout' => 60000,
-            'userVerification' => 'preferred',
+            'userVerification' => $credentials === [] ? 'required' : 'preferred',
             'allowCredentials' => array_map(static fn (array $c): array => ['type' => 'public-key', 'id' => $c['credential_id']], $credentials),
         ];
     }

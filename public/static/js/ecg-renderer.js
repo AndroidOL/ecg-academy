@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109aq';
+const __asset = __isNode ? '' : '?v=20261109ar';
 const { ECGSession, LEAD_NAMES } = await import(`./ecg-engine.js${__asset}`);
 
 const COLUMNS = [
@@ -131,7 +131,8 @@ export class ECGViewer {
   }
 
   prepareCanvas() {
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const dprCap = window.matchMedia?.('(max-width: 719px)').matches ? 1.5 : 2;
+    const dpr = Math.min(dprCap, window.devicePixelRatio || 1);
     this.dpr = dpr;
     this.canvas.width = Math.round(this.cssWidth * dpr);
     this.canvas.height = Math.round(this.cssHeight * dpr);
@@ -307,6 +308,7 @@ export class ECGViewer {
     cancelAnimationFrame(this.raf);
     this.playing = true;
     this.scrollLast = performance.now();
+    this.lastPaintAt = 0;
     if (this.options.mode === '12lead') {
       this.twelveProgress = 0;
       this.draw();
@@ -317,8 +319,10 @@ export class ECGViewer {
       const maxOffset = Math.max(0.1, this.getScrollSession().duration - this.windowSeconds());
       if (this.scrollOffset > maxOffset) this.scrollOffset = 0;
     }
+    const frameInterval = 1000 / (this.options.fps || (window.matchMedia?.('(max-width: 719px)').matches ? 30 : 45));
     const tick = (now) => {
       if (!this.playing || this.destroyed) return;
+      if (document.hidden) { this.raf = requestAnimationFrame(tick); return; }
       const dt = Math.min(0.12, Math.max(0, (now - this.scrollLast) / 1000));
       this.scrollLast = now;
       const speedNow = this.options.speed;
@@ -335,7 +339,10 @@ export class ECGViewer {
         this.paintSweepSegment(previous, this.progress);
         this.clearSweepGap(this.progress);
       }
-      this.draw();
+      if (now - (this.lastPaintAt || 0) >= frameInterval) {
+        this.lastPaintAt = now;
+        this.draw();
+      }
       this.raf = requestAnimationFrame(tick);
     };
     this.raf = requestAnimationFrame(tick);
@@ -1001,14 +1008,33 @@ export class ECGViewer {
     return ann;
   }
 
+  annotationLeads(ann) {
+    const explicit = ann?.leads;
+    if (Array.isArray(explicit)) return explicit.map(String);
+    if (typeof explicit === 'string') return explicit.split(/[,，、\s]+/).filter(Boolean);
+    let text = String(ann?.label || '');
+    const expanded = [];
+    text = text.replace(/V([1-6])\s*[–-]\s*V([1-6])/gi, (_, a, b) => {
+      const lo = Math.min(Number(a), Number(b));
+      const hi = Math.max(Number(a), Number(b));
+      for (let i = lo; i <= hi; i += 1) expanded.push(`V${i}`);
+      return '';
+    });
+    const matches = text.match(/aVR|aVL|aVF|V[1-6]|III|II|I/g) || [];
+    return [...new Set([...expanded, ...matches])];
+  }
+
   drawAnnotations(colors, left, top, plotW, plotH, pxPerSec, result, yFor) {
     const ctx = this.ctx;
     const annotations = result.annotations || [];
+    const currentLead = String(result.lead || '');
     let row = 0;
     for (const raw of annotations) {
       const ann = this.snapAnnotation(raw);
       if (!ann) continue;
       const labelText = String(ann.label || '');
+      const annotationLeadList = this.annotationLeads(ann);
+      if (currentLead && annotationLeadList.length && !annotationLeadList.includes(currentLead)) continue;
       // 基础 P/R/T 箭头会与间期标尺打架；改由教科书模式/波形本身表达。
       if (ann.kind === 'arrow' && /^(P|R|T)$/.test(labelText)) continue;
       const tone = this.toneColor(colors, ann.tone);
@@ -1333,7 +1359,8 @@ export function renderMiniECG(canvas, spec) {
   if (!(canvas instanceof HTMLCanvasElement) || !spec || typeof spec !== 'object') return null;
   const width = canvas.clientWidth || 240;
   const height = canvas.clientHeight || 62;
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const dprCap = window.matchMedia?.('(max-width: 719px)').matches ? 1.5 : 2;
+  const dpr = Math.min(dprCap, window.devicePixelRatio || 1);
   canvas.width = Math.round(width * dpr);
   canvas.height = Math.round(height * dpr);
   const ctx = canvas.getContext('2d');

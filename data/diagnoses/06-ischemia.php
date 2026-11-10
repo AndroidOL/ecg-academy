@@ -87,9 +87,9 @@ return [
             'show12Lead' => true,
             'annotations' => [
                 ['kind' => 'bracket', 't0' => 0.50, 't1' => 0.62, 'label' => 'QRS 0.10 s', 'tone' => 'teal'],
-                ['kind' => 'arrow', 't' => 0.55, 'label' => 'V1–V4 ST↑ 2–4 mm', 'tone' => 'danger', 'dir' => 'up'],
-                ['kind' => 'arrow', 't' => 0.88, 'label' => 'T 波高尖', 'tone' => 'gold', 'dir' => 'up'],
-                ['kind' => 'arrow', 't' => 1.30, 'label' => 'II、III、aVF 镜像 ST↓ 1 mm', 'tone' => 'warn', 'dir' => 'down'],
+                ['kind' => 'arrow', 't' => 0.55, 'label' => 'V1–V4 ST↑ 2–4 mm', 'tone' => 'danger', 'dir' => 'up', 'leads' => ['V1', 'V2', 'V3', 'V4']],
+                ['kind' => 'arrow', 't' => 0.88, 'label' => 'T 波高尖', 'tone' => 'gold', 'dir' => 'up', 'leads' => ['V2', 'V3', 'V4']],
+                ['kind' => 'arrow', 't' => 1.30, 'label' => 'II、III、aVF 镜像 ST↓ 1 mm', 'tone' => 'warn', 'dir' => 'down', 'leads' => ['II', 'III', 'aVF']],
             ],
             'duration' => 9,
             'seed' => 151,

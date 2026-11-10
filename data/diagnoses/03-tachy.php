@@ -166,8 +166,8 @@ return [
             'extras' => ['sawtooth'],
             'conduction' => '2:1',
             'annotations' => [
-                ['kind' => 'arrow', 't' => 0.62, 'label' => 'F 波（锯齿）', 'tone' => 'warn', 'dir' => 'up'],
-                ['kind' => 'bracket', 't0' => 0.58, 't1' => 0.98, 'label' => '2:1 传导，心室率 ≈150', 'tone' => 'danger'],
+                ['kind' => 'arrow', 't' => 0.62, 'label' => 'F 波（锯齿）', 'tone' => 'warn', 'dir' => 'up', 'leads' => ['II', 'III', 'aVF', 'V1']],
+                ['kind' => 'bracket', 't0' => 0.58, 't1' => 0.98, 'label' => '2:1 传导，心室率 ≈150', 'tone' => 'danger', 'leads' => ['II', 'V1']],
             ],
             'duration' => 7,
             'seed' => 103,

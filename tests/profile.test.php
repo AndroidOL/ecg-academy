@@ -94,6 +94,13 @@ try {
         assert($options['pubKeyCredParams'][0]['alg'] === -7);
     });
 
+    check('passkey login without username uses discoverable credentials', function (): void {
+        $options = Auth::passkeyLoginOptions('');
+        assert($options['allowCredentials'] === []);
+        assert($options['userVerification'] === 'required');
+        assert(strlen((string) $options['challenge']) >= 40);
+    });
+
     check('user passkey login options 404 when none registered', function (): void {
         $stmt = Db::pdo()->prepare('SELECT username FROM users WHERE id = ?');
         $stmt->execute([$GLOBALS['userIds'][0]]);

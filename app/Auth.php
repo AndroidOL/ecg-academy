@@ -197,7 +197,8 @@ final class Auth
             throw new ApiError(403, 'user_login_disabled', '当前站点已关闭普通用户登录');
         }
         $username = strtolower(trim($username));
-        if ($username === '') throw new ApiError(422, 'missing_credentials', '请输入用户名');
+        // 空用户名 = discoverable credential 登录：浏览器直接选择本机 Passkey。
+        if ($username === '') return WebAuthn::loginOptions([]);
         $stmt = Db::pdo()->prepare(
             'SELECT p.credential_id FROM admin_passkeys p JOIN users u ON u.id = p.user_id
              WHERE u.username = ? AND u.is_guest = 0 AND u.is_active = 1 ORDER BY p.id ASC LIMIT 20'

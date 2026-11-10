@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261109aq';
+const __asset = __isNode ? '' : '?v=20261109ar';
 const { getLocale } = await import(`../i18n.js${__asset}`);
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
 const { LOOPS, LOOP_MAIN, LOOP_WINDOWS, loopPoint, normalLoopMetrics } = await import(`../vector-loop-model.js${__asset}`);
@@ -126,9 +126,14 @@ function canvas2d(canvas) {
   const rect = canvas.getBoundingClientRect();
   const width = Math.max(260, Math.round(rect.width || canvas.parentElement?.clientWidth || 360));
   const height = Math.round(Number(canvas.dataset.height || 300));
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
-  canvas.width = Math.round(width * dpr);
-  canvas.height = Math.round(height * dpr);
+  const dprCap = window.matchMedia?.('(max-width: 719px)').matches ? 1.5 : 2;
+  const dpr = Math.min(dprCap, window.devicePixelRatio || 1);
+  const pixelWidth = Math.round(width * dpr);
+  const pixelHeight = Math.round(height * dpr);
+  if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+    canvas.width = pixelWidth;
+    canvas.height = pixelHeight;
+  }
   canvas.style.height = `${height}px`;
   const ctx = canvas.getContext('2d');
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1111,14 +1116,20 @@ export async function vectorLabView() {
   const content = el.querySelector('[data-visual-content]');
   const stopAnim = () => { if (raf) cancelAnimationFrame(raf); raf = 0; cleanup.forEach((fn) => fn()); cleanup = []; };
   let lastFrame = 0;
+  const frameInterval = 1000 / (window.matchMedia?.('(max-width: 719px)').matches ? 30 : 45);
+  let lastLoopPaint = 0;
+  let lastLimbPaint = 0;
+  let lastActivationPaint = 0;
+  const render12Lead = () => {
+    const twelve = content.querySelector('[data-vector-12lead]');
+    if (twelve) draw12LeadCanvas(twelve, state);
+  };
   const renderLoopState = () => {
     const canvas = content.querySelector('[data-vector-canvas]');
     if (!canvas) return;
     drawVectorCanvas(canvas, state, 0);
     const projection = content.querySelector('[data-vector-ecg]');
     if (projection) drawProjectionCanvas(projection, state, 0);
-    const twelve = content.querySelector('[data-vector-12lead]');
-    if (twelve) draw12LeadCanvas(twelve, state);
     const syncLabel = content.querySelector('[data-vector-sync-label]');
     if (syncLabel) syncLabel.textContent = getLocale() === 'en' ? `Lead ${state.lead} · time cursor` : `${LEADS[state.lead].name} · 时间光标`;
     const bars = content.querySelector('[data-vector-projections]');
@@ -1157,12 +1168,16 @@ export async function vectorLabView() {
   };
   const drawLoopFrame = (now) => {
     if (!content.querySelector('[data-vector-canvas]')) return;
+    if (document.hidden) { if (state.playing) raf = requestAnimationFrame(drawLoopFrame); return; }
     if (state.playing) {
       const dt = lastFrame ? Math.min(0.12, (now - lastFrame) / 1000) : 0;
       state.phase = ((state.phase ?? 0) + dt / (cycleDuration(state) / 1000)) % 1;
     }
     lastFrame = now;
-    renderLoopState();
+    if (now - lastLoopPaint >= frameInterval) {
+      lastLoopPaint = now;
+      renderLoopState();
+    }
     if (state.playing) raf = requestAnimationFrame(drawLoopFrame);
   };
   const drawLimbFrame = (now) => {
@@ -1173,21 +1188,24 @@ export async function vectorLabView() {
       state.angle = ((Number(state.angle) || 0) + dt * 11) % 360;
     }
     state.lastLimbAt = now;
-    drawLimbCanvas(canvas, state, now);
-    updateLimbReadout(content, state, now);
-    const waves = content.querySelector('[data-limb-waves]');
-    if (waves) drawLimbWaves(waves, state, now);
-    const chestVector = content.querySelector('[data-chest-vector-canvas]');
-    if (chestVector) {
-      if (state.qrsPlaying) {
-        const dt = state.lastQrsAt ? Math.min(0.12, (now - state.lastQrsAt) / 1000) : 0;
-        state.qrsPhase = ((state.qrsPhase ?? 0) + dt / 4.2) % 1;
+    if (now - lastLimbPaint >= frameInterval) {
+      lastLimbPaint = now;
+      drawLimbCanvas(canvas, state, now);
+      updateLimbReadout(content, state, now);
+      const waves = content.querySelector('[data-limb-waves]');
+      if (waves) drawLimbWaves(waves, state, now);
+      const chestVector = content.querySelector('[data-chest-vector-canvas]');
+      if (chestVector) {
+        if (state.qrsPlaying) {
+          const dt = state.lastQrsAt ? Math.min(0.12, (now - state.lastQrsAt) / 1000) : 0;
+          state.qrsPhase = ((state.qrsPhase ?? 0) + dt / 4.2) % 1;
+        }
+        state.lastQrsAt = now;
+        drawChestVectorCanvas(chestVector, state);
+        const chestWaves = content.querySelector('[data-chest-vector-waves]');
+        if (chestWaves) drawChestVectorWaves(chestWaves, state);
+        updateChestVectorReadout(content, state);
       }
-      state.lastQrsAt = now;
-      drawChestVectorCanvas(chestVector, state);
-      const chestWaves = content.querySelector('[data-chest-vector-waves]');
-      if (chestWaves) drawChestVectorWaves(chestWaves, state);
-      updateChestVectorReadout(content, state);
     }
     raf = requestAnimationFrame(drawLimbFrame);
   };
@@ -1199,10 +1217,13 @@ export async function vectorLabView() {
       state.qrsPhase = ((state.qrsPhase ?? 0) + dt / 5.5) % 1;
     }
     state.lastActivationAt = now;
-    drawActivationCanvas(canvas, state);
-    const waves = content.querySelector('[data-activation-waves]');
-    if (waves) drawChestVectorWaves(waves, state);
-    updateActivationUi(content, state);
+    if (now - lastActivationPaint >= frameInterval) {
+      lastActivationPaint = now;
+      drawActivationCanvas(canvas, state);
+      const waves = content.querySelector('[data-activation-waves]');
+      if (waves) drawChestVectorWaves(waves, state);
+      updateActivationUi(content, state);
+    }
     raf = requestAnimationFrame(drawActivationFrame);
   };
   const bindLoops = () => {
@@ -1250,12 +1271,13 @@ export async function vectorLabView() {
       if (slider) slider.value = String(v);
       if (label) label.textContent = `${v >= 0 ? '+' : ''}${Math.round(v)}°`;
       renderLoopState();
+      render12Lead();
     };
     content.querySelectorAll('[data-vector-axis]').forEach((slider) => {
       slider.addEventListener('input', (e) => setAxis(e.target.dataset.vectorAxis, e.target.value));
     });
     content.querySelector('[data-vector-loop]')?.addEventListener('change', (e) => { state.loop = e.target.value; });
-    content.querySelector('[data-vector-lead]')?.addEventListener('change', (e) => { state.lead = e.target.value; });
+    content.querySelector('[data-vector-lead]')?.addEventListener('change', (e) => { state.lead = e.target.value; renderLoopState(); render12Lead(); });
     const canvas = content.querySelector('[data-vector-canvas]');
     if (canvas) {
       let dragging = false;
@@ -1319,6 +1341,7 @@ export async function vectorLabView() {
         setZoom(state.zoom * Math.exp(-e.deltaY * 0.0015));
       }, { passive: false });
     }
+    render12Lead();
     raf = requestAnimationFrame(drawLoopFrame);
   };
   const bindLimb = () => {
