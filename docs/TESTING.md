@@ -7,6 +7,8 @@
 
 - CPR 中检查心律会实际停止按压并记录中断；同步/非同步错误只在放电后扣分，充电阶段不提前提示。
 - 首页 ECG 外壳非滚动模式同时设置 `overflow-x/y: visible`，`scrollWidth == clientWidth`，无幽灵滚动条。
+- 其他急救场景监护固定 seed，心率/QRS 变化不重建波形；只在节律/关键形态变化时刷新。
+- 本地浏览器：心动过缓 HR 从 32 降到 30 时监护 `data-sig` 不变，未重建波形；0 JS 错误。
 - PHP 全量 106/106（sim 17 项）；JS engine 19、read 6、study 11、vector-loop 6。
 - 本地浏览器：首页 ECG 外壳无横向溢出；CPR 检查后停止；错误模式充电后可放电并扣分；0 JS 错误。
 - 生产已验证：`/api/version` 返回 `3.3.5 / 20261110af`；首页 ECG 外壳 `clientWidth == scrollWidth`；CPR 中检查心律后按钮恢复“开始 CPR”并记录中断扣分；0 JS 错误。

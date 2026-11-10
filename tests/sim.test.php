@@ -143,6 +143,7 @@ try {
         $id = $view['sessionId'];
         $initialHr = $view['vitals']['hr'];
         $initialBp = $view['vitals']['bpSys'];
+        $initialMonitorSeed = $view['monitor']['seed'];
         assert($initialHr === 32);
         assert($view['phaseLabel'] === '就诊评估');
         pauseFor(8.2);
@@ -150,6 +151,7 @@ try {
         assert($view['vitals']['hr'] < $initialHr, 'HR should drift down while untreated');
         assert($view['vitals']['bpSys'] < $initialBp, 'BP should drift down while untreated');
         assert($view['monitor']['rate'] === $view['vitals']['hr'], 'monitor rate should follow live HR');
+        assert($view['monitor']['seed'] === $initialMonitorSeed, 'non-VF monitor waveform must stay stable while vitals change');
         assert($view['phase'] !== 'arrival');
         SimEngine::action($userId, $id, 'finish', []);
     });

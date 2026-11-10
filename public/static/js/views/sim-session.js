@@ -194,7 +194,7 @@ export async function simSessionView({ params }) {
     if (!initial && actionsSig !== lastActionsSig) {
       renderActions();
     }
-    const monitorSigNew = JSON.stringify({ rhythm: state.monitor?.rhythm, rate: state.monitor?.rate, qrs: state.monitor?.qrs, morphology: state.monitor?.morphology, p: state.monitor?.p, seed: state.monitor?.seed, vfAmplitude: state.monitor?.vfAmplitude, cprArtifact: state.monitor?.cprArtifact, description: state.monitor?.description });
+    const monitorSigNew = JSON.stringify({ rhythm: state.monitor?.rhythm, morphology: state.monitor?.morphology, p: state.monitor?.p, seed: state.monitor?.seed, vfAmplitude: state.monitor?.vfAmplitude, cprArtifact: state.monitor?.cprArtifact, sineWave: state.monitor?.sineWave });
     if (monitorSigNew !== monitorSig) {
       monitorSig = monitorSigNew;
       mountMonitor();

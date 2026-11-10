@@ -1271,6 +1271,7 @@ final class SimEngine
             't' => ['shape' => 'normal', 'amp' => 1], 'u' => 0, 'qt' => 0.38,
             'extras' => [], 'annotations' => [], 'duration' => 4, 'seed' => 5,
         ];
+        $base['seed'] = 5 + ((int) ($state['monitorSeed'] ?? 0) % 500000);
         if ($state['status'] !== 'active' && in_array($state['outcome'], ['rosc', 'stable'], true)) {
             return array_replace($base, ['rate' => 92, 'atrialRate' => 92, 'description' => '恢复自主循环，窦性心律。']);
         }
@@ -1301,8 +1302,8 @@ final class SimEngine
         return match ($state['rhythm']) {
             'vf' => array_replace($base, ['rhythm' => 'vf', 'rate' => 0, 'p' => 'absent', 'extras' => ['fibrillatory'], 'seed' => ((int) ($state['monitorSeed'] ?? 37)) % 2000000000, 'cprArtifact' => $cprArtifact, 'vfAmplitude' => !empty($state['flags']['vf_fine']) ? 0.55 : (float) ($state['vfScale'] ?? 1), 'description' => !empty($state['flags']['vf_fine']) ? '细颤：振幅低、频率快，除颤成功率下降。' : '粗颤：振幅较高，立即 CPR 并尽快除颤。']),
             'pvt' => array_replace($base, ['rhythm' => 'vt', 'rate' => 200, 'qrs' => 0.17, 'morphology' => 'wide', 'p' => 'absent', 't' => ['shape' => 'discordant', 'amp' => 1.1], 'description' => '宽 QRS 心动过速，无脉。']),
-            'svt' => array_replace($base, ['rhythm' => 'svt', 'rate' => (int) ($state['hr'] ?? 190), 'atrialRate' => (int) ($state['hr'] ?? 190), 'p' => 'hidden', 'qrs' => 0.07, 'seed' => 61 + intdiv((int) $elapsed, 4), 'description' => '窄 QRS 规则心动过速。']),
-            'af_fast' => array_replace($base, ['rhythm' => 'af', 'rate' => (int) ($state['hr'] ?? 152), 'atrialRate' => 400, 'irregularity' => 0.24, 'p' => 'absent', 'extras' => ['fibrillatory'], 'seed' => 71 + intdiv((int) $elapsed, 4), 'description' => '快速心房颤动。']),
+            'svt' => array_replace($base, ['rhythm' => 'svt', 'rate' => (int) ($state['hr'] ?? 190), 'atrialRate' => (int) ($state['hr'] ?? 190), 'p' => 'hidden', 'qrs' => 0.07, 'seed' => $base['seed'] + 3, 'description' => '窄 QRS 规则心动过速。']),
+            'af_fast' => array_replace($base, ['rhythm' => 'af', 'rate' => (int) ($state['hr'] ?? 152), 'atrialRate' => 400, 'irregularity' => 0.24, 'p' => 'absent', 'extras' => ['fibrillatory'], 'seed' => $base['seed'] + 7, 'description' => '快速心房颤动。']),
             'post_shock' => array_replace($base, ['rhythm' => 'asystole', 'rate' => 0, 'p' => 'absent', 'cprArtifact' => $cprArtifact, 'description' => '电击后短暂心室静止（约 2 秒），观察心律。']),
             'brady' => array_replace($base, ['rate' => (int) ($state['hr'] ?? 32), 'atrialRate' => (int) ($state['hr'] ?? 32), 'qt' => 0.46, 'description' => '症状性心动过缓，心率约 ' . (int) ($state['hr'] ?? 32) . ' 次/分。']),
             'asystole' => array_replace($base, ['rhythm' => 'asystole', 'rate' => 0, 'p' => 'absent', 'qrs' => 0.16, 'cprArtifact' => $cprArtifact, 'description' => '心搏停止。']),
