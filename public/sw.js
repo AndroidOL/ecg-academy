@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'ecg-20261110ac';
+const CACHE_VERSION = 'ecg-20261110ad';
 const SHELL = [
   '/', '/offline.html', '/static/manifest.webmanifest',
   '/static/css/tokens.css', '/static/css/base.css', '/static/css/components.css',
