@@ -4,13 +4,13 @@
 
 ## 主要参考框架
 
-- **成人高级生命支持**：American Heart Association, *2020 Guidelines for CPR and Emergency Cardiovascular Care*（ACLS 流程、CPR 质量、除颤/复律、肾上腺素与抗心律失常药时序）。
+- **成人高级生命支持**：American Heart Association, *2020 Guidelines for CPR and Emergency Cardiovascular Care* 与 *2025 Guidelines for CPR and Emergency Cardiovascular Care*（ACLS 流程、CPR 质量、除颤/复律、肾上腺素与抗心律失常药时序；2025 重点更新强调初始除颤失败后给肾上腺素、避免常规高剂量肾上腺素）。
 - **室性心律失常与猝死**：ESC 心室心律失常患者管理指南（2022 版框架；室速/室颤、ICD、遗传性心律失常）。
 - **心房颤动**：ACC/AHA/ACCP/HRS 心房颤动指南（2023 版框架；卒中风险、抗凝、心室率/节律控制）。
 - **心力衰竭与 CRT**：AHA/ACC/HFSA 心力衰竭指南与 ESC 心脏起搏/CRT 指南（器械治疗与再同步化框架）。
-- **儿童与新生儿**：AHA/AAP 儿科生命支持与儿童心电图年龄相关正常值；川崎病、先天性房室阻滞、先天性长 QT 的儿科心脏评估原则。
+- **儿童与新生儿**：AHA 2025 心肺复苏与心血管急救指南中的儿科生命支持更新、儿童心电图年龄相关正常值；川崎病、先天性房室阻滞、先天性长 QT 的儿科心脏评估原则。
 - **心电图学教材**：*Chou's Electrocardiography in Clinical Practice*、*Braunwald's Heart Disease* 心电图章节、*Marriott's Practical Electrocardiography* 等经典教材的判读框架。
-- **药物与电解质**：临床药理学与电解质紊乱标准教材；高钾/低钾、钙、镁、地高辛与 QT 延长药物的心电图表现。
+- **药物与电解质**：临床药理学与电解质紊乱标准教材；UK Kidney Association 2023 成人急性高钾血症治疗指南；高钾/低钾、钙、镁、地高辛与 QT 延长药物的心电图表现。
 
 ## 编写规则
 

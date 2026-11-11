@@ -40,5 +40,5 @@
 - 2023 ACC/AHA/ACCP/HRS Atrial Fibrillation Guideline（美国）。
 - 2024 ESC Guidelines for the management of atrial fibrillation（欧洲，AF-CARE）。
 - 2023 ESC Guidelines for the management of acute coronary syndromes。
-- AHA 2020 ACLS / PALS；ERC 2021 Guidelines。
+- AHA 2020/2025 ACLS / PALS；ERC 2021 Guidelines。
 - 具体页面与版本请以发布机构原文为准；本页为教学摘要，不替代原文。

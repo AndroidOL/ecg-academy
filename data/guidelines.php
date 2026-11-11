@@ -79,6 +79,7 @@ return [
             'sources' => [
                 '2020 AHA Guidelines for CPR and Emergency Cardiovascular Care',
                 '2023 AHA Focused Update on Adult Advanced Cardiovascular Life Support',
+                '2025 AHA Guidelines for CPR and Emergency Cardiovascular Care (adult ALS update)',
             ],
         ],
         'hyperkalemia' => [
@@ -89,7 +90,7 @@ return [
                 '评估少尿/无尿、透析通路、保钾药物（ACEI/ARB、螺内酯、NSAIDs）和钾补充剂。',
             ],
             'workflow' => [
-                '有心电图改变或严重高钾：优先静脉钙剂稳定心肌（葡萄糖酸钙/氯化钙按本地规范，缓慢给药并监测）。',
+                '有心电图改变或严重高钾：优先静脉钙剂稳定心肌（10% 葡萄糖酸钙 30 mL 缓慢静注或按本地规范；氯化钙 10% 10 mL 仅用于复苏/中心静脉），并监测。',
                 '促进钾进入细胞：胰岛素+葡萄糖是核心方案；可联合雾化沙丁胺醇；监测血糖至少数小时，防止迟发低血糖。',
                 '促进钾排出：利尿剂（有尿量者）、钾结合剂；严重或肾功能衰竭者尽快评估血液透析。',
                 '同时停用保钾药物、限制钾摄入，并治疗酸中毒、组织坏死、横纹肌溶解等诱因。',

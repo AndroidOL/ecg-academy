@@ -218,6 +218,7 @@ const RULES = [
   [/^版权：(.+)$/, (m) => `Copyright: ${m[1]}`],
   [/^许可证：(.+)$/, (m) => `License: ${translatePhrase(m[1]) || m[1]}`],
   [/^收藏于 (.+)$/, (m) => `Saved on ${m[1]}`],
+  [/^最后核对 (\d{4}-\d{2}-\d{2}) · 整理 (.+)$/, (m) => `Last checked ${m[1]} · Compiled by ${translatePhrase(m[2]) || m[2]}`],
   [/^答错 (\d+) 次 · 答对 (\d+) 次 · 间隔 (\d+) 天$/, (m) => `Wrong ${m[1]} · Correct ${m[2]} · Interval ${m[3]} days`],
   [/^你选：(.+)$/, (m) => `Your choice: ${translatePhrase(m[1]) || m[1]}`],
   [/^正确：(.+)$/, (m) => `Correct: ${translatePhrase(m[1]) || m[1]}`],

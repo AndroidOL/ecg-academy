@@ -1605,7 +1605,9 @@ final class SimEngine
             $state['syncShocks']++;
             $state['shocks']++;
             $state['lastShockAt'] = $now;
-            $expected = $state['rhythm'] === 'svt' ? [50, 100] : [120, 200];
+            $expected = in_array($state['rhythm'], ['svt', 'atrial_tachy', 'atrial_flutter'], true)
+                ? [50, 100]
+                : (in_array($state['rhythm'], ['af', 'af_fast'], true) ? [120, 200] : ($state['rhythm'] === 'vt' ? [100, 200] : [120, 200]));
             if ($energy < $expected[0] || $energy > $expected[1]) {
                 $state['energyErrors']++;
                 self::penalty($state, 6, '同步电复律能量不在推荐范围');
@@ -1651,7 +1653,7 @@ final class SimEngine
         self::requireIv($state);
         $algorithm = $scenario['algorithm'];
         if (in_array($algorithm, ['vf'], true)) {
-            if ($state['shocks'] < 2) self::penalty($state, 5, '可除颤心律过早给予肾上腺素（通常第二次除颤后）');
+            if ($state['shocks'] < 2) self::penalty($state, 5, '可除颤心律过早给予肾上腺素（应在初始除颤失败后）');
             if ($state['lastEpiAt'] && $now - $state['lastEpiAt'] < 180) {
                 $state['epiErrors']++;
                 self::penalty($state, 5, '肾上腺素间隔 <3 分钟');
@@ -2312,7 +2314,7 @@ final class SimEngine
             if ($etco2 > 0 && $etco2 < 10) return 'ETCO₂ 偏低：检查按压深度/频率、回弹与通气，避免过度通气；按压质量差时除颤成功率下降。';
             if ($etco2 >= 40) return 'ETCO₂ 突然升高：立即检查脉搏与心律，可能是自主循环恢复（ROSC）的最早信号。';
             if ($state['shocks'] === 0) return '可除颤心律：尽快选择电治疗并充电，放电后立即恢复按压。';
-            if ($state['shocks'] < 2) return '继续 CPR 2 分钟；第二次除颤后考虑肾上腺素 1 mg。';
+            if ($state['shocks'] < 2) return '继续 CPR 2 分钟；初始除颤失败后（通常第二次除颤后）考虑肾上腺素 1 mg。';
             if ($state['epi'] === 0) return '可给予肾上腺素 1 mg IV/IO，每 3–5 分钟重复。';
             if ($state['amio'] === 0) return '难治性 VF 可加胺碘酮 300 mg，同时寻找可逆病因。';
             return '持续高质量 CPR，减少按压中断，评估可逆病因。';

@@ -165,7 +165,7 @@
       "缺血"
     ],
     "oneLiner": "NSTEMI 常表现为 ST 段水平/下斜型压低、T 波倒置或动态改变；诊断需结合肌钙蛋白与临床。",
-    "specificity": "相邻导联 ST 压低 ≥0.05–0.1 mV、T 波倒置、动态变化；aVR ST 抬高提示左主干/多支病变。",
+    "specificity": "相邻两个导联 ST 压低：V2–V3 ≥0.05 mV，其他导联 ≥0.1 mV；伴 T 波倒置、动态变化；aVR ST 抬高提示左主干/多支病变。",
     "objectives": [
       "NSTEMI：ST 压低/T 倒置 + 肌钙蛋白。",
       "aVR 抬高是高风险信号。",

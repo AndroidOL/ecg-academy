@@ -526,7 +526,7 @@
     "objectives": [
       "起搏 AV 间期影响充盈。",
       "DDD 顺序起搏可见两个钉。",
-      " optimization 需超声/临床。"
+      "参数优化需超声与临床。"
     ],
     "sections": [
       {
@@ -554,7 +554,7 @@
     "keyPoints": [
       "起搏 AV 间期影响充盈。",
       "DDD 顺序起搏可见两个钉。",
-      " optimization 需超声/临床。"
+      "参数优化需超声与临床。"
     ],
     "clinicalPearl": "起搏心电图上的 AV 间期是“设置值”，但血流动力学效果要看超声与症状。",
     "topic": true,
