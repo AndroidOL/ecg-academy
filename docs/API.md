@@ -20,7 +20,7 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/bootstrap` | 当前用户、CSRF、内容统计、1920 题库统计、进度、AI 状态（含 `byokEnabled`）、本周排行榜、场景数、`features`（注册/登录开关）、`site`（GitHub/许可证/版权/ICP） |
+| GET | `/api/bootstrap` | 当前用户、CSRF、内容统计、2000 题库统计、进度、AI 状态（含 `byokEnabled`）、本周排行榜、场景数、`features`（注册/登录开关）、`site`（GitHub/许可证/版权/ICP） |
 | GET | `/api/admin/auth-config` | 管理后台登录方式与 Passkey 是否存在（公开只读） |
 | POST | `/api/admin/login` | 管理员密码登录（受 `admin.password_login_enabled` 控制） |
 | GET | `/api/admin/passkey/login/options` | 生成 WebAuthn 登录 challenge |
@@ -48,7 +48,7 @@ curl -b cookies.txt -H 'Content-Type: application/json' -H 'X-CSRF-Token: <csrf>
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/api/quiz/new?level=1|2|3&chapter=&focus=a,b&assignment=CODE&device=UUID` | 从 1920 道预生成病例中出题；level 3 为组合诊断；assignment 覆盖难度/章节/专项并记录匿名成绩；返回剥离答案的 ECG 规格、选项、attemptId、bankId |
+| GET | `/api/quiz/new?level=1|2|3&chapter=&focus=a,b&assignment=CODE&device=UUID` | 从 2000 道预生成病例中出题；level 3 为组合诊断；assignment 覆盖难度/章节/专项并记录匿名成绩；返回剥离答案的 ECG 规格、选项、attemptId、bankId |
 | POST | `/api/quiz/answer` | `{attemptId, selected:["id"], timeMs, level?}`；服务端判分并返回解析；`level` 仅用于游客本地等级判断；未解锁难度返回 `unlocked:false`、score/xp=0；测试模式按难度计分、答错 4× 扣分并更新锁定 |
 | GET | `/api/quiz/history` | 最近答题记录 |
 | GET | `/api/learning/status` | 19 板块学习状态、最近 50 题评级、考试解锁、1735 题统计 |

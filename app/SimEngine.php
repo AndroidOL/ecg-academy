@@ -29,10 +29,994 @@ final class SimEngine
             throw new ApiError(404, 'scenario_not_found', '急救场景不存在');
         }
         $now = microtime(true);
+        $state = self::createState($userId, $scenario, null, $now);
+        $pdo = Db::pdo();
+        $stmt = $pdo->prepare(
+            'INSERT INTO sim_sessions (id, user_id, scenario_id, state, status, started_at, updated_at)
+             VALUES (?, ?, ?, ?, "active", NOW(3), NOW(3))'
+        );
+        $stmt->execute([$state['id'], $userId, $scenarioId, self::encode($state)]);
+        return self::view($state, $scenario, $userId);
+    }
+
+    public static function state(int $userId, string $sessionId): array
+    {
+        $session = self::load($userId, $sessionId);
+        $scenario = self::scenario($session['scenario_id']);
+        if (!$scenario) throw new ApiError(404, 'scenario_not_found', '场景不存在');
+        $state = self::decode($session['state']);
+        if ($state['status'] === 'active') {
+            $outcome = self::advance($state, $scenario);
+            if ($outcome !== null) {
+                self::finalize($state, $scenario, $outcome, $userId, 0);
+            } elseif ($state['dirty']) {
+                self::saveSession($sessionId, $state, 'active');
+            }
+        }
+        return self::view($state, $scenario, $userId);
+    }
+
+    public static function action(int $userId, string $sessionId, string $action, array $payload): array
+    {
+        $session = self::load($userId, $sessionId);
+        $scenario = self::scenario($session['scenario_id']);
+        if (!$scenario) throw new ApiError(404, 'scenario_not_found', '场景不存在');
+        $state = self::decode($session['state']);
+        if ($state['status'] !== 'active') {
+            return self::view($state, $scenario, $userId);
+        }
+        $now = microtime(true);
+        $outcome = self::advance($state, $scenario, $now);
+        if ($outcome !== null) {
+            self::finalize($state, $scenario, $outcome, $userId, 0);
+            return self::view($state, $scenario, $userId);
+        }
+
+        self::applyAction($state, $scenario, $action, $payload, $now, $userId);
+
+        if ($state['status'] === 'active') {
+            $state['updatedAt'] = $now;
+            self::saveSession($sessionId, $state, 'active');
+        }
+        return self::view($state, $scenario, $userId);
+    }
+
+    private static function applyAction(array &$state, array $scenario, string $action, array $payload, float $now, int $userId): void
+    {
+        match ($action) {
+            'cpr_start' => self::cprStart($state, $now),
+            'cpr_stop' => self::cprStop($state, $payload, $now),
+            'charge' => self::charge($state, $scenario, $payload, $now),
+            'disarm' => self::disarm($state),
+            'shock' => self::shock($state, $scenario, $payload, $now),
+            'epi' => self::epi($state, $scenario, $now),
+            'amio' => self::amio($state, $scenario, $now),
+            'atropine' => self::atropine($state, $scenario, $now),
+            'pacing' => self::pacing($state, $scenario, $now),
+            'epi_infusion' => self::epiInfusion($state, $scenario, $now),
+            'iv' => self::iv($state, $now),
+            'oxygen' => self::oxygen($state, $scenario, $now),
+            'sedate' => self::sedate($state, $scenario),
+            'calcium' => self::calcium($state, $scenario, $now),
+            'bicarb' => self::bicarb($state, $scenario, $now),
+            'insulin' => self::insulin($state, $scenario, $now),
+            'special' => self::specialAction($state, $scenario, $now),
+            'adenosine' => self::adenosine($state, $scenario, $now),
+            'vagal' => self::vagal($state, $scenario, $now),
+            'check_pulse' => self::check($state, '检查脉搏', $now),
+            'check_rhythm' => self::check($state, '检查心律', $now),
+            'finish' => self::finalize($state, $scenario, 'aborted', $userId, 0),
+            default => throw new ApiError(422, 'invalid_action', '未知操作'),
+        };
+    }
+
+    public static function startDuo(int $userId): array
+    {
+        $pool = self::duoCasePool();
+        $ids = array_keys($pool);
+        if (count($ids) < 2) {
+            throw new ApiError(500, 'duo_pool_empty', '随机病例池不足');
+        }
+        shuffle($ids);
+        $chosen = array_slice($ids, 0, 2);
+        $now = microtime(true);
+        $sessionId = bin2hex(random_bytes(12));
+        $patients = [];
+        foreach ($chosen as $index => $scenarioId) {
+            $scenario = self::scenario($scenarioId);
+            if ($scenario === null) {
+                continue;
+            }
+            $case = self::randomCase($scenario, $pool[$scenarioId], $index);
+            $subState = self::createState(
+                $userId,
+                $scenario,
+                bin2hex(random_bytes(12)),
+                $now,
+                '患者 ' . self::duoCode($index) . ' 送达：' . $case['complaint']
+            );
+            $subState['duoMode'] = true;
+            $patients[] = [
+                'scenarioId' => $scenarioId,
+                'state' => $subState,
+                'case' => $case,
+                'diagnosis' => $case['diagnosis'],
+                'diagnosisOptions' => $case['options'],
+                'diagnosisSubmitted' => false,
+                'diagnosisSelected' => null,
+                'diagnosisCorrect' => null,
+                'diagnosisAt' => null,
+                'treatmentStarted' => false,
+                'treatmentAt' => null,
+                // First patient: 15 s; second patient gets an additional 15 s.
+                'diagnosisDeadline' => $now + 15.0 * ($index + 1),
+                'windowTotal' => 15,
+                'windowScored' => false,
+            ];
+        }
+        if (count($patients) < 2) {
+            throw new ApiError(500, 'duo_case_failed', '随机病例生成失败');
+        }
+
         $state = [
-            'id' => bin2hex(random_bytes(12)),
+            'id' => $sessionId,
             'userId' => $userId,
-            'scenarioId' => $scenarioId,
+            'mode' => 'duo',
+            'scenarioId' => 'random-duo',
+            'startedAt' => $now,
+            'updatedAt' => $now,
+            'status' => 'active',
+            'outcome' => null,
+            'endedAt' => null,
+            'runId' => null,
+            'score' => null,
+            'grade' => null,
+            'diagnosisDeadline' => $now + 30.0,
+            'lockUntil' => null,
+            'lockPatient' => null,
+            'lockLabel' => null,
+            'patients' => $patients,
+            'events' => [],
+            'dirty' => false,
+        ];
+        self::duoEvent($state, '双人随机模式：两名危重症患者同时送达。', 'warn');
+        self::duoEvent($state, '15 秒内完成诊断并开始处理；同一时间只能处置一名患者，CPR 除外。', 'neutral');
+
+        $stmt = Db::pdo()->prepare(
+            'INSERT INTO sim_sessions (id, user_id, scenario_id, state, status, started_at, updated_at)
+             VALUES (?, ?, "random-duo", ?, "active", NOW(3), NOW(3))'
+        );
+        $stmt->execute([$sessionId, $userId, self::encode($state)]);
+        return self::duoView($state, $userId);
+    }
+
+    public static function duoState(int $userId, string $sessionId): array
+    {
+        $session = self::duoLoad($userId, $sessionId);
+        $state = self::decode((string) $session['state']);
+        if (($state['mode'] ?? '') !== 'duo') {
+            throw new ApiError(404, 'duo_session_not_found', '双人模拟会话不存在');
+        }
+        if ($state['status'] === 'active') {
+            self::duoAdvance($state, microtime(true));
+            if ($state['dirty']) {
+                self::duoSave($state);
+            }
+        }
+        return self::duoView($state, $userId);
+    }
+
+    public static function duoAction(int $userId, string $sessionId, int $patientIndex, string $action, array $payload): array
+    {
+        $session = self::duoLoad($userId, $sessionId);
+        $state = self::decode((string) $session['state']);
+        if (($state['mode'] ?? '') !== 'duo') {
+            throw new ApiError(404, 'duo_session_not_found', '双人模拟会话不存在');
+        }
+        if ($state['status'] !== 'active') {
+            return self::duoView($state, $userId);
+        }
+        $now = microtime(true);
+        self::duoAdvance($state, $now);
+        if ($state['status'] !== 'active') {
+            self::duoSave($state);
+            return self::duoView($state, $userId);
+        }
+        if ($action === 'finish') {
+            self::duoFinalize($state, 'aborted', $now);
+            self::duoSave($state);
+            return self::duoView($state, $userId);
+        }
+        if ($patientIndex < 0 || $patientIndex > count($state['patients']) - 1) {
+            throw new ApiError(422, 'invalid_patient', '患者编号无效');
+        }
+        $patient = &$state['patients'][$patientIndex];
+        if ($patient['state']['status'] !== 'active') {
+            throw new ApiError(409, 'patient_ended', '该患者已恢复窦性心律或抢救结束');
+        }
+
+        $isParallel = in_array($action, ['cpr_start', 'cpr_stop', 'charge', 'disarm'], true);
+        if (!$isParallel && !empty($state['lockUntil']) && $now < (float) $state['lockUntil']) {
+            $remaining = max(1, (int) ceil((float) $state['lockUntil'] - $now));
+            $other = self::duoCode((int) ($state['lockPatient'] ?? 0));
+            throw new ApiError(409, 'procedure_busy', "正在处置患者 {$other}（{$state['lockLabel']}，约 {$remaining} 秒）；除 CPR 与充电外，同一时间只能进行一项操作");
+        }
+
+        $scenario = self::scenario((string) $patient['scenarioId']);
+        if ($scenario === null) {
+            throw new ApiError(500, 'scenario_missing', '病例数据缺失');
+        }
+
+        self::applyAction($patient['state'], $scenario, $action, $payload, $now, $userId);
+
+        if (self::isDuoTreatment($action) && !$patient['treatmentStarted']) {
+            $patient['treatmentStarted'] = true;
+            $patient['treatmentAt'] = $now;
+            $deadline = (float) ($patient['diagnosisDeadline'] ?? $state['diagnosisDeadline']);
+            $inTime = $now <= $deadline;
+            self::event(
+                $patient['state'],
+                $inTime ? '已开始处理（诊断窗口内）' : '已开始处理（超出诊断窗口）',
+                $inTime ? 'good' : 'warn'
+            );
+        }
+
+        self::duoAdvance($state, $now);
+        if ($state['status'] !== 'active') {
+            self::duoSave($state);
+            return self::duoView($state, $userId);
+        }
+
+        $lockUntil = self::duoLockUntil($patient['state'], $action, $now);
+        if (!$isParallel) {
+            if ($lockUntil > $now) {
+                $state['lockUntil'] = $lockUntil;
+                $state['lockPatient'] = $patientIndex;
+                $state['lockLabel'] = self::duoActionLabel($action);
+                self::duoEvent(
+                    $state,
+                    '患者 ' . self::duoCode($patientIndex) . '：' . $state['lockLabel']
+                    . '（约 ' . max(1, (int) ceil($lockUntil - $now)) . ' 秒）',
+                    'neutral'
+                );
+            } else {
+                $state['lockUntil'] = null;
+                $state['lockPatient'] = null;
+                $state['lockLabel'] = null;
+            }
+        }
+        $state['updatedAt'] = $now;
+        $state['dirty'] = true;
+        self::duoSave($state);
+        return self::duoView($state, $userId);
+    }
+
+    public static function duoDiagnosis(int $userId, string $sessionId, int $patientIndex, string $diagnosis): array
+    {
+        $session = self::duoLoad($userId, $sessionId);
+        $state = self::decode((string) $session['state']);
+        if (($state['mode'] ?? '') !== 'duo') {
+            throw new ApiError(404, 'duo_session_not_found', '双人模拟会话不存在');
+        }
+        if ($state['status'] !== 'active') {
+            return self::duoView($state, $userId);
+        }
+        $now = microtime(true);
+        self::duoAdvance($state, $now);
+        if ($state['status'] !== 'active') {
+            self::duoSave($state);
+            return self::duoView($state, $userId);
+        }
+        if ($patientIndex < 0 || $patientIndex > count($state['patients']) - 1) {
+            throw new ApiError(422, 'invalid_patient', '患者编号无效');
+        }
+        $patient = &$state['patients'][$patientIndex];
+        if ($patient['state']['status'] !== 'active') {
+            throw new ApiError(409, 'patient_ended', '该患者的抢救已结束');
+        }
+        if ($patient['diagnosisSubmitted']) {
+            throw new ApiError(422, 'diagnosis_done', '该患者的诊断已提交');
+        }
+        if (!in_array($diagnosis, $patient['diagnosisOptions'], true)) {
+            throw new ApiError(422, 'invalid_diagnosis', '诊断选项无效');
+        }
+        $correct = $diagnosis === $patient['diagnosis'];
+        $deadline = (float) ($patient['diagnosisDeadline'] ?? $state['diagnosisDeadline']);
+        $inTime = $now <= $deadline;
+        $patient['diagnosisSubmitted'] = true;
+        $patient['diagnosisSelected'] = $diagnosis;
+        $patient['diagnosisCorrect'] = $correct;
+        $patient['diagnosisAt'] = $now;
+        self::event($patient['state'], '诊断已提交：' . $diagnosis, $correct ? 'good' : 'neutral');
+        if (!$correct) {
+            self::penalty($patient['state'], 8, '诊断与病例不符（正确诊断见复盘）');
+        } elseif (!$inTime) {
+            self::event($patient['state'], '诊断正确，但已超出 15 秒窗口', 'warn');
+        }
+        $state['updatedAt'] = $now;
+        $state['dirty'] = true;
+        self::duoSave($state);
+        return self::duoView($state, $userId);
+    }
+
+    public static function debrief(int $userId, int $runId): array
+    {
+        $stmt = Db::pdo()->prepare('SELECT * FROM sim_runs WHERE id = ? AND user_id = ? LIMIT 1');
+        $stmt->execute([$runId, $userId]);
+        $run = $stmt->fetch();
+        if (!$run) throw new ApiError(404, 'run_not_found', '复盘记录不存在');
+        $scenario = self::scenario($run['scenario_id']);
+        $payload = json_decode((string) $run['actions'], true);
+        $payload = is_array($payload) ? $payload : [];
+        $isDuo = ($payload['mode'] ?? '') === 'duo';
+        if ($isDuo && $scenario === null) {
+            $scenario = [
+                'id' => 'random-duo',
+                'name' => '双人随机急救',
+                'subtitle' => '两名危重症患者同时送达',
+                'success' => '两名患者均恢复窦性心律/自主循环；部分成功按 55% 计分。',
+            ];
+        }
+        $events = $isDuo ? (array) ($payload['events'] ?? []) : $payload;
+        $metrics = self::metricsFromEvents($events);
+        return [
+            'run' => [
+                'id' => (int) $run['id'],
+                'scenarioId' => $run['scenario_id'],
+                'score' => (int) $run['score'],
+                'grade' => $run['grade'],
+                'outcome' => $run['outcome'],
+                'duration' => (int) $run['duration_s'],
+                'createdAt' => $run['created_at'],
+            ],
+            'scenario' => $scenario ? array_diff_key($scenario, ['algorithm' => true]) : null,
+            'events' => $events,
+            'duo' => $isDuo ? ['patients' => (array) ($payload['patients'] ?? [])] : null,
+            'metrics' => $metrics,
+            'review' => self::localReview($scenario, $events, (int) $run['score'], $run['outcome']),
+            'aiAvailable' => Ai::configured(),
+        ];
+    }
+
+    private static function duoLoad(int $userId, string $sessionId): array
+    {
+        if (!preg_match('/^[a-f0-9]{24}$/', $sessionId)) {
+            throw new ApiError(404, 'duo_session_not_found', '双人模拟会话不存在');
+        }
+        $stmt = Db::pdo()->prepare('SELECT * FROM sim_sessions WHERE id = ? AND user_id = ? LIMIT 1');
+        $stmt->execute([$sessionId, $userId]);
+        $session = $stmt->fetch();
+        if (!$session || (string) ($session['scenario_id'] ?? '') !== 'random-duo') {
+            throw new ApiError(404, 'duo_session_not_found', '双人模拟会话不存在');
+        }
+        return $session;
+    }
+
+    private static function duoSave(array &$state): void
+    {
+        $state['dirty'] = false;
+        $status = $state['status'] === 'active' ? 'active' : 'ended';
+        $stmt = Db::pdo()->prepare('UPDATE sim_sessions SET state = ?, status = ?, updated_at = NOW(3) WHERE id = ?');
+        $stmt->execute([self::encode($state), $status, $state['id']]);
+    }
+
+    private static function duoAdvance(array &$state, ?float $now = null): void
+    {
+        if (($state['status'] ?? '') !== 'active') {
+            return;
+        }
+        $now = $now ?? microtime(true);
+        if (!empty($state['lockUntil']) && $now >= (float) $state['lockUntil']) {
+            $state['lockUntil'] = null;
+            $state['lockPatient'] = null;
+            $state['lockLabel'] = null;
+            self::duoEvent($state, '当前处置完成，可以切换患者。', 'neutral');
+        }
+
+        foreach ($state['patients'] as $index => &$patient) {
+            $deadline = (float) ($patient['diagnosisDeadline'] ?? $state['diagnosisDeadline']);
+            if (!$patient['windowScored'] && $now >= $deadline) {
+                if (!$patient['diagnosisSubmitted']) {
+                    self::penalty($patient['state'], 8, '诊断窗口内未提交诊断');
+                }
+                if (!$patient['treatmentStarted']) {
+                    self::penalty($patient['state'], 8, '诊断窗口内未开始处理');
+                }
+                $patient['windowScored'] = true;
+                self::duoEvent($state, '患者 ' . self::duoCode($index) . '：诊断/处置窗口已结束。', 'warn');
+                $state['dirty'] = true;
+            }
+            if ($patient['state']['status'] !== 'active') {
+                continue;
+            }
+            $scenario = self::scenario((string) $patient['scenarioId']);
+            if ($scenario === null) {
+                continue;
+            }
+            $pendingOutcome = $patient['state']['pendingOutcome'] ?? null;
+            if ($pendingOutcome !== null) {
+                $patient['state']['status'] = 'ended';
+                $patient['state']['outcome'] = (string) $pendingOutcome;
+                $patient['state']['endedAt'] = $now;
+                $patient['state']['pendingOutcome'] = null;
+                $patient['state']['dirty'] = false;
+                $success = in_array($pendingOutcome, ['rosc', 'stable'], true);
+                self::duoEvent(
+                    $state,
+                    '患者 ' . self::duoCode($index) . '：' . ($success ? '恢复窦性心律/自主循环' : '抢救失败'),
+                    $success ? 'good' : 'bad'
+                );
+                $state['dirty'] = true;
+                continue;
+            }
+            $outcome = self::advance($patient['state'], $scenario, $now);
+            if ($outcome !== null) {
+                $patient['state']['status'] = 'ended';
+                $patient['state']['outcome'] = $outcome;
+                $patient['state']['endedAt'] = $now;
+                $patient['state']['dirty'] = false;
+                $success = in_array($outcome, ['rosc', 'stable'], true);
+                self::duoEvent(
+                    $state,
+                    '患者 ' . self::duoCode($index) . '：' . ($success ? '恢复窦性心律/自主循环' : '抢救失败'),
+                    $success ? 'good' : 'bad'
+                );
+                $state['dirty'] = true;
+            } elseif ($patient['state']['dirty']) {
+                $state['dirty'] = true;
+                $patient['state']['dirty'] = false;
+            }
+            if ((int) ($state['lockPatient'] ?? -1) === $index) {
+                foreach (['ivPendingUntil', 'chargeReadyAt', 'postShockUntil'] as $pendingKey) {
+                    if (!empty($patient['state'][$pendingKey]) && (float) $patient['state'][$pendingKey] > (float) ($state['lockUntil'] ?? 0)) {
+                        $state['lockUntil'] = (float) $patient['state'][$pendingKey];
+                    }
+                }
+            }
+        }
+        unset($patient);
+
+        if ($now - (float) $state['startedAt'] > 600) {
+            foreach ($state['patients'] as $index => &$patient) {
+                if ($patient['state']['status'] === 'active') {
+                    $patient['state']['status'] = 'ended';
+                    $patient['state']['outcome'] = 'timeout';
+                    $patient['state']['endedAt'] = $now;
+                    $patient['state']['dirty'] = false;
+                    self::duoEvent($state, '患者 ' . self::duoCode($index) . '：超过总时限，抢救失败。', 'bad');
+                }
+            }
+            unset($patient);
+        }
+
+        $allEnded = true;
+        foreach ($state['patients'] as $patient) {
+            if ($patient['state']['status'] === 'active') {
+                $allEnded = false;
+                break;
+            }
+        }
+        if ($allEnded) {
+            self::duoFinalize($state, 'completed', $now);
+        }
+    }
+
+    private static function duoFinalize(array &$state, string $reason, float $now): void
+    {
+        if (($state['status'] ?? '') !== 'active') {
+            return;
+        }
+        foreach ($state['patients'] as $index => &$patient) {
+            $deadline = (float) ($patient['diagnosisDeadline'] ?? $state['diagnosisDeadline']);
+            if ($patient['state']['status'] === 'active') {
+                $patient['state']['status'] = 'ended';
+                $patient['state']['outcome'] = $reason === 'aborted' ? 'aborted' : 'timeout';
+                $patient['state']['endedAt'] = $now;
+                $patient['state']['dirty'] = false;
+                self::duoEvent(
+                    $state,
+                    '患者 ' . self::duoCode($index) . '：' . ($reason === 'aborted' ? '提前结束' : '抢救失败'),
+                    $reason === 'aborted' ? 'warn' : 'bad'
+                );
+            }
+            if (!$patient['windowScored'] && $now >= $deadline) {
+                if (!$patient['diagnosisSubmitted']) {
+                    self::penalty($patient['state'], 8, '诊断窗口内未提交诊断');
+                }
+                if (!$patient['treatmentStarted']) {
+                    self::penalty($patient['state'], 8, '诊断窗口内未开始处理');
+                }
+                $patient['windowScored'] = true;
+            }
+        }
+        unset($patient);
+
+        $results = [];
+        $successCount = 0;
+        $processSum = 0.0;
+        $allDiagnosisInTime = true;
+        $allTreatmentInTime = true;
+        foreach ($state['patients'] as $index => $patient) {
+            $result = self::duoScorePatient($patient, $state, $now, $index);
+            $results[] = $result;
+            if ($result['success']) {
+                $successCount++;
+                $processSum += $result['processScore'];
+            }
+            if (!($result['diagnosisCorrect'] && $result['diagnosisInTime'])) {
+                $allDiagnosisInTime = false;
+            }
+            if (!($result['treatmentStarted'] && $result['treatmentInTime'])) {
+                $allTreatmentInTime = false;
+            }
+        }
+
+        if ($successCount === 2) {
+            $score = (int) round($processSum / 2);
+            $outcome = 'rosc';
+        } elseif ($successCount === 1) {
+            $score = (int) round($processSum * 0.55);
+            $outcome = 'partial';
+        } else {
+            $score = 0;
+            $outcome = $reason === 'aborted' ? 'aborted' : 'failed';
+        }
+        if ($successCount > 0) {
+            if ($allDiagnosisInTime) {
+                $score += 8;
+            }
+            if ($allTreatmentInTime) {
+                $score += 5;
+            }
+        }
+        $score = max(0, min(100, $score));
+        $grade = self::gradeFor($score);
+        $duration = max(1, (int) round($now - (float) $state['startedAt']));
+
+        $events = $state['events'];
+        foreach ($results as $result) {
+            foreach ($result['events'] as $event) {
+                $event['patient'] = $result['code'];
+                $events[] = $event;
+            }
+        }
+        usort($events, static fn (array $a, array $b): int => ((float) $a['t']) <=> ((float) $b['t']));
+        $payload = ['mode' => 'duo', 'events' => $events, 'patients' => $results];
+
+        $pdo = Db::pdo();
+        $stmt = $pdo->prepare(
+            'INSERT INTO sim_runs (user_id, scenario_id, score, grade, outcome, actions, duration_s)
+             VALUES (?, "random-duo", ?, ?, ?, ?, ?)'
+        );
+        $stmt->execute([
+            (int) $state['userId'],
+            $score,
+            $grade,
+            $outcome,
+            self::encode($payload),
+            $duration,
+        ]);
+        $runId = (int) $pdo->lastInsertId();
+        $xp = $outcome === 'rosc'
+            ? max(5, (int) round($score / 4))
+            : ($outcome === 'partial' ? max(3, (int) round($score / 8)) : 0);
+        if ($xp > 0) {
+            $pdo->prepare('UPDATE users SET xp = xp + ? WHERE id = ?')->execute([$xp, (int) $state['userId']]);
+        }
+
+        $state['status'] = 'ended';
+        $state['outcome'] = $outcome;
+        $state['endedAt'] = $now;
+        $state['score'] = $score;
+        $state['grade'] = $grade;
+        $state['runId'] = $runId;
+        $state['results'] = $results;
+        $state['lockUntil'] = null;
+        $state['lockPatient'] = null;
+        $state['lockLabel'] = null;
+        $state['dirty'] = false;
+        self::saveSession((string) $state['id'], $state, 'ended');
+    }
+
+    private static function duoScorePatient(array $patient, array $state, float $now, int $index): array
+    {
+        $patientState = $patient['state'];
+        $outcome = (string) ($patientState['outcome'] ?? 'timeout');
+        $success = in_array($outcome, ['rosc', 'stable'], true);
+        $startedAt = (float) $patientState['startedAt'];
+        $endedAt = (float) ($patientState['endedAt'] ?? $now);
+        $duration = max(1, (int) round($endedAt - $startedAt));
+        $deadline = (float) ($patient['diagnosisDeadline'] ?? $state['diagnosisDeadline']);
+
+        $score = 100;
+        foreach ((array) ($patientState['penalties'] ?? []) as $penalty) {
+            $score -= (int) ($penalty['points'] ?? 0);
+        }
+        $firstCpr = $patientState['firstCprAt'] ? (float) $patientState['firstCprAt'] - $startedAt : null;
+        if ($firstCpr !== null && $firstCpr <= 10) {
+            $score += 10;
+        }
+        $cprSeconds = (float) ($patientState['cprSeconds'] ?? 0);
+        if (!empty($patientState['cpr']) && !empty($patientState['cprStartedAt'])) {
+            $cprSeconds += max(0, $endedAt - (float) $patientState['cprStartedAt']);
+        }
+        $cprRatio = $duration > 0 ? $cprSeconds / $duration : 0;
+        if ($cprRatio >= 0.5) {
+            $score += 10;
+        }
+        if ($success) {
+            $score += 20;
+        }
+        if ((int) ($patientState['syncErrors'] ?? 0) === 0) {
+            $score += 5;
+        }
+        if ((int) ($patientState['energyErrors'] ?? 0) === 0) {
+            $score += 5;
+        }
+        if ((int) ($patientState['epiErrors'] ?? 0) === 0) {
+            $score += 5;
+        }
+
+        $diagnosisInTime = $patient['diagnosisAt'] !== null && (float) $patient['diagnosisAt'] <= $deadline;
+        $treatmentInTime = $patient['treatmentAt'] !== null && (float) $patient['treatmentAt'] <= $deadline;
+        if ($patient['diagnosisCorrect'] && $diagnosisInTime) {
+            $score += 10;
+        }
+        if ($patient['treatmentStarted'] && $treatmentInTime) {
+            $score += 5;
+        }
+
+        $processScore = max(0, min(100, $score));
+        $finalScore = $success ? $processScore : 0;
+
+        $events = [];
+        foreach ((array) ($patientState['events'] ?? []) as $event) {
+            $events[] = [
+                't' => round((float) ($event['t'] ?? 0), 1),
+                'label' => (string) ($event['label'] ?? ''),
+                'tone' => (string) ($event['tone'] ?? 'neutral'),
+                'points' => (int) ($event['points'] ?? 0),
+            ];
+        }
+        $penalties = [];
+        foreach ((array) ($patientState['penalties'] ?? []) as $penalty) {
+            $penalties[] = [
+                't' => round((float) ($penalty['t'] ?? 0), 1),
+                'points' => (int) ($penalty['points'] ?? 0),
+                'reason' => (string) ($penalty['reason'] ?? ''),
+            ];
+        }
+
+        return [
+            'index' => $index,
+            'code' => self::duoCode($index),
+            'diagnosis' => (string) $patient['diagnosis'],
+            'diagnosisSelected' => $patient['diagnosisSelected'],
+            'diagnosisCorrect' => (bool) $patient['diagnosisCorrect'],
+            'diagnosisAt' => $patient['diagnosisAt'] !== null ? round((float) $patient['diagnosisAt'] - $startedAt, 1) : null,
+            'diagnosisInTime' => $diagnosisInTime,
+            'treatmentStarted' => (bool) $patient['treatmentStarted'],
+            'treatmentAt' => $patient['treatmentAt'] !== null ? round((float) $patient['treatmentAt'] - $startedAt, 1) : null,
+            'treatmentInTime' => $treatmentInTime,
+            'outcome' => $outcome,
+            'success' => $success,
+            'processScore' => $processScore,
+            'score' => $finalScore,
+            'grade' => $success ? self::gradeFor($processScore) : 'D',
+            'cprRatio' => round($cprRatio, 2),
+            'penalties' => $penalties,
+            'events' => $events,
+        ];
+    }
+
+    private static function duoView(array $state, int $userId): array
+    {
+        $now = microtime(true);
+        $start = (float) $state['startedAt'];
+        $elapsed = max(0, (int) round($now - $start));
+        $windowLeft = 0;
+        $lockActive = !empty($state['lockUntil']) && $now < (float) $state['lockUntil'];
+
+        $patients = [];
+        foreach ($state['patients'] as $index => $patient) {
+            $scenario = self::scenario((string) $patient['scenarioId']);
+            if ($scenario === null) {
+                continue;
+            }
+            $view = self::view($patient['state'], $scenario, $userId);
+            unset($view['scenario'], $view['hint'], $view['events']);
+            $view['index'] = $index;
+            $view['code'] = self::duoCode($index);
+            $case = $patient['case'];
+            unset($case['diagnosis'], $case['options']);
+            $view['case'] = $case;
+            $view['actions'] = self::duoActionsFor((string) $patient['scenarioId']);
+            $ended = $view['status'] === 'ended';
+            $deadline = (float) ($patient['diagnosisDeadline'] ?? $state['diagnosisDeadline']);
+            $patientWindowLeft = max(0, (int) ceil($deadline - $now));
+            $windowLeft = max($windowLeft, $patientWindowLeft);
+            $diagnosisInTime = $patient['diagnosisAt'] !== null && (float) $patient['diagnosisAt'] <= $deadline;
+            $treatmentInTime = $patient['treatmentAt'] !== null && (float) $patient['treatmentAt'] <= $deadline;
+            $view['diagnosis'] = [
+                'options' => $patient['diagnosisOptions'],
+                'submitted' => (bool) $patient['diagnosisSubmitted'],
+                'selected' => $patient['diagnosisSelected'],
+                'at' => $patient['diagnosisAt'] !== null ? round((float) $patient['diagnosisAt'] - $start, 1) : null,
+                'inTime' => $diagnosisInTime,
+                'correct' => $ended ? (bool) $patient['diagnosisCorrect'] : null,
+                'label' => $ended ? (string) $patient['diagnosis'] : null,
+                'deadlineLeft' => $patientWindowLeft,
+                'windowTotal' => (int) ($patient['windowTotal'] ?? 15),
+                'expired' => $now >= $deadline,
+            ];
+            $view['treatment'] = [
+                'started' => (bool) $patient['treatmentStarted'],
+                'at' => $patient['treatmentAt'] !== null ? round((float) $patient['treatmentAt'] - $start, 1) : null,
+                'inTime' => $treatmentInTime,
+            ];
+            $view['locked'] = $lockActive;
+            $view['lockOwner'] = $lockActive && (int) ($state['lockPatient'] ?? -1) === $index;
+            if ($ended && isset($state['results'][$index])) {
+                $view['result'] = $state['results'][$index];
+            }
+            $patients[] = $view;
+        }
+
+        $events = [];
+        foreach ((array) $state['events'] as $event) {
+            $event['patient'] = null;
+            $events[] = $event;
+        }
+        foreach ($state['patients'] as $index => $patient) {
+            foreach (self::duoSanitizeEvents((array) ($patient['state']['events'] ?? [])) as $event) {
+                $event['patient'] = self::duoCode($index);
+                $events[] = $event;
+            }
+        }
+        usort($events, static fn (array $a, array $b): int => ((float) $b['t']) <=> ((float) $a['t']));
+
+        return [
+            'mode' => 'duo',
+            'sessionId' => (string) $state['id'],
+            'status' => (string) $state['status'],
+            'outcome' => $state['outcome'] ?? null,
+            'elapsed' => $elapsed,
+            'remaining' => max(0, 600 - $elapsed),
+            'windowLeft' => $windowLeft,
+            'windowTotal' => 30,
+            'lock' => [
+                'active' => $lockActive,
+                'patient' => $lockActive ? (int) $state['lockPatient'] : null,
+                'code' => $lockActive ? self::duoCode((int) $state['lockPatient']) : null,
+                'label' => $lockActive ? (string) $state['lockLabel'] : null,
+                'remaining' => $lockActive ? max(1, (int) ceil((float) $state['lockUntil'] - $now)) : 0,
+            ],
+            'patients' => $patients,
+            'events' => array_slice($events, 0, 40),
+            'score' => $state['status'] === 'ended' ? ($state['score'] ?? null) : null,
+            'grade' => $state['status'] === 'ended' ? ($state['grade'] ?? null) : null,
+            'runId' => $state['runId'] ?? null,
+            'aiAvailable' => Ai::configured(),
+        ];
+    }
+
+    private static function duoActionsFor(string $scenarioId): array
+    {
+        $scenario = self::scenario($scenarioId);
+        $groups = [
+            ['id' => 'bls', 'label' => '基础生命支持', 'actions' => [
+                ['id' => 'cpr_start', 'label' => '开始胸外按压', 'tone' => 'primary'],
+                ['id' => 'cpr_stop', 'label' => '暂停按压', 'tone' => 'ghost'],
+                ['id' => 'oxygen', 'label' => '球囊面罩通气 / 吸氧', 'tone' => 'ghost'],
+                ['id' => 'iv', 'label' => '建立 IV/IO', 'tone' => 'ghost'],
+            ]],
+            ['id' => 'shock', 'label' => '电治疗', 'actions' => [
+                ['id' => 'shock', 'label' => '电击 / 复律', 'tone' => 'danger', 'requiresEnergy' => true],
+                ['id' => 'disarm', 'label' => '解除充电', 'tone' => 'ghost'],
+            ]],
+            ['id' => 'drugs', 'label' => '药物与操作', 'actions' => [
+                ['id' => 'epi', 'label' => '肾上腺素 1 mg', 'tone' => 'warn', 'requiresIv' => true],
+                ['id' => 'amio', 'label' => '胺碘酮 300 mg', 'tone' => 'ghost', 'requiresIv' => true],
+                ['id' => 'atropine', 'label' => '阿托品 1 mg', 'tone' => 'ghost', 'requiresIv' => true],
+                ['id' => 'adenosine', 'label' => 'Adenosine 6 mg', 'tone' => 'ghost', 'requiresIv' => true],
+                ['id' => 'calcium', 'label' => '静脉钙剂', 'tone' => 'ghost', 'requiresIv' => true],
+                ['id' => 'bicarb', 'label' => '碳酸氢钠', 'tone' => 'ghost', 'requiresIv' => true],
+                ['id' => 'insulin', 'label' => '胰岛素+葡萄糖', 'tone' => 'ghost', 'requiresIv' => true],
+                ['id' => 'epi_infusion', 'label' => '肾上腺素泵入', 'tone' => 'ghost', 'requiresIv' => true],
+                ['id' => 'pacing', 'label' => '经皮起搏', 'tone' => 'primary'],
+                ['id' => 'sedate', 'label' => '镇静', 'tone' => 'ghost', 'requiresIv' => true],
+                ['id' => 'vagal', 'label' => '迷走刺激', 'tone' => 'ghost'],
+            ]],
+            ['id' => 'assess', 'label' => '评估', 'actions' => [
+                ['id' => 'check_pulse', 'label' => '检查脉搏', 'tone' => 'ghost'],
+                ['id' => 'check_rhythm', 'label' => '检查心律', 'tone' => 'ghost'],
+            ]],
+        ];
+        if (!empty($scenario['specialAction'])) {
+            $groups[] = ['id' => 'special', 'label' => '可逆病因 / 特殊处理', 'actions' => [[
+                'id' => 'special',
+                'label' => (string) $scenario['specialAction']['label'],
+                'tone' => (string) ($scenario['specialAction']['tone'] ?? 'primary'),
+            ]]];
+        }
+        return $groups;
+    }
+
+    private static function duoCasePool(): array
+    {
+        $file = BASE_PATH . '/data/random-cases.php';
+        $pool = is_file($file) ? require $file : [];
+        return is_array($pool) ? $pool : [];
+    }
+
+    private static function randomCase(array $scenario, array $meta, int $index): array
+    {
+        $ageRange = (array) ($meta['age'] ?? [30, 80]);
+        $age = random_int((int) ($ageRange[0] ?? 30), (int) ($ageRange[1] ?? 80));
+        $sexes = (array) ($meta['sex'] ?? ['男', '女']);
+        $sex = (string) $sexes[array_rand($sexes)];
+        $complaints = (array) ($meta['complaint'] ?? [$scenario['patient']['complaint'] ?? '突发意识丧失']);
+        $complaint = (string) $complaints[array_rand($complaints)];
+        $diagnosis = (string) ($meta['diagnosis'] ?? (string) $scenario['name']);
+        $options = array_values(array_unique(array_filter(array_merge(
+            [$diagnosis],
+            array_map('strval', (array) ($meta['distractors'] ?? []))
+        ))));
+        $fallbacks = ['心搏停止', '心室颤动', '无脉性室性心动过速', '症状性心动过缓', '快速心房颤动'];
+        foreach ($fallbacks as $fallback) {
+            if (count($options) >= 4) {
+                break;
+            }
+            if (!in_array($fallback, $options, true)) {
+                $options[] = $fallback;
+            }
+        }
+        shuffle($options);
+        return [
+            'code' => self::duoCode($index),
+            'age' => $age,
+            'sex' => $sex,
+            'weight' => random_int(48, 95),
+            'complaint' => $complaint,
+            'exam' => array_values(array_map('strval', (array) ($meta['exam'] ?? []))),
+            'diagnosis' => $diagnosis,
+            'options' => $options,
+        ];
+    }
+
+    private static function duoEvent(array &$state, string $label, string $tone): void
+    {
+        $state['events'][] = [
+            't' => round(microtime(true) - (float) $state['startedAt'], 1),
+            'label' => $label,
+            'tone' => $tone,
+            'points' => 0,
+        ];
+        if (count($state['events']) > 120) {
+            $state['events'] = array_slice($state['events'], -120);
+        }
+        $state['dirty'] = true;
+    }
+
+    private static function duoCode(int $index): string
+    {
+        return $index === 0 ? 'A' : 'B';
+    }
+
+    private static function duoLockUntil(array $state, string $action, float $now): float
+    {
+        if (in_array($action, ['cpr_start', 'cpr_stop'], true)) {
+            return 0.0;
+        }
+        foreach (['ivPendingUntil', 'chargeReadyAt', 'postShockUntil'] as $key) {
+            if (!empty($state[$key]) && (float) $state[$key] > $now) {
+                return (float) $state[$key];
+            }
+        }
+        $seconds = match ($action) {
+            'shock' => 2.0,
+            'charge' => 3.0,
+            'iv' => 6.0,
+            'pacing' => 3.0,
+            'special' => 2.5,
+            'epi_infusion' => 2.5,
+            'sedate' => 2.0,
+            'oxygen' => 1.5,
+            'disarm' => 1.5,
+            'check_pulse', 'check_rhythm' => 1.0,
+            default => 1.5,
+        };
+        return $now + $seconds;
+    }
+
+    private static function duoActionLabel(string $action): string
+    {
+        return [
+            'iv' => 'IV/IO 建立中',
+            'charge' => '除颤器充电中',
+            'shock' => '电击后观察',
+            'oxygen' => '球囊通气',
+            'pacing' => '经皮起搏',
+            'sedate' => '镇静',
+            'epi' => '肾上腺素推注',
+            'amio' => '胺碘酮推注',
+            'atropine' => '阿托品推注',
+            'adenosine' => 'Adenosine 推注',
+            'calcium' => '静脉钙剂',
+            'bicarb' => '碳酸氢钠',
+            'insulin' => '胰岛素+葡萄糖',
+            'epi_infusion' => '肾上腺素泵入',
+            'vagal' => '迷走刺激',
+            'special' => '特殊处理',
+            'disarm' => '解除充电',
+            'check_pulse' => '检查脉搏',
+            'check_rhythm' => '检查心律',
+        ][$action] ?? '处置中';
+    }
+
+    private static function isDuoTreatment(string $action): bool
+    {
+        return in_array($action, [
+            'cpr_start', 'iv', 'oxygen', 'charge', 'shock', 'epi', 'amio', 'atropine',
+            'pacing', 'epi_infusion', 'sedate', 'calcium', 'bicarb', 'insulin', 'special',
+            'adenosine', 'vagal',
+        ], true);
+    }
+
+    private static function duoSanitizeEvents(array $events): array
+    {
+        foreach ($events as &$event) {
+            if (str_starts_with((string) ($event['label'] ?? ''), '扣分：')) {
+                $event['label'] = '操作扣分（详见复盘）';
+            }
+        }
+        unset($event);
+        return $events;
+    }
+
+    private static function gradeFor(int $score): string
+    {
+        return $score >= 85 ? 'A' : ($score >= 70 ? 'B' : ($score >= 55 ? 'C' : 'D'));
+    }
+
+    private static function load(int $userId, string $sessionId): array
+    {
+        if (!preg_match('/^[a-f0-9]{24}$/', $sessionId)) {
+            throw new ApiError(404, 'session_not_found', '模拟会话不存在');
+        }
+        $stmt = Db::pdo()->prepare('SELECT * FROM sim_sessions WHERE id = ? AND user_id = ? LIMIT 1');
+        $stmt->execute([$sessionId, $userId]);
+        $session = $stmt->fetch();
+        if (!$session) throw new ApiError(404, 'session_not_found', '模拟会话不存在');
+        return $session;
+    }
+
+    private static function saveSession(string $id, array $state, string $status): void
+    {
+        unset($state['dirty']);
+        $stmt = Db::pdo()->prepare('UPDATE sim_sessions SET state = ?, status = ?, updated_at = NOW(3) WHERE id = ?');
+        $stmt->execute([self::encode($state), $status, $id]);
+    }
+
+    private static function encode(array $data): string
+    {
+        return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    }
+
+    private static function decode(string $json): array
+    {
+        $state = json_decode($json, true, 64, JSON_THROW_ON_ERROR);
+        $state['dirty'] = false;
+        return $state;
+    }
+
+    private static function createState(int $userId, array $scenario, ?string $id = null, ?float $now = null, ?string $arrivalLabel = null): array
+    {
+        $now = $now ?? microtime(true);
+        $state = [
+            'id' => $id ?? bin2hex(random_bytes(12)),
+            'userId' => $userId,
+            'scenarioId' => (string) $scenario['id'],
             'startedAt' => $now,
             'updatedAt' => $now,
             'rhythm' => (string) $scenario['initialRhythm'],
@@ -93,141 +1077,13 @@ final class SimEngine
             'lastPhysiologyAt' => $now, 'phase' => 'arrival', 'stage' => 0, 'lastStageAt' => $now,
             'dirty' => false,
         ];
-        foreach (self::initialVitals($scenario) as $key => $value) $state[$key] = $value;
+        foreach (self::initialVitals($scenario) as $key => $value) {
+            $state[$key] = $value;
+        }
         $state['lastPhysiologyAt'] = $now;
         $state['phase'] = 'arrival';
         $state['lastStageAt'] = $now;
-        self::event($state, '场景开始：' . $scenario['name'], 'neutral');
-        $pdo = Db::pdo();
-        $stmt = $pdo->prepare(
-            'INSERT INTO sim_sessions (id, user_id, scenario_id, state, status, started_at, updated_at)
-             VALUES (?, ?, ?, ?, "active", NOW(3), NOW(3))'
-        );
-        $stmt->execute([$state['id'], $userId, $scenarioId, self::encode($state)]);
-        return self::view($state, $scenario, $userId);
-    }
-
-    public static function state(int $userId, string $sessionId): array
-    {
-        $session = self::load($userId, $sessionId);
-        $scenario = self::scenario($session['scenario_id']);
-        if (!$scenario) throw new ApiError(404, 'scenario_not_found', '场景不存在');
-        $state = self::decode($session['state']);
-        if ($state['status'] === 'active') {
-            $outcome = self::advance($state, $scenario);
-            if ($outcome !== null) {
-                self::finalize($state, $scenario, $outcome, $userId, 0);
-            } elseif ($state['dirty']) {
-                self::saveSession($sessionId, $state, 'active');
-            }
-        }
-        return self::view($state, $scenario, $userId);
-    }
-
-    public static function action(int $userId, string $sessionId, string $action, array $payload): array
-    {
-        $session = self::load($userId, $sessionId);
-        $scenario = self::scenario($session['scenario_id']);
-        if (!$scenario) throw new ApiError(404, 'scenario_not_found', '场景不存在');
-        $state = self::decode($session['state']);
-        if ($state['status'] !== 'active') {
-            return self::view($state, $scenario, $userId);
-        }
-        $now = microtime(true);
-        $outcome = self::advance($state, $scenario, $now);
-        if ($outcome !== null) {
-            self::finalize($state, $scenario, $outcome, $userId, 0);
-            return self::view($state, $scenario, $userId);
-        }
-
-        match ($action) {
-            'cpr_start' => self::cprStart($state, $now),
-            'cpr_stop' => self::cprStop($state, $payload, $now),
-            'charge' => self::charge($state, $scenario, $payload, $now),
-            'disarm' => self::disarm($state),
-            'shock' => self::shock($state, $scenario, $payload, $now),
-            'epi' => self::epi($state, $scenario, $now),
-            'amio' => self::amio($state, $scenario, $now),
-            'atropine' => self::atropine($state, $scenario, $now),
-            'pacing' => self::pacing($state, $scenario, $now),
-            'epi_infusion' => self::epiInfusion($state, $scenario, $now),
-            'iv' => self::iv($state, $now),
-            'oxygen' => self::oxygen($state, $scenario, $now),
-            'sedate' => self::sedate($state, $scenario),
-            'calcium' => self::calcium($state, $scenario, $now),
-            'bicarb' => self::bicarb($state, $scenario, $now),
-            'insulin' => self::insulin($state, $scenario, $now),
-            'special' => self::specialAction($state, $scenario, $now),
-            'adenosine' => self::adenosine($state, $scenario, $now),
-            'vagal' => self::vagal($state, $scenario, $now),
-            'check_pulse' => self::check($state, '检查脉搏', $now),
-            'check_rhythm' => self::check($state, '检查心律', $now),
-            'finish' => self::finalize($state, $scenario, 'aborted', $userId, 0),
-            default => throw new ApiError(422, 'invalid_action', '未知操作'),
-        };
-
-        if ($state['status'] === 'active') {
-            $state['updatedAt'] = $now;
-            self::saveSession($sessionId, $state, 'active');
-        }
-        return self::view($state, $scenario, $userId);
-    }
-
-    public static function debrief(int $userId, int $runId): array
-    {
-        $stmt = Db::pdo()->prepare('SELECT * FROM sim_runs WHERE id = ? AND user_id = ? LIMIT 1');
-        $stmt->execute([$runId, $userId]);
-        $run = $stmt->fetch();
-        if (!$run) throw new ApiError(404, 'run_not_found', '复盘记录不存在');
-        $scenario = self::scenario($run['scenario_id']);
-        $events = json_decode((string) $run['actions'], true) ?: [];
-        $metrics = self::metricsFromEvents($events);
-        return [
-            'run' => [
-                'id' => (int) $run['id'],
-                'scenarioId' => $run['scenario_id'],
-                'score' => (int) $run['score'],
-                'grade' => $run['grade'],
-                'outcome' => $run['outcome'],
-                'duration' => (int) $run['duration_s'],
-                'createdAt' => $run['created_at'],
-            ],
-            'scenario' => $scenario ? array_diff_key($scenario, ['algorithm' => true]) : null,
-            'events' => $events,
-            'metrics' => $metrics,
-            'review' => self::localReview($scenario, $events, (int) $run['score'], $run['outcome']),
-            'aiAvailable' => Ai::configured(),
-        ];
-    }
-
-    private static function load(int $userId, string $sessionId): array
-    {
-        if (!preg_match('/^[a-f0-9]{24}$/', $sessionId)) {
-            throw new ApiError(404, 'session_not_found', '模拟会话不存在');
-        }
-        $stmt = Db::pdo()->prepare('SELECT * FROM sim_sessions WHERE id = ? AND user_id = ? LIMIT 1');
-        $stmt->execute([$sessionId, $userId]);
-        $session = $stmt->fetch();
-        if (!$session) throw new ApiError(404, 'session_not_found', '模拟会话不存在');
-        return $session;
-    }
-
-    private static function saveSession(string $id, array $state, string $status): void
-    {
-        unset($state['dirty']);
-        $stmt = Db::pdo()->prepare('UPDATE sim_sessions SET state = ?, status = ?, updated_at = NOW(3) WHERE id = ?');
-        $stmt->execute([self::encode($state), $status, $id]);
-    }
-
-    private static function encode(array $data): string
-    {
-        return json_encode($data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-    }
-
-    private static function decode(string $json): array
-    {
-        $state = json_decode($json, true, 64, JSON_THROW_ON_ERROR);
-        $state['dirty'] = false;
+        self::event($state, '场景开始：' . ($arrivalLabel ?? (string) $scenario['name']), 'neutral');
         return $state;
     }
 
@@ -556,6 +1412,12 @@ final class SimEngine
             $remaining = max(0, (int) ceil($state['cprPendingUntil'] - $now));
             throw new ApiError(422, 'cpr_pending', "正在准备胸外按压，约需 {$remaining} 秒");
         }
+        if (!empty($state['pulse']) && !in_array($state['rhythm'], ['vf', 'pvt', 'pea', 'asystole', 'post_shock'], true)) {
+            self::penalty($state, 8, '患者有脉搏时开始胸外按压');
+            self::event($state, '当前有脉搏：不应开始胸外按压，应评估心律并处理病因', 'bad');
+            $state['dirty'] = true;
+            return;
+        }
         $delay = random_int(3, 5);
         $state['cprPendingUntil'] = $now + $delay;
         self::event($state, "准备开始高质量胸外按压（约 {$delay} 秒，按压前确认环境与体位）", 'neutral');
@@ -627,12 +1489,22 @@ final class SimEngine
         if ($energy < 20) {
             throw new ApiError(422, 'invalid_energy', '请选择有效能量');
         }
+        $sync = (bool) ($payload['sync'] ?? false);
+        $duo = !empty($state['duoMode']);
         $state['chargeStartedAt'] = $now;
-        $state['chargeReadyAt'] = $now + 3.0;
+        // In the dual-patient mode charging is a single button press; the
+        // mandatory 3-second hands-off pause happens around the discharge.
+        $state['chargeReadyAt'] = $duo ? $now : $now + 3.0;
         $state['chargeEnergy'] = $energy;
-        $state['chargeSync'] = (bool) ($payload['sync'] ?? false);
-        $state['chargeAnnounced'] = false;
-        self::event($state, "除颤器开始充电 {$energy} J（约 3 秒）", 'neutral');
+        $state['chargeSync'] = $sync;
+        $state['chargeAnnounced'] = $duo;
+        self::event(
+            $state,
+            $duo
+                ? "除颤器已充电 {$energy} J（" . ($sync ? '同步' : '非同步') . '）'
+                : "除颤器开始充电 {$energy} J（约 3 秒）",
+            'neutral'
+        );
         $state['dirty'] = true;
     }
 
@@ -993,7 +1865,7 @@ final class SimEngine
         if (self::random($state) < 0.65) {
             $state['rhythm'] = 'rosc';
             self::event($state, 'Adenosine 终止心动过速', 'good');
-            self::finalize($state, $scenario, 'stable', (int) $state['userId'], 0);
+            self::completeTransition($state, $scenario, 'stable');
         } else {
             self::event($state, 'Adenosine 未终止，考虑同步电复律', 'warn');
         }
@@ -1010,11 +1882,21 @@ final class SimEngine
         if (self::random($state) < 0.25) {
             $state['rhythm'] = 'rosc';
             self::event($state, '迷走刺激终止心动过速', 'good');
-            self::finalize($state, $scenario, 'stable', (int) $state['userId'], 0);
+            self::completeTransition($state, $scenario, 'stable');
         } else {
             self::event($state, '未终止，需药物或电复律', 'warn');
         }
         $state['dirty'] = true;
+    }
+
+    private static function completeTransition(array &$state, array $scenario, string $outcome): void
+    {
+        if (!empty($state['duoMode'])) {
+            $state['pendingOutcome'] = $outcome;
+            $state['dirty'] = true;
+            return;
+        }
+        self::finalize($state, $scenario, $outcome, (int) $state['userId'], 0);
     }
 
     private static function check(array &$state, string $label, float $now): void
@@ -1472,7 +2354,14 @@ final class SimEngine
         $review = [];
         $actions = array_filter($events, static fn (array $e): bool => ($e['points'] ?? 0) < 0);
         foreach (array_slice($actions, 0, 6) as $event) {
-            $review[] = ['tone' => 'bad', 'title' => '扣分操作', 'detail' => $event['label']];
+            $detail = (string) ($event['label'] ?? '');
+            if (str_starts_with($detail, '扣分：')) {
+                $detail = mb_substr($detail, 3, null, 'UTF-8');
+            }
+            if (($event['patient'] ?? null) !== null && $event['patient'] !== '') {
+                $detail = '[' . $event['patient'] . '] ' . $detail;
+            }
+            $review[] = ['tone' => 'bad', 'title' => '扣分操作', 'detail' => $detail];
         }
         $good = array_filter($events, static fn (array $e): bool => ($e['tone'] ?? '') === 'good');
         if ($good !== []) {

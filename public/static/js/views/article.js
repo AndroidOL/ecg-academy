@@ -1,6 +1,6 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261110aj';
-const { localizedName } = await import(`../i18n.js${__asset}`);
+const __asset = __isNode ? '' : '?v=20261111a5';
+const { localizedName, translate, getLocale, loadContentCatalog } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { isFavorite, toggleFavorite } = await import(`../study-store.js${__asset}`);
@@ -132,7 +132,7 @@ export async function articleView({ params }) {
               <div class="textbook-card"><div class="textbook-card-title"><i class="textbook-dot" style="background:var(--gold)"></i>ST 段 / T 波</div><p>心室复极；T 波方向通常与 QRS 主波一致，ST 段偏移需结合相邻导联与临床。</p></div>
               <div class="textbook-card"><div class="textbook-card-title"><i class="textbook-dot" style="background:var(--muted)"></i>QT 间期</div><p>从 QRS 起点到 T 波终点，反映电收缩总时间；需按心率校正为 QTc。</p></div>
             </div>
-            ${detail.id !== 'normal-sinus' ? `<div class="textbook-compare"><div class="textbook-compare-label"><b>正常对照</b><span>窦性心律 · 72 次/分</span></div><div class="mini-ecg"><canvas data-textbook-normal aria-label="正常窦性心律对照心电图片段"></canvas></div></div>` : ''}
+            ${detail.id !== 'normal-sinus' ? `<div class="textbook-compare"><div class="textbook-compare-label"><b>正常对照</b><span>窦性心律 · 72 次/分</span></div><div class="mini-ecg"><canvas data-textbook-normal aria-label="${escapeHtml(translate('正常窦性心律对照心电图片段'))}"></canvas></div></div>` : ''}
             <div class="textbook-metrics">
               <span>本例 HR <b>${escapeHtml(String(detail.ecg?.rate || '—'))}</b> 次/分</span>
               <span>PR <b>${escapeHtml(String(detail.ecg?.pr ?? '—'))}</b> s</span>
@@ -414,10 +414,15 @@ export async function articleView({ params }) {
 
   const aiHost = el.querySelector('#article-ai');
   if (aiHost && (store.ai?.allowed !== false || store.ai?.byokEnabled)) {
+    if (getLocale() === 'en') await loadContentCatalog();
     const chat = createAiChat({
       diagnosisId: detail.id,
-      welcome: `关于「${localizedName(detail)}」，你可以问我诊断标准、鉴别或处理。先记住这句话：${detail.oneLiner}`,
-      suggestions: ['最容易漏诊的点是什么？', '和相似诊断怎么鉴别？', '给我一个床旁记忆法'],
+      welcome: getLocale() === 'en'
+        ? `Ask me about “${localizedName(detail)}”: diagnostic criteria, differential diagnosis, or management. First, remember this: ${translate(detail.oneLiner || '')}`
+        : `关于「${localizedName(detail)}」，你可以问我诊断标准、鉴别或处理。先记住这句话：${detail.oneLiner}`,
+      suggestions: getLocale() === 'en'
+        ? ['What is the most easily missed point?', 'How do I differentiate similar diagnoses?', 'Give me a bedside mnemonic']
+        : ['最容易漏诊的点是什么？', '和相似诊断怎么鉴别？', '给我一个床旁记忆法'],
     });
     aiHost.appendChild(chat.el);
   }

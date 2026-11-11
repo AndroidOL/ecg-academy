@@ -1,6 +1,7 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261110aj';
+const __asset = __isNode ? '' : '?v=20261111a5';
 const { ECGSession, LEAD_NAMES } = await import(`./ecg-engine.js${__asset}`);
+const { getLocale, translate } = await import(`./i18n.js${__asset}`);
 
 const COLUMNS = [
   ['I', 'II', 'III'],
@@ -61,6 +62,11 @@ export class ECGViewer {
     this.canvas.tabIndex = 0;
     this.canvas.setAttribute('role', 'img');
     this.canvas.setAttribute('aria-label', this.ariaLabel());
+    this.onLocaleChange = () => {
+      this.canvas.setAttribute('aria-label', this.ariaLabel());
+      this.draw();
+    };
+    if (typeof window !== 'undefined') window.addEventListener('ecg-locale-change', this.onLocaleChange);
     this.shell.appendChild(this.canvas);
     this.root.appendChild(this.shell);
 
@@ -99,6 +105,13 @@ export class ECGViewer {
 
   ariaLabel() {
     const summary = this.rhythmSession.summary();
+    if (getLocale() === 'en') {
+      const mode = this.options.mode === '12lead' ? '12-lead' : `${this.options.lead} lead`;
+      const playback = this.options.mode === '12lead' ? 'live scrolling' : this.playback === 'scroll' ? 'continuous scrolling' : 'looping';
+      const description = translate(summary.description || '');
+      const rate = translate(summary.rateText || '') || summary.rateText || '';
+      return `ECG demonstration, ${mode}, ${playback}. ${description} Heart rate ${rate}.`;
+    }
     const playback = this.options.mode === '12lead' ? '十二导联实时滚动' : this.playback === 'scroll' ? '连续滚动' : '循环覆盖';
     return `心电图演示，${this.options.mode === '12lead' ? '十二导联' : this.options.lead + ' 导联'}，${playback}。${summary.description || ''} 心率约 ${summary.rateText}。`;
   }
@@ -370,6 +383,7 @@ export class ECGViewer {
     cancelAnimationFrame(this.raf);
     this.resizeObserver.disconnect();
     if (this.themeObserver) this.themeObserver.disconnect();
+    if (typeof window !== 'undefined' && this.onLocaleChange) window.removeEventListener('ecg-locale-change', this.onLocaleChange);
     this.canvas.removeEventListener('pointermove', this.onPointerMove);
     this.canvas.removeEventListener('pointerleave', this.onPointerLeave);
     this.canvas.removeEventListener('pointerdown', this.onPointerDown);
@@ -544,7 +558,7 @@ export class ECGViewer {
         const summary = result.summary;
         ctx.fillStyle = colors.muted;
         ctx.font = '500 10.5px "SF Mono", ui-monospace, monospace';
-        const text = `${summary.rateText}${summary.pr ? ` · PR ${summary.pr.toFixed(2)}s` : ''}${summary.qrs ? ` · QRS ${summary.qrs.toFixed(2)}s` : ''}`;
+        const text = `${translate(summary.rateText)}${summary.pr ? ` · PR ${summary.pr.toFixed(2)}s` : ''}${summary.qrs ? ` · QRS ${summary.qrs.toFixed(2)}s` : ''}`;
         ctx.textAlign = 'right';
         ctx.fillText(text, this.cssWidth - padRight, this.cssHeight - 6);
         ctx.textAlign = 'left';
@@ -620,7 +634,7 @@ export class ECGViewer {
       const summary = result.summary;
       ctx.fillStyle = colors.muted;
       ctx.font = '500 10.5px "SF Mono", ui-monospace, monospace';
-      const text = `${summary.rateText}${summary.pr ? ` · PR ${summary.pr.toFixed(2)}s` : ''}${summary.qrs ? ` · QRS ${summary.qrs.toFixed(2)}s` : ''}`;
+      const text = `${translate(summary.rateText)}${summary.pr ? ` · PR ${summary.pr.toFixed(2)}s` : ''}${summary.qrs ? ` · QRS ${summary.qrs.toFixed(2)}s` : ''}`;
       ctx.textAlign = 'right';
       ctx.fillText(text, this.cssWidth - padRight, this.cssHeight - 6);
       ctx.textAlign = 'left';
@@ -830,7 +844,7 @@ export class ECGViewer {
       const summary = result.summary;
       ctx.fillStyle = colors.muted;
       ctx.font = '500 10.5px "SF Mono", ui-monospace, monospace';
-      const text = `${summary.rateText}${summary.pr ? ` · PR ${summary.pr.toFixed(2)}s` : ''}${summary.qrs ? ` · QRS ${summary.qrs.toFixed(2)}s` : ''}`;
+      const text = `${translate(summary.rateText)}${summary.pr ? ` · PR ${summary.pr.toFixed(2)}s` : ''}${summary.qrs ? ` · QRS ${summary.qrs.toFixed(2)}s` : ''}`;
       ctx.textAlign = 'right';
       ctx.fillText(text, this.cssWidth - padRight, this.cssHeight - 6);
       ctx.textAlign = 'left';
@@ -1060,7 +1074,7 @@ export class ECGViewer {
     for (const raw of annotations) {
       const ann = this.snapAnnotation(raw);
       if (!ann) continue;
-      const labelText = String(ann.label || '');
+      const labelText = translate(String(ann.label || ''));
       const annotationLeadList = this.annotationLeads(ann);
       if (currentLead && annotationLeadList.length && !annotationLeadList.includes(currentLead)) continue;
       // 基础 P/R/T 箭头会与间期标尺打架；改由教科书模式/波形本身表达。
@@ -1080,7 +1094,7 @@ export class ECGViewer {
         ctx.lineTo(x1, y);
         ctx.lineTo(x1, y + 4);
         ctx.stroke();
-        this.drawLabel(String(ann.label || ''), (x0 + x1) / 2, y - 2, tone, colors, 'center');
+        this.drawLabel(labelText, (x0 + x1) / 2, y - 2, tone, colors, 'center');
       } else if (ann.kind === 'arrow' && Number.isFinite(ann.t)) {
         const x = left + ann.t * pxPerSec;
         if (x < left || x > left + plotW) continue;
@@ -1104,7 +1118,7 @@ export class ECGViewer {
         }
         ctx.closePath();
         ctx.fill();
-        this.drawLabel(String(ann.label || ''), x, labelY, tone, colors, 'center');
+        this.drawLabel(labelText, x, labelY, tone, colors, 'center');
       }
     }
   }
@@ -1222,11 +1236,17 @@ export class ECGViewer {
     ctx.fillStyle = colors.muted;
     ctx.font = '500 9px "SF Mono", ui-monospace, monospace';
     ctx.textAlign = 'left';
-    const progressLabel = progress == null
-      ? '12 导联 · 10 s'
-      : this.options.twelveLayout === 'rows'
-        ? '播放中 · 各导联 10 s 实时滚动'
-        : '播放中 · 各导联同步 2.5 s 滚动窗口';
+    const progressLabel = getLocale() === 'en'
+      ? (progress == null
+        ? '12-lead · 10 s'
+        : this.options.twelveLayout === 'rows'
+          ? 'Playing · 10 s live scrolling per lead'
+          : 'Playing · synchronized 2.5 s scrolling window')
+      : (progress == null
+        ? '12 导联 · 10 s'
+        : this.options.twelveLayout === 'rows'
+          ? '播放中 · 各导联 10 s 实时滚动'
+          : '播放中 · 各导联同步 2.5 s 滚动窗口');
     ctx.fillText(progressLabel, padLeft + 2, this.cssHeight - 3);
     // 1 mV 校准脉冲与纸速/增益标注（12 导联底边）
     const calH = Math.min(26, 10 * pxPerMm);

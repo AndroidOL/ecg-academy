@@ -26,6 +26,7 @@ const DICT = {
   zh: {
     'nav.home': '首页', 'nav.learn': '学习', 'nav.intro': '导论', 'nav.ai': 'AI 导师', 'nav.practice': '练习', 'nav.read': '系统判读', 'nav.sim': '急救', 'nav.lab': '实验室', 'nav.me': '我的',
     'nav.exam': '考试', 'nav.leaderboard': '排行', 'nav.review': '错题复习', 'nav.glossary': '术语表', 'nav.daily': '每日挑战',
+    'nav.packs': '课程包', 'nav.guidelines': '指南差异', 'nav.vectors': '心脏向量实验室', 'nav.about': '关于 / 勘误',
     'brand.sub': 'ECG LAB · 读懂每一次心跳',
     'footer.about': '关于 / 勘误', 'footer.github': 'GitHub',
     'common.language': '语言', 'common.chinese': '中文', 'common.english': 'English',
@@ -33,6 +34,7 @@ const DICT = {
   en: {
     'nav.home': 'Home', 'nav.learn': 'Learn', 'nav.intro': 'Intro', 'nav.ai': 'AI Tutor', 'nav.practice': 'Practice', 'nav.read': 'Guided Read', 'nav.sim': 'ACLS', 'nav.lab': 'Lab', 'nav.me': 'Profile',
     'nav.exam': 'Exam', 'nav.leaderboard': 'Ranks', 'nav.review': 'Review', 'nav.glossary': 'Glossary', 'nav.daily': 'Daily',
+    'nav.packs': 'Course Packs', 'nav.guidelines': 'Guidelines', 'nav.vectors': 'Vector Lab', 'nav.about': 'About',
     'brand.sub': 'ECG LAB · Read every heartbeat',
     'footer.about': 'About / Corrections', 'footer.github': 'GitHub',
     'common.language': 'Language', 'common.chinese': '中文', 'common.english': 'English',
@@ -185,6 +187,68 @@ const ADJ_EN = { '安静': 'Quiet', '专注': 'Focused', '好奇': 'Curious', '�
 const NOUN_EN = { '听诊器': 'Stethoscope', '心电笔': 'ECG Pen', '小示波器': 'Scope', '窦房结': 'SA Node', '除颤仪': 'Defibrillator', '心电图纸': 'ECG Paper', '白大褂': 'White Coat', '叩诊锤': 'Reflex Hammer' };
 const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const RULES = [
+  [/^(\d+) 位参与者$/, (m) => `${m[1]} participants`],
+  [/^(\d+) 名患者$/, (m) => `${m[1]} patients`],
+  [/^(\d+) 条$/, (m) => `${m[1]} items`],
+  [/^\/ (\d+) 题$/, (m) => ` / ${m[1]} questions`],
+  [/^正确 (\d+)$/, (m) => `Correct ${m[1]}`],
+  [/^(\d+) \/ (\d+) 已作答$/, (m) => `${m[1]} / ${m[2]} answered`],
+  [/^(\d+) 次 · (\d+)%$/, (m) => `${m[1]} attempts · ${m[2]}%`],
+  [/^最近错选记录（(\d+)）$/, (m) => `Recent wrong choices (${m[1]})`],
+  [/^薄弱：(.+?) ×(\d+)$/, (m) => `Weak: ${translatePhrase(m[1]) || m[1]} ×${m[2]}`],
+  [/^(\d+) 分 · ([A-D])$/, (m) => `${m[1]} pts · ${m[2]}`],
+  [/^分 · (.+)$/, (m) => ` pts · ${translatePhrase(m[1]) || m[1]}`],
+  [/^(\d+) 个分类$/, (m) => `${m[1]} categories`],
+  [/^(\d+) 个术语$/, (m) => `${m[1]} terms`],
+  [/^(\d+) 次$/, (m) => `${m[1]} uses`],
+  [/^∞ 次$/, () => '∞ uses'],
+  [/^每日 (\d+) 次$/, (m) => `${m[1]} per day`],
+  [/^(\d+) 次可用$/, (m) => `${m[1]} available`],
+  [/^第 (\d+) 名$/, (m) => `Rank ${m[1]}`],
+  [/^(\d+) \/ (\d+) 页 · 共 (\d+) 篇$/, (m) => `Page ${m[1]} / ${m[2]} · ${m[3]} articles`],
+  [/^\/ (\d+) 页 · 共 (\d+) 篇$/, (m) => `Page ${m[1]} · ${m[2]} articles`],
+  [/^Lv\.(\d+) 后计分 · (\d+) 个相关诊断$/, (m) => `Scores at Lv.${m[1]} · ${m[2]} related diagnoses`],
+  [/^AI 对话需 Lv\.(\d+) 解锁$/, (m) => `AI chat unlocks at Lv.${m[1]}`],
+  [/^距 Lv\.(\d+) 还差 (\d+) XP$/, (m) => `${m[2]} XP to Lv.${m[1]}`],
+  [/^阅读进度 (\d+)%$/, (m) => `Reading progress ${m[1]}%`],
+  [/^A (\d+)s · B (\d+)s 诊断窗口$/, (m) => `Diagnosis windows A ${m[1]}s · B ${m[2]}s`],
+  [/^(.+?) · 正确 (\d+) · 错误 (\d+) · 正确率 (\d+)%$/, (m) => `${translatePhrase(m[1]) || m[1]} · Correct ${m[2]} · Wrong ${m[3]} · Accuracy ${m[4]}%`],
+  [/^(.+?) · 正确率 (\d+)%$/, (m) => `${translatePhrase(m[1]) || m[1]} · Accuracy ${m[2]}%`],
+  [/^应用版本 (v[\d.]+) · ([A-Za-z0-9]+)。(.+)$/, (m) => `App version ${m[1]} · ${m[2]}. ${translatePhrase(m[3]) || m[3]}`],
+  [/^版权：(.+)$/, (m) => `Copyright: ${m[1]}`],
+  [/^许可证：(.+)$/, (m) => `License: ${translatePhrase(m[1]) || m[1]}`],
+  [/^收藏于 (.+)$/, (m) => `Saved on ${m[1]}`],
+  [/^答错 (\d+) 次 · 答对 (\d+) 次 · 间隔 (\d+) 天$/, (m) => `Wrong ${m[1]} · Correct ${m[2]} · Interval ${m[3]} days`],
+  [/^你选：(.+)$/, (m) => `Your choice: ${translatePhrase(m[1]) || m[1]}`],
+  [/^正确：(.+)$/, (m) => `Correct: ${translatePhrase(m[1]) || m[1]}`],
+  [/^同一题已错 (\d+) 次$/, (m) => `Wrong ${m[1]} times on this question`],
+  [/^已附带 (\d+) 次答错记录$/, (m) => `${m[1]} wrong-answer records attached`],
+  [/^常选 (.+) ×(\d+)$/, (m) => `Often chose ${translatePhrase(m[1]) || m[1]} ×${m[2]}`],
+  [/^最常选 (.+)$/, (m) => `Most often chose ${translatePhrase(m[1]) || m[1]}`],
+  [/^常见错选：(.+) ×(\d+)$/, (m) => `Common wrong choice: ${translatePhrase(m[1]) || m[1]} ×${m[2]}`],
+  [/^Common wrong choice: (.+) ×(\d+)$/, (m) => `Common wrong choice: ${translatePhrase(m[1]) || m[1]} ×${m[2]}`],
+  [/^Your choice: (.+)$/, (m) => `Your choice: ${translatePhrase(m[1]) || m[1]}`],
+  [/^Correct: (.+)$/, (m) => `Correct: ${translatePhrase(m[1]) || m[1]}`],
+  [/^Most often chose (.+)$/, (m) => `Most often chose ${translatePhrase(m[1]) || m[1]}`],
+  [/^Weak: (.+?) ×(\d+)$/, (m) => `Weak: ${translatePhrase(m[1]) || m[1]} ×${m[2]}`],
+  [/^· Phase: (.+)$/, (m) => `· Phase: ${translatePhrase(m[1]) || m[1]}`],
+  [/^· Scenario start: (.+)$/, (m) => `· Scenario start: ${translatePhrase(m[1]) || m[1]}`],
+  [/^Patient ([AB]): (.+)$/, (m) => `Patient ${m[1]}: ${translatePhrase(m[2]) || m[2]}`],
+  [/^同题错 (\d+) 次$/, (m) => `Same question wrong ${m[1]} times`],
+  [/^错 (\d+) · 慢 (\d+) · 遗忘 (\d+) · 常选 (.+) ×(\d+)$/, (m) => `Wrong ${m[1]} · Slow ${m[2]} · Lapses ${m[3]} · Often chose ${translatePhrase(m[4]) || m[4]} ×${m[5]}`],
+  [/^错 (\d+) · 慢 (\d+) · 遗忘 (\d+)$/, (m) => `Wrong ${m[1]} · Slow ${m[2]} · Lapses ${m[3]}`],
+  [/^同题重复错 (\d+) 次$/, (m) => `Same question repeated ${m[1]} times`],
+  [/^患者\s*([AB])\s*[：:]\s*(.+)$/, (m) => `Patient ${m[1]}: ${translatePhrase(m[2]) || m[2]}`],
+  [/^患者 ([AB])$/, (m) => `Patient ${m[1]}`],
+  [/^患者 ([AB]) 送达：(.+)$/, (m) => `Patient ${m[1]} arrived: ${translatePhrase(m[2]) || m[2]}`],
+  [/^· 病情阶段：(.+)$/, (m) => `· Phase: ${translatePhrase(m[1]) || m[1]}`],
+  [/^· 场景开始：(.+)$/, (m) => `· Scenario start: ${translatePhrase(m[1]) || m[1]}`],
+  [/^(.+) · 患者 (\d+) 岁 ([男女])$/, (m) => `${translatePhrase(m[1]) || m[1]} · Patient ${m[2]} y ${m[3] === '男' ? 'M' : 'F'}`],
+  [/^ECG · (.+?) · (.+)$/, (m) => `ECG · ${translatePhrase(m[1]) || m[1]} · ${translatePhrase(m[2]) || m[2]}`],
+  [/^DUAL RANDOM · (进行中|已结束)$/, (m) => `DUAL RANDOM · ${m[1] === '进行中' ? 'In progress' : 'Ended'}`],
+  [/^LIVE SIMULATION · (进行中|已结束)$/, (m) => `LIVE SIMULATION · ${m[1] === '进行中' ? 'In progress' : 'Ended'}`],
+  [/^([AB]) (✓|未提交)$/, (m) => `${m[1]} ${m[2] === '✓' ? '✓' : 'Not submitted'}`],
+  [/^(\d+) 岁 · ([男女]) · (.+) kg$/, (m) => `${m[1]} y · ${m[2] === '男' ? 'M' : 'F'} · ${m[3]} kg`],
   [/^(\d+) 种判读诊断$/, (m) => `${m[1]} diagnoses`],
   [/^(\d+) 章系统课程$/, (m) => `${m[1]} chapters`],
   [/^(\d+) 个系统章节$/, (m) => `${m[1]} chapters`],
@@ -222,6 +286,8 @@ const RULES = [
   [/^最近 (\d+) 题$/, (m) => `Last ${m[1]} questions`],
   [/^(\d+) \/ (\d+) 篇$/, (m) => `${m[1]} / ${m[2]} articles`],
   [/^(\d+)–(\d+) 次\/分$/, (m) => `${m[1]}–${m[2]} bpm`],
+  [/^约 (\d+) 次\/分$/, (m) => `about ${m[1]} bpm`],
+  [/^症状性心动过缓，心率约 (\d+) 次\/分。$/, (m) => `Symptomatic bradycardia, heart rate about ${m[1]} bpm.`],
   [/^(\d+) 次\/分$/, (m) => `${m[1]} bpm`],
   [/^(\d+)月(\d+)日\s*(未完成|已完成)?$/, (m, text) => `${MONTHS_EN[(Number(m[1]) || 1) - 1]} ${Number(m[2])}${m[3] === '已完成' ? ' · Done' : m[3] === '未完成' ? ' · Missed' : ''}`, 'date'],
 ];
@@ -233,6 +299,16 @@ function translatePhrase(value) {
   for (const [re, fn, kind] of RULES) {
     const match = value.match(re);
     if (match) return kind === 'date' ? fn(match, value) : fn(match);
+  }
+  if (value.includes(' · ')) {
+    const parts = value.split(' · ').map((part) => {
+      const translated = translatePhrase(part);
+      if (translated && translated !== part) return { text: translated, changed: true, ok: true };
+      return { text: part, changed: false, ok: !/[\u3400-\u9fff]/.test(part) };
+    });
+    if (parts.some((part) => part.changed) && parts.every((part) => part.ok)) {
+      return parts.map((part) => part.text).join(' · ');
+    }
   }
   const guest = value.match(/^(.+?)(听诊器|心电笔|小示波器|窦房结|除颤仪|心电图纸|白大褂|叩诊锤)·(\d+)$/);
   if (guest && ADJ_EN[guest[1]] && NOUN_EN[guest[2]]) return `${ADJ_EN[guest[1]]} ${NOUN_EN[guest[2]]} · ${guest[3]}`;
@@ -249,10 +325,14 @@ export async function loadContentCatalog() {
     CONTENT = (await import(url.href)).default || {};
     TEXT = { en: { ...EN_TEXT, ...GENERATED, ...CONTENT, ...OVERRIDES, '__content_loaded': true } };
     applyLocale(document.body);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('ecg-locale-change', { detail: { locale: 'en' } }));
+    }
   } catch { /* optional */ }
 }
 
 const SKIP = '.ai-bubble, .ai-stream-text, .ai-answer, .ai-quiz-panel, canvas, svg, script, style, [data-no-i18n]';
+const SKIP_ATTR = '.ai-bubble, .ai-stream-text, .ai-answer, .ai-quiz-panel, script, style, [data-no-i18n]';
 
 export function getLocale() {
   try {
@@ -292,7 +372,7 @@ export function localeLabel(id) {
 }
 
 export function navKey(path) {
-  return `nav.${({ '/': 'home', '/learn': 'learn', '/intro': 'intro', '/ai': 'ai', '/practice': 'practice', '/read': 'read', '/daily': 'daily', '/exam': 'exam', '/leaderboard': 'leaderboard', '/sim': 'sim', '/lab': 'lab', '/me': 'me', '/review': 'review', '/glossary': 'glossary', '/guidelines': 'guidelines' })[path] || 'home'}`;
+  return `nav.${({ '/': 'home', '/learn': 'learn', '/intro': 'intro', '/packs': 'packs', '/ai': 'ai', '/practice': 'practice', '/read': 'read', '/daily': 'daily', '/exam': 'exam', '/leaderboard': 'leaderboard', '/sim': 'sim', '/lab': 'lab', '/me': 'me', '/review': 'review', '/glossary': 'glossary', '/guidelines': 'guidelines', '/vectors': 'vectors', '/about': 'about' })[path] || 'home'}`;
 }
 
 let applying = false;
@@ -321,7 +401,7 @@ export function applyLocale(root) {
       if (translated) node.nodeValue = raw.replace(trimmed, translated);
     });
     host.querySelectorAll('[placeholder],[title],[aria-label]').forEach((el) => {
-      if (el.closest(SKIP)) return;
+      if (el.closest(SKIP_ATTR)) return;
       ['placeholder', 'title', 'aria-label'].forEach((attr) => {
         const value = el.getAttribute(attr);
         if (!value) return;

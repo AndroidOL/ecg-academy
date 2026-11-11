@@ -264,6 +264,19 @@ try {
         SimEngine::action($userId, $id, 'finish', []);
     });
 
+    check('CPR preparation can be cancelled before compressions start', function () use ($userId): void {
+        $view = SimEngine::start($userId, 'vf-arrest');
+        $id = $view['sessionId'];
+        SimEngine::action($userId, $id, 'cpr_start', []);
+        $view = SimEngine::state($userId, $id);
+        assert($view['flags']['cprPending'] === true);
+        $view = SimEngine::action($userId, $id, 'cpr_stop', []);
+        assert($view['cpr'] === false);
+        assert($view['flags']['cprPending'] === false);
+        assert((bool) array_filter($view['events'], static fn (array $e): bool => str_contains((string) $e['label'], '取消胸外按压准备')));
+        SimEngine::action($userId, $id, 'finish', []);
+    });
+
     check('checking rhythm stops CPR and wrong mode is penalized only after shock', function () use ($userId): void {
         $view = SimEngine::start($userId, 'vf-arrest');
         $id = $view['sessionId'];

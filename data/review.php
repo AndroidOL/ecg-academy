@@ -35,10 +35,19 @@ return [
             'sources' => ['ESC 2023 急性冠脉综合征指南（教学摘要）', 'Fourth Universal Definition of Myocardial Infarction (2018)'],
         ],
         'electrolyte' => [
-            'sources' => ['ESC 2022 室性心律失常与心脏骤停管理指南', 'AHA/ACCF/HRS 心电图标准化建议'],
+            'sources' => [
+                'UK Kidney Association 2020 成人急性高钾血症治疗指南（教学摘要）',
+                'ESC 2022 室性心律失常与心脏骤停管理指南',
+                'AHA/ACCF/HRS 心电图标准化建议',
+            ],
         ],
         'structural' => [
-            'sources' => ['ESC 2022 心脏肿瘤学与心肌病相关心电图共识（教学摘要）', 'Bayés de Luna《Clinical Electrocardiography》'],
+            'sources' => [
+                'ESC 2019 室上性心动过速管理指南（WPW/预激，教学摘要）',
+                'HRS/EHRA/APHRS 2013 Brugada 综合征专家共识（教学摘要）',
+                'ESC 2022 心脏肿瘤学与心肌病相关心电图共识（教学摘要）',
+                'Bayés de Luna《Clinical Electrocardiography》',
+            ],
         ],
         'skills' => [
             'sources' => ['AHA/ACCF/HRS 心电图标准化与判读建议', 'AHA ACLS 2020 成人高级生命支持'],

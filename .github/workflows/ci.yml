@@ -35,7 +35,7 @@ jobs:
           node-version: '22'
       - name: Validate content
         run: php scripts/validate_content.php
-      - name: Validate 1920-case question bank
+      - name: Validate 2000-case question bank
         run: php scripts/validate_bank.php
       - name: Validate review ledger
         run: php scripts/validate_review.php

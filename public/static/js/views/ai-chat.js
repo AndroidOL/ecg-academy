@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261110aj';
+const __asset = __isNode ? '' : '?v=20261111a5';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, escapeHtml, toast, openModal } = await import(`../ui.js${__asset}`);
@@ -7,11 +7,20 @@ const { getByok, isRemembered, setByok, clearByok } = await import(`../byok.js${
 const { streamAi } = await import(`../ai-stream.js${__asset}`);
 const { streamDirectChat, buildMessages } = await import(`../ai-direct.js${__asset}`);
 const { renderMarkdown } = await import(`../markdown.js${__asset}`);
+const { getLocale, translate } = await import(`../i18n.js${__asset}`);
 
 export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '', placeholder = '问一个关于这张心电图的问题…' } = {}) {
   const el = document.createElement('div');
   el.className = 'ai-panel';
-  const chips = suggestions.length ? suggestions : ['最容易漏诊的点是什么？', '如何与相似诊断鉴别？', '给我一个记忆口诀'];
+  const en = getLocale() === 'en';
+  const defaultChips = en
+    ? ['What is the most easily missed point?', 'How do I differentiate similar diagnoses?', 'Give me a memory mnemonic']
+    : ['最容易漏诊的点是什么？', '如何与相似诊断鉴别？', '给我一个记忆口诀'];
+  const chips = (suggestions.length ? suggestions : defaultChips).map((text) => translate(text));
+  const welcomeText = welcome || (en
+    ? 'I can connect the key clues, differential points, and management principles of this ECG. For teaching only.'
+    : '我可以帮你把这张心电图的关键线索、鉴别点和处理原则串起来。仅用于教学。');
+  const placeholderText = translate(placeholder) || placeholder;
   el.innerHTML = `
     <div class="ai-panel-head">
       <span class="ai-spark">${icon('sparkles', 17)}</span>
@@ -20,11 +29,11 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
       <span class="badge badge-brand" data-ai-credits>${store.ai?.admin ? '∞ 次' : `${store.ai?.credits ?? 0} 次`}</span>
     </div>
     <div class="ai-messages" data-ai-messages aria-live="polite">
-      <div class="ai-bubble assistant">${escapeHtml(welcome || '我可以帮你把这张心电图的关键线索、鉴别点和处理原则串起来。仅用于教学。')}</div>
+      <div class="ai-bubble assistant">${escapeHtml(welcomeText)}</div>
     </div>
     <div class="ai-suggestions">${chips.map((text) => `<button class="ai-suggestion" type="button" data-ai-suggestion="${escapeHtml(text)}">${escapeHtml(text)}</button>`).join('')}</div>
     <div class="ai-input-row">
-      <input class="input" data-ai-input maxlength="600" placeholder="${escapeHtml(placeholder)}" aria-label="向 AI 导师提问">
+      <input class="input" data-ai-input maxlength="600" placeholder="${escapeHtml(placeholderText)}" aria-label="向 AI 导师提问">
       <button class="btn btn-primary btn-sm" type="button" data-ai-send>发送</button>
     </div>
     <div class="ai-disclaimer">AI 生成内容需结合教材与临床判断；急症按当地急救流程处理。</div>`;
@@ -39,11 +48,11 @@ export function createAiChat({ diagnosisId = null, suggestions = [], welcome = '
   if (locked) {
     input.disabled = true;
     send.disabled = true;
-    input.placeholder = `AI 对话需 Lv.${store.ai.levelRequired || 10} 解锁`;
+    input.placeholder = translate(`AI 对话需 Lv.${store.ai.levelRequired || 10} 解锁`);
   } else if (noCredits) {
     input.disabled = true;
     send.disabled = true;
-    input.placeholder = '对话次数已用完：完成每日挑战获得次数';
+    input.placeholder = translate('对话次数已用完：完成每日挑战获得次数');
   }
 
   const addBubble = (text, type = 'assistant', extra = '') => {

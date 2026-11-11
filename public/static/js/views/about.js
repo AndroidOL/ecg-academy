@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261110aj';
+const __asset = __isNode ? '' : '?v=20261111a5';
 const { store } = await import(`../store.js${__asset}`);
 const { CORRECTIONS } = await import(`../data/corrections.js${__asset}`);
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
@@ -43,6 +43,8 @@ export async function aboutView() {
         </div>
         <h2 class="section-title" style="margin-top:18px">医学顾问</h2>
         <p class="muted about-copy">当前为编辑整理版本，尚无已签约的临床顾问。我们公开列出缺口，欢迎心内科、急诊科、儿科与重症医学同行参与审阅；审阅者、日期和版本会写入章节元数据。</p>
+        <h2 class="section-title" style="margin-top:18px">站点信息</h2>
+        <p class="muted about-copy">许可证：${escapeHtml(site.license || 'MIT（代码）· CC BY-SA 4.0（教学内容）')}<br>版权：${escapeHtml(site.copyright || '© 2026 Tianhao Wu 等')}${site.icp ? `<br>ICP 备案：<a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" style="color:var(--brand)">${escapeHtml(site.icp)}</a>` : ''}</p>
       </aside>
     </div>
     <section class="card card-pad" style="margin-top:14px">

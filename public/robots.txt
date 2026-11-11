@@ -1,2 +1,8 @@
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /offline.html
+
+# Public content pages are server-rendered at real URLs.
+# Interactive app screens live behind /#/ and are not separate crawlable URLs.
+Sitemap: https://ecg.tianhao.me/sitemap.xml

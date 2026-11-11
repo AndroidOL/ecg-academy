@@ -1,7 +1,7 @@
 // Cache-busted dynamic imports: keep Node tests query-free while forcing
 // browsers with immutable 7-day static caching to load the current modules.
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261110aj';
+const __asset = __isNode ? '' : '?v=20261111a5';
 const [
   { api },
   { store, initTheme, applyTheme },
@@ -38,6 +38,7 @@ const routes = [
   { path: '/review', handler: lazyView('review.js', 'reviewView') },
   { path: '/exam', handler: lazyView('exam.js', 'examView') },
   { path: '/leaderboard', handler: lazyView('leaderboard.js', 'leaderboardView') },
+  { path: '/sim/duo/:sessionId', handler: lazyView('sim-duo.js', 'simDuoView') },
   { path: '/sim/:sessionId', handler: lazyView('sim-session.js', 'simSessionView') },
   { path: '/sim', handler: lazyView('sim-list.js', 'simListView') },
   { path: '/vectors', handler: lazyView('vector-lab.js', 'vectorLabView') },
@@ -269,7 +270,7 @@ function updateShell() {
 function updateNav(path) {
   const { label, active } = navLabel(path);
   const displayLabel = getLocale() === 'en' ? t(navKey(active), label) : label;
-  document.title = `${displayLabel} · 心迹 ECG Lab`;
+  document.title = `${displayLabel} · ${getLocale() === 'en' ? 'ECG Lab' : '心迹 ECG Lab'}`;
   document.querySelectorAll('.nav-link[data-nav]').forEach((link) => {
     const item = link.dataset.nav;
     const isActive = item === '/' ? path === '/' : path.startsWith(item);

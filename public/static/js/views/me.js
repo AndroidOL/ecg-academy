@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261110aj';
+const __asset = __isNode ? '' : '?v=20261111a5';
 const { api } = await import(`../api.js${__asset}`);
 const { store, applyTheme, getThemeMode } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -24,16 +24,17 @@ function isIOSDevice() {
 function pwaActionMarkup() {
   const app = store.app || {};
   const version = `v${escapeHtml(app.version || '—')} · ${escapeHtml(app.assetVersion || '—')}`;
+  const note = (zh, en) => getLocale() === 'en' ? `App version ${version}. ${en}` : `应用版本 ${version}。${zh}`;
   if (isPwaStandalone()) {
-    return `<div class="row-wrap"><span class="badge badge-ok">已安装并正在以应用运行</span></div><p class="muted pwa-note">应用版本 ${version}。新版本发布后打开应用会自动检查；如有更新提示，点击刷新即可。</p>`;
+    return `<div class="row-wrap"><span class="badge badge-ok">已安装并正在以应用运行</span></div><p class="muted pwa-note">${note('新版本发布后打开应用会自动检查；如有更新提示，点击刷新即可。', 'The app checks for updates when opened after a new release; if prompted, tap Refresh.')}</p>`;
   }
   if (installPrompt()) {
-    return `<div class="row-wrap"><button class="btn btn-primary btn-sm" type="button" data-install>${icon('download', 14)} 安装到设备</button><span class="badge">可离线打开</span></div><p class="muted pwa-note">应用版本 ${version}。安装后从桌面图标进入，全屏运行并缓存已访问页面。</p>`;
+    return `<div class="row-wrap"><button class="btn btn-primary btn-sm" type="button" data-install>${icon('download', 14)} 安装到设备</button><span class="badge">可离线打开</span></div><p class="muted pwa-note">${note('安装后从桌面图标进入，全屏运行并缓存已访问页面。', 'Open it from the desktop icon to run full-screen and cache visited pages.')}</p>`;
   }
   if (isIOSDevice()) {
-    return `<div class="pwa-steps"><b>iPhone / iPad 安装步骤</b><ol><li>用 Safari 打开本页。</li><li>点击底部“分享”按钮。</li><li>选择“添加到主屏幕”，确认名称后添加。</li></ol></div><p class="muted pwa-note">应用版本 ${version}。iOS 不支持网页主动弹出安装框，需通过 Safari 分享菜单添加。</p>`;
+    return `<div class="pwa-steps"><b>iPhone / iPad 安装步骤</b><ol><li>用 Safari 打开本页。</li><li>点击底部“分享”按钮。</li><li>选择“添加到主屏幕”，确认名称后添加。</li></ol></div><p class="muted pwa-note">${note('iOS 不支持网页主动弹出安装框，需通过 Safari 分享菜单添加。', 'iOS does not allow web pages to open the install prompt; add it from the Safari Share menu.')}</p>`;
   }
-  return `<div class="pwa-steps"><b>当前浏览器没有提供自动安装按钮</b><ol><li>电脑端：使用 Chrome / Edge，点击地址栏右侧的安装图标。</li><li>手机端：Chrome 菜单 →“安装应用 / 添加到主屏幕”；iOS 使用 Safari 分享菜单。</li><li>必须通过 HTTPS 访问，且已加载过本站。</li></ol></div><p class="muted pwa-note">应用版本 ${version}。若你刚刚关闭了安装提示，刷新页面后重新尝试。</p>`;
+  return `<div class="pwa-steps"><b>当前浏览器没有提供自动安装按钮</b><ol><li>电脑端：使用 Chrome / Edge，点击地址栏右侧的安装图标。</li><li>手机端：Chrome 菜单 →“安装应用 / 添加到主屏幕”；iOS 使用 Safari 分享菜单。</li><li>必须通过 HTTPS 访问，且已加载过本站。</li></ol></div><p class="muted pwa-note">${note('若你刚刚关闭了安装提示，刷新页面后重新尝试。', 'If you just dismissed the install prompt, refresh the page and try again.')}</p>`;
 }
 
 function byokCard() {
@@ -75,7 +76,7 @@ export async function meView() {
   const el = document.createElement('div');
   el.className = 'page';
   const stats = await api.stats('week');
-  document.title = '我的 · 心迹 ECG Lab';
+  document.title = getLocale() === 'en' ? 'Profile · ECG Lab' : '我的 · 心迹 ECG Lab';
   const user = store.user || { displayName: '访客', isGuest: true, xp: 0 };
   const level = !user.isGuest && store.level
     ? { level: store.level.level, xp: store.level.xp, nextXp: store.level.nextXp, progress: store.level.progress }

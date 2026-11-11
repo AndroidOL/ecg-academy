@@ -81,6 +81,8 @@ export function normalizeSpec(spec = {}) {
     sineWave: Boolean(spec.sineWave),
     vfAmplitude: clamp(num(spec.vfAmplitude, 1), 0.35, 1.4),
     cprArtifact: Boolean(spec.cprArtifact),
+    // Audit-only hook: render the underlying QRS/T without the flutter wave.
+    noSawtooth: Boolean(spec.noSawtooth),
     conduction: String(spec.conduction || ''),
     start: clamp(num(spec.start, 0.58), 0.02, 1.5),
   };
@@ -326,6 +328,7 @@ function profileFor(spec, lead) {
   prof.rPrimeDelay = 0;
   prof.sWide = false;
   prof.stOverride = null;
+  prof.brugada = false;
 
   if (overrides.st !== undefined) prof.stOverride = Number(overrides.st);
 
@@ -389,6 +392,7 @@ function profileFor(spec, lead) {
       prof.stOverride = spec.st.elevation?.[lead] ?? 2.4;
       prof.t = -0.32;
       prof.qrsScale = 1.2;
+      prof.brugada = true;
     }
   } else if (m === 'hyperk') {
     prof.pScale = 0.28;
@@ -415,6 +419,16 @@ function profileFor(spec, lead) {
     prof.tSigma = 0.075;
   }
 
+  const extras = new Set(spec.extras || []);
+  if (extras.has('tallR-V1') && lead === 'V1') {
+    prof.r = Math.max(prof.r, 0.85);
+    prof.s = -0.32;
+  }
+  if (extras.has('tallR-V2') && lead === 'V2') {
+    prof.r = Math.max(prof.r, 0.95);
+    prof.s = -0.42;
+  }
+
   if (spec.axis === 'left' && LIMB_LEADS.has(lead)) {
     if (lead === 'I' || lead === 'aVL') prof.r = Math.max(0.35, prof.r);
     if (lead === 'III' || lead === 'aVF') prof.s = Math.min(-0.3, prof.s);
@@ -434,7 +448,9 @@ function addSTSegment(samples, sampleRate, start, end, amp, shape, beatTime, lea
     const t = i / sampleRate;
     const u = clamp((t - start) / (end - start), 0, 1);
     let env;
-    if (shape === 'convex') {
+    if (shape === 'coved') {
+      env = 1.0 - 0.50 * (u * u * (3 - 2 * u)) - 0.06 * Math.sin(Math.PI * u);
+    } else if (shape === 'convex') {
       env = 0.55 + 0.45 * (u * u * (3 - 2 * u)) + 0.06 * Math.sin(Math.PI * u);
     } else if (shape === 'concave') {
       env = 0.82 + 0.18 * u - 0.12 * Math.sin(Math.PI * u);
@@ -559,6 +575,15 @@ function addSTT(samples, sampleRate, beat, prof, spec, lead) {
   const stAmp = stMm * 0.1;
   const shape = spec.st.shape;
 
+  if (prof.brugada) {
+    // Type-1 Brugada: high J-point, convex descending ST, inverted T.
+    const j = beat.t + 0.026 * widthScale;
+    addGaussian(samples, sampleRate, j + 0.006, 0.30, 0.018);
+    addSTSegment(samples, sampleRate, j + 0.012, tCenter + 0.005, 0.24, 'coved', beat.t, lead);
+    addAsymGaussian(samples, sampleRate, tCenter + 0.028, -0.32, tSigma * 0.9, tSigma * 0.7);
+    return;
+  }
+
   if (stAmp !== 0) {
     const modulated = stAmp * (1 + 0.035 * Math.sin(beat.t * 3.7 + lead.charCodeAt(0) * 0.3));
     if (shape === 'scoop') {
@@ -635,11 +660,20 @@ function addSpecialRhythm(samples, sampleRate, spec, lead, rng) {
     return;
   }
   if (spec.rhythm === 'torsades') {
+    const rate = clamp(spec.rate || 210, 150, 250);
+    const rr = 60 / rate;
+    for (let beat = 0.2; beat < spec.duration; beat += rr) {
+      // Slow axis twist + waxing/waning spindle: real TdP is not a pure sine.
+      const axis = Math.sin(2 * Math.PI * 0.34 * beat + 0.4);
+      const spindle = 0.62 + 0.38 * Math.sin(2 * Math.PI * 0.11 * beat + 0.2);
+      const amp = 0.95 * axis * spindle * leadFactor;
+      addAsymGaussian(samples, sampleRate, beat, amp, 0.020, 0.032);
+      addAsymGaussian(samples, sampleRate, beat + 0.045, -amp * 0.55, 0.030, 0.045);
+      addGaussian(samples, sampleRate, beat + 0.20, amp * 0.18, 0.045);
+    }
     for (let i = 0; i < n; i += 1) {
       const t = i / sampleRate;
-      const twist = Math.sin(2 * Math.PI * 0.22 * t + 0.5);
-      const carrier = Math.sin(2 * Math.PI * 3.6 * t + 0.7 * Math.sin(2 * Math.PI * 0.19 * t));
-      samples[i] = (0.62 * twist * carrier + 0.13 * Math.sin(2 * Math.PI * 7.3 * t + 0.3)) * leadFactor;
+      samples[i] += 0.012 * Math.sin(2 * Math.PI * 0.09 * t + 0.3);
     }
     return;
   }
@@ -715,32 +749,72 @@ function addFibrillatory(samples, sampleRate, spec, lead, rng) {
 }
 
 function addSawtooth(samples, sampleRate, spec, lead) {
+  if (spec.noSawtooth) return;
   if (!spec.extras.includes('sawtooth') && spec.rhythm !== 'flutter') return;
-  const n = samples.length;
+  const count = samples.length;
   const rate = spec.atrialRate || 300;
   const f = rate / 60;
-  const polarity = lead === 'aVR' ? -1 : (['II', 'III', 'aVF', 'V1'].includes(lead) ? 1 : 0.55);
-  const phaseOffset = ((lead.charCodeAt(0) + lead.length * 3 + (spec.seed || 11)) % 13) * 0.017;
-  let phase = phaseOffset;
-  for (let i = 0; i < n; i += 1) {
+  const polarity = lead === 'aVR' || lead === 'V1'
+    ? -1
+    : (['II', 'III', 'aVF'].includes(lead) ? 1 : 0.55);
+  const leadGain = lead === 'V1' ? 1.15 : (['II', 'III', 'aVF'].includes(lead) ? 1 : 0.85);
+
+  // The flutter clock is shared by all leads and locked to the QRS schedule:
+  // one F wave sits under the QRS, the other is visible between complexes.
+  const start = spec.start || 0;
+  const atrialRR = 60 / Math.max(1, rate);
+  const qrsStart = start + atrialRR * 0.6;
+  const desiredPhaseAtQrs = 0.10;
+  const basePhase = ((desiredPhaseAtQrs - qrsStart * f) % 1 + 1) % 1;
+  const smooth = (u) => u * u * (3 - 2 * u);
+  const hash = (x) => {
+    let h = Math.imul((x >>> 0) ^ (spec.seed || 11), 2246822519) >>> 0;
+    h ^= h >>> 15;
+    h = Math.imul(h, 3266489917) >>> 0;
+    h ^= h >>> 13;
+    return (h >>> 0) / 4294967296;
+  };
+
+  for (let i = 0; i < count; i += 1) {
     const t = i / sampleRate;
-    // Slight rate/amplitude wobble: real flutter waves are not a perfect saw.
-    const wobble = 1 + 0.012 * Math.sin(2 * Math.PI * 0.13 * t + phaseOffset * 7)
-      + 0.006 * Math.sin(2 * Math.PI * 0.37 * t + 1.1);
-    phase += (f * wobble) / sampleRate;
-    const p = phase % 1;
-    const edge = 0.17;
-    let saw;
-    if (p < edge) {
-      const u = p / edge;
-      saw = -1 + 2 * (u * u * (3 - 2 * u));
+    // Bounded wobble rather than an accumulating rate error: the F wave stays
+    // locked to the QRS while still showing a little physiological variation.
+    const phase = basePhase + t * f
+      + 0.010 * Math.sin(2 * Math.PI * 0.11 * t + 0.7)
+      + 0.006 * Math.sin(2 * Math.PI * 0.29 * t + 2.1);
+    const cycle = Math.floor(phase);
+    const frac = phase - cycle;
+    const k = smooth(frac);
+
+    // Smoothly interpolate cycle-to-cycle variation so the sawtooth never
+    // repeats as a mathematically perfect ramp.
+    const a1 = hash(cycle * 2);
+    const a2 = hash(cycle * 2 + 1);
+    const ampMod = 0.92 + 0.16 * (a1 + (a2 - a1) * k);
+    const b1 = hash(cycle * 2 + 101);
+    const b2 = hash(cycle * 2 + 102);
+    // Fast upstroke (about 13–17% of the flutter cycle), then a slow descent.
+    const rise = 0.15 + ((b1 + (b2 - b1) * k) - 0.5) * 0.04;
+    const c1 = hash(cycle * 2 + 201);
+    const c2 = hash(cycle * 2 + 202);
+    const peak = 0.55 + ((c1 + (c2 - c1) * k) - 0.5) * 0.10;
+
+    // Typical counter-clockwise flutter in II/III/aVF: slow descending limb,
+    // steep ascending limb, sharp negative apex and a rounded positive peak.
+    let wave;
+    if (frac < rise) {
+      const u = frac / rise;
+      // Ease-out rise: steep immediately after the trough, rounded at the peak.
+      wave = -1 + (peak + 1) * (1 - Math.pow(1 - u, 2));
     } else {
-      const u = (p - edge) / (1 - edge);
-      saw = 1 - 2 * u - 0.10 * Math.sin(Math.PI * u);
+      const u = (frac - rise) / (1 - rise);
+      // Gradual descent that ends with a non-zero slope, forming a sharp apex.
+      wave = peak - (peak + 1) * Math.pow(u, 1.28);
     }
-    const amp = 0.09 * (1 + 0.07 * Math.sin(2 * Math.PI * 0.22 * t + phaseOffset * 5))
-      * (0.97 + 0.03 * Math.sin(2 * Math.PI * 0.07 * t));
-    samples[i] += amp * saw * polarity;
+    // Small notch on the early downstroke; real flutter is not a clean line.
+    const notchDist = ((frac - (rise + 0.06) + 0.5) % 1 + 1) % 1 - 0.5;
+    wave += 0.04 * Math.exp(-Math.pow(notchDist / 0.035, 2));
+    samples[i] += 0.21 * leadGain * ampMod * polarity * wave;
   }
 }
 
@@ -770,6 +844,9 @@ function synthesizeLead(schedule, lead) {
   }
 
   const prof = profileFor(spec, lead);
+  // Flutter T waves are commonly low/flattened and partly buried by the
+  // continuous F waves; keep the sawtooth readable without changing other rhythms.
+  if (spec.rhythm === 'flutter') prof.t *= 0.40;
   addBaseline(samples, sampleRate, spec, rng);
   addFibrillatory(samples, sampleRate, spec, lead, rng);
   addSawtooth(samples, sampleRate, spec, lead);
@@ -839,7 +916,10 @@ function finish(samples, spec, lead, schedule) {
 function summarize(spec, schedule) {
   const beats = schedule.beats;
   let hr = spec.rate || 0;
-  if (beats.length >= 2) {
+  // Authored rates describe the underlying rhythm. Averaging RR intervals
+  // across premature beats, pauses or Wenckebach cycles would under/overstate
+  // the teaching rate (e.g. PAC/PVC, sinus arrest, 4:3 AV block).
+  if (!hr && beats.length >= 2) {
     const intervals = [];
     for (let i = 1; i < beats.length; i += 1) intervals.push(beats[i].t - beats[i - 1].t);
     const mean = intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length;

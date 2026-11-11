@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261110aj';
+const __asset = __isNode ? '' : '?v=20261111a5';
 const { api } = await import(`../api.js${__asset}`);
 const { hasByok } = await import(`../byok.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
@@ -242,9 +242,9 @@ export async function simSessionView({ params }) {
     host.hidden = false;
     host.classList.toggle('active', Boolean(state.cpr));
     const pending = Boolean(state.flags?.cprPending);
-    const disabled = state.status !== 'active' || pending ? 'disabled' : '';
-    host.innerHTML = `<div class="cpr-dock-info"><span class="cpr-kicker"><i class="cpr-pulse"></i> HIGH-QUALITY CPR</span><strong>${state.cpr ? '按压进行中' : pending ? `准备按压 · ${state.flags?.cprReadyIn ?? 0}s` : 'CPR 未开始'}</strong><span>${state.cpr ? '保持 100–120 次/分，深度 5–6 cm，完全回弹；除颤前先停止。' : pending ? '正在确认环境、体位与按压位置，3–5 秒后开始有效按压。' : '患者无脉？点击开始胸外按压；除颤前必须先停止。'}</span></div><button class="btn btn-secondary" type="button" data-cpr-toggle ${disabled}>${state.cpr ? '停止 CPR' : pending ? `准备中 ${state.flags?.cprReadyIn ?? 0}s` : '开始 CPR'}</button>`;
-    host.querySelector('[data-cpr-toggle]')?.addEventListener('click', () => { if (!pending) act(state.cpr ? 'cpr_stop' : 'cpr_start', {}); });
+    const disabled = state.status !== 'active' ? 'disabled' : '';
+    host.innerHTML = `<div class="cpr-dock-info"><span class="cpr-kicker"><i class="cpr-pulse"></i> HIGH-QUALITY CPR</span><strong>${state.cpr ? '按压进行中' : pending ? `准备按压 · ${state.flags?.cprReadyIn ?? 0}s` : 'CPR 未开始'}</strong><span>${state.cpr ? '保持 100–120 次/分，深度 5–6 cm，完全回弹；除颤前先停止。' : pending ? '正在确认环境、体位与按压位置；可点击右侧取消准备。' : '患者无脉？点击开始胸外按压；除颤前必须先停止。'}</span></div><button class="btn btn-secondary" type="button" data-cpr-toggle ${disabled}>${state.cpr ? '停止 CPR' : pending ? `取消准备 ${state.flags?.cprReadyIn ?? 0}s` : '开始 CPR'}</button>`;
+    host.querySelector('[data-cpr-toggle]')?.addEventListener('click', () => { act((state.cpr || pending) ? 'cpr_stop' : 'cpr_start', {}); });
   }
 
   function renderActions() {

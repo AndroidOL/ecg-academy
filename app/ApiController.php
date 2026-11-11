@@ -376,6 +376,40 @@ final class ApiController
         Http::ok(SimEngine::debrief((int) $user['id'], (int) ($_GET['runId'] ?? 0)));
     }
 
+    public static function simDuoStart(array $params = []): void
+    {
+        $user = self::user();
+        Http::ok(SimEngine::startDuo((int) $user['id']));
+    }
+
+    public static function simDuoState(array $params = []): void
+    {
+        $user = self::user();
+        $id = (string) ($_GET['id'] ?? '');
+        Http::ok(SimEngine::duoState((int) $user['id'], $id));
+    }
+
+    public static function simDuoAction(array $params = []): void
+    {
+        $user = self::user();
+        $input = Http::input();
+        $sessionId = (string) ($input['sessionId'] ?? '');
+        $patient = (int) ($input['patient'] ?? 0);
+        $action = (string) ($input['action'] ?? '');
+        $payload = is_array($input['payload'] ?? null) ? $input['payload'] : [];
+        Http::ok(SimEngine::duoAction((int) $user['id'], $sessionId, $patient, $action, $payload));
+    }
+
+    public static function simDuoDiagnosis(array $params = []): void
+    {
+        $user = self::user();
+        $input = Http::input();
+        $sessionId = (string) ($input['sessionId'] ?? '');
+        $patient = (int) ($input['patient'] ?? 0);
+        $diagnosis = (string) ($input['diagnosis'] ?? '');
+        Http::ok(SimEngine::duoDiagnosis((int) $user['id'], $sessionId, $patient, $diagnosis));
+    }
+
     public static function aiStatus(array $params = []): void
     {
         $user = self::user();

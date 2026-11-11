@@ -8,12 +8,22 @@ use App\ApiController;
 use App\ApiError;
 use App\Auth;
 use App\Config;
+use App\Content;
 use App\Http;
 use App\Router;
+use App\Seo;
 use App\SimEngine;
 
 $path = (string) parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
 $method = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+
+// Canonical URLs never carry a trailing slash (except "/").
+if ($path !== '/' && str_ends_with($path, '/')) {
+    $query = (string) ($_SERVER['QUERY_STRING'] ?? '');
+    header('Location: ' . rtrim($path, '/') . ($query !== '' ? '?' . $query : ''), true, 301);
+    exit;
+}
+$path = rawurldecode($path);
 
 if (str_starts_with($path, '/api/')) {
     try {
@@ -99,6 +109,10 @@ if (str_starts_with($path, '/api/')) {
         $router->get('/api/sim/state', [ApiController::class, 'simState']);
         $router->post('/api/sim/action', [ApiController::class, 'simAction']);
         $router->get('/api/sim/debrief', [ApiController::class, 'simDebrief']);
+        $router->post('/api/sim/duo/start', [ApiController::class, 'simDuoStart']);
+        $router->get('/api/sim/duo/state', [ApiController::class, 'simDuoState']);
+        $router->post('/api/sim/duo/action', [ApiController::class, 'simDuoAction']);
+        $router->post('/api/sim/duo/diagnosis', [ApiController::class, 'simDuoDiagnosis']);
         $router->get('/api/ai/status', [ApiController::class, 'aiStatus']);
         $router->post('/api/ai/chat', [ApiController::class, 'aiChat']);
         $router->post('/api/ai/stream', [ApiController::class, 'aiStream']);
@@ -125,24 +139,99 @@ if (str_starts_with($path, '/static/')) {
     exit;
 }
 
+// Bing/Yandex IndexNow verification: /{key}.txt echoes the configured key.
+$indexNowKey = trim((string) Config::get('app.seo.indexnow_key', ''));
+if ($indexNowKey !== '' && $path === '/' . $indexNowKey . '.txt') {
+    header('Content-Type: text/plain; charset=utf-8');
+    header('Cache-Control: public, max-age=86400');
+    if ($method !== 'HEAD') {
+        echo $indexNowKey;
+    }
+    exit;
+}
+
+// Server-rendered SEO pages (real paths, full HTML, canonical + JSON-LD).
+// Returns false only for "/" so the interactive SPA keeps the home page.
+if (Seo::handle($path, $method)) {
+    exit;
+}
+
 header('Content-Type: text/html; charset=utf-8');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 $version = htmlspecialchars((string) Config::get('app.asset_version', '1'), ENT_QUOTES, 'UTF-8');
 $appName = htmlspecialchars((string) Config::get('app.name', '心迹 ECG Lab'), ENT_QUOTES, 'UTF-8');
+$baseUrl = Seo::baseUrl();
+$homeCanonical = $baseUrl . '/';
+$siteDescription = '心迹 ECG Lab：面向医学生与住院医师的免费开源心电图学习、判读练习与 ACLS 急救推演。' . count(Content::summaries()) . ' 篇结构化课程、确定性命库、五步判读训练与 12 个 ACLS 场景。';
+$verifyMeta = '';
+foreach (['baidu' => 'baidu-site-verification', 'google' => 'google-site-verification', 'bing' => 'msvalidate.01'] as $engine => $metaName) {
+    $code = trim((string) Config::get('app.seo.verification.' . $engine, ''));
+    if ($code !== '') {
+        $verifyMeta .= '  <meta name="' . $metaName . '" content="' . htmlspecialchars($code, ENT_QUOTES, 'UTF-8') . '">' . "\n";
+    }
+}
+$siteJsonLd = json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'WebSite',
+    'name' => '心迹 ECG Lab',
+    'alternateName' => '心迹 · ECG Lab',
+    'url' => $homeCanonical,
+    'inLanguage' => 'zh-CN',
+    'description' => $siteDescription,
+    'publisher' => [
+        '@type' => 'EducationalOrganization',
+        'name' => '心迹 ECG Lab',
+        'url' => $homeCanonical,
+        'sameAs' => ['https://github.com/AndroidOL/ecg-academy'],
+    ],
+    'potentialAction' => [
+        '@type' => 'SearchAction',
+        'target' => ['@type' => 'EntryPoint', 'urlTemplate' => $baseUrl . '/learn?q={search_term_string}'],
+        'query-input' => 'required name=search_term_string',
+    ],
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+$chapterLinks = '';
+foreach (Content::chapters() as $chapter) {
+    $chapterBase = ($chapter['id'] ?? '') === 'theory' ? '/intro' : '/learn';
+    $chapterLinks .= '<li><a href="' . $chapterBase . '#chapter-' . htmlspecialchars((string) $chapter['id'], ENT_QUOTES, 'UTF-8') . '">'
+        . htmlspecialchars((string) $chapter['name'], ENT_QUOTES, 'UTF-8') . '</a></li>';
+}
 ?>
 <!doctype html>
 <html lang="zh-CN" data-theme="auto">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="applicable-device" content="pc,mobile">
+  <meta name="renderer" content="webkit">
   <meta name="theme-color" content="#0e766e" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0b2b29" media="(prefers-color-scheme: dark)">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="<?= $appName ?>">
-  <meta name="description" content="心迹 ECG Lab：面向医学生与住院医师的免费开源心电图学习、判读练习与 ACLS 急救推演。">
+  <meta name="description" content="<?= htmlspecialchars($siteDescription, ENT_QUOTES, 'UTF-8') ?>">
+  <meta name="keywords" content="心电图,心电图判读,心电图学习,心电图练习,ACLS,心电向量,ECG,心电图诊断,心电图课程">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+  <meta name="author" content="心迹 ECG Lab">
   <meta name="color-scheme" content="light dark">
+  <link rel="canonical" href="<?= htmlspecialchars($homeCanonical, ENT_QUOTES, 'UTF-8') ?>">
+  <link rel="alternate" hreflang="zh-CN" href="<?= htmlspecialchars($homeCanonical, ENT_QUOTES, 'UTF-8') ?>">
+  <link rel="alternate" hreflang="x-default" href="<?= htmlspecialchars($homeCanonical, ENT_QUOTES, 'UTF-8') ?>">
+  <meta property="og:site_name" content="心迹 ECG Lab">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="心迹 ECG Lab · 读懂每一次心跳">
+  <meta property="og:description" content="<?= htmlspecialchars($siteDescription, ENT_QUOTES, 'UTF-8') ?>">
+  <meta property="og:url" content="<?= htmlspecialchars($homeCanonical, ENT_QUOTES, 'UTF-8') ?>">
+  <meta property="og:image" content="<?= htmlspecialchars($baseUrl . '/static/img/og-cover.png', ENT_QUOTES, 'UTF-8') ?>">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="zh_CN">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="心迹 ECG Lab · 读懂每一次心跳">
+  <meta name="twitter:description" content="<?= htmlspecialchars($siteDescription, ENT_QUOTES, 'UTF-8') ?>">
+  <meta name="twitter:image" content="<?= htmlspecialchars($baseUrl . '/static/img/og-cover.png', ENT_QUOTES, 'UTF-8') ?>">
+<?= $verifyMeta ?>  <script type="application/ld+json"><?= $siteJsonLd ?></script>
   <title><?= $appName ?> · 读懂每一次心跳</title>
   <link rel="icon" href="/static/img/favicon.svg?v=<?= $version ?>" type="image/svg+xml">
   <link rel="icon" href="/static/img/icon-192.png?v=<?= $version ?>" type="image/png" sizes="192x192">
@@ -153,6 +242,7 @@ $appName = htmlspecialchars((string) Config::get('app.name', '心迹 ECG Lab'), 
   <link rel="stylesheet" href="/static/css/components.css?v=<?= $version ?>">
   <link rel="stylesheet" href="/static/css/pages.css?v=<?= $version ?>">
   <link rel="stylesheet" href="/static/css/ecg.css?v=<?= $version ?>">
+  <link rel="stylesheet" href="/static/css/seo.css?v=<?= $version ?>">
   <link rel="modulepreload" href="/static/js/api.js?v=<?= $version ?>">
   <link rel="modulepreload" href="/static/js/store.js?v=<?= $version ?>">
   <link rel="modulepreload" href="/static/js/router.js?v=<?= $version ?>">
@@ -164,7 +254,7 @@ $appName = htmlspecialchars((string) Config::get('app.name', '心迹 ECG Lab'), 
   <script src="/static/js/theme-init.js?v=<?= $version ?>"></script>
 </head>
 <body>
-  <a class="skip-link" href="#main">跳到主要内容</a>
+  <a class="skip-link" href="#app">跳到主要内容</a>
   <div id="app">
     <div class="boot-splash" role="status" aria-live="polite">
       <div class="boot-mark" aria-hidden="true">
@@ -176,7 +266,16 @@ $appName = htmlspecialchars((string) Config::get('app.name', '心迹 ECG Lab'), 
   </div>
   <div id="modal-root"></div>
   <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
-  <noscript><div class="noscript">本应用需要启用 JavaScript 才能显示交互式心电图。</div></noscript>
+  <noscript>
+    <div class="seo-noscript">
+      <h1>心迹 ECG Lab：免费心电图学习、判读练习与 ACLS 急救推演</h1>
+      <p>从窦性心律到心室颤动，从 ST-T 改变到电解质紊乱。用可交互的心电图、组合判读练习与 ACLS 推演，把书本上的标准变成床边的直觉。交互功能需要启用 JavaScript；你可以先阅读完整课程与术语表。</p>
+      <p class="seo-noscript-actions"><a href="/learn">心电图诊断图谱</a> · <a href="/intro">心电图导论</a> · <a href="/read">五步判读法</a> · <a href="/practice">判读练习</a> · <a href="/sim">急救推演</a> · <a href="/glossary">双语术语表</a> · <a href="/guidelines">区域指南差异</a></p>
+      <h2>按章节浏览</h2>
+      <ul class="seo-noscript-chapters"><?= $chapterLinks ?></ul>
+      <p>本站为教学用途，不构成诊疗建议。</p>
+    </div>
+  </noscript>
   <script type="module" src="/static/js/app.js?v=<?= $version ?>"></script>
 </body>
 </html>

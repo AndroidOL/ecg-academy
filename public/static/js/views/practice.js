@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261110aj';
+const __asset = __isNode ? '' : '?v=20261111a5';
 const { localizedName, getLocale, translate } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -163,9 +163,9 @@ export async function practiceView({ query } = {}) {
       <div>
         <div class="page-eyebrow">${icon('target', 14)} READ & DECIDE</div>
         <h1 class="page-title">判读练习</h1>
-        <p class="page-sub">题库已预置 1920 道确定性病例：由 40 种诊断 × 40 个种子、8 组组合 × 40 个种子组成；答案与解析来自策展知识库，服务端校验。</p>
+        <p class="page-sub">题库已预置 2000 道确定性病例：由 42 种诊断 × 40 个种子、8 组组合 × 40 个种子组成；答案与解析来自策展知识库，服务端校验。</p>
       </div>
-      <div class="row-wrap"><span class="badge badge-brand">${icon('activity', 11)} 正确率 ${store.quiz?.accuracy || 0}%</span><span class="badge">${store.quiz?.attempts || 0} 次作答</span><span class="badge">题库 ${store.bank?.total || 1920} 道</span><span class="badge ${testStatus.score < 0 ? 'badge-danger' : 'badge-brand'}">测试分 ${testStatus.score > 0 ? '+' : ''}${testStatus.score}</span></div>
+      <div class="row-wrap"><span class="badge badge-brand">${icon('activity', 11)} 正确率 ${store.quiz?.accuracy || 0}%</span><span class="badge">${store.quiz?.attempts || 0} 次作答</span><span class="badge">题库 ${store.bank?.total || 2000} 道</span><span class="badge ${testStatus.score < 0 ? 'badge-danger' : 'badge-brand'}">测试分 ${testStatus.score > 0 ? '+' : ''}${testStatus.score}</span></div>
     </header>
     ${testStatus.locked ? `<div class="callout danger" style="margin-bottom:14px">${icon('alert', 14)} 今日测试分已低于 ${testStatus.lockScore} 分，测试模块锁定至 ${escapeHtml(testStatus.lockedUntil || '次日 00:00')}。你仍可阅读课程、错题复习和急救推演。</div>` : ''}
     ${state.assignmentMeta ? `<div class="callout brand" style="margin-bottom:14px">${icon('target', 14)} <b>${escapeHtml(state.assignmentMeta.title || '班级作业')}</b>${state.assignmentMeta.className ? ` · ${escapeHtml(state.assignmentMeta.className)}` : ''}：共 ${state.assignmentMeta.level >= 3 ? '组合' : state.assignmentMeta.level === 2 ? '进阶' : '基础'}难度；提交后匿名记录成绩，不收集姓名或 IP。</div>` : ''}

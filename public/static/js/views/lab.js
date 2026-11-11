@@ -1,7 +1,8 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261110aj';
+const __asset = __isNode ? '' : '?v=20261111a5';
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, medicalDisclaimer } = await import(`../ui.js${__asset}`);
+const { getLocale, translate } = await import(`../i18n.js${__asset}`);
 
 function baseSpec() {
   return {
@@ -80,7 +81,9 @@ function buildSpec(k, ca, mg) {
   if (mg < 0.7) annotations.push({ kind: 'bracket', t0: 0.55, t1: 0.55 + spec.qt, label: 'QT/U 延长 · 低镁', tone: 'danger' });
   if (mg > 1.5) annotations.push({ kind: 'bracket', t0: 0.38, t1: 0.54, label: 'PR 延长 · 高镁', tone: 'warn' });
   spec.annotations = annotations.slice(0, 4);
-  spec.description = `教学模拟：K⁺ ${k.toFixed(1)} mmol/L，Ca²⁺ ${ca.toFixed(2)} mmol/L，Mg²⁺ ${mg.toFixed(2)} mmol/L。`;
+  spec.description = getLocale() === 'en'
+    ? `Teaching simulation: K⁺ ${k.toFixed(1)} mmol/L, Ca²⁺ ${ca.toFixed(2)} mmol/L, Mg²⁺ ${mg.toFixed(2)} mmol/L.`
+    : `教学模拟：K⁺ ${k.toFixed(1)} mmol/L，Ca²⁺ ${ca.toFixed(2)} mmol/L，Mg²⁺ ${mg.toFixed(2)} mmol/L。`;
   return spec;
 }
 
@@ -243,9 +246,12 @@ export async function labView() {
     el.querySelector('[data-lab-k-label]').textContent = `K⁺ ${state.k.toFixed(1)} mmol/L`;
     el.querySelector('[data-lab-ca-label]').textContent = `Ca²⁺ ${state.ca.toFixed(2)} mmol/L`;
     el.querySelector('[data-lab-mg-label]').textContent = `Mg²⁺ ${state.mg.toFixed(2)} mmol/L`;
-    el.querySelector('[data-lab-lead-label]').textContent = `${state.lead} 导联`;
-    stage.innerHTML = `<span class="stage-name" style="color:var(--${ks.tone === 'danger' ? 'danger' : ks.tone === 'warn' ? 'warn' : 'ok'})">${escapeHtml(ks.name)}</span><span>${escapeHtml(ks.text)}</span>`;
-    summary.innerHTML = `<span class="stage-name">综合判读</span><span>钾：${escapeHtml(ks.name)}；钙：${escapeHtml(cs.name)}；镁：${escapeHtml(ms.name)}。${escapeHtml(spec.description)}</span>`;
+    el.querySelector('[data-lab-lead-label]').textContent = getLocale() === 'en' ? `${state.lead}-lead` : `${state.lead} 导联`;
+    stage.innerHTML = `<span class="stage-name" style="color:var(--${ks.tone === 'danger' ? 'danger' : ks.tone === 'warn' ? 'warn' : 'ok'})">${escapeHtml(translate(ks.name))}</span><span>${escapeHtml(translate(ks.text))}</span>`;
+    const summaryText = getLocale() === 'en'
+      ? `Potassium: ${translate(ks.name)}; Calcium: ${translate(cs.name)}; Magnesium: ${translate(ms.name)}. ${translate(spec.description)}`
+      : `钾：${ks.name}；钙：${cs.name}；镁：${ms.name}。${spec.description}`;
+    summary.innerHTML = `<span class="stage-name">综合判读</span><span>${escapeHtml(summaryText)}</span>`;
     if (viewerII) viewerII.setSpec(spec);
     if (viewerV3) { viewerV3.setSpec(spec); viewerV3.setLead(state.lead); }
     if (viewer12) {

@@ -1,8 +1,8 @@
-const CACHE_VERSION = 'ecg-20261110aj';
+const CACHE_VERSION = 'ecg-20261111a5';
 const SHELL = [
   '/', '/offline.html', '/static/manifest.webmanifest',
   '/static/css/tokens.css', '/static/css/base.css', '/static/css/components.css',
-  '/static/css/pages.css', '/static/css/ecg.css',
+  '/static/css/pages.css', '/static/css/ecg.css', '/static/css/seo.css',
   '/static/img/icon-192.png', '/static/img/icon-512.png', '/static/img/apple-touch-icon.png',
   '/static/js/app.js', '/static/js/theme-init.js',
 ];

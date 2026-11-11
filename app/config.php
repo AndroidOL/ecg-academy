@@ -4,11 +4,23 @@ declare(strict_types=1);
 return [
     'app' => [
         'name' => '心迹 ECG Lab',
-        'version' => '3.3.9',
-        'asset_version' => '20261110aj',
+        'version' => '3.4.5',
+        'asset_version' => '20261111a5',
         'env' => 'production',
         'debug' => false,
         'base_path' => '',
+        // Canonical origin for SEO pages, sitemap and structured data.
+        'base_url' => 'https://ecg.tianhao.me',
+        'seo' => [
+            // Paste the verification codes from Baidu / Google / Bing 站长平台 when available.
+            'verification' => [
+                'baidu' => '',
+                'google' => '',
+                'bing' => '',
+            ],
+            // Bing IndexNow key: /{key}.txt will echo the key automatically.
+            'indexnow_key' => '',
+        ],
     ],
     'db' => [
         'host' => '127.0.0.1',

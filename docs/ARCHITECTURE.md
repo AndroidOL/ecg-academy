@@ -99,7 +99,7 @@ hash 路由，便于任意静态托管与无重写部署：
 
 ## 数据流：练习
 
-1. `GET /api/quiz/new?level=&chapter=&focus=`：服务端通过 `QuestionBank` 从 1920 道预生成病例中选择一条（按难度/章节/专项过滤，带兜底），以该条目的 seed、diagnosis、rate 重建 ECG 规格与选项，写入 `quiz_attempts`（pending），返回剥离答案的 ECG 规格、题面、选项。
+1. `GET /api/quiz/new?level=&chapter=&focus=`：服务端通过 `QuestionBank` 从 2000 道预生成病例中选择一条（按难度/章节/专项过滤，带兜底），以该条目的 seed、diagnosis、rate 重建 ECG 规格与选项，写入 `quiz_attempts`（pending），返回剥离答案的 ECG 规格、题面、选项。
 2. 前端 `ECGEngine.generate(spec)` → Canvas。
 3. 用户提交 → `POST /api/quiz/answer`：服务端对比 `correct_ids`，计算得分、更新 XP 与进度，返回逐项解析。
 4. “AI 解释错因” → `POST /api/ai/explain {attemptId}`：仅基于该题快照、知识库要点与用户选择生成，禁止凭空新增诊断标准；AI 不可用时返回本地规则解析。

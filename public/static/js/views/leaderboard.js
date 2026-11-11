@@ -1,8 +1,9 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261110aj';
+const __asset = __isNode ? '' : '?v=20261111a5';
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, escapeHtml, toast } = await import(`../ui.js${__asset}`);
+const { getLocale } = await import(`../i18n.js${__asset}`);
 
 const SCOPES = [
   ['today', '今日榜', '今日 00:00 起'],
@@ -45,7 +46,7 @@ function render(el) {
     </header>
     <div class="lb-toolbar">
       <div class="lb-tabs" role="tablist">${SCOPES.map(([id, label, note]) => `<button class="chip ${scope === id ? 'active' : ''}" type="button" role="tab" aria-selected="${scope === id}" data-lb-scope="${id}" title="${note}">${label}</button>`).join('')}</div>
-      <div class="lb-meta"><span>${escapeHtml(data?.updatedAt ? new Date(data.updatedAt).toLocaleString('zh-CN') : '—')}</span><span>${data?.total ?? 0} 位参与者</span></div>
+      <div class="lb-meta"><span>${escapeHtml(data?.updatedAt ? new Date(data.updatedAt).toLocaleString(getLocale() === 'en' ? 'en-US' : 'zh-CN') : '—')}</span><span>${data?.total ?? 0} 位参与者</span></div>
     </div>
     ${me ? `<div class="lb-me card"><div class="lb-me-main"><span class="page-eyebrow">MY RANK</span><b>${me.rank ? `第 ${me.rank} 名` : '暂未上榜'}</b><p>${escapeHtml(me.name)} · 正确 ${me.correct} · 错误 ${me.wrong} · 正确率 ${me.accuracy}%</p></div><strong>${sign(me.points)}</strong></div>` : ''}
     ${podium.length ? `<section class="lb-podium">${podium.map((item) => `<article class="lb-podium-card rank-${item.rank}"><span class="lb-podium-medal">${medal(item.rank)}</span><b>${escapeHtml(item.name)}</b><small>${item.isGuest ? '游客' : '用户'} · 正确率 ${item.accuracy}%</small><strong>${sign(item.points)}</strong></article>`).join('')}</section>` : '<div class="learn-empty"><b>还没有测试记录</b><span>完成一局判读练习，答对按难度 +10/+15/+20、答错按 4× 扣分，即可进入排行榜。</span><a class="btn btn-primary btn-sm" href="#/practice" style="margin-top:12px">去测试</a></div>'}
