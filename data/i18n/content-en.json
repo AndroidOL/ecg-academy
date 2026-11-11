@@ -9059,5 +9059,6 @@
     "PVC\/VT 界限补充频率条件；心包炎抗栓表述消除矛盾；右室梗死 V4R 阈值按年龄\/性别分层。": "Add frequency conditions to the PVC\/VT boundary; eliminate the contradiction in the pericarditis antithrombotic statement; stratify the V4R threshold for right ventricular infarction by age\/sex.",
     "高钾钙剂更新为 UKKA 2023 方案；房扑\/房颤\/房速补充心衰\/低血压用药边界。": "Update hyperkalemia calcium therapy to the UKKA 2023 regimen; add medication boundaries for heart failure\/hypotension in atrial flutter\/atrial fibrillation\/atrial tachycardia.",
     "加入 AHA 2025 CPR\/ECC ALS\/PALS 来源；肾上腺素改为初始除颤失败后给予。": "Add AHA 2025 CPR\/ECC ALS\/PALS sources; change epinephrine to administration after failure of initial defibrillation.",
-    "章节题库 6 道失效题回填；2000 题选项审计与 1765 题章节题一致性审计均 0 问题。": "Backfill 6 invalid questions in the chapter question bank; the 2000-question option audit and the 1765-question chapter question consistency audit both showed 0 issues."
+    "章节题库 6 道失效题回填；2000 题选项审计与 1765 题章节题一致性审计均 0 问题。": "Backfill 6 invalid questions in the chapter question bank; the 2000-question option audit and the 1765-question chapter question consistency audit both showed 0 issues.",
+    "理论专题复核：LAFB 电轴改为 −30° 至 −90°；起搏参数优化文案去中英混杂；NSTEMI ST 压低阈值改为 V2–V3 ≥0.05 mV、其他导联 ≥0.1 mV；预激伴房颤区分稳定\/不稳定处理。": "Theory topic review: LAFB axis changed to −30° to −90°; pacing parameter optimization wording: remove mixed Chinese\/English; NSTEMI ST depression threshold changed to V2–V3 ≥0.05 mV, other leads ≥0.1 mV; pre-excitation with atrial fibrillation: distinguish stable\/unstable management."
 }
