@@ -323,7 +323,7 @@ function profileFor(spec, lead) {
   const prof = Object.assign({}, base, overrides);
   prof.tSigma = 0.052;
   prof.qrsScale = 1;
-  prof.qrsWiden = 1;
+  prof.qrsWiden = 2.2;
   prof.tSign = 1;
   prof.pScale = 1;
   prof.delta = false;
@@ -338,7 +338,7 @@ function profileFor(spec, lead) {
   const m = spec.morphology;
   if (m === 'rbbb') {
     prof.qrsScale = 1.55;
-    prof.qrsWiden = 1.6;
+    prof.qrsWiden = 1.0;
     if (lead === 'V1' || lead === 'V2') {
       prof.q = 0;
       prof.r = 0.16;
@@ -388,6 +388,7 @@ function profileFor(spec, lead) {
     }
   } else if (m === 'wpw') {
     prof.qrsScale = 1.45;
+    prof.qrsWiden = 1.2;
     prof.delta = true;
     if (spec.leads?.[lead]?.t === undefined) prof.t = (prof.t >= 0 ? 1 : -1) * Math.abs(prof.t) * 0.9;
   } else if (m === 'brugada') {
@@ -409,7 +410,7 @@ function profileFor(spec, lead) {
     }
   } else if (m === 'wide' || m === 'pvc') {
     prof.qrsScale = 1.9;
-    prof.qrsWiden = 1.7;
+    prof.qrsWiden = 1.5;
     if (lead === 'II' || lead === 'III' || lead === 'aVF') {
       prof.q = 0;
       prof.r = -0.82;

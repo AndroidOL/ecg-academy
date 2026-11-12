@@ -8,7 +8,7 @@ return [
         'primary' => 'afib',
         'secondary' => 'rbbb',
         'level' => 3,
-        'overrides' => ['morphology' => 'rbbb', 'qrs' => 0.13, 'show12Lead' => true],
+        'overrides' => ['morphology' => 'rbbb', 'qrs' => 0.13, 'show12Lead' => true, 'primaryLead' => 'V1'],
         'stem' => '患者 72 岁，心悸、乏力，既往高血压。心电图示 RR 绝对不规则，QRS 增宽。',
     ],
     [
@@ -16,7 +16,7 @@ return [
         'primary' => 'afib',
         'secondary' => 'lbbb',
         'level' => 3,
-        'overrides' => ['morphology' => 'lbbb', 'qrs' => 0.14, 't' => ['shape' => 'discordant', 'amp' => 1.0], 'show12Lead' => true],
+        'overrides' => ['morphology' => 'lbbb', 'qrs' => 0.14, 't' => ['shape' => 'discordant', 'amp' => 1.0], 'show12Lead' => true, 'primaryLead' => 'V5'],
         'stem' => '患者 68 岁，活动后气促，既往扩张型心肌病。心电图示不规则窄/宽 QRS 节律。',
     ],
     [
@@ -24,7 +24,7 @@ return [
         'primary' => 'stemi-anterior',
         'secondary' => 'rbbb',
         'level' => 3,
-        'overrides' => ['morphology' => 'rbbb', 'qrs' => 0.13, 'show12Lead' => true],
+        'overrides' => ['morphology' => 'rbbb', 'qrs' => 0.13, 'show12Lead' => true, 'primaryLead' => 'V1'],
         'stem' => '患者 61 岁，持续胸痛 1 小时。心电图示前壁导联 ST 抬高，QRS 增宽。',
     ],
     [
@@ -56,7 +56,7 @@ return [
         'primary' => 'atrial-flutter',
         'secondary' => 'rbbb',
         'level' => 3,
-        'overrides' => ['morphology' => 'rbbb', 'qrs' => 0.13],
+        'overrides' => ['morphology' => 'rbbb', 'qrs' => 0.13, 'primaryLead' => 'V1'],
         'stem' => '患者 66 岁，心悸伴轻度气促。心电图示规则宽 QRS 心动过速，可见锯齿状心房波。',
     ],
     [

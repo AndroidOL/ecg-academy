@@ -4,7 +4,7 @@ declare(strict_types=1);
 return [
     'app' => [
         'name' => '心迹 ECG Lab',
-        'version' => '3.4.18',
+        'version' => '3.4.19',
         'asset_version' => '20261112a12',
         'env' => 'production',
         'debug' => false,

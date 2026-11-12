@@ -29,6 +29,28 @@ function noNaN(result) {
   }
 }
 
+function qrsWidthMs(result, beatTime, window = 0.12) {
+  const sampleRate = result.sampleRate;
+  const lo = Math.max(0, Math.round((beatTime - 0.08) * sampleRate));
+  const hi = Math.min(result.samples.length - 1, Math.round((beatTime + window) * sampleRate));
+  let low = 0;
+  let high = 0;
+  for (let i = lo; i <= hi; i += 1) {
+    low = Math.min(low, result.samples[i]);
+    high = Math.max(high, result.samples[i]);
+  }
+  const threshold = Math.max(0.04, Math.max(Math.abs(low), Math.abs(high)) * 0.1);
+  let first = null;
+  let last = null;
+  for (let i = lo; i <= hi; i += 1) {
+    if (Math.abs(result.samples[i]) > threshold) {
+      if (first === null) first = i;
+      last = i;
+    }
+  }
+  return first === null ? 0 : ((last - first) / sampleRate) * 1000;
+}
+
 check('normal sinus generates 8s at 500Hz', () => {
   const result = generateLead(base, 'II');
   assert.equal(result.samples.length, 4000);
@@ -64,6 +86,15 @@ check('all 12 leads are generated without NaN', () => {
     assert.equal(result.samples.length, 4000);
     noNaN(result);
   }
+});
+
+check('normal QRS stays physiological and wide-complex rhythms stay wide', () => {
+  const normal = new ECGSession({ ...base, rate: 72, atrialRate: 72 }).lead('II');
+  const normalWidth = qrsWidthMs(normal, 0.58);
+  assert.ok(normalWidth >= 60 && normalWidth <= 110, `normal QRS width ${normalWidth.toFixed(0)} ms`);
+  const wide = new ECGSession({ ...base, rhythm: 'vt', rate: 160, atrialRate: 75, qrs: 0.16, morphology: 'wide', t: { shape: 'discordant', amp: 1 } }).lead('II');
+  const wideWidth = qrsWidthMs(wide, 0.58, 0.14);
+  assert.ok(wideWidth >= 120 && wideWidth <= 240, `wide QRS width ${wideWidth.toFixed(0)} ms`);
 });
 
 check('RBBB V1 shows small r, deep S and dominant R′ instead of a second QRS', () => {
