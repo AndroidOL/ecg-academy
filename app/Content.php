@@ -138,6 +138,7 @@ final class Content
 
         $diagnosis['chapterMeta'] = $chapter;
         $diagnosis['review'] = self::reviewInfo((string) $diagnosis['chapter'], (string) $diagnosis['id']);
+        $diagnosis['chapterGuide'] = ChapterGuides::get((string) $diagnosis['chapter']);
         $diagnosis['related'] = array_values($related);
         $diagnosis['topic'] = (bool) ($diagnosis['topic'] ?? false);
         $diagnosis['urgency'] = (string) ($diagnosis['urgency'] ?? 'core');

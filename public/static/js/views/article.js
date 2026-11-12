@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261112a10';
+const __asset = __isNode ? '' : '?v=20261112a11';
 const { localizedName, translate, getLocale, loadContentCatalog } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -32,6 +32,27 @@ function list(items = [], className = '') {
   return `<ul class="${className}">${items.map((text) => `<li>${escapeHtml(text)}</li>`).join('')}</ul>`;
 }
 
+function chapterGuideHtml(guide) {
+  if (!guide || !guide.overview) return '';
+  const refs = Array.isArray(guide.references) ? guide.references : [];
+  const refHtml = refs.length ? `<h3 class="chapter-guide-ref-title">权威指南与文献</h3><ol class="article-references">${refs.map((ref) => {
+    const title = escapeHtml(ref.title || ref.url || '参考文献');
+    const meta = [ref.authors, ref.journal, ref.year ? String(ref.year) : '', ref.note].filter(Boolean).map((part) => escapeHtml(part)).join(' · ');
+    const link = ref.url ? `<a href="${escapeHtml(ref.url)}" target="_blank" rel="noopener noreferrer">${title}</a>` : title;
+    return `<li>${link}${meta ? `<span class="chapter-guide-ref-meta">${meta}</span>` : ''}</li>`;
+  }).join('')}</ol>` : '';
+  return `<section class="article-section chapter-guide" id="chapter-guide">
+    <div class="chapter-guide-head"><div><div class="page-eyebrow">CHAPTER FRAMEWORK</div><h2>${escapeHtml(guide.title || '本章学习框架')}</h2></div><span class="badge badge-brand">全章通用</span></div>
+    <p class="chapter-guide-overview">${escapeHtml(guide.overview)}</p>
+    <div class="chapter-guide-grid">
+      <div class="chapter-guide-card"><h3>判读与决策顺序</h3><ol>${(guide.checklist || []).map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ol></div>
+      <div class="chapter-guide-card chapter-guide-danger"><h3>危险信号</h3><ul>${(guide.redFlags || []).map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></div>
+      <div class="chapter-guide-card chapter-guide-pearls"><h3>记忆与易错点</h3><ul>${(guide.pearls || []).map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></div>
+    </div>
+    ${refHtml}
+  </section>`;
+}
+
 export async function articleView({ params }) {
   const el = document.createElement('div');
   el.className = 'page';
@@ -51,7 +72,9 @@ export async function articleView({ params }) {
   let mastered = status === 'mastered';
   const favorited = isFavorite(detail.id);
   const review = detail.review || {};
-  const tocSections = detail.guideline ? [...SECTIONS, ['guideline', '指南规范']] : SECTIONS;
+  const tocSections = detail.chapterGuide
+    ? [['chapter-guide', '本章框架'], ...SECTIONS, ...(detail.guideline ? [['guideline', '指南规范']] : [])]
+    : (detail.guideline ? [...SECTIONS, ['guideline', '指南规范']] : SECTIONS);
 
   el.innerHTML = `
     <div class="breadcrumb"><a href="#/learn">诊断图谱</a><span>/</span><a href="#/learn?chapter=${encodeURIComponent(detail.chapter)}">${escapeHtml(localizedName(chapter))}</a><span>/</span><span>${escapeHtml(localizedName(detail))}</span></div>
@@ -83,6 +106,7 @@ export async function articleView({ params }) {
           <div><b>参考来源</b><span>${escapeHtml((review.sources || []).join(' · ') || '见文末参考说明')}</span></div>
           <a class="btn btn-ghost btn-xs" href="#/about">报告勘误 ${icon('arrowUpRight', 12)}</a>
         </div>
+        ${chapterGuideHtml(detail.chapterGuide)}
 
         <section class="section" id="ecg-viewer-section" ${hasEcg ? '' : 'hidden'}>
           <div class="section-head">
@@ -205,7 +229,7 @@ export async function articleView({ params }) {
         <div class="toc">
           <div class="toc-title">ON THIS PAGE</div>
           ${isTopic
-            ? `<a class="toc-link" href="#topic-objectives" data-toc="topic-objectives">学习目标</a>${(detail.sections || []).map((section, index) => `<a class="toc-link" href="#topic-section-${index}" data-toc="topic-section-${index}">${escapeHtml(section.title || '')}</a>`).join('')}${(detail.references || []).length ? `<a class="toc-link" href="#topic-references" data-toc="topic-references">参考资料</a>` : ''}`
+            ? `${detail.chapterGuide ? '<a class="toc-link" href="#chapter-guide" data-toc="chapter-guide">本章框架</a>' : ''}<a class="toc-link" href="#topic-objectives" data-toc="topic-objectives">学习目标</a>${(detail.sections || []).map((section, index) => `<a class="toc-link" href="#topic-section-${index}" data-toc="topic-section-${index}">${escapeHtml(section.title || '')}</a>`).join('')}${(detail.references || []).length ? `<a class="toc-link" href="#topic-references" data-toc="topic-references">参考资料</a>` : ''}`
             : tocSections.map(([id, name]) => `<a class="toc-link" href="#ecg-viewer-section" data-toc="${id}">${name}</a>`).join('')}
         </div>
         <div class="article-side-card">

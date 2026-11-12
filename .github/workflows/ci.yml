@@ -45,6 +45,8 @@ jobs:
         run: php scripts/audit_section_bank.php
       - name: Validate special practice questions
         run: php scripts/validate_special_questions.php
+      - name: Validate chapter guides and references
+        run: php scripts/validate_chapter_guides.php
       - name: Prepare integration database
         run: |
           cat > app/config.local.php <<'PHP'

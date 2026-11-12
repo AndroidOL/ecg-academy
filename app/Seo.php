@@ -400,6 +400,7 @@ final class Seo
             . ($keyNumbers !== '' ? '<div class="seo-keynums">' . $keyNumbers . '</div>' : '')
             . '</header>'
             . $reviewHtml
+            . self::chapterGuideSection(is_array($detail['chapterGuide'] ?? null) ? $detail['chapterGuide'] : null)
             . '<div class="seo-layout">'
             . '<div class="seo-prose">' . $sections
             . '<section class="seo-sec" id="interactive">'
@@ -1309,6 +1310,34 @@ final class Seo
             . ($sourceText !== '' ? '<p>' . self::e($sourceText) . '</p>' : '')
             . '<p>本段为教学摘要，不替代当地指南与临床判断。</p></div>';
         return self::section('guideline', '指南规范与检查流程', $html);
+    }
+
+    private static function chapterGuideSection(?array $guide): string
+    {
+        if (!is_array($guide) || empty($guide['overview'])) return '';
+        $html = '<p class="seo-lead">' . self::e((string) $guide['overview']) . '</p>';
+        $html .= '<h3>判读与决策顺序</h3>' . self::ol((array) ($guide['checklist'] ?? []));
+        $html .= '<h3>危险信号</h3>' . self::ul((array) ($guide['redFlags'] ?? []));
+        $html .= '<h3>记忆与易错点</h3>' . self::ul((array) ($guide['pearls'] ?? []));
+        $refs = (array) ($guide['references'] ?? []);
+        if ($refs !== []) {
+            $html .= '<h3>权威指南与文献</h3><ul class="seo-list">';
+            foreach ($refs as $ref) {
+                if (!is_array($ref)) continue;
+                $title = self::e((string) ($ref['title'] ?? $ref['url'] ?? '参考文献'));
+                $url = (string) ($ref['url'] ?? '');
+                $meta = array_filter([
+                    (string) ($ref['authors'] ?? ''),
+                    (string) ($ref['journal'] ?? ''),
+                    (string) ($ref['year'] ?? ''),
+                    (string) ($ref['note'] ?? ''),
+                ], static fn (string $part): bool => $part !== '');
+                $link = $url !== '' ? '<a href="' . self::e($url) . '" target="_blank" rel="noopener noreferrer">' . $title . '</a>' : $title;
+                $html .= '<li>' . $link . ($meta !== [] ? '<br><small>' . self::e(implode(' · ', $meta)) . '</small>' : '') . '</li>';
+            }
+            $html .= '</ul>';
+        }
+        return self::section('chapter-guide', '本章学习框架', $html);
     }
 
     private static function ul(array $items, string $class = 'seo-list'): string
