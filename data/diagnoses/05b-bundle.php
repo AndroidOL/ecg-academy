@@ -85,6 +85,8 @@ return [
             'pause' => null,
             'extras' => [],
             'show12Lead' => true,
+            'primaryLead' => 'V1',
+            'start' => 0.61,
             'annotations' => [
                 ['kind' => 'bracket', 't0' => 0.45, 't1' => 0.61, 'label' => 'PR 0.16 s', 'tone' => 'brand'],
                 ['kind' => 'bracket', 't0' => 0.61, 't1' => 0.74, 'label' => 'QRS 0.13 s', 'tone' => 'warn'],
@@ -180,6 +182,8 @@ return [
             'pause' => null,
             'extras' => [],
             'show12Lead' => true,
+            'primaryLead' => 'V5',
+            'start' => 0.63,
             'annotations' => [
                 ['kind' => 'bracket', 't0' => 0.45, 't1' => 0.63, 'label' => 'PR 0.18 s', 'tone' => 'brand'],
                 ['kind' => 'bracket', 't0' => 0.63, 't1' => 0.77, 'label' => 'QRS 0.14 s', 'tone' => 'warn'],

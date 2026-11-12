@@ -323,6 +323,7 @@ function profileFor(spec, lead) {
   const prof = Object.assign({}, base, overrides);
   prof.tSigma = 0.052;
   prof.qrsScale = 1;
+  prof.qrsWiden = 1;
   prof.tSign = 1;
   prof.pScale = 1;
   prof.delta = false;
@@ -337,12 +338,13 @@ function profileFor(spec, lead) {
   const m = spec.morphology;
   if (m === 'rbbb') {
     prof.qrsScale = 1.55;
+    prof.qrsWiden = 1.6;
     if (lead === 'V1' || lead === 'V2') {
       prof.q = 0;
       prof.r = 0.16;
       prof.s = -0.9;
-      prof.rPrime = 0.95;
-      prof.rPrimeDelay = 0.06;
+      prof.rPrime = 1.05;
+      prof.rPrimeDelay = 0.09;
       prof.t = -Math.abs(prof.t || 0.2);
     }
     if (lead === 'I' || lead === 'aVL' || lead === 'V5' || lead === 'V6') {
@@ -351,6 +353,7 @@ function profileFor(spec, lead) {
     }
   } else if (m === 'lbbb') {
     prof.qrsScale = 1.75;
+    prof.qrsWiden = 2.15;
     if (lead === 'V1' || lead === 'V2') {
       prof.q = 0;
       prof.r = 0.1;
@@ -406,6 +409,7 @@ function profileFor(spec, lead) {
     }
   } else if (m === 'wide' || m === 'pvc') {
     prof.qrsScale = 1.9;
+    prof.qrsWiden = 1.7;
     if (lead === 'II' || lead === 'III' || lead === 'aVF') {
       prof.q = 0;
       prof.r = -0.82;
@@ -542,8 +546,9 @@ function addP(samples, sampleRate, p, prof, options = {}) {
 }
 
 function addQRS(samples, sampleRate, beat, prof, spec) {
-  const scale = prof.qrsScale || 1;
-  const widthScale = Math.max(0.75, (beat.qrsWidth || spec.qrs) / 0.08);
+  const broaden = prof.qrsWiden || 1;
+  const scale = (prof.qrsScale || 1) * broaden;
+  const widthScale = Math.max(0.75, (beat.qrsWidth || spec.qrs) / 0.08) * broaden;
   const sig = 0.0095 * widthScale;
   const rAmp = prof.r * (beat.ampScale || 1);
   const qAmp = prof.q * (beat.ampScale || 1);

@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261112a11';
+const __asset = __isNode ? '' : '?v=20261112a12';
 const { localizedName, translate, getLocale, loadContentCatalog } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -378,7 +378,7 @@ export async function articleView({ params }) {
         syncPlayButton();
       });
     });
-    leadSelect.value = spec.primaryLead === 'V1' ? 'V1' : 'II';
+    leadSelect.value = ['II', 'V1', 'V5'].includes(spec.primaryLead) ? spec.primaryLead : 'II';
     leadSelect?.addEventListener('change', () => viewer.setLead(leadSelect.value));
     speedSelect?.addEventListener('change', () => viewer.setSpeed(Number(speedSelect.value) || 2));
     const tocLinks = el.querySelectorAll('[data-toc]');

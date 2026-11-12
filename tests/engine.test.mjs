@@ -71,8 +71,33 @@ check('RBBB V1 shows small r, deep S and dominant R′ instead of a second QRS',
   const at = (t) => result.samples[Math.round(t * result.sampleRate)];
   const initialR = Math.max(at(0.57), at(0.572), at(0.574), at(0.576), at(0.578));
   assert.ok(initialR < 0.2, `initial r too tall: ${initialR}`);
-  assert.ok(at(0.61) < -0.5, `S too shallow: ${at(0.61)}`);
-  assert.ok(at(0.644) > 0.6, `R′ too small: ${at(0.644)}`);
+  assert.ok(at(0.62) < -0.5, `S too shallow: ${at(0.62)}`);
+  assert.ok(at(0.678) > 0.6, `R′ too small: ${at(0.678)}`);
+});
+
+check('LBBB V5 widens the QRS above 120 ms', () => {
+  const result = new ECGSession({ ...base, rate: 72, atrialRate: 72, pr: 0.18, qrs: 0.14, morphology: 'lbbb', seed: 127 }).lead('V5');
+  const sampleRate = result.sampleRate;
+  const start = Math.round(0.50 * sampleRate);
+  const end = Math.round(0.72 * sampleRate);
+  let low = 0;
+  let high = 0;
+  for (let i = start; i <= end; i += 1) {
+    low = Math.min(low, result.samples[i]);
+    high = Math.max(high, result.samples[i]);
+  }
+  const threshold = Math.max(0.04, Math.max(Math.abs(low), Math.abs(high)) * 0.1);
+  let first = null;
+  let last = null;
+  for (let i = start; i <= end; i += 1) {
+    if (Math.abs(result.samples[i]) > threshold) {
+      if (first === null) first = i;
+      last = i;
+    }
+  }
+  const widthMs = first === null ? 0 : ((last - first) / sampleRate) * 1000;
+  assert.ok(widthMs >= 120, `LBBB QRS too narrow: ${widthMs.toFixed(0)} ms`);
+  assert.ok(high > 1, `LBBB V5 R wave too small: ${high}`);
 });
 
 check('PVC ectopy produces wide negative complex in lead II', () => {
