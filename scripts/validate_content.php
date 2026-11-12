@@ -7,6 +7,7 @@ $chapters = require BASE_PATH . '/data/chapters.php';
 $chapterIds = array_column($chapters, 'id');
 $files = glob(BASE_PATH . '/data/diagnoses/*.php') ?: [];
 $all = [];
+$known = \App\Content::all();
 $errors = [];
 $warnings = [];
 
@@ -15,7 +16,7 @@ $required = [
     'keyNumbers', 'specificity', 'mechanism', 'criteria', 'reading', 'redFlags',
     'management', 'pitfalls', 'differential', 'pearls', 'ecg',
 ];
-$rhythms = ['sinus', 'af', 'flutter', 'atrial_tach', 'svt', 'vt', 'vf', 'vflutter', 'torsades', 'junctional', 'ventricular_escape', 'aivr', 'asystole'];
+$rhythms = ['sinus', 'af', 'flutter', 'atrial_tach', 'svt', 'vt', 'vf', 'vflutter', 'torsades', 'junctional', 'ventricular_escape', 'aivr', 'asystole', 'paced'];
 $morphologies = ['normal', 'rbbb', 'lbbb', 'lafb', 'lvh', 'wpw', 'brugada', 'hyperk', 'wide', 'pvc'];
 
 foreach ($files as $file) {
@@ -75,7 +76,7 @@ foreach ($files as $file) {
 
 foreach ($all as $id => $item) {
     foreach ($item['differential'] ?? [] as $diff) {
-        if (isset($diff['id']) && !isset($all[$diff['id']])) {
+        if (isset($diff['id']) && !isset($all[$diff['id']]) && !isset($known[$diff['id']])) {
             $errors[] = "$id: differential 引用不存在 {$diff['id']}";
         }
     }

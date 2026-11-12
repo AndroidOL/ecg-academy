@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261112a4';
+const __asset = __isNode ? '' : '?v=20261112a5';
 const { localizedName } = await import(`../i18n.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, chapterColor, difficultyDots, escapeHtml, setupMiniECG, emptyState, medicalDisclaimer } = await import(`../ui.js${__asset}`);
@@ -33,6 +33,11 @@ export async function learnView({ query }) {
     page: Math.max(1, Number(saved.page) || 1),
     pageSize: 24,
   };
+  // 直接打开/刷新具体章节或带搜索词时，不被默认“常见核心/基础”过滤成空
+  if (state.chapter !== 'all' || state.q !== '') {
+    state.level = 0;
+    state.scope = 'all';
+  }
   const savedScroll = Number(saved.scroll || 0) || 0;
   let firstRender = true;
   const saveState = () => {
@@ -109,7 +114,7 @@ export async function learnView({ query }) {
         <option value="weak" ${state.sort === 'weak' ? 'selected' : ''}>薄弱优先</option>
       </select>
     </div>
-    <div class="filter-summary"><b data-learn-count>${items.length}</b> 个结果 <span>·</span> 每页 24 章，按难度排序；点击卡片查看完整解析</div>
+    <div class="filter-summary"><b data-learn-count>${items.length}</b> 个结果 <span>·</span> <span data-learn-hint>${state.q || state.chapter !== 'all' ? '搜索/浏览章节时已忽略难度筛选' : '每页 24 章，按难度排序；点击卡片查看完整解析'}</span></div>
     <section class="card-grid" data-learn-grid aria-live="polite"></section>
     <div class="pager-bar" data-pager aria-label="课程分页"></div>
     ${medicalDisclaimer()}
@@ -128,17 +133,21 @@ export async function learnView({ query }) {
 
   const filtered = () => {
     const q = state.q.toLowerCase();
+    const ignoreLevel = q !== '' || state.chapter !== 'all';
     const list = items.filter((item) => {
       if (state.scope !== 'all' && (item.rarity || 'common') !== state.scope) return false;
       if (state.chapter !== 'all' && item.chapter !== state.chapter) return false;
-      if (state.level === 4) {
-        if (!item.topic) return false;
-      } else if (state.level && (item.topic || Number(item.difficulty) !== state.level)) {
-        return false;
+      if (!ignoreLevel) {
+        if (state.level === 4) {
+          if (!item.topic) return false;
+        } else if (state.level && (item.topic || Number(item.difficulty) !== state.level)) {
+          return false;
+        }
       }
       if (state.urgency !== 'all' && (item.urgency || 'core') !== state.urgency) return false;
       if (q) {
-        const haystack = `${item.name} ${item.en} ${(item.tags || []).join(' ')} ${item.oneLiner}`.toLowerCase();
+        const chapter = chapterMap.get(item.chapter);
+        const haystack = `${item.name} ${item.en} ${item.chapterName || ''} ${chapter?.en || ''} ${(item.tags || []).join(' ')} ${item.oneLiner}`.toLowerCase();
         if (!haystack.includes(q)) return false;
       }
       return true;
@@ -190,12 +199,17 @@ export async function learnView({ query }) {
   const render = () => {
     const list = filtered();
     count.textContent = String(list.length);
+    const ignoreLevel = state.q !== '' || state.chapter !== 'all';
+    const hint = el.querySelector('[data-learn-hint]');
+    if (hint) hint.textContent = ignoreLevel ? '搜索/浏览章节时已忽略难度筛选' : '每页 24 章，按难度排序；点击卡片查看完整解析';
+    levelSelect.disabled = ignoreLevel;
+    levelSelect.title = ignoreLevel ? '搜索/浏览章节时忽略难度筛选' : '';
     const totalPages = Math.max(1, Math.ceil(list.length / state.pageSize));
     state.page = Math.min(Math.max(1, state.page), totalPages);
     const start = (state.page - 1) * state.pageSize;
     const pageItems = list.slice(start, start + state.pageSize);
     if (list.length === 0) {
-      grid.innerHTML = emptyState('没有匹配的诊断', '试试清空搜索、切换难度或查看“全部”。', 'search');
+      grid.innerHTML = emptyState('没有匹配的诊断', ignoreLevel ? '试试清空搜索或切换章节。' : '试试清空搜索、切换难度或查看“全部”。', 'search');
       pager.innerHTML = '';
       return;
     }
@@ -217,6 +231,13 @@ export async function learnView({ query }) {
 
   search.addEventListener('input', () => {
     state.q = search.value.trim();
+    if (state.q) {
+      state.level = 0;
+      levelSelect.value = 'all';
+      state.scope = 'all';
+      scopeChips.querySelectorAll('[data-scope]').forEach((chip) => chip.classList.toggle('active', chip.dataset.scope === 'all'));
+      try { localStorage.setItem('ecg-learn-level', '0'); } catch { /* ignore */ }
+    }
     resetPage();
     render();
   });
@@ -256,9 +277,11 @@ export async function learnView({ query }) {
     chapterChips.querySelectorAll('[data-chapter]').forEach((chip) => {
       chip.classList.toggle('active', chip.dataset.chapter === state.chapter);
     });
-    // 选择具体类型后，难度自动回到“全部类型”
+    // 浏览章节时自动回到全部难度/范围，避免 uncommon 章节被默认范围过滤成空
     state.level = 0;
     levelSelect.value = 'all';
+    state.scope = 'all';
+    scopeChips.querySelectorAll('[data-scope]').forEach((chip) => chip.classList.toggle('active', chip.dataset.scope === 'all'));
     try { localStorage.setItem('ecg-learn-level', '0'); } catch { /* ignore */ }
     const hash = state.chapter === 'all' ? '#/learn' : `#/learn?chapter=${encodeURIComponent(state.chapter)}`;
     history.replaceState(null, '', hash);

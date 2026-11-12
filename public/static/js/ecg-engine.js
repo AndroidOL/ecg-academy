@@ -48,6 +48,8 @@ export function normalizeSpec(spec = {}) {
   if (!spec || typeof spec !== 'object' || Array.isArray(spec)) spec = {};
   const s = {
     rhythm: String(spec.rhythm || 'sinus'),
+    pacedMode: String(spec.pacedMode || 'vvi'),
+    capture: spec.capture !== false,
     rate: clamp(num(spec.rate, 72), 0, 320),
     atrialRate: clamp(num(spec.atrialRate, spec.rate || 72), 0, 400),
     irregularity: clamp(num(spec.irregularity, 0), 0, 0.45),
@@ -685,21 +687,34 @@ function addSpecialRhythm(samples, sampleRate, spec, lead, rng) {
     return;
   }
   if (spec.rhythm === 'paced') {
+    const mode = spec.pacedMode || 'vvi';
     const rr = 60 / clamp(spec.rate || 70, 40, 120);
     const polarity = ['III', 'aVF'].includes(lead) ? 0.8 : 1;
     for (let i = 0; i < n; i += 1) {
       const t = i / sampleRate;
+      let v = 0;
+      // 双腔起搏：心房钉 + P，随后按 AV 间期发放心室钉
+      if (mode === 'ddd') {
+        let atrial = (t - 0.28) % rr;
+        if (atrial < 0) atrial += rr;
+        v += 0.55 * Math.exp(-Math.pow((atrial - 0.004) / 0.0016, 2));
+        const ap = atrial - 0.018;
+        if (ap > -0.04 && ap < 0.10) v += 0.16 * Math.exp(-Math.pow(ap / 0.03, 2));
+      }
       let local = (t - 0.45) % rr;
       if (local < 0) local += rr;
-      const spike = Math.exp(-Math.pow((local - 0.004) / 0.0016, 2));
-      const q = local - 0.022;
-      let v = 0.9 * spike;
-      if (q >= 0 && q < 0.18) {
-        v += -0.62 * Math.exp(-Math.pow((q - 0.06) / 0.026, 2));
-        v += 0.5 * Math.exp(-Math.pow((q - 0.125) / 0.032, 2));
+      // 心室起搏钉始终存在；capture=false 时只有钉、无 QRS/T（失夺获示范）
+      v += 0.9 * Math.exp(-Math.pow((local - 0.004) / 0.0016, 2));
+      if (spec.capture !== false) {
+        const narrow = mode === 'crt';
+        const q = local - 0.022;
+        if (q >= 0 && q < (narrow ? 0.12 : 0.18)) {
+          v += -0.62 * Math.exp(-Math.pow((q - (narrow ? 0.05 : 0.06)) / (narrow ? 0.022 : 0.026), 2));
+          v += 0.5 * Math.exp(-Math.pow((q - (narrow ? 0.095 : 0.125)) / 0.032, 2));
+        }
+        const tw = local - (narrow ? 0.28 : 0.31);
+        if (tw > -0.16 && tw < 0.16) v += 0.24 * Math.exp(-Math.pow(tw / 0.055, 2));
       }
-      const tw = local - 0.31;
-      if (tw > -0.16 && tw < 0.16) v += 0.24 * Math.exp(-Math.pow(tw / 0.055, 2));
       samples[i] = v * leadFactor * polarity;
     }
     return;

@@ -90,7 +90,7 @@ final class Content
                 'quizEligible' => (bool) ($diagnosis['quizEligible'] ?? true),
                 'topic' => (bool) ($diagnosis['topic'] ?? false),
                 'urgency' => (string) ($diagnosis['urgency'] ?? 'core'),
-                'rarity' => (string) ($diagnosis['rarity'] ?? (in_array($diagnosis['chapter'], ['pacing','special','syndromes','pediatric','rhythm-competition','advanced'], true) ? 'uncommon' : 'common')),
+                'rarity' => (string) ($diagnosis['rarity'] ?? (in_array($diagnosis['chapter'], ['pacing','pacemaker','special','syndromes','pediatric','rhythm-competition','advanced'], true) ? 'uncommon' : 'common')),
                 'hasEcg' => isset($diagnosis['ecg']) && is_array($diagnosis['ecg']),
             ];
         }
@@ -141,7 +141,7 @@ final class Content
         $diagnosis['related'] = array_values($related);
         $diagnosis['topic'] = (bool) ($diagnosis['topic'] ?? false);
         $diagnosis['urgency'] = (string) ($diagnosis['urgency'] ?? 'core');
-        $diagnosis['rarity'] = (string) ($diagnosis['rarity'] ?? (in_array($diagnosis['chapter'], ['pacing','special','syndromes','pediatric','rhythm-competition','advanced'], true) ? 'uncommon' : 'common'));
+        $diagnosis['rarity'] = (string) ($diagnosis['rarity'] ?? (in_array($diagnosis['chapter'], ['pacing','pacemaker','special','syndromes','pediatric','rhythm-competition','advanced'], true) ? 'uncommon' : 'common'));
         $diagnosis['hasEcg'] = isset($diagnosis['ecg']) && is_array($diagnosis['ecg']);
         $diagnosis['ecg'] = $diagnosis['hasEcg'] ? self::fullSpec($diagnosis) : null;
         $guideline = self::guidelineFor((string) $diagnosis['id']);

@@ -3,7 +3,7 @@
     "id": "nbg-code",
     "name": "起搏器 NBG 代码",
     "en": "NBG pacemaker code",
-    "chapter": "pacing",
+    "chapter": "pacemaker",
     "difficulty": 2,
     "urgency": "core",
     "tags": [
@@ -54,7 +54,7 @@
     "id": "vvi-pacing",
     "name": "VVI 起搏心电图",
     "en": "VVI pacing ECG",
-    "chapter": "pacing",
+    "chapter": "pacemaker",
     "difficulty": 2,
     "urgency": "core",
     "tags": [
@@ -105,7 +105,7 @@
     "id": "aai-pacing",
     "name": "AAI 起搏心电图",
     "en": "AAI pacing ECG",
-    "chapter": "pacing",
+    "chapter": "pacemaker",
     "difficulty": 2,
     "urgency": "advanced",
     "tags": [
@@ -156,7 +156,7 @@
     "id": "ddd-pacing",
     "name": "DDD 双腔起搏心电图",
     "en": "DDD pacing ECG",
-    "chapter": "pacing",
+    "chapter": "pacemaker",
     "difficulty": 2,
     "urgency": "core",
     "tags": [
@@ -207,7 +207,7 @@
     "id": "crt-pacing",
     "name": "CRT 双室起搏",
     "en": "Cardiac resynchronization therapy",
-    "chapter": "pacing",
+    "chapter": "pacemaker",
     "difficulty": 3,
     "urgency": "advanced",
     "tags": [
@@ -258,7 +258,7 @@
     "id": "pacing-spike",
     "name": "起搏钉的识别",
     "en": "Pacemaker spikes",
-    "chapter": "pacing",
+    "chapter": "pacemaker",
     "difficulty": 1,
     "urgency": "core",
     "tags": [
@@ -309,7 +309,7 @@
     "id": "failure-to-capture",
     "name": "起搏失夺获",
     "en": "Failure to capture",
-    "chapter": "pacing",
+    "chapter": "pacemaker",
     "difficulty": 3,
     "urgency": "critical",
     "tags": [
@@ -360,7 +360,7 @@
     "id": "undersensing",
     "name": "起搏器感知不足",
     "en": "Undersensing",
-    "chapter": "pacing",
+    "chapter": "pacemaker",
     "difficulty": 2,
     "urgency": "core",
     "tags": [
@@ -411,7 +411,7 @@
     "id": "oversensing",
     "name": "起搏器感知过度",
     "en": "Oversensing",
-    "chapter": "pacing",
+    "chapter": "pacemaker",
     "difficulty": 2,
     "urgency": "core",
     "tags": [
@@ -462,7 +462,7 @@
     "id": "pmt",
     "name": "起搏器介导性心动过速",
     "en": "Pacemaker-mediated tachycardia",
-    "chapter": "pacing",
+    "chapter": "pacemaker",
     "difficulty": 3,
     "urgency": "urgent",
     "tags": [
@@ -513,7 +513,7 @@
     "id": "av-timing",
     "name": "起搏 AV 间期与优化",
     "en": "Pacing AV timing",
-    "chapter": "pacing",
+    "chapter": "pacemaker",
     "difficulty": 2,
     "urgency": "advanced",
     "tags": [
@@ -564,7 +564,7 @@
     "id": "hysteresis",
     "name": "起搏频率滞后与模式转换",
     "en": "Hysteresis and mode switch",
-    "chapter": "pacing",
+    "chapter": "pacemaker",
     "difficulty": 2,
     "urgency": "advanced",
     "tags": [
@@ -615,7 +615,7 @@
     "id": "icd-basics",
     "name": "ICD 与起搏功能",
     "en": "ICD and pacing",
-    "chapter": "pacing",
+    "chapter": "pacemaker",
     "difficulty": 3,
     "urgency": "critical",
     "tags": [
@@ -666,7 +666,7 @@
     "id": "magnet-mode",
     "name": "磁铁与起搏器",
     "en": "Magnet mode",
-    "chapter": "pacing",
+    "chapter": "pacemaker",
     "difficulty": 2,
     "urgency": "advanced",
     "tags": [
@@ -921,7 +921,7 @@
     "id": "pacing-malfunction-summary",
     "name": "起搏器故障的心电图线索",
     "en": "ECG clues of pacemaker malfunction",
-    "chapter": "pacing",
+    "chapter": "pacemaker",
     "difficulty": 3,
     "urgency": "critical",
     "tags": [
