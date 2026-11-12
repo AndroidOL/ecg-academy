@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261112a7';
+const __asset = __isNode ? '' : '?v=20261112a8';
 const { localizedName } = await import(`../i18n.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { icon, chapterColor, difficultyDots, escapeHtml, setupMiniECG, emptyState, medicalDisclaimer } = await import(`../ui.js${__asset}`);
@@ -24,6 +24,7 @@ export async function learnView({ query }) {
     location.hash = '#/intro';
   }
   const state = {
+    q: String(saved.q || ''),
     chapter: chapterMap.has(initialChapter) ? initialChapter : 'all',
     level: [1, 2, 3, 4].includes(savedLevel) ? savedLevel : 1,
     urgency: ['critical', 'urgent', 'core', 'advanced', 'all'].includes(saved.urgency) ? saved.urgency : 'all',
@@ -36,7 +37,7 @@ export async function learnView({ query }) {
   const saveState = () => {
     try {
       sessionStorage.setItem('ecg-learn-state-v1', JSON.stringify({
-        chapter: state.chapter, level: state.level, urgency: state.urgency,
+        q: state.q, chapter: state.chapter, level: state.level, urgency: state.urgency,
         sort: state.sort, page: state.page, scroll: window.scrollY || 0,
       }));
       localStorage.setItem('ecg-learn-level', String(state.level));
@@ -75,6 +76,7 @@ export async function learnView({ query }) {
     </section>
 
     <div class="filter-bar" style="margin-top:18px">
+      <div class="search-box">${icon('search', 16)}<input class="input" type="search" value="${escapeHtml(state.q)}" placeholder="搜索诊断、英文名或关键词…" data-learn-search aria-label="搜索诊断"></div>
       <div class="row-wrap" data-chapter-chips>
         <button class="chip ${state.chapter === 'all' ? 'active' : ''}" type="button" data-chapter="all">全部</button>
         ${chapters.map((chapter) => `<button class="chip ${state.chapter === chapter.id ? 'active' : ''}" type="button" data-chapter="${escapeHtml(chapter.id)}">${escapeHtml(localizedName(chapter))}</button>`).join('')}
@@ -101,7 +103,7 @@ export async function learnView({ query }) {
         <option value="weak" ${state.sort === 'weak' ? 'selected' : ''}>薄弱优先</option>
       </select>
     </div>
-    <div class="filter-summary"><b data-learn-count>${items.length}</b> 个结果 <span>·</span> 每页 24 章，按难度排序；点击卡片查看完整解析</div>
+    <div class="filter-summary"><b data-learn-count>${items.length}</b> 个结果 <span>·</span> <span data-learn-hint>每页 24 章，按难度排序；点击卡片查看完整解析</span></div>
     <section class="card-grid" data-learn-grid aria-live="polite"></section>
     <div class="pager-bar" data-pager aria-label="课程分页"></div>
     ${medicalDisclaimer()}
@@ -109,6 +111,7 @@ export async function learnView({ query }) {
 
   const grid = el.querySelector('[data-learn-grid]');
   const count = el.querySelector('[data-learn-count]');
+  const search = el.querySelector('[data-learn-search]');
   const levelSelect = el.querySelector('[data-level]');
   levelSelect.value = state.level === 0 ? 'all' : String(state.level);
   const urgencySelect = el.querySelector('[data-urgency]');
@@ -117,14 +120,23 @@ export async function learnView({ query }) {
   const pager = el.querySelector('[data-pager]');
 
   const filtered = () => {
+    const q = state.q.toLowerCase();
+    const ignoreLevel = q !== '' || state.chapter !== 'all';
     const list = items.filter((item) => {
       if (state.chapter !== 'all' && item.chapter !== state.chapter) return false;
-      if (state.level === 4) {
-        if (!item.topic) return false;
-      } else if (state.level && (item.topic || Number(item.difficulty) !== state.level)) {
-        return false;
+      if (!ignoreLevel) {
+        if (state.level === 4) {
+          if (!item.topic) return false;
+        } else if (state.level && (item.topic || Number(item.difficulty) !== state.level)) {
+          return false;
+        }
       }
       if (state.urgency !== 'all' && (item.urgency || 'core') !== state.urgency) return false;
+      if (q) {
+        const chapter = chapterMap.get(item.chapter);
+        const haystack = `${item.name} ${item.en} ${item.chapterName || ''} ${chapter?.en || ''} ${(item.tags || []).join(' ')} ${item.oneLiner}`.toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
       return true;
     });
     if (state.sort === 'urgency') {
@@ -174,12 +186,18 @@ export async function learnView({ query }) {
   const render = () => {
     const list = filtered();
     count.textContent = String(list.length);
+    const ignoreLevel = state.q !== '' || state.chapter !== 'all';
+    const hint = el.querySelector('[data-learn-hint]');
+    if (hint) hint.textContent = ignoreLevel ? '搜索/浏览章节时已忽略难度筛选' : '每页 24 章，按难度排序；点击卡片查看完整解析';
+    levelSelect.disabled = ignoreLevel;
+    levelSelect.value = ignoreLevel ? 'all' : (state.level === 0 ? 'all' : String(state.level));
+    levelSelect.title = ignoreLevel ? '搜索/浏览章节时忽略难度筛选' : '';
     const totalPages = Math.max(1, Math.ceil(list.length / state.pageSize));
     state.page = Math.min(Math.max(1, state.page), totalPages);
     const start = (state.page - 1) * state.pageSize;
     const pageItems = list.slice(start, start + state.pageSize);
     if (list.length === 0) {
-      grid.innerHTML = emptyState('没有匹配的诊断', '试试切换难度或查看“全部”。', 'search');
+      grid.innerHTML = emptyState('没有匹配的诊断', ignoreLevel ? '试试清空搜索或切换章节。' : '试试清空搜索、切换难度或查看“全部”。', 'search');
       pager.innerHTML = '';
       return;
     }
@@ -199,6 +217,11 @@ export async function learnView({ query }) {
   };
   const resetPage = () => { state.page = 1; saveState(); };
 
+  search.addEventListener('input', () => {
+    state.q = search.value.trim();
+    resetPage();
+    render();
+  });
   levelSelect.addEventListener('change', () => {
     const raw = levelSelect.value;
     state.level = raw === 'all' ? 0 : Number(raw) || 0;
