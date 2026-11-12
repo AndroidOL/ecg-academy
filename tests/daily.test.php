@@ -114,6 +114,8 @@ try {
         foreach ($result['details'] as $detail) {
             assert($detail['correct'] === true);
             assert($detail['correctNames'] !== []);
+            assert(!empty($detail['spec']['seed']), 'spec missing');
+            assert(($detail['spec']['duration'] ?? 0) === 8, 'spec duration missing');
         }
     });
 
@@ -178,6 +180,12 @@ try {
         assert(isset($result['id']) && $result['id'] > 0, 'result id missing');
         assert(count($result['details']) === 10, 'details missing');
         assert(isset($result['details'][0]['selectedNames'], $result['details'][0]['correctNames']), 'answer names missing');
+        assert(!empty($result['details'][0]['spec']['seed']), 'history spec missing');
+        $pdo = Db::pdo();
+        $pdo->prepare('UPDATE daily_results SET details = JSON_REMOVE(details, \'$[0].spec\') WHERE user_id = ? AND day = ?')
+            ->execute([$guest, $today]);
+        $old = Daily::dayResult($guest, $today);
+        assert(!empty($old['details'][0]['spec']['seed']), 'old record spec hydration failed');
         $records = Daily::records($guest);
         assert($records !== [], 'records empty');
         assert($records[0]['day'] === $today, 'latest record not today');

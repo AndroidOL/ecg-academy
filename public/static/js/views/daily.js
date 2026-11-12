@@ -1,6 +1,6 @@
 
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261112a2';
+const __asset = __isNode ? '' : '?v=20261112a4';
 const { localizedName } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -21,6 +21,7 @@ const state = {
   result: null,
   historyDay: null,
   viewer: null,
+  reviewViewers: [],
   timerId: null,
   busy: false,
 };
@@ -37,6 +38,45 @@ function destroyViewer() {
     state.viewer.destroy();
     state.viewer = null;
   }
+}
+
+function destroyReviewViewers() {
+  (state.reviewViewers || []).forEach((viewer) => {
+    try { viewer?.destroy?.(); } catch { /* ignore */ }
+  });
+  state.reviewViewers = [];
+}
+
+function mountReviewEcgs(el, result) {
+  destroyReviewViewers();
+  const details = Array.isArray(result?.details) ? result.details : [];
+  details.forEach((detail, index) => {
+    const root = el.querySelector(`[data-daily-review-ecg="${index}"]`);
+    if (!root || !detail?.spec) return;
+    try {
+      const viewer = mountECG(root, detail.spec, {
+        mode: 'rhythm', speed: 1, showAnnotations: false, showSummary: false, autoPlay: false,
+      });
+      state.reviewViewers[index] = viewer;
+      const play = el.querySelector(`[data-daily-review-play="${index}"]`);
+      if (play) {
+        play.addEventListener('click', () => {
+          if (viewer.playing) viewer.pause();
+          else viewer.play(1);
+          play.textContent = viewer.playing ? '暂停' : '播放';
+        });
+      }
+      const twelve = el.querySelector(`[data-daily-review-12lead="${index}"]`);
+      if (twelve) {
+        let mode = 'rhythm';
+        twelve.addEventListener('click', () => {
+          mode = mode === '12lead' ? 'rhythm' : '12lead';
+          viewer.setMode(mode);
+          twelve.textContent = mode === '12lead' ? '节律条' : '12 导联';
+        });
+      }
+    } catch { /* renderer unavailable */ }
+  });
 }
 
 function fmtClock(ms) {
@@ -132,6 +172,11 @@ function resultDetailMarkup(result, title = '今日复盘') {
     return `<div class="daily-review-item ${tone}">
       <div class="daily-review-head"><span class="badge ${detail.correct ? 'badge-ok' : detail.partial ? 'badge-warn' : 'badge-danger'}">${detail.correct ? '正确' : detail.partial ? '部分正确' : '错误'}</span>${detail.unlocked === false ? `<span class="badge">自由练习 · Lv.${detail.unlockLevel} 后计分</span>` : ''}${detail.slow ? '<span class="badge badge-warn">不熟练 · &gt;15s</span>' : ''}<span class="muted">第 ${index + 1} 题 · ${fmtClock(detail.timeMs || 0)}${Number.isFinite(Number(detail.score)) ? ` · ${Number(detail.score) >= 0 ? '+' : ''}${detail.score} 分` : ''}${Number.isFinite(Number(detail.xp)) ? ` · ${Number(detail.xp) > 0 ? '+' : ''}${detail.xp} XP` : ''}</span></div>
       <p class="daily-review-q">${escapeHtml(detail.stem || detail.question || '该心电图最可能的诊断是？')}</p>
+      ${detail.spec ? `<div class="daily-review-ecg" data-daily-review-ecg="${index}"></div>
+        <div class="daily-review-ecg-tools">
+          <button class="btn btn-xs btn-secondary" type="button" data-daily-review-play="${index}">播放</button>
+          ${detail.spec.show12Lead ? `<button class="btn btn-xs btn-ghost" type="button" data-daily-review-12lead="${index}">12 导联</button>` : ''}
+        </div>` : ''}
       <p class="daily-review-a">你的答案：${escapeHtml(chosen)} · 正确答案：<b>${escapeHtml(correct)}</b></p>
       ${notes ? `<p class="daily-review-note">${escapeHtml(notes)}</p>` : ''}
     </div>`;
@@ -464,6 +509,7 @@ async function loadHistory(el, day) {
 
 function render(el) {
   destroyViewer();
+  destroyReviewViewers();
   clearTimer();
   if (state.mode === 'runner') {
     el.innerHTML = runnerMarkup();
@@ -479,6 +525,7 @@ function render(el) {
     });
     el.querySelector('[data-share]')?.addEventListener('click', shareResult);
     bindHistoryClicks(el);
+    mountReviewEcgs(el, state.result);
     return;
   }
   if (state.mode === 'history') {
@@ -488,6 +535,7 @@ function render(el) {
       state.historyDay = null;
       render(el);
     });
+    mountReviewEcgs(el, state.result);
     return;
   }
   el.innerHTML = homeMarkup();
@@ -526,6 +574,7 @@ function render(el) {
     }
   });
   bindHistoryClicks(el);
+  mountReviewEcgs(el, state.status?.result || null);
 }
 
 export async function dailyView() {
@@ -542,6 +591,7 @@ export async function dailyView() {
     el,
     destroy() {
       destroyViewer();
+      destroyReviewViewers();
       clearTimer();
     },
   };

@@ -162,6 +162,7 @@ final class Daily
                 'level' => $built['level'],
                 'question' => $built['question'],
                 'stem' => $built['stem'],
+                'spec' => $built['spec'],
                 'correct' => $isCorrect,
                 'partial' => $partial,
                 'slow' => $slow,
@@ -314,6 +315,23 @@ final class Daily
         ];
     }
 
+    /**
+     * 旧记录没有存 ecg spec；按 bankId + day 重建，保证历史复盘也能看到原题。
+     */
+    private static function hydrateDetails(string $day, array $details): array
+    {
+        if ($details === []) return $details;
+        $bank = self::bankIndex();
+        foreach ($details as &$detail) {
+            if (!is_array($detail) || isset($detail['spec']) || empty($detail['id'])) continue;
+            $entry = $bank[(string) $detail['id']] ?? null;
+            if (!$entry) continue;
+            $built = self::buildQuestion($day, $entry);
+            if ($built !== null) $detail['spec'] = $built['spec'];
+        }
+        return $details;
+    }
+
     private static function bankIndex(): array
     {
         $index = [];
@@ -348,6 +366,7 @@ final class Daily
         $row = $stmt->fetch();
         if (!$row) return null;
         $details = json_decode((string) ($row['details'] ?? '[]'), true);
+        $details = is_array($details) ? self::hydrateDetails((string) $row['day'], $details) : [];
         return [
             'id' => (int) $row['id'],
             'day' => (string) $row['day'],
