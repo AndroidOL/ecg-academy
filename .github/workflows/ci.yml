@@ -43,6 +43,8 @@ jobs:
         run: php scripts/validate_section_bank.php
       - name: Audit section answer accuracy
         run: php scripts/audit_section_bank.php
+      - name: Validate special practice questions
+        run: php scripts/validate_special_questions.php
       - name: Prepare integration database
         run: |
           cat > app/config.local.php <<'PHP'
@@ -56,6 +58,8 @@ jobs:
         run: php tests/assignment.test.php
       - name: Learning and exam integration test
         run: php tests/learning.test.php
+      - name: Special practice integration test
+        run: php tests/special.test.php
       - name: Leaderboard integration test
         run: php tests/leaderboard.test.php
       - name: Validate multi-hundred-chapter curriculum

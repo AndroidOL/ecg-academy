@@ -14,6 +14,8 @@ final class Quiz
         $level = max(1, min(3, (int) ($params['level'] ?? 1)));
         $chapter = (string) ($params['chapter'] ?? 'all');
         $focus = array_values(array_filter((array) ($params['focus'] ?? []), 'is_string'));
+        $special = preg_replace('/[^a-z0-9-]/', '', strtolower(trim((string) ($params['special'] ?? ''))));
+        $optionPool = array_values(array_filter(array_map('strval', (array) ($params['optionPool'] ?? [])), static fn (string $id): bool => Content::find($id) !== null));
         $confusionId = trim((string) ($params['confusion'] ?? ''));
         $assignment = null;
         $assignmentCode = trim((string) ($params['assignment'] ?? ''));
@@ -34,13 +36,15 @@ final class Quiz
         $combo = null;
         $primary = null;
         $secondary = null;
+        $customOptions = null;
+        $customExplanations = [];
         $question = '该心电图最可能的诊断是？';
         $stem = '';
 
         $all = Content::all();
         $bankSeed = null;
         $bankId = null;
-        $entry = QuestionBank::pick($level, $chapter, $focus);
+        $entry = QuestionBank::pick($level, $chapter, $focus, $special);
         if ($entry) {
             $candidatePrimary = $all[$entry['primary']] ?? null;
             $candidateSecondary = !empty($entry['secondary']) ? ($all[$entry['secondary']] ?? null) : null;
@@ -52,6 +56,10 @@ final class Quiz
                 $bankId = (string) ($entry['id'] ?? '');
                 $question = (string) ($entry['question'] ?? $question);
                 $stem = (string) ($entry['stem'] ?? '');
+                if (isset($entry['options']) && is_array($entry['options'])) {
+                    $customOptions = $entry['options'];
+                    $customExplanations = array_values(array_filter((array) ($entry['explanations'] ?? []), 'is_array'));
+                }
                 if (!empty($entry['combo'])) {
                     foreach (require BASE_PATH . '/data/combos.php' as $comboCandidate) {
                         if (($comboCandidate['id'] ?? '') === $entry['combo']) {
@@ -111,13 +119,20 @@ final class Quiz
             $level = $level === 2 ? 2 : 1;
         }
 
-        $correctIds = [$primary['id']];
-        if ($secondary) $correctIds[] = $secondary['id'];
-        $correctIds = array_values(array_unique($correctIds));
+        if ($customOptions !== null) {
+            $correctIds = array_values(array_unique(array_map('strval', (array) ($entry['correctIds'] ?? []))));
+        } else {
+            $correctIds = [$primary['id']];
+            if ($secondary) $correctIds[] = $secondary['id'];
+            $correctIds = array_values(array_unique($correctIds));
+        }
 
         $spec = $primary['ecg'] ?? [];
         if ($combo) {
             $spec = array_replace_recursive($spec, $combo['overrides'] ?? []);
+        }
+        if ($entry && !empty($entry['overrides']) && is_array($entry['overrides'])) {
+            $spec = array_replace_recursive($spec, $entry['overrides']);
         }
         $spec['seed'] = $bankSeed ?? random_int(1, 99999);
         if ($entry && !empty($entry['rate'])) {
@@ -127,12 +142,12 @@ final class Quiz
         $spec['duration'] = 8;
         $spec['annotations'] = [];
         unset($spec['description'], $spec['preview']);
-        if (($secondary['ecg']['show12Lead'] ?? false) || ($primary['ecg']['show12Lead'] ?? false)) {
+        if (($secondary['ecg']['show12Lead'] ?? false) || ($primary['ecg']['show12Lead'] ?? false) || ($entry && !empty($entry['show12Lead']))) {
             $spec['show12Lead'] = true;
         }
 
         if ($confusionId !== '' && (!Content::find($confusionId) || in_array($confusionId, $correctIds, true))) $confusionId = '';
-        $options = self::buildOptions($primary, $secondary, count($correctIds) > 1, '', $confusionId !== '' ? $confusionId : null);
+        $options = self::buildOptions($primary, $secondary, count($correctIds) > 1, '', $confusionId !== '' ? $confusionId : null, $optionPool !== [] ? $optionPool : null, $customOptions);
         $optionIds = array_column($options, 'id');
         $caseKey = $bankId ?? implode('+', $correctIds);
         $payload = [
@@ -140,12 +155,15 @@ final class Quiz
             'correctIds' => $correctIds,
             'optionIds' => $optionIds,
             'level' => $level,
-            'chapter' => $primary['chapter'],
+            'chapter' => $entry['chapter'] ?? $primary['chapter'],
             'question' => $question,
             'stem' => $stem,
             'caseKey' => $caseKey,
             'primaryId' => $primary['id'],
             'bankId' => $bankId,
+            'special' => $special,
+            'optionNames' => array_column($options, 'name', 'id'),
+            'customExplanations' => $customExplanations,
             'assignmentId' => $assignment ? (int) $assignment['id'] : null,
             'deviceHash' => $deviceHash,
             'createdAt' => time(),
@@ -230,9 +248,28 @@ final class Quiz
         }
     }
 
-    public static function buildOptions(array $primary, ?array $secondary, bool $multiple, string $salt = '', ?string $forcedDistractorId = null): array
+    public static function buildOptions(array $primary, ?array $secondary, bool $multiple, string $salt = '', ?string $forcedDistractorId = null, ?array $optionPool = null, ?array $customOptions = null): array
     {
         $all = Content::all();
+        if ($customOptions !== null) {
+            $options = [];
+            foreach ($customOptions as $option) {
+                if (!is_array($option) || empty($option['id'])) continue;
+                $options[] = [
+                    'id' => (string) $option['id'],
+                    'name' => (string) ($option['name'] ?? $option['id']),
+                    'nameEn' => (string) ($option['nameEn'] ?? $option['name'] ?? $option['id']),
+                    'chapter' => (string) ($option['chapter'] ?? ''),
+                ];
+            }
+            if ($salt !== '') {
+                $optRank = static fn (array $option): string => hash('sha256', $salt . '|o|' . $option['id']);
+                usort($options, static fn (array $a, array $b): int => strcmp($optRank($a), $optRank($b)));
+            } else {
+                shuffle($options);
+            }
+            return $options;
+        }
         $correct = [$primary];
         if ($secondary) $correct[] = $secondary;
         $correctIds = array_column($correct, 'id');
@@ -240,20 +277,28 @@ final class Quiz
         $ids = $correctIds;
         $candidates = [];
 
-        foreach ($correct as $diagnosis) {
-            foreach ($diagnosis['differential'] ?? [] as $diff) {
-                $id = $diff['id'] ?? '';
-                if ($id !== '' && isset($all[$id]) && !in_array($id, $ids, true)) {
-                    $candidates[] = $id;
+        if ($optionPool !== null) {
+            // 专项训练只允许本专项诊断作为干扰项；不足 5 项时宁可少选项。
+            foreach ($optionPool as $id) {
+                $id = (string) $id;
+                if (isset($all[$id]) && !in_array($id, $ids, true)) $candidates[] = $id;
+            }
+        } else {
+            foreach ($correct as $diagnosis) {
+                foreach ($diagnosis['differential'] ?? [] as $diff) {
+                    $id = $diff['id'] ?? '';
+                    if ($id !== '' && isset($all[$id]) && !in_array($id, $ids, true)) {
+                        $candidates[] = $id;
+                    }
                 }
             }
-        }
-        if ($forcedDistractorId !== null && isset($all[$forcedDistractorId]) && !in_array($forcedDistractorId, $ids, true)) {
-            array_unshift($candidates, $forcedDistractorId);
-        }
-        foreach ($all as $diagnosis) {
-            if (!in_array($diagnosis['id'], $ids, true) && ($diagnosis['quizEligible'] ?? true)) {
-                $candidates[] = $diagnosis['id'];
+            if ($forcedDistractorId !== null && isset($all[$forcedDistractorId]) && !in_array($forcedDistractorId, $ids, true)) {
+                array_unshift($candidates, $forcedDistractorId);
+            }
+            foreach ($all as $diagnosis) {
+                if (!in_array($diagnosis['id'], $ids, true) && ($diagnosis['quizEligible'] ?? true)) {
+                    $candidates[] = $diagnosis['id'];
+                }
             }
         }
         $candidates = array_values(array_unique($candidates));
@@ -267,7 +312,7 @@ final class Quiz
             if (count($ids) >= $wanted) break;
             if (!in_array($id, $ids, true)) $ids[] = $id;
         }
-        if ($forcedDistractorId !== null && isset($all[$forcedDistractorId]) && !in_array($forcedDistractorId, $correctIds, true) && !in_array($forcedDistractorId, $ids, true)) {
+        if ($optionPool === null && $forcedDistractorId !== null && isset($all[$forcedDistractorId]) && !in_array($forcedDistractorId, $correctIds, true) && !in_array($forcedDistractorId, $ids, true)) {
             for ($i = count($ids) - 1; $i >= 0; $i -= 1) {
                 if (!in_array($ids[$i], $correctIds, true)) { $ids[$i] = $forcedDistractorId; break; }
             }
@@ -381,6 +426,7 @@ final class Quiz
                    mastered_at = IF(VALUES(status) = "mastered", COALESCE(mastered_at, NOW()), mastered_at)'
             );
             foreach ($correctIds as $id) {
+                if (!isset($all[$id])) continue;
                 $progress->execute([$userId, $id, $isCorrect ? 'mastered' : 'read', $isCorrect ? date('Y-m-d H:i:s') : null]);
             }
 
@@ -393,33 +439,37 @@ final class Quiz
         self::recordAssignmentAttempt($payload, $isCorrect, $score, $timeMs);
         Learning::recordPracticeAnswer($userId, $isCorrect, (string) ($payload['chapter'] ?? ''), (string) (($payload['bankId'] ?? '') ?: ($payload['caseKey'] ?? 'practice')), $timeMs, $score, $scored['unlocked']);
         $all = Content::all();
-        $selectedNames = [];
-        foreach ($selectedIds as $id) {
-            $selectedNames[] = $all[$id]['name'] ?? $id;
-        }
+        $optionNames = (array) ($payload['optionNames'] ?? []);
+        $customExplanations = array_values(array_filter((array) ($payload['customExplanations'] ?? []), 'is_array'));
+        $nameFor = static fn (string $id): string => $all[$id]['name'] ?? $optionNames[$id] ?? $id;
+        $selectedNames = array_map($nameFor, $selectedIds);
         $explanation = [];
-        foreach ($correctIds as $id) {
-            $d = $all[$id] ?? null;
-            if (!$d) continue;
-            $explanation[] = [
-                'id' => $d['id'],
-                'name' => $d['name'],
-                'oneLiner' => $d['oneLiner'] ?? '',
-                'specificity' => $d['specificity'] ?? '',
-                'keyNumbers' => $d['keyNumbers'] ?? [],
-                'criteria' => array_slice($d['criteria'] ?? [], 0, 3),
-                'management' => array_slice($d['management'] ?? [], 0, 2),
-                'description' => $d['ecg']['description'] ?? '',
-            ];
+        if ($customExplanations !== []) {
+            $explanation = $customExplanations;
+        } else {
+            foreach ($correctIds as $id) {
+                $d = $all[$id] ?? null;
+                if (!$d) continue;
+                $explanation[] = [
+                    'id' => $d['id'],
+                    'name' => $d['name'],
+                    'oneLiner' => $d['oneLiner'] ?? '',
+                    'specificity' => $d['specificity'] ?? '',
+                    'keyNumbers' => $d['keyNumbers'] ?? [],
+                    'criteria' => array_slice($d['criteria'] ?? [], 0, 3),
+                    'management' => array_slice($d['management'] ?? [], 0, 2),
+                    'description' => $d['ecg']['description'] ?? '',
+                ];
+            }
         }
 
-        $localText = self::localExplanation($isCorrect, $partial, $correctIds, $selectedIds, $all);
+        $localText = self::localExplanation($isCorrect, $partial, $correctIds, $selectedIds, $all, $optionNames, $customExplanations);
         return [
             'attemptId' => $attemptId,
             'correct' => $isCorrect,
             'partial' => $partial,
             'correctIds' => $correctIds,
-            'correctNames' => array_map(static fn (string $id): string => $all[$id]['name'] ?? $id, $correctIds),
+            'correctNames' => array_map($nameFor, $correctIds),
             'selectedNames' => $selectedNames,
             'score' => $score,
             'xp' => $xp,
@@ -493,38 +543,47 @@ final class Quiz
         self::recordAssignmentAttempt($payload, $isCorrect, $score, $timeMs);
         Learning::recordPracticeAnswer($userId, $isCorrect, (string) ($payload['chapter'] ?? ''), (string) (($payload['bankId'] ?? '') ?: ($payload['caseKey'] ?? 'practice')), $timeMs, $score, $scored['unlocked']);
         $all = Content::all();
-        $selectedNames = array_map(static fn (string $id): string => $all[$id]['name'] ?? $id, $selectedIds);
+        $optionNames = (array) ($payload['optionNames'] ?? []);
+        $customExplanations = array_values(array_filter((array) ($payload['customExplanations'] ?? []), 'is_array'));
+        $nameFor = static fn (string $id): string => $all[$id]['name'] ?? $optionNames[$id] ?? $id;
+        $selectedNames = array_map($nameFor, $selectedIds);
         $explanation = [];
-        foreach ($correctIds as $id) {
-            $d = $all[$id] ?? null;
-            if (!$d) continue;
-            $explanation[] = [
-                'id' => $d['id'], 'name' => $d['name'], 'oneLiner' => $d['oneLiner'] ?? '',
-                'specificity' => $d['specificity'] ?? '', 'keyNumbers' => $d['keyNumbers'] ?? [],
-                'criteria' => array_slice($d['criteria'] ?? [], 0, 3), 'management' => array_slice($d['management'] ?? [], 0, 2),
-                'description' => $d['ecg']['description'] ?? '',
-            ];
+        if ($customExplanations !== []) {
+            $explanation = $customExplanations;
+        } else {
+            foreach ($correctIds as $id) {
+                $d = $all[$id] ?? null;
+                if (!$d) continue;
+                $explanation[] = [
+                    'id' => $d['id'], 'name' => $d['name'], 'oneLiner' => $d['oneLiner'] ?? '',
+                    'specificity' => $d['specificity'] ?? '', 'keyNumbers' => $d['keyNumbers'] ?? [],
+                    'criteria' => array_slice($d['criteria'] ?? [], 0, 3), 'management' => array_slice($d['management'] ?? [], 0, 2),
+                    'description' => $d['ecg']['description'] ?? '',
+                ];
+            }
         }
         return [
             'attemptId' => $token, 'correct' => $isCorrect, 'partial' => $partial,
             'correctIds' => $correctIds,
-            'correctNames' => array_map(static fn (string $id): string => $all[$id]['name'] ?? $id, $correctIds),
+            'correctNames' => array_map($nameFor, $correctIds),
             'selectedNames' => $selectedNames, 'score' => $score, 'xp' => $xp, 'timeMs' => $timeMs,
             'baseScore' => $base, 'timeBonus' => $timeBonus,
             'slow' => $slow, 'speed' => $scored['speed'],
             'xpMultiplier' => $scored['xpMultiplier'], 'penalty' => $scored['penalty'],
             'unlocked' => $scored['unlocked'], 'unlockLevel' => $scored['unlockLevel'],
             'explanation' => $explanation,
-            'localExplanation' => self::localExplanation($isCorrect, $partial, $correctIds, $selectedIds, $all),
+            'localExplanation' => self::localExplanation($isCorrect, $partial, $correctIds, $selectedIds, $all, $optionNames, $customExplanations),
             'aiAvailable' => false,
         ];
     }
 
-    private static function localExplanation(bool $correct, bool $partial, array $correctIds, array $selectedIds, array $all): string
+    private static function localExplanation(bool $correct, bool $partial, array $correctIds, array $selectedIds, array $all, array $optionNames = [], array $customExplanations = []): string
     {
-        $correctNames = array_map(static fn (string $id): string => $all[$id]['name'] ?? $id, $correctIds);
+        $nameFor = static fn (string $id): string => $all[$id]['name'] ?? $optionNames[$id] ?? $id;
+        $correctNames = array_map($nameFor, $correctIds);
+        $custom = $customExplanations[0] ?? null;
         if ($correct) {
-            $d = $all[$correctIds[0]] ?? null;
+            $d = $all[$correctIds[0]] ?? $custom;
             return '判断正确。关键线索：' . ($d['specificity'] ?? $d['oneLiner'] ?? '') . ' 下一步可用“AI 导师”继续追问机制与鉴别。';
         }
         $parts = [];
@@ -534,16 +593,16 @@ final class Quiz
         } else {
             $parts[] = '你的选择与正确诊断不一致。';
         }
-        $primary = $all[$correctIds[0]] ?? null;
+        $primary = $all[$correctIds[0]] ?? $custom;
         if ($primary) {
             $parts[] = '最关键的识别点是：' . ($primary['specificity'] ?? $primary['oneLiner'] ?? '');
             if (!empty($primary['criteria'][0])) {
                 $parts[] = '再看一遍标准：' . $primary['criteria'][0];
             }
         }
-        $selectedNames = array_map(static fn (string $id): string => $all[$id]['name'] ?? $id, $selectedIds);
+        $selectedNames = array_map($nameFor, $selectedIds);
         if ($selectedNames !== []) {
-            $parts[] = '你选择了 ' . implode('、', $selectedNames) . '，请对照“鉴别诊断”部分逐条排除。';
+            $parts[] = '你选择了 ' . implode('、', $selectedNames) . '，请对照解析逐条排除。';
         }
         return implode(' ', $parts);
     }
@@ -552,7 +611,7 @@ final class Quiz
     {
         $limit = max(1, min(30, $limit));
         $stmt = Db::pdo()->prepare(
-            'SELECT id, case_key, score, is_correct, time_ms, correct_ids, selected_ids, created_at, answered_at
+            'SELECT id, case_key, score, is_correct, time_ms, correct_ids, selected_ids, payload, created_at, answered_at
              FROM quiz_attempts WHERE user_id = ? AND status = "answered" ORDER BY id DESC LIMIT ' . $limit
         );
         $stmt->execute([$userId]);
@@ -561,14 +620,17 @@ final class Quiz
         return array_map(static function (array $row) use ($all): array {
             $correct = json_decode((string) $row['correct_ids'], true) ?: [];
             $selected = json_decode((string) ($row['selected_ids'] ?? '[]'), true) ?: [];
+            $payload = json_decode((string) ($row['payload'] ?? '{}'), true) ?: [];
+            $optionNames = (array) ($payload['optionNames'] ?? []);
+            $nameFor = static fn (string $id): string => $all[$id]['name'] ?? $optionNames[$id] ?? $id;
             return [
                 'id' => (int) $row['id'],
                 'caseKey' => $row['case_key'],
                 'correct' => (int) $row['is_correct'] === 1,
                 'score' => (int) $row['score'],
                 'timeMs' => (int) $row['time_ms'],
-                'correctNames' => array_map(static fn (string $id): string => $all[$id]['name'] ?? $id, $correct),
-                'selectedNames' => array_map(static fn (string $id): string => $all[$id]['name'] ?? $id, $selected),
+                'correctNames' => array_map($nameFor, $correct),
+                'selectedNames' => array_map($nameFor, $selected),
                 'createdAt' => $row['answered_at'] ?: $row['created_at'],
             ];
         }, $rows);

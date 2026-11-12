@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261112a9';
+const __asset = __isNode ? '' : '?v=20261112a10';
 const { localizedName, getLocale, translate } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -23,8 +23,9 @@ const SPECIAL_PRACTICES = [
   {
     id: 'posterior-rv',
     label: '后壁与右室心梗',
-    note: '可疑后壁 + 18 导联思路',
+    note: '正常/异常波形 + 18 导联决策',
     level: 3,
+    count: 8,
     focus: ['stemi-posterior', 'stemi-rv', 'stemi-inferior'],
   },
   {
@@ -60,6 +61,8 @@ const state = {
   chapter: 'all',
   total: 5,
   focus: [],
+  special: '',
+  optionPool: [],
   confusion: '',
   quiz: null,
   index: 0,
@@ -124,6 +127,8 @@ export async function practiceView({ query } = {}) {
   state.submitted = false;
   state.result = null;
   state.focus = [];
+  state.special = '';
+  state.optionPool = [];
   const initialFocus = String(query?.get('focus') || '').split(',').map((x) => x.trim()).filter(Boolean);
   const initialConfusion = String(query?.get('confusion') || '').trim();
   state.focus = initialFocus;
@@ -192,7 +197,7 @@ export async function practiceView({ query } = {}) {
             return `<button class="special-card" type="button" data-special="${item.id}">
               <b>${item.label}</b>
               <span>${item.note}</span>
-              <small>${freePractice ? `Lv.${item.level} 后计分 · ` : ''}${item.focus.length} 个相关诊断</small>
+              <small>${freePractice ? `Lv.${item.level} 后计分 · ` : ''}${item.count ? `${item.count} 道专题题` : `${item.focus.length} 个相关诊断`}</small>
             </button>`;
           }).join('')}
         </div>
@@ -257,7 +262,7 @@ export async function practiceView({ query } = {}) {
     levelButtons.forEach((b) => b.classList.toggle('active', Number(b.dataset.level) === item.level));
     button.disabled = true;
     try {
-      await startQuiz(item.focus);
+      await startQuiz(item.focus, { special: item.id, optionPool: item.focus });
     } catch (error) {
       toast(error.message || '专项练习出题失败', 'error');
     } finally {
@@ -340,9 +345,11 @@ export async function practiceView({ query } = {}) {
     }
   });
 
-  async function startQuiz(focus = []) {
+  async function startQuiz(focus = [], options = {}) {
     clearSpeedTimer();
     state.focus = focus;
+    state.special = options.special || '';
+    state.optionPool = Array.isArray(options.optionPool) ? options.optionPool : [];
     const requestedConfusion = state.confusion;
     state.confusion = '';
     state.answeredCount = 0;
@@ -350,7 +357,16 @@ export async function practiceView({ query } = {}) {
     state.lives = 3;
     state.speedRemaining = 60;
     state.roundTotal = state.gameMode === 'classic' ? state.total : 0;
-    const quiz = await api.quizNew({ level: state.level, chapter: state.chapter, focus, confusion: requestedConfusion || undefined, assignment: state.assignmentCode, device: state.assignmentCode ? deviceId() : undefined });
+    const quiz = await api.quizNew({
+      level: state.level,
+      chapter: state.chapter,
+      focus,
+      special: state.special || undefined,
+      optionPool: state.optionPool.length ? state.optionPool : undefined,
+      confusion: requestedConfusion || undefined,
+      assignment: state.assignmentCode,
+      device: state.assignmentCode ? deviceId() : undefined,
+    });
     state.quiz = quiz;
     state.index = 0;
     state.correct = 0;
@@ -485,7 +501,7 @@ function renderQuestion(el) {
             </label>`).join('')}
           </div>
           <div class="quiz-actions">
-            <span class="muted" style="font-size:11px">${multiple ? '选择所有符合的诊断后再提交。' : '选择一个最可能的诊断。'} · 键盘 1–5 / Enter</span>
+            <span class="muted" style="font-size:11px">${multiple ? '选择所有符合的诊断后再提交。' : '选择一个最可能的答案。'} · 键盘 1–${quiz.options.length} / Enter</span>
             <button class="btn btn-primary" type="button" data-submit disabled>${icon('check', 15)} 提交答案</button>
           </div>
           <div id="quiz-feedback" role="status" aria-live="polite"></div>
@@ -686,7 +702,15 @@ function renderQuestion(el) {
       state.index += 1;
       setButtonLoading(next, true, '出题中');
       try {
-        const newQuiz = await api.quizNew({ level: state.level, chapter: state.chapter, focus: state.focus, assignment: state.assignmentCode, device: state.assignmentCode ? deviceId() : undefined });
+        const newQuiz = await api.quizNew({
+          level: state.level,
+          chapter: state.chapter,
+          focus: state.focus,
+          special: state.special || undefined,
+          optionPool: state.optionPool.length ? state.optionPool : undefined,
+          assignment: state.assignmentCode,
+          device: state.assignmentCode ? deviceId() : undefined,
+        });
         state.quiz = newQuiz;
         state.submitted = false;
         state.selected = new Set();

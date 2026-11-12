@@ -137,10 +137,16 @@ final class ApiController
         if (!empty($_GET['focus'])) {
             $focus = array_values(array_filter(array_map('trim', explode(',', (string) $_GET['focus']))));
         }
+        $optionPool = [];
+        if (!empty($_GET['optionPool'])) {
+            $optionPool = array_values(array_filter(array_map('trim', explode(',', (string) $_GET['optionPool']))));
+        }
         $payload = Quiz::newAttempt((int) $user['id'], [
             'level' => (int) ($_GET['level'] ?? 1),
             'chapter' => (string) ($_GET['chapter'] ?? 'all'),
             'focus' => $focus,
+            'special' => (string) ($_GET['special'] ?? ''),
+            'optionPool' => $optionPool,
             'confusion' => (string) ($_GET['confusion'] ?? ''),
             'assignment' => (string) ($_GET['assignment'] ?? ''),
             'device' => (string) ($_GET['device'] ?? ''),

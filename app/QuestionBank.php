@@ -34,8 +34,16 @@ final class QuestionBank
         ];
     }
 
-    public static function pick(int $level, string $chapter = 'all', array $focus = []): ?array
+    public static function pick(int $level, string $chapter = 'all', array $focus = [], string $special = ''): ?array
     {
+        if ($special !== '') {
+            $specialPool = SpecialQuestions::forModule($special);
+            if ($specialPool !== []) {
+                $sameLevel = array_values(array_filter($specialPool, static fn (array $entry): bool => (int) ($entry['level'] ?? 1) === $level));
+                $pool = $sameLevel !== [] ? $sameLevel : $specialPool;
+                return $pool[array_rand($pool)];
+            }
+        }
         $all = self::all();
         if ($all === []) return null;
         $matchesFocus = static function (array $entry) use ($focus): bool {
