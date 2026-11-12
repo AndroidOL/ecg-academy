@@ -12,7 +12,7 @@
 
 </div>
 
-![首页](docs/screenshots/home.png)
+![首页](public/static/img/screenshots/home.png)
 
 ## 这是什么
 
@@ -64,10 +64,10 @@
 
 | 系统判读 | 实验室 |
 | --- | --- |
-| ![系统判读训练](docs/screenshots/read.png) | ![电解质实验室](docs/screenshots/lab.png) |
-| ![每日挑战](docs/screenshots/daily.png) | ![向量实验室](docs/screenshots/vectors.png) |
-| ![课程图谱](docs/screenshots/learn.png) | ![双语术语表](docs/screenshots/glossary.png) |
-| ![判读练习](docs/screenshots/practice-quiz.png) | ![急救模拟](docs/screenshots/sim.png) |
+| ![系统判读训练](public/static/img/screenshots/read.png) | ![电解质实验室](public/static/img/screenshots/lab.png) |
+| ![每日挑战](public/static/img/screenshots/daily.png) | ![向量实验室](public/static/img/screenshots/vectors.png) |
+| ![课程图谱](public/static/img/screenshots/learn.png) | ![双语术语表](public/static/img/screenshots/glossary.png) |
+| ![判读练习](public/static/img/screenshots/practice-quiz.png) | ![急救模拟](public/static/img/screenshots/sim.png) |
 
 ## 快速开始
 
