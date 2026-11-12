@@ -440,6 +440,16 @@ function profileFor(spec, lead) {
     if (lead === 'I' || lead === 'aVL') prof.r = Math.max(0.35, prof.r);
     if (lead === 'III' || lead === 'aVF') prof.s = Math.min(-0.3, prof.s);
   }
+  if (spec.axis === 'right' && LIMB_LEADS.has(lead)) {
+    if (lead === 'I' || lead === 'aVL') {
+      prof.r = -Math.abs(prof.r);
+      prof.s = Math.min(-0.25, prof.s);
+    }
+    if (lead === 'III' || lead === 'aVF') {
+      prof.r = Math.abs(prof.r);
+      prof.s = Math.min(0, prof.s);
+    }
+  }
 
   return prof;
 }

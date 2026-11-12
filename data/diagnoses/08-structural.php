@@ -78,6 +78,7 @@ return [
             'pause' => null,
             'extras' => [],
             'show12Lead' => true,
+            'primaryLead' => 'V5',
             'annotations' => [
                 ['kind' => 'arrow', 't' => 0.6, 'label' => 'V5 高 R 波', 'tone' => 'warn', 'dir' => 'up'],
                 ['kind' => 'arrow', 't' => 0.85, 'label' => '侧壁 ST 压低/T 倒置', 'tone' => 'danger', 'dir' => 'down'],
@@ -338,11 +339,12 @@ return [
             'pause' => null,
             'extras' => [],
             'leads' => [
-                'I' => ['r' => 0.55, 's' => -0.38, 't' => 0.1],
-                'III' => ['q' => -0.3, 'r' => 0.18, 's' => -0.15, 't' => -0.22],
+                'I' => ['r' => 0.12, 's' => -0.75, 't' => 0.05],
+                'III' => ['q' => -0.35, 'r' => 0.28, 's' => -0.10, 't' => -0.24],
                 'V1' => ['r' => 0.55, 's' => -0.7, 't' => -0.2],
             ],
             'show12Lead' => true,
+            'primaryLead' => 'III',
             'annotations' => [
                 ['kind' => 'arrow', 't' => 0.6, 'label' => 'I 导联深 S', 'tone' => 'warn', 'dir' => 'down'],
                 ['kind' => 'bracket', 't0' => 0.5, 't1' => 1.04, 'label' => '窦速 ≈112 次/分', 'tone' => 'danger'],

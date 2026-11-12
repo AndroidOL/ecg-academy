@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261112a12';
+const __asset = __isNode ? '' : '?v=20261112a13';
 const { localizedName, translate, getLocale, loadContentCatalog } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -121,7 +121,7 @@ export async function articleView({ params }) {
                   <button class="ecg-tab" type="button" data-ecg-mode="12lead" role="tab" aria-selected="false">12 导联</button>
                 </div>
                 <select class="select" data-ecg-lead aria-label="选择导联" style="width:auto;min-height:30px;padding:3px 7px;font-size:10px">
-                  <option value="II">II 导联</option><option value="V1">V1 导联</option><option value="V5">V5 导联</option>
+                  <option value="II">II 导联</option><option value="I">I 导联</option><option value="III">III 导联</option><option value="V1">V1 导联</option><option value="V2">V2 导联</option><option value="V3">V3 导联</option><option value="V5">V5 导联</option>
                 </select>
               </div>
               <div class="ecg-toolbar-group" data-playback-group>
@@ -378,7 +378,7 @@ export async function articleView({ params }) {
         syncPlayButton();
       });
     });
-    leadSelect.value = ['II', 'V1', 'V5'].includes(spec.primaryLead) ? spec.primaryLead : 'II';
+    leadSelect.value = ['II', 'I', 'III', 'V1', 'V2', 'V3', 'V5'].includes(spec.primaryLead) ? spec.primaryLead : 'II';
     leadSelect?.addEventListener('change', () => viewer.setLead(leadSelect.value));
     speedSelect?.addEventListener('change', () => viewer.setSpeed(Number(speedSelect.value) || 2));
     const tocLinks = el.querySelectorAll('[data-toc]');

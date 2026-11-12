@@ -80,6 +80,7 @@ return [
             'pause' => null,
             'extras' => [],
             'show12Lead' => true,
+            'primaryLead' => 'V3',
             'annotations' => [
                 ['kind' => 'arrow', 't' => 1.45, 'label' => 'T 波高尖对称', 'tone' => 'danger', 'dir' => 'up'],
                 ['kind' => 'arrow', 't' => 0.55, 'label' => 'P 波变平', 'tone' => 'warn', 'dir' => 'up'],

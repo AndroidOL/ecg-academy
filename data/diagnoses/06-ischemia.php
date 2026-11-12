@@ -85,6 +85,7 @@ return [
             'pause' => null,
             'extras' => [],
             'show12Lead' => true,
+            'primaryLead' => 'V2',
             'annotations' => [
                 ['kind' => 'bracket', 't0' => 0.50, 't1' => 0.62, 'label' => 'QRS 0.10 s', 'tone' => 'teal'],
                 ['kind' => 'arrow', 't' => 0.55, 'label' => 'V1–V4 ST↑ 2–4 mm', 'tone' => 'danger', 'dir' => 'up', 'leads' => ['V1', 'V2', 'V3', 'V4']],
@@ -273,6 +274,7 @@ return [
             'pause' => null,
             'extras' => [],
             'show12Lead' => true,
+            'primaryLead' => 'V5',
             'annotations' => [
                 ['kind' => 'bracket', 't0' => 0.50, 't1' => 0.66, 'label' => 'PR 0.16 s', 'tone' => 'brand'],
                 ['kind' => 'arrow', 't' => 0.62, 'label' => 'V4–V6 ST↓ 1.5–2 mm', 'tone' => 'danger', 'dir' => 'down'],
@@ -463,6 +465,7 @@ return [
             'pause' => null,
             'extras' => ['tallR-V1', 'tallR-V2'],
             'show12Lead' => true,
+            'primaryLead' => 'V1',
             'annotations' => [
                 ['kind' => 'arrow', 't' => 0.6, 'label' => 'V1–V3 ST↓ 2 mm（后壁镜像）', 'tone' => 'warn', 'dir' => 'down'],
                 ['kind' => 'arrow', 't' => 0.9, 'label' => 'V1–V2 R 波增高', 'tone' => 'danger', 'dir' => 'up'],
@@ -559,6 +562,7 @@ return [
             'pause' => null,
             'extras' => ['rv-mi'],
             'show12Lead' => true,
+            'primaryLead' => 'V1',
             'annotations' => [
                 ['kind' => 'arrow', 't' => 0.55, 'label' => 'II、III、aVF ST↑', 'tone' => 'danger', 'dir' => 'up'],
                 ['kind' => 'arrow', 't' => 0.9, 'label' => 'aVL 镜像 ST↓', 'tone' => 'warn', 'dir' => 'down'],
