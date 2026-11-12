@@ -67,6 +67,15 @@ return [
         'pacing' => [
             'sources' => ['HRS/ACC/AHA 起搏器与 ICD 心电图判读共识（教学摘要）', 'AHA/ACCF/HRS 心电图标准化建议'],
         ],
+        'pacemaker' => [
+            'lastChecked' => '2026-11-12',
+            'sources' => [
+                '2021 ESC Guidelines on cardiac pacing and cardiac resynchronization therapy (Eur Heart J. 2021;42:3427–3520)',
+                '2018 ACC/AHA/HRS Guideline on the Evaluation and Management of Patients With Bradycardia and Cardiac Conduction Delay (Circulation. 2019;140:e382–e482)',
+                '2022 AHA/ACC/HFSA Guideline for the Management of Heart Failure (CRT 部分; Circulation. 2022;145:e895–e1032)',
+                'AHA/ACCF/HRS 心电图标准化与判读建议（起搏钉与 QRS 形态部分）',
+            ],
+        ],
         'special' => [
             'sources' => ['AHA/ACCF/HRS 心电图标准化建议', 'ESC 2022 室性心律失常管理指南'],
         ],

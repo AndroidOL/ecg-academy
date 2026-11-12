@@ -52,8 +52,8 @@
   },
   {
     "id": "vvi-pacing",
-    "name": "VVI 起搏心电图",
-    "en": "VVI pacing ECG",
+    "name": "VVI 起搏：适应证与边界",
+    "en": "VVI pacing: indications and limits",
     "chapter": "pacemaker",
     "difficulty": 2,
     "urgency": "core",
@@ -103,8 +103,8 @@
   },
   {
     "id": "aai-pacing",
-    "name": "AAI 起搏心电图",
-    "en": "AAI pacing ECG",
+    "name": "AAI 起搏：适应证与边界",
+    "en": "AAI pacing: indications and limits",
     "chapter": "pacemaker",
     "difficulty": 2,
     "urgency": "advanced",
@@ -154,8 +154,8 @@
   },
   {
     "id": "ddd-pacing",
-    "name": "DDD 双腔起搏心电图",
-    "en": "DDD pacing ECG",
+    "name": "DDD 起搏：模式与边界",
+    "en": "DDD pacing: modes and limits",
     "chapter": "pacemaker",
     "difficulty": 2,
     "urgency": "core",
@@ -205,8 +205,8 @@
   },
   {
     "id": "crt-pacing",
-    "name": "CRT 双室起搏",
-    "en": "Cardiac resynchronization therapy",
+    "name": "CRT：适应证与优化",
+    "en": "CRT: indications and optimization",
     "chapter": "pacemaker",
     "difficulty": 3,
     "urgency": "advanced",

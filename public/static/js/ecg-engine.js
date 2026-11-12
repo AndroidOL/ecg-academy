@@ -693,6 +693,25 @@ function addSpecialRhythm(samples, sampleRate, spec, lead, rng) {
     for (let i = 0; i < n; i += 1) {
       const t = i / sampleRate;
       let v = 0;
+      // AAI：心房钉 + P，经自身房室结下传形成窄 QRS；没有心室起搏钉
+      if (mode === 'aai') {
+        let atrial = (t - 0.28) % rr;
+        if (atrial < 0) atrial += rr;
+        v += 0.55 * Math.exp(-Math.pow((atrial - 0.004) / 0.0016, 2));
+        const ap = atrial - 0.018;
+        if (ap > -0.04 && ap < 0.10) v += 0.16 * Math.exp(-Math.pow(ap / 0.03, 2));
+        const pr = clamp(spec.pr || 0.16, 0.10, 0.30);
+        const q = atrial - pr;
+        if (q >= 0 && q < 0.09) {
+          v += -0.55 * Math.exp(-Math.pow((q - 0.012) / 0.006, 2));
+          v += 0.75 * Math.exp(-Math.pow((q - 0.035) / 0.010, 2));
+          v += -0.25 * Math.exp(-Math.pow((q - 0.065) / 0.008, 2));
+        }
+        const tw = q - 0.22;
+        if (tw > -0.08 && tw < 0.10) v += 0.16 * Math.exp(-Math.pow(tw / 0.05, 2));
+        samples[i] = v * leadFactor * polarity;
+        continue;
+      }
       // 双腔起搏：心房钉 + P，随后按 AV 间期发放心室钉
       if (mode === 'ddd') {
         let atrial = (t - 0.28) % rr;
