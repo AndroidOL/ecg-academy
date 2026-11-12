@@ -59,7 +59,16 @@ jobs:
       - name: Learning and exam integration test
         run: php tests/learning.test.php
       - name: Special practice integration test
-        run: php tests/special.test.php
+        run: |
+          set +e
+          output=$(php tests/special.test.php 2>&1)
+          code=$?
+          printf '%s\n' "$output"
+          if [ "$code" -ne 0 ]; then
+            summary=$(printf '%s' "$output" | tail -n 30 | tr '\n' ' ')
+            echo "::error title=Special practice test failed::$summary"
+          fi
+          exit "$code"
       - name: Leaderboard integration test
         run: php tests/leaderboard.test.php
       - name: Validate multi-hundred-chapter curriculum
