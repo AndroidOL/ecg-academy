@@ -1,6 +1,6 @@
 
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261111a6';
+const __asset = __isNode ? '' : '?v=20261112a2';
 const { localizedName } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -19,6 +19,7 @@ const state = {
   questionStart: 0,
   viewMode: 'rhythm',
   result: null,
+  historyDay: null,
   viewer: null,
   timerId: null,
   busy: false,
@@ -43,18 +44,42 @@ function fmtClock(ms) {
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
+function dayLabel(day) {
+  const date = new Date(`${day}T00:00:00`);
+  return `${date.getMonth() + 1}月${date.getDate()}日`;
+}
+
 function calendarMarkup(history) {
+  const today = state.status?.day || new Date().toISOString().slice(0, 10);
   const cells = (history || []).map((day) => {
     const date = new Date(`${day.day}T00:00:00`);
-    const isToday = day.day === state.status?.day || day.day === state.result?.day;
-    const label = `${date.getMonth() + 1}月${date.getDate()}日 ${day.done ? `已完成 ${day.correct}/${day.total}` : '未完成'}`;
-    return `<div class="day-cell ${day.done ? 'done' : ''} ${isToday ? 'today' : ''}" title="${escapeHtml(label)}">
+    const isToday = day.day === today;
+    const label = `${date.getMonth() + 1}月${date.getDate()}日 ${day.done ? `已完成 ${day.correct}/${day.total}，点击查看复盘` : '未完成'}`;
+    const attrs = day.done
+      ? ` data-history-day="${escapeHtml(day.day)}" role="button" tabindex="0" aria-label="${escapeHtml(label)}"`
+      : '';
+    return `<div class="day-cell ${day.done ? 'done' : ''} ${isToday ? 'today' : ''}${day.done ? ' clickable' : ''}"${attrs} title="${escapeHtml(label)}">
       <span>${date.getDate()}</span>
       ${day.done ? `<i class="day-dot"></i>` : ''}
     </div>`;
   }).join('');
   return `<div class="daily-calendar-grid" role="list" aria-label="最近 28 天打卡记录">${cells}</div>
-    <div class="daily-calendar-legend"><span><i class="day-dot"></i> 已完成</span><span>右端为今天</span></div>`;
+    <div class="daily-calendar-legend"><span><i class="day-dot"></i> 已完成，可点击复盘</span><span>右端为今天</span></div>`;
+}
+
+function historyRecordsMarkup(records) {
+  const rows = Array.isArray(records) ? records : [];
+  if (rows.length === 0) return '';
+  return `<section class="card card-pad daily-history-card">
+    <div class="section-head"><div><div class="page-eyebrow">HISTORY</div><h2 class="section-title">历史记录</h2></div><span class="section-kicker">共 ${rows.length} 次</span></div>
+    <div class="daily-history-list">
+      ${rows.map((row) => `<button class="daily-history-row" type="button" data-history-day="${escapeHtml(row.day)}">
+        <span class="daily-history-date">${escapeHtml(dayLabel(row.day))}</span>
+        <span class="daily-history-score">${row.correct}/${row.total} · ${row.score} 分</span>
+        <span class="muted">${Number(row.xp) > 0 ? `+${row.xp} XP` : ''}</span>
+      </button>`).join('')}
+    </div>
+  </section>`;
 }
 
 function homeMarkup() {
@@ -93,11 +118,12 @@ function homeMarkup() {
       <div class="section-head"><div><div class="page-eyebrow">CHECK-IN</div><h2 class="section-title">最近 28 天</h2></div><span class="section-kicker">周末也不中断</span></div>
       ${calendarMarkup(status.history || [])}
     </section>
+    ${historyRecordsMarkup(status.records || [])}
     ${done && result ? resultDetailMarkup(result) : ''}
     ${medicalDisclaimer()}`;
 }
 
-function resultDetailMarkup(result) {
+function resultDetailMarkup(result, title = '今日复盘') {
   const items = (result.details || []).map((detail, index) => {
     const tone = detail.correct ? 'ok' : detail.partial ? 'warn' : 'bad';
     const chosen = (detail.selectedNames || []).join('、') || '未作答';
@@ -111,7 +137,7 @@ function resultDetailMarkup(result) {
     </div>`;
   }).join('');
   return `<section class="card card-pad daily-review-card">
-      <div class="section-head"><div><div class="page-eyebrow">REVIEW</div><h2 class="section-title">今日复盘</h2></div><span class="badge badge-brand">${result.correct}/${result.total} · ${result.score} 分</span></div>
+      <div class="section-head"><div><div class="page-eyebrow">REVIEW</div><h2 class="section-title">${escapeHtml(title)}</h2></div><span class="badge badge-brand">${result.correct}/${result.total} · ${result.score} 分</span></div>
       ${items}
     </section>`;
 }
@@ -307,6 +333,7 @@ function bindRunner(el) {
         bestStreak: result.bestStreak,
         totalDays: result.totalDays,
         history: result.history,
+        records: result.records || state.status?.records || [],
         day: result.day,
       };
       state.mode = 'result';
@@ -362,6 +389,28 @@ function resultMarkup() {
     ${medicalDisclaimer()}`;
 }
 
+function historyMarkup() {
+  const result = state.result;
+  if (!result) return '';
+  const wrong = (result.details || []).filter((detail) => !detail.correct).length;
+  const title = `${dayLabel(result.day)} 复盘`;
+  return `<header class="page-head">
+      <div><div class="page-eyebrow">DAILY REVIEW</div><h1 class="page-title">${escapeHtml(title)}</h1><p class="page-sub">${escapeHtml(result.createdAt || '')} · 历史挑战记录</p></div>
+      <div class="row-wrap"><button class="btn btn-secondary btn-sm" type="button" data-home>${icon('arrowLeft', 14)} 返回每日挑战</button></div>
+    </header>
+    <section class="daily-result card card-pad">
+      <div class="daily-result-score">${result.correct}<span>/${result.total}</span></div>
+      <div class="daily-result-meta">
+        <div><b>${result.score}</b><span>得分</span></div>
+        <div><b>${Number(result.xp) > 0 ? '+' : ''}${result.xp}</b><span>XP</span></div>
+        <div><b>${wrong}</b><span>错题</span></div>
+        <div><b>${fmtClock(result.timeMs || 0)}</b><span>总用时</span></div>
+      </div>
+    </section>
+    ${resultDetailMarkup(result, title)}
+    ${medicalDisclaimer()}`;
+}
+
 async function shareResult() {
   const result = state.result;
   if (!result) return;
@@ -376,6 +425,40 @@ async function shareResult() {
     toast('分享文案已复制', 'success');
   } catch {
     toast('复制失败，请手动分享', 'warn');
+  }
+}
+
+function bindHistoryClicks(el) {
+  el.querySelectorAll('[data-history-day]').forEach((node) => {
+    const day = node.dataset.historyDay;
+    if (!day) return;
+    const open = () => loadHistory(el, day);
+    node.addEventListener('click', open);
+    if (node.getAttribute('role') === 'button') {
+      node.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          open();
+        }
+      });
+    }
+  });
+}
+
+async function loadHistory(el, day) {
+  if (!day || state.busy) return;
+  state.busy = true;
+  try {
+    const result = await api.dailyResult(day);
+    state.result = result;
+    state.historyDay = day;
+    state.mode = 'history';
+    render(el);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (error) {
+    toast(error.message || '复盘加载失败', 'error');
+  } finally {
+    state.busy = false;
   }
 }
 
@@ -395,6 +478,16 @@ function render(el) {
       render(el);
     });
     el.querySelector('[data-share]')?.addEventListener('click', shareResult);
+    bindHistoryClicks(el);
+    return;
+  }
+  if (state.mode === 'history') {
+    el.innerHTML = historyMarkup();
+    el.querySelector('[data-home]')?.addEventListener('click', () => {
+      state.mode = 'home';
+      state.historyDay = null;
+      render(el);
+    });
     return;
   }
   el.innerHTML = homeMarkup();
@@ -426,11 +519,13 @@ function render(el) {
   });
   el.querySelector('[data-review]')?.addEventListener('click', () => {
     state.result = state.status?.result || null;
+    state.historyDay = null;
     if (state.result) {
       state.mode = 'result';
       render(el);
     }
   });
+  bindHistoryClicks(el);
 }
 
 export async function dailyView() {

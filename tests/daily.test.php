@@ -171,6 +171,22 @@ try {
         assert(count($done) === 3);
     });
 
+    check('history result returns own day details and rejects invalid/foreign days', function () use ($guest): void {
+        $today = date('Y-m-d');
+        $result = Daily::dayResult($guest, $today);
+        assert($result !== null, 'missing own result');
+        assert(isset($result['id']) && $result['id'] > 0, 'result id missing');
+        assert(count($result['details']) === 10, 'details missing');
+        assert(isset($result['details'][0]['selectedNames'], $result['details'][0]['correctNames']), 'answer names missing');
+        $records = Daily::records($guest);
+        assert($records !== [], 'records empty');
+        assert($records[0]['day'] === $today, 'latest record not today');
+        $stranger = makeUser('每日陌生人');
+        assert(Daily::dayResult($stranger, $today) === null, 'leaked foreign result');
+        assert(Daily::dayResult($guest, '2099-01-01') === null, 'future day accepted');
+        assert(Daily::dayResult($guest, 'not-a-date') === null, 'invalid day accepted');
+    });
+
     check('invalid answers are rejected before consuming the round', function () use ($guest): void {
         // guest already finished today, so use a fresh user
         $fresh = makeUser('每日校验');

@@ -20,6 +20,7 @@ final class Daily
             'bestStreak' => self::bestStreak($userId),
             'totalDays' => self::totalDays($userId),
             'history' => self::history($userId, 28),
+            'records' => self::records($userId, 200),
         ];
     }
 
@@ -229,6 +230,7 @@ final class Daily
         $result['bestStreak'] = self::bestStreak($userId);
         $result['totalDays'] = self::totalDays($userId);
         $result['history'] = self::history($userId, 28);
+        $result['records'] = self::records($userId, 200);
         $result['isGuest'] = $isGuest;
         return $result;
     }
@@ -341,12 +343,13 @@ final class Daily
 
     private static function resultFor(int $userId, string $day): ?array
     {
-        $stmt = Db::pdo()->prepare('SELECT day, correct, total, score, xp, time_ms, details, created_at FROM daily_results WHERE user_id = ? AND day = ? LIMIT 1');
+        $stmt = Db::pdo()->prepare('SELECT id, day, correct, total, score, xp, time_ms, details, created_at FROM daily_results WHERE user_id = ? AND day = ? LIMIT 1');
         $stmt->execute([$userId, $day]);
         $row = $stmt->fetch();
         if (!$row) return null;
         $details = json_decode((string) ($row['details'] ?? '[]'), true);
         return [
+            'id' => (int) $row['id'],
             'day' => (string) $row['day'],
             'correct' => (int) $row['correct'],
             'total' => (int) $row['total'],
@@ -356,6 +359,42 @@ final class Daily
             'createdAt' => (string) $row['created_at'],
             'details' => is_array($details) ? $details : [],
         ];
+    }
+
+    /**
+     * 读取某一天的历史挑战详情；只允许本人、已过去或今天、合法日期。
+     */
+    public static function dayResult(int $userId, string $day): ?array
+    {
+        $day = trim($day);
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $day) !== 1) return null;
+        [$year, $month, $date] = array_map('intval', explode('-', $day));
+        if (!checkdate($month, $date, $year) || $day > date('Y-m-d')) return null;
+        return self::resultFor($userId, $day);
+    }
+
+    /**
+     * 历史挑战摘要列表（按日期倒序），供日历之外的完整历史入口。
+     */
+    public static function records(int $userId, int $limit = 200): array
+    {
+        $limit = max(1, min(500, $limit));
+        $stmt = Db::pdo()->prepare(
+            'SELECT id, day, correct, total, score, xp, time_ms, created_at
+             FROM daily_results WHERE user_id = ?
+             ORDER BY day DESC, id DESC LIMIT ' . $limit
+        );
+        $stmt->execute([$userId]);
+        return array_map(static fn (array $row): array => [
+            'id' => (int) $row['id'],
+            'day' => (string) $row['day'],
+            'correct' => (int) $row['correct'],
+            'total' => (int) $row['total'],
+            'score' => (int) $row['score'],
+            'xp' => (int) $row['xp'],
+            'timeMs' => (int) $row['time_ms'],
+            'createdAt' => (string) $row['created_at'],
+        ], $stmt->fetchAll());
     }
 
     private static function days(int $userId, int $limit = 2000): array

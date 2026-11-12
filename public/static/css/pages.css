@@ -1040,6 +1040,16 @@
 .day-dot { width:5px; height:5px; border-radius:50%; background:var(--brand); }
 .daily-calendar-legend { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:9px; font-size:10.5px; color:var(--muted); }
 .daily-calendar-legend span { display:inline-flex; align-items:center; gap:5px; }
+.day-cell.clickable { cursor:pointer; }
+.day-cell.clickable:hover { border-color:var(--brand); filter:brightness(1.02); }
+.day-cell.clickable:focus-visible { outline:2px solid var(--brand); outline-offset:2px; }
+.daily-history-card { margin-top:16px; }
+.daily-history-list { display:flex; flex-direction:column; gap:6px; margin-top:10px; }
+.daily-history-row { display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:10px; background:var(--surface-2); color:var(--ink); font:inherit; text-align:left; cursor:pointer; }
+.daily-history-row:hover { border-color:var(--brand); }
+.daily-history-date { font-weight:700; font-size:12px; }
+.daily-history-score { font-size:12px; font-variant-numeric:tabular-nums; }
+.daily-history-row .muted { font-size:10.5px; }
 .daily-result { text-align:center; margin-top:16px; }
 .daily-result-score { font-size:56px; font-weight:800; letter-spacing:-.04em; line-height:1; }
 .daily-result-score span { font-size:20px; color:var(--muted); font-weight:600; }
@@ -1061,6 +1071,8 @@
   .daily-hero-title { font-size:19px; }
   .daily-result-meta { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .day-cell { min-height:42px; }
+  .daily-history-row { padding:8px 10px; }
+  .daily-history-date, .daily-history-score { font-size:11.5px; }
 }
 
 /* ---------- activation sequence (vector lab) ---------- */

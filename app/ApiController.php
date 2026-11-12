@@ -552,6 +552,15 @@ final class ApiController
         Http::ok(Daily::complete((int) $user['id'], (string) ($input['token'] ?? ''), $answers, (int) ($input['level'] ?? 0)));
     }
 
+    public static function dailyResult(array $params = []): void
+    {
+        $user = self::user();
+        $day = (string) ($params['day'] ?? $_GET['day'] ?? '');
+        $result = Daily::dayResult((int) $user['id'], $day);
+        if ($result === null) throw new ApiError(404, 'daily_not_found', '该日没有挑战记录');
+        Http::ok($result);
+    }
+
     private static function user(): array
     {
         $user = Auth::user(false);

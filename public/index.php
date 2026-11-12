@@ -86,6 +86,7 @@ if (str_starts_with($path, '/api/')) {
         $router->get('/api/daily/status', [ApiController::class, 'dailyStatus']);
         $router->get('/api/daily/start', [ApiController::class, 'dailyStart']);
         $router->post('/api/daily/complete', [ApiController::class, 'dailyComplete']);
+        $router->get('/api/daily/result', [ApiController::class, 'dailyResult']);
         $router->get('/api/stats', [ApiController::class, 'stats']);
         $router->get('/api/leaderboard', [ApiController::class, 'leaderboard']);
         $router->post('/api/auth/register/code', [ApiController::class, 'registerCode']);

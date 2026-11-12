@@ -102,6 +102,7 @@ export const api = {
   dailyStatus: () => request('/api/daily/status'),
   dailyStart: () => request('/api/daily/start'),
   dailyComplete: (token, answers, level) => request('/api/daily/complete', { method: 'POST', body: { token, answers, level } }),
+  dailyResult: (day) => request(`/api/daily/result?day=${encodeURIComponent(day)}`),
   stats: (scope = 'week') => request(`/api/stats${qs({ scope })}`),
   leaderboard: (scope = 'week') => request(`/api/leaderboard${qs({ scope })}`),
   registerCode: (email) => request('/api/auth/register/code', { method: 'POST', body: { email } }),
