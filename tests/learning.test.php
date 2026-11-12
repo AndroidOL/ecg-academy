@@ -35,7 +35,7 @@ function answersFor(array $round): array {
 try {
     check('section bank has enough questions and 4 options', function () {
         $counts = SectionBank::counts();
-        assert(count($counts) === 19);
+        assert(count($counts) === count(Content::chapters()));
         foreach ($counts as $chapter => $count) assert($count >= 30, $chapter . ' too few');
         $all = SectionBank::all();
         assert(count($all[0]['options']) === 4);
