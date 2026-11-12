@@ -66,6 +66,15 @@ check('all 12 leads are generated without NaN', () => {
   }
 });
 
+check('RBBB V1 shows small r, deep S and dominant R′ instead of a second QRS', () => {
+  const result = new ECGSession({ ...base, rate: 75, atrialRate: 75, pr: 0.16, qrs: 0.13, morphology: 'rbbb', seed: 113 }).lead('V1');
+  const at = (t) => result.samples[Math.round(t * result.sampleRate)];
+  const initialR = Math.max(at(0.57), at(0.572), at(0.574), at(0.576), at(0.578));
+  assert.ok(initialR < 0.2, `initial r too tall: ${initialR}`);
+  assert.ok(at(0.61) < -0.5, `S too shallow: ${at(0.61)}`);
+  assert.ok(at(0.644) > 0.6, `R′ too small: ${at(0.644)}`);
+});
+
 check('PVC ectopy produces wide negative complex in lead II', () => {
   const result = generateLead({
     ...base,

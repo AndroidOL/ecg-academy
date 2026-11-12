@@ -339,10 +339,10 @@ function profileFor(spec, lead) {
     prof.qrsScale = 1.55;
     if (lead === 'V1' || lead === 'V2') {
       prof.q = 0;
-      prof.r = 0.35;
-      prof.s = -0.65;
-      prof.rPrime = 0.9;
-      prof.rPrimeDelay = 0.045;
+      prof.r = 0.16;
+      prof.s = -0.9;
+      prof.rPrime = 0.95;
+      prof.rPrimeDelay = 0.06;
       prof.t = -Math.abs(prof.t || 0.2);
     }
     if (lead === 'I' || lead === 'aVL' || lead === 'V5' || lead === 'V6') {

@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261112a8';
+const __asset = __isNode ? '' : '?v=20261112a9';
 const { ECGSession, LEAD_NAMES } = await import(`./ecg-engine.js${__asset}`);
 const { getLocale, translate } = await import(`./i18n.js${__asset}`);
 
