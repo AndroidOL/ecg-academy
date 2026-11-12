@@ -344,7 +344,7 @@ final class Quiz
         }
         $attemptId = (int) $attemptId;
         $pdo = Db::pdo();
-        $stmt = $pdo->prepare('SELECT * FROM quiz_attempts WHERE id = ? AND user_id = ? LIMIT 1');
+        $stmt = $pdo->prepare('SELECT *, TIMESTAMPDIFF(SECOND, created_at, NOW()) AS age_seconds FROM quiz_attempts WHERE id = ? AND user_id = ? LIMIT 1');
         $stmt->execute([$attemptId, $userId]);
         $attempt = $stmt->fetch();
         if (!$attempt) {
@@ -353,7 +353,7 @@ final class Quiz
         if ($attempt['status'] !== 'pending') {
             throw new ApiError(409, 'attempt_answered', '该题已提交，请开始新题');
         }
-        if (strtotime((string) $attempt['created_at']) < time() - 7200) {
+        if ((int) ($attempt['age_seconds'] ?? 0) > 7200) {
             $pdo->prepare('UPDATE quiz_attempts SET status = "expired" WHERE id = ?')->execute([$attemptId]);
             throw new ApiError(410, 'attempt_expired', '题目已过期，请重新出题');
         }
