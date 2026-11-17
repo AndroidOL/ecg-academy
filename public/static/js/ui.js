@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261112a16';
+const __asset = __isNode ? '' : '?v=20261112a17';
 const { renderMiniECG } = await import(`./ecg-renderer.js${__asset}`);
 
 const paths = {

@@ -28,6 +28,23 @@ return [
         'stem' => '患者 61 岁，持续胸痛 1 小时。心电图示前壁导联 ST 抬高，QRS 增宽。',
     ],
     [
+        'id' => 'av-block-1-lbbb',
+        'primary' => 'av-block-1',
+        'secondary' => 'lbbb',
+        'level' => 3,
+        'overrides' => [
+            'rate' => 68,
+            'atrialRate' => 68,
+            'pr' => 0.26,
+            'qrs' => 0.14,
+            'morphology' => 'lbbb',
+            't' => ['shape' => 'discordant', 'amp' => 1.0],
+            'show12Lead' => true,
+            'primaryLead' => 'V5',
+        ],
+        'stem' => '患者 76 岁，乏力、头晕；PR 0.26 s，QRS 宽大，V1 深 S，V5/V6 宽 R。',
+    ],
+    [
         'id' => 'av-block-3-ventricular-escape',
         'primary' => 'av-block-3',
         'secondary' => 'ventricular-escape',

@@ -145,9 +145,15 @@ final class Quiz
         if (($secondary['ecg']['show12Lead'] ?? false) || ($primary['ecg']['show12Lead'] ?? false) || ($entry && !empty($entry['show12Lead']))) {
             $spec['show12Lead'] = true;
         }
+        // 一张图可同时存在多个独立诊断：例如 AV 阻滞 + RBBB、LBBB + LVH。
+        // 只在普通题库中派生；专项决策题的正确答案由题目数据提供。
+        if ($customOptions === null && empty($primary['topic']) && !in_array((string) ($primary['chapter'] ?? ''), ['skills'], true)) {
+            $correctIds = EcgDiagnoses::derive($spec, $correctIds, $all);
+            if (count($correctIds) > 1) $question = EcgDiagnoses::questionForMulti($question);
+        }
 
         if ($confusionId !== '' && (!Content::find($confusionId) || in_array($confusionId, $correctIds, true))) $confusionId = '';
-        $options = self::buildOptions($primary, $secondary, count($correctIds) > 1, '', $confusionId !== '' ? $confusionId : null, $optionPool !== [] ? $optionPool : null, $customOptions);
+        $options = self::buildOptions($primary, $secondary, count($correctIds) > 1, '', $confusionId !== '' ? $confusionId : null, $optionPool !== [] ? $optionPool : null, $customOptions, $customOptions === null ? $correctIds : []);
         $optionIds = array_column($options, 'id');
         $caseKey = $bankId ?? implode('+', $correctIds);
         $payload = [
@@ -252,7 +258,7 @@ final class Quiz
         }
     }
 
-    public static function buildOptions(array $primary, ?array $secondary, bool $multiple, string $salt = '', ?string $forcedDistractorId = null, ?array $optionPool = null, ?array $customOptions = null): array
+    public static function buildOptions(array $primary, ?array $secondary, bool $multiple, string $salt = '', ?string $forcedDistractorId = null, ?array $optionPool = null, ?array $customOptions = null, array $extraCorrectIds = []): array
     {
         $all = Content::all();
         if ($customOptions !== null) {
@@ -276,7 +282,7 @@ final class Quiz
         }
         $correct = [$primary];
         if ($secondary) $correct[] = $secondary;
-        $correctIds = array_column($correct, 'id');
+        $correctIds = array_values(array_unique(array_merge(array_column($correct, 'id'), $extraCorrectIds)));
         $wanted = $multiple ? 6 : 5;
         $ids = $correctIds;
         $candidates = [];

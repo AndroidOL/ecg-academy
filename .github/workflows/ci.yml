@@ -62,6 +62,10 @@ jobs:
         run: php tests/learning.test.php
       - name: ECG feature extraction test
         run: php tests/ecg-features.test.php
+      - name: Multi-diagnosis derivation test
+        run: php tests/ecg-diagnoses.test.php
+      - name: Multi-diagnosis integration test
+        run: php tests/multi-diagnosis.test.php
       - name: Special practice integration test
         run: |
           set +e
