@@ -132,7 +132,7 @@ return [
             'V1–V3 ST 压低不是“前壁缺血”的同义词；高 R + 直立 T 要想到后壁。',
             '右室梗死：V4R ST 抬高；硝酸酯和利尿剂可能诱发严重低血压。',
         ],
-        'references' => ['esc-acs-2023', 'udmi-2018', 'aha-chest-pain-2021'],
+        'references' => ['esc-acs-2023', 'acc-acs-2025', 'udmi-2018', 'aha-chest-pain-2021', 'aha-ecg-stt-qt-2009'],
     ],
     'electrolyte' => [
         'title' => '从 T 波和 QT 读出内环境',
@@ -154,7 +154,7 @@ return [
             '低钾：U 波、ST 压低、T 低平；低钙：ST 延长、QT 延长。',
             'QT 相关风险不只看 QTc 数字，还要看诱因、药物、心动过缓与电解质。',
         ],
-        'references' => ['esc-va-2022', 'aha-ecg-2007', 'aha-acls-2020'],
+        'references' => ['esc-va-2022', 'aha-ecg-stt-qt-2009', 'aha-acls-2020'],
     ],
     'structural' => [
         'title' => '电压、预激与离子通道',
@@ -176,7 +176,7 @@ return [
             'WPW：短 PR + delta 波 + 宽 QRS；旁路定位需结合 δ 波方向。',
             'Brugada 看 V1–V2 穹隆型 ST；S1Q3T3 对 PE 特异性低，不能单独诊断。',
         ],
-        'references' => ['esc-cardiomyopathy-2023', 'hrs-brugada-2013', 'esc-pe-2019', 'esc-svt-2019'],
+        'references' => ['esc-cardiomyopathy-2023', 'aha-hcm-2024', 'hrs-brugada-2013', 'esc-pe-2019', 'esc-svt-2019'],
     ],
     'skills' => [
         'title' => '把规则变成肌肉记忆',
@@ -198,7 +198,7 @@ return [
             '相邻导联：前壁 V1–V4、下壁 II/III/aVF、侧壁 I/aVL/V5–V6。',
             '不确定时重复心电图、加做 18 导联、与旧图比较，比“猜诊断”更有价值。',
         ],
-        'references' => ['aha-ecg-2007', 'aha-acls-2020', 'esc-acs-2023'],
+        'references' => ['aha-ecg-2007', 'aha-acls-2020', 'esc-acs-2023', 'acc-acs-2025'],
     ],
     'theory' => [
         'title' => '先懂电，再看图',
@@ -242,7 +242,7 @@ return [
             'RVH 的 V1 高 R 需与后壁心梗、WPW、RBBB 鉴别。',
             '心房增大看 P 波，心室增大看 QRS 电压与电轴，二者常同时出现。',
         ],
-        'references' => ['esc-cardiomyopathy-2023', 'aha-ecg-2007'],
+        'references' => ['esc-cardiomyopathy-2023', 'aha-hcm-2024', 'aha-ecg-chamber-2009', 'aha-ecg-2007'],
     ],
     'pacing' => [
         'title' => '食管导联、心内电图与消融定位',
@@ -264,7 +264,7 @@ return [
             '拖带与重整帮助判断折返环与关键峡部。',
             '消融成功不等于治愈，需评估复发与长期风险。',
         ],
-        'references' => ['esc-pacing-2021', 'aha-brady-2018', 'aha-hf-2022'],
+        'references' => ['esc-pacing-2021', 'aha-brady-2018', 'aha-hf-2022', 'hrs-vt-ablation-2019'],
     ],
     'pacemaker' => [
         'title' => '先找钉，再看夺获与感知',
@@ -286,7 +286,7 @@ return [
             'DDD 的心房钉后应有 P，心室钉后应有 QRS；AV 间期可程控。',
             '先找钉，再看夺获与感知；不要把所有宽 QRS 都当自身心律失常。',
         ],
-        'references' => ['esc-pacing-2021', 'aha-brady-2018', 'aha-hf-2022'],
+        'references' => ['esc-pacing-2021', 'aha-brady-2018', 'aha-hf-2022', 'hrs-vt-ablation-2019'],
     ],
     'special' => [
         'title' => '把一瞬间变成一整天',
@@ -352,7 +352,7 @@ return [
             '一次正常 ECG 不能排除 ACS；动态复查与 18 导联能补足盲区。',
             '危急值要闭环：报告、记录、复核与交接，不能只喊一声。',
         ],
-        'references' => ['aha-acls-2020', 'esc-acs-2023', 'esc-syncope-2018', 'aha-chest-pain-2021'],
+        'references' => ['aha-acls-2020', 'esc-acs-2023', 'acc-acs-2025', 'esc-syncope-2018', 'aha-chest-pain-2021'],
     ],
     'pediatric' => [
         'title' => '年龄改变正常范围',
@@ -440,6 +440,6 @@ return [
             '心内电图能回答体表 ECG 难以确定的房室关系与激动顺序。',
             'AI 心电图的价值在于辅助筛查与风险分层，不是替代判读。',
         ],
-        'references' => ['esc-va-2022', 'esc-cardiomyopathy-2023', 'aha-ecg-2007'],
+        'references' => ['esc-va-2022', 'esc-cardiomyopathy-2023', 'aha-ecg-2007', 'hrs-vt-ablation-2019'],
     ],
 ];

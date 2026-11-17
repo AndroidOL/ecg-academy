@@ -30,6 +30,7 @@ foreach ($chapterIds as $id) {
 }
 foreach ($guides as $id => $ref) {
     if (trim((string) ($ref['url'] ?? '')) === '') $errors[] = "{$id}: 缺少 URL";
+    elseif (!str_starts_with((string) $ref['url'], 'https://doi.org/')) $errors[] = "{$id}: URL 不是 DOI 链接";
     if (trim((string) ($ref['title'] ?? '')) === '') $errors[] = "{$id}: 缺少标题";
 }
 if ($errors !== []) {
