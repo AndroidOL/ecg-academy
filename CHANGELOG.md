@@ -2,6 +2,12 @@
 
 完整版本记录见 [docs/CHANGELOG.md](docs/CHANGELOG.md)。
 
+## 3.4.25 — 2026-11-12
+
+- 十步法文章更新后重新生成章节题库，修复 CI「Audit section answer accuracy」的 5 条来源/英文不一致。
+- 题库仍为 1801 题（pacemaker 100）；section audit 0 issues。
+- 资源版本保持 `20261112a16`（数据/题库修复）。
+
 ## 3.4.24 — 2026-11-12
 
 - 十步法文章重写为 10 个完整步骤：定标/导联、心率、节律/P、电轴、PR/QRS/QT、P 形态、QRS 形态/病理性 Q、ST、T/U、旧图与临床对照；每步 5 条可操作要点与 7 条权威参考。
