@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261112a15';
+const __asset = __isNode ? '' : '?v=20261112a16';
 const { localizedName, getLocale, translate } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -240,11 +240,10 @@ export async function readView({ query } = {}) {
           return `<div class="read-selfcheck-item ${result ? (result.correct ? 'is-correct' : 'is-wrong') : ''}" data-adv-card="${check.id}">
             <h4>${escapeHtml(check.question)}</h4>
             <div class="read-selfcheck-options">${check.options.map((option) => {
-              const chosen = result?.value === option.id;
               const expected = check.answer === option.id;
-              return `<button class="read-option ${chosen ? (result.correct ? 'is-correct' : 'is-wrong') : ''} ${result && expected ? 'is-correct' : ''}" type="button" data-adv-check="${check.id}" data-adv-value="${option.id}" ${result ? 'disabled' : ''}>${escapeHtml(option.label)}</button>`;
+              return `<button class="read-option ${result ? (expected ? 'is-correct' : 'is-wrong') : ''}" type="button" data-adv-check="${check.id}" data-adv-value="${option.id}" ${result ? 'disabled' : ''}>${escapeHtml(option.label)}</button>`;
             }).join('')}</div>
-            <div class="read-selfcheck-note ${result ? 'show' : ''}" data-adv-card-note>${result ? `<b>${result.correct ? '判断正确' : '需要复习'}</b><p>${escapeHtml(check.explanation)}</p>` : ''}</div>
+            <div class="read-selfcheck-note ${result ? 'show' : ''}" data-adv-card-note>${result ? `<b>${result.correct ? '判断正确' : '需要复习'}</b><p>${escapeHtml(check.explanation)}</p><div class="read-option-review-list">${check.options.map((option) => `<div class="read-option-review ${option.id === check.answer ? 'ok' : 'bad'}"><b>${option.id === check.answer ? '正确' : '错误'}</b><span>${escapeHtml(option.label)}：${escapeHtml(option.id === check.answer ? check.explanation : '该选项不符合本例的判断；请对照正确解析。')}</span></div>`).join('')}</div>` : ''}</div>
           </div>`;
         }).join('')}</div>
       </div>
@@ -284,12 +283,14 @@ export async function readView({ query } = {}) {
         const note = card?.querySelector('[data-adv-card-note]');
         card?.querySelectorAll('[data-adv-check]').forEach((option) => {
           option.disabled = true;
-          if (option.dataset.advValue === check.answer) option.classList.add('is-correct');
-          if (option === button && !correct) option.classList.add('is-wrong');
+          const expected = option.dataset.advValue === check.answer;
+          option.classList.toggle('is-correct', expected);
+          option.classList.toggle('is-wrong', !expected);
         });
         if (note) {
+          const review = check.options.map((option) => `<div class="read-option-review ${option.id === check.answer ? 'ok' : 'bad'}"><b>${option.id === check.answer ? '正确' : '错误'}</b><span>${escapeHtml(option.label)}：${escapeHtml(option.id === check.answer ? check.explanation : '该选项不符合本例的判断；请对照正确解析。')}</span></div>`).join('');
           note.classList.add('show');
-          note.innerHTML = `<b>${correct ? '判断正确' : '需要复习'}</b><p>${escapeHtml(check.explanation)}</p>`;
+          note.innerHTML = `<b>${correct ? '判断正确' : '需要复习'}</b><p>${escapeHtml(check.explanation)}</p><div class="read-option-review-list">${review}</div>`;
         }
         updateAdvancedScore();
       });
@@ -367,18 +368,22 @@ export async function readView({ query } = {}) {
     const status = card.querySelector(`[data-step-status="${step.id}"]`);
     status.textContent = correct ? '正确' : '需复习';
     status.className = `badge ${correct ? 'badge-ok' : 'badge-danger'}`;
+    const answerIds = Array.isArray(reading[step.id].answer) ? reading[step.id].answer : [reading[step.id].answer];
     card.querySelectorAll('.read-option').forEach((node) => {
-      const expected = reading[step.id].answer.includes(node.dataset.value);
-      const chosen = selection.has(node.dataset.value);
+      const expected = answerIds.includes(node.dataset.value);
       node.disabled = true;
       node.classList.toggle('is-correct', expected);
-      node.classList.toggle('is-wrong', chosen && !expected);
+      node.classList.toggle('is-wrong', !expected);
     });
     const confirm = card.querySelector('[data-step-confirm]');
     if (confirm) confirm.disabled = true;
     const note = card.querySelector(`[data-step-note="${step.id}"]`);
+    const review = reading.options[step.id].map((option) => {
+      const expected = answerIds.includes(option.id);
+      return `<div class="read-option-review ${expected ? 'ok' : 'bad'}"><b>${expected ? '正确' : '错误'}</b><span>${escapeHtml(option.label)}：${escapeHtml(expected ? reading[step.id].explanation : '该选项不符合本例的判断；请对照上方正确解析。')}</span></div>`;
+    }).join('');
     note.classList.add('show', correct ? 'ok' : 'bad');
-    note.innerHTML = `<b>${correct ? '判断正确' : '再看一次'}</b><p>${escapeHtml(reading[step.id].explanation)}</p>`;
+    note.innerHTML = `<b>${correct ? '判断正确' : '再看一次'}</b><p>${escapeHtml(reading[step.id].explanation)}</p><div class="read-option-review-list">${review}</div>`;
   }
 
   function renderConclusion() {
