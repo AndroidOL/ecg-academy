@@ -60,6 +60,8 @@ jobs:
         run: php tests/assignment.test.php
       - name: Learning and exam integration test
         run: php tests/learning.test.php
+      - name: ECG feature extraction test
+        run: php tests/ecg-features.test.php
       - name: Special practice integration test
         run: |
           set +e
