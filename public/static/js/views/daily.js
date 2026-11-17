@@ -1,6 +1,6 @@
 
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261117a1';
+const __asset = __isNode ? '' : '?v=20261117a2';
 const { localizedName } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -178,6 +178,7 @@ function resultDetailMarkup(result, title = '今日复盘') {
           ${detail.spec.show12Lead ? `<button class="btn btn-xs btn-ghost" type="button" data-daily-review-12lead="${index}">12 导联</button>` : ''}
         </div>` : ''}
       <p class="daily-review-a">你的答案：${escapeHtml(chosen)} · 正确答案：<b>${escapeHtml(correct)}</b></p>
+      ${!detail.correct && (detail.correctIds || []).length ? `<div class="row-wrap" style="margin-top:6px"><a class="btn btn-xs btn-secondary" href="#/read?focus=${encodeURIComponent(detail.correctIds.join(','))}">十步重读</a></div>` : ''}
       ${notes ? `<p class="daily-review-note">${escapeHtml(notes)}</p>` : ''}
     </div>`;
   }).join('');

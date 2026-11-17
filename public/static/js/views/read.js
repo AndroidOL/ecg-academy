@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261117a1';
+const __asset = __isNode ? '' : '?v=20261117a2';
 const { localizedName, getLocale, translate } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -67,7 +67,7 @@ export async function readView({ query } = {}) {
     quiz: null,
     reading: null,
     level: 1,
-    mode: String(query?.get('advanced') || '') === '1' ? 'advanced' : 'basic',
+    mode: String(query?.get('mode') || '') === 'basic' ? 'basic' : 'advanced',
     advancedChecks: {},
     advancedTotal: 0,
     measureReady: false,
@@ -85,17 +85,15 @@ export async function readView({ query } = {}) {
       <div>
         <div class="page-eyebrow">${icon('target', 14)} SYSTEMATIC READING</div>
         <h1 class="page-title">系统判读训练</h1>
-        <p class="page-sub">用「五步基础」建立判读顺序，或切到「十步进阶」逐项完成完整读图；每一步即时反馈，最后再下诊断。</p>
+        <p class="page-sub">按十步法从定标、导联、心率、节律、电轴、间期、P/QRS 形态、ST-T 到临床对照逐项完成；每一步即时反馈，最后再下诊断。</p>
       </div>
       <div class="read-head-side">
-        <div class="read-mode-switch" role="tablist" aria-label="判读模式">
-          <button class="read-mode-btn" type="button" role="tab" data-read-mode="basic">五步基础</button>
-          <button class="read-mode-btn" type="button" role="tab" data-read-mode="advanced">十步进阶</button>
-        </div>
         <div class="row-wrap read-head-meta">
+          <span class="badge badge-brand">${icon('bookOpen', 11)} 十步法 · 完整判读</span>
+          <a class="btn btn-xs btn-ghost" href="#/learn/systematic-ecg-reading">十步法原文</a>
           ${focus.length ? `<span class="badge badge-warn">专项 ${focus.length} 个诊断</span>` : ''}
           <span class="badge badge-brand" data-read-stats>${statsLabel()}</span>
-          <span class="badge" data-read-key-hint>键盘 1–5 / Enter / N</span>
+          <span class="badge" data-read-key-hint>逐项点击自检</span>
         </div>
       </div>
     </header>
@@ -122,9 +120,10 @@ export async function readView({ query } = {}) {
         </div>
         <div class="read-loading" data-read-loading>${icon('activity', 14)} 正在生成病例…</div>
       </section>
-      <div class="read-steps" data-steps></div>
-      <section class="read-measure-host is-hidden" data-measure-host></section>
+      <div class="read-steps is-hidden" data-steps></div>
       <section class="read-advanced-host" data-advanced-host></section>
+      <section class="read-measure-host is-hidden" data-measure-host></section>
+      <section class="read-advanced-summary-host is-hidden" data-advanced-summary-host></section>
       <section class="quiz-card read-conclusion" data-conclusion></section>
       <div class="read-feedback" data-read-feedback></div>
     </div>
@@ -134,7 +133,7 @@ export async function readView({ query } = {}) {
   const stepsHost = el.querySelector('[data-steps]');
   const advancedHost = el.querySelector('[data-advanced-host]');
   const measureHost = el.querySelector('[data-measure-host]');
-  const modeButtons = [...el.querySelectorAll('[data-read-mode]')];
+  const summaryHost = el.querySelector('[data-advanced-summary-host]');
   const conclusionHost = el.querySelector('[data-conclusion]');
   const feedbackHost = el.querySelector('[data-read-feedback]');
   const loading = el.querySelector('[data-read-loading]');
@@ -142,16 +141,12 @@ export async function readView({ query } = {}) {
 
   function setMode(mode, { render = true } = {}) {
     state.mode = mode === 'advanced' ? 'advanced' : 'basic';
-    modeButtons.forEach((button) => {
-      const active = button.dataset.readMode === state.mode;
-      button.classList.toggle('active', active);
-      button.setAttribute('aria-selected', String(active));
-    });
     stepsHost.classList.toggle('is-hidden', state.mode !== 'basic');
     advancedHost.classList.toggle('is-hidden', state.mode !== 'advanced');
-    measureHost.classList.toggle('is-hidden', state.mode !== 'basic' || !state.measureReady);
+    measureHost.classList.toggle('is-hidden', !state.measureReady);
+    summaryHost.classList.toggle('is-hidden', state.mode !== 'advanced');
     const hint = el.querySelector('[data-read-key-hint]');
-    if (hint) hint.textContent = state.mode === 'advanced' ? '十步进阶：逐项点击自检' : '键盘 1–5 / Enter / N';
+    if (hint) hint.textContent = state.mode === 'advanced' ? '十步进阶：逐项点击自检' : '五步基础：键盘 1–5';
     if (!render) return;
     if (state.mode === 'advanced') renderAdvanced();
     else advancedHost.innerHTML = '';
@@ -174,6 +169,8 @@ export async function readView({ query } = {}) {
     advancedHost.innerHTML = '';
     measureHost.innerHTML = '';
     measureHost.classList.add('is-hidden');
+    summaryHost.innerHTML = '';
+    summaryHost.classList.add('is-hidden');
     conclusionHost.innerHTML = '';
     feedbackHost.innerHTML = '';
     metaBadge.textContent = '加载中…';
@@ -307,7 +304,7 @@ export async function readView({ query } = {}) {
     const irregular = (rrs && rrs.max - rrs.min > 0.12) || String(spec.rhythm) === 'af' || Number(spec.irregularity) > 0.06;
     measureHost.innerHTML = `<section class="quiz-card read-measure">
       <div class="read-measure-head">
-        <div><div class="page-eyebrow">MACHINE MEASUREMENTS</div><h3>电脑判读 · 本例测量值</h3><p class="muted">五步完成后的自动测量，用于强化对间期和节律的印象；现代心电图机也是先自动测量，再由人复核。</p></div>
+        <div><div class="page-eyebrow">MACHINE MEASUREMENTS</div><h3>电脑判读 · 本例测量值</h3><p class="muted">判读完成后自动给出这些数值，用于强化对间期和节律的印象；现代心电图机也是先自动测量，再由人复核。</p></div>
         <span class="badge badge-brand">自动测量</span>
       </div>
       <div class="read-measure-grid">
@@ -353,6 +350,8 @@ export async function readView({ query } = {}) {
     if (!advancedHost) return;
     if (state.mode !== 'advanced' || !state.quiz) {
       advancedHost.innerHTML = '';
+      summaryHost.innerHTML = '';
+      summaryHost.classList.add('is-hidden');
       return;
     }
     const reading = buildAdvancedReading(state.quiz.spec || {}, state.quiz.options || [], measureLeadVoltages(), Array.isArray(state.quiz.references) ? state.quiz.references : []);
@@ -422,10 +421,9 @@ export async function readView({ query } = {}) {
       </div>
       ${valuesHtml}
       <div class="read-ten-steps">${reading.steps.map(stepHtml).join('')}</div>
-      ${summaryHtml}
-      ${referencesHtml}
-      <p class="read-advanced-source">${escapeHtml(reading.sourceNote)} <a href="#/guidelines">查看指南规范与文献 →</a></p>
     </section>`;
+    summaryHost.innerHTML = `${summaryHtml}${referencesHtml}<p class="read-advanced-source">${escapeHtml(reading.sourceNote)} <a href="#/guidelines">查看指南规范与文献 →</a></p>`;
+    summaryHost.classList.remove('is-hidden');
     const updateAdvancedScore = () => {
       const node = advancedHost.querySelector('[data-advanced-score]');
       if (!node) return;
@@ -472,6 +470,10 @@ export async function readView({ query } = {}) {
         }
         updateStepState(stepOfCheck(id)?.id);
         updateAdvancedScore();
+        if (Object.keys(state.advancedChecks).length >= totalChecks) {
+          state.measureReady = true;
+          renderMeasurements();
+        }
       });
     });
     updateAdvancedScore();
@@ -573,7 +575,7 @@ export async function readView({ query } = {}) {
 
   function renderConclusion() {
     const quiz = state.quiz;
-    conclusionHost.innerHTML = `<div class="read-conclusion-head"><div><div class="page-eyebrow">STEP 6</div><h3>6 · 结论</h3><p class="muted">综合前面五步，选择最可能的诊断。提交后由服务端判分并记录到练习数据。</p></div><span class="badge">已用时 <b data-read-elapsed>0s</b></span></div>
+    conclusionHost.innerHTML = `<div class="read-conclusion-head"><div><div class="page-eyebrow">STEP 6</div><h3>6 · 结论</h3><p class="muted">综合十步判读，选择最可能的诊断。提交后由服务端判分并记录到练习数据。</p></div><span class="badge">已用时 <b data-read-elapsed>0s</b></span></div>
       <div class="option-list read-diagnosis" data-diagnosis-options>
         ${quiz.options.map((option, index) => `<label class="option-card" data-diagnosis="${escapeHtml(option.id)}">
           <input type="${quiz.multiple ? 'checkbox' : 'radio'}" name="read-diagnosis" value="${escapeHtml(option.id)}">
@@ -750,12 +752,6 @@ export async function readView({ query } = {}) {
     });
   });
   el.querySelector('[data-read-new]')?.addEventListener('click', () => loadQuiz(state.level));
-  modeButtons.forEach((button) => {
-    button.addEventListener('click', () => {
-      if (state.mode === button.dataset.readMode) return;
-      setMode(button.dataset.readMode);
-    });
-  });
   setMode(state.mode, { render: false });
 
   const onKey = (event) => {

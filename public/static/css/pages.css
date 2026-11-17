@@ -936,12 +936,8 @@
 .read-head { align-items:flex-start; }
 .read-head-side { display:flex; flex-direction:column; align-items:flex-end; gap:7px; }
 .read-head-meta { justify-content:flex-end; }
-.read-mode-switch { display:inline-flex; padding:3px; border:1px solid var(--line); border-radius:10px; background:var(--bg-elev); box-shadow:inset 0 1px 2px rgba(0,0,0,.04); }
-.read-mode-btn { border:0; border-radius:8px; background:transparent; color:var(--muted); padding:7px 15px; font:inherit; font-size:12px; font-weight:650; line-height:1.2; cursor:pointer; transition:background .15s, color .15s, box-shadow .15s; }
-.read-mode-btn:hover { color:var(--ink); }
-.read-mode-btn.active { background:var(--brand); color:#fff; box-shadow:0 1px 4px color-mix(in srgb,var(--brand) 35%,transparent); }
 .read-steps.is-hidden, .read-advanced-host.is-hidden { display:none; }
-.read-measure-host.is-hidden { display:none; }
+.read-measure-host.is-hidden, .read-advanced-summary-host.is-hidden { display:none; }
 .read-measure { padding:14px; }
 .read-measure-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px; }
 .read-measure-head h3 { margin:2px 0 4px; font-size:16px; }
@@ -1095,7 +1091,7 @@
 .read-entry-text span { display:block; margin-top:1px; color:var(--muted); font-size:10px; line-height:1.45; }
 @media (max-width:900px) { .read-steps { grid-template-columns:minmax(0,1fr); } .read-ecg-card { position:static; } }
 @media (max-width:719px) { .read-ecg-card #read-ecg.is-12lead #read-ecg-canvas { max-height:46vh; } }
-@media (max-width:600px) { .read-diagnosis { grid-template-columns:minmax(0,1fr); } .read-score-row { grid-template-columns:repeat(3,minmax(0,1fr)); } .read-mode-switch { width:100%; } .read-mode-btn { flex:1; } .read-ten-step { grid-template-columns:36px minmax(0,1fr); } .read-ten-step-rail { padding-top:12px; font-size:11px; } .read-ten-step-main { padding:10px; } .read-ten-options { grid-template-columns:minmax(0,1fr); } .read-advanced-head { flex-direction:column; } .read-advanced-actions { justify-content:flex-start; } }
+@media (max-width:600px) { .read-diagnosis { grid-template-columns:minmax(0,1fr); } .read-score-row { grid-template-columns:repeat(3,minmax(0,1fr)); } .read-ten-step { grid-template-columns:36px minmax(0,1fr); } .read-ten-step-rail { padding-top:12px; font-size:11px; } .read-ten-step-main { padding:10px; } .read-ten-options { grid-template-columns:minmax(0,1fr); } .read-advanced-head { flex-direction:column; } .read-advanced-actions { justify-content:flex-start; } }
 /* ---------- leaderboard ---------- */
 .leaderboard-page { max-width: 1020px; }
 .lb-tabs { margin: 0 0 8px; width: fit-content; }

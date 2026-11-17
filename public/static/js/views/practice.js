@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261117a1';
+const __asset = __isNode ? '' : '?v=20261117a2';
 const { localizedName, getLocale, translate } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -180,7 +180,7 @@ export async function practiceView({ query } = {}) {
     <div class="practice-setup">
       <section class="quiz-card">
         <div class="page-eyebrow">SETUP</div>
-        <a class="read-entry" href="#/read"><span class="read-entry-icon">${icon('target', 16)}</span><span class="read-entry-text"><b>系统判读训练</b><span>按 频率 → 节律 → 电轴 → 间期 → ST-T → 结论 的顺序读图，每一步即时反馈。</span></span><span class="badge badge-brand">NEW</span></a>
+        <a class="read-entry" href="#/read"><span class="read-entry-icon">${icon('target', 16)}</span><span class="read-entry-text"><b>系统判读训练</b><span>按十步法从定标、导联、心率、节律、电轴、间期、P/QRS 形态、ST-T 到临床对照逐项读图，每一步即时反馈。</span></span><span class="badge badge-brand">NEW</span></a>
         <h2 class="section-title" style="margin-bottom:10px">选择玩法</h2>
         <div class="game-mode-grid">${GAME_MODES.map((mode) => `<button class="game-mode-card ${mode.id === state.gameMode ? 'active' : ''}" type="button" data-game-mode="${mode.id}"><span class="game-mode-icon">${icon(mode.icon, 16)}</span><b>${mode.name}</b><small>${mode.note}</small></button>`).join('')}</div>
         <div class="section-head" style="margin:16px 0 8px"><h2 class="section-title" style="font-size:16px;margin:0">难度与范围</h2><span class="muted" style="font-size:10px">未解锁难度可自由练习 · 不计分 / 不扣分</span></div>
@@ -794,7 +794,7 @@ function feedbackHtml(result, multiple, isLast = false) {
     <p class="feedback-text">${escapeHtml(result.localExplanation || '')}</p>
     ${(result.explanation || []).map((item) => `<div class="explain-block"><h4>${escapeHtml(item.name)}</h4><p>${escapeHtml(item.specificity || item.oneLiner || '')}</p><ul>${(item.criteria || []).map((c) => `<li>${escapeHtml(c)}</li>`).join('')}</ul></div>`).join('')}
     ${aiUiAvailable() ? `<div class="ai-ask-row"><input class="input" data-ai-question maxlength="120" placeholder="简短追问（≤120 字）：为什么排除某个选项？"><button class="btn btn-secondary btn-sm" type="button" data-ai-ask>${icon('sparkles', 14)} 问 AI</button></div><div class="ai-ask-hint">追问限 120 字；复杂或跨主题问题请到文章页的「AI 导师」提问。</div>` : ''}
-    <div class="row-wrap" style="margin-top:12px">${!result.correct && (result.correctIds || []).length ? `<a class="btn btn-secondary btn-sm" href="#/read?focus=${encodeURIComponent((result.correctIds || []).join(','))}">${icon('target', 14)} 用五步法重读</a>` : ''}${aiUiAvailable() ? `<button class="btn btn-secondary btn-sm" type="button" data-ai-explain>${icon('sparkles', 14)} AI 解释错因</button>` : ''}<button class="btn btn-primary btn-sm" type="button" data-next>${icon('arrowRight', 14)} ${isLast ? '查看本轮结果' : '下一题'}</button></div>
+    <div class="row-wrap" style="margin-top:12px">${!result.correct && (result.correctIds || []).length ? `<a class="btn btn-secondary btn-sm" href="#/read?focus=${encodeURIComponent((result.correctIds || []).join(','))}">${icon('target', 14)} 用十步法重读</a>` : ''}${aiUiAvailable() ? `<button class="btn btn-secondary btn-sm" type="button" data-ai-explain>${icon('sparkles', 14)} AI 解释错因</button>` : ''}<button class="btn btn-primary btn-sm" type="button" data-next>${icon('arrowRight', 14)} ${isLast ? '查看本轮结果' : '下一题'}</button></div>
     <div data-ai-explain-panel></div>
   </div>`;
 }

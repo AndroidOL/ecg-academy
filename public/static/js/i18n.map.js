@@ -177,7 +177,7 @@ export default {
     "事件记录器与循环记录器": "Event and loop recorders",
     "二度 II 型房室传导阻滞": "Second-degree AV block, Mobitz type II",
     "二度 I 型房室传导阻滞": "Second-degree AV block, Mobitz type I (Wenckebach)",
-    "五步重读": "Five-step re-read",
+    "十步重读": "Ten-step re-read",
     "亚军": "Runner-up",
     "交流电与电磁干扰": "Electrical interference",
     "交界性期前收缩": "Premature junctional contraction (PJC)",
@@ -598,8 +598,8 @@ export default {
     "按压中断 <10 秒": "Compression interruptions <10 seconds",
     "按压比例": "Compression fraction",
     "按压过程中不应停顿检查脉搏/心律": "Do not pause compressions to check pulse/rhythm",
-    "按频率 → 节律 → 电轴 → 间期 → ST-T → 结论六步读图，每一步即时反馈；最后提交诊断并进入错题本。": "Read the ECG in six steps: rate → rhythm → axis → intervals → ST-T → conclusion, with immediate feedback at each step; finally submit the diagnosis and add it to the mistake notebook.",
-    "按 频率 → 节律 → 电轴 → 间期 → ST-T → 结论 的顺序读图，每一步即时反馈。": "Read the ECG in the order of rate → rhythm → axis → intervals → ST-T → conclusion, with immediate feedback at each step.",
+    "按十步法从定标、导联、心率、节律、电轴、间期、P/QRS 形态、ST-T 到临床对照逐项读图，每一步即时反馈；最后提交诊断并进入错题本。": "Read step by step with the ten-step method: calibration, leads, rate, rhythm, axis, intervals, P/QRS morphology, ST-T, and clinical correlation, with immediate feedback; then submit the diagnosis and add it to the mistake notebook.",
+    "按十步法从定标、导联、心率、节律、电轴、间期、P/QRS 形态、ST-T 到临床对照逐项读图，每一步即时反馈。": "Read step by step with the ten-step method: calibration, leads, rate, rhythm, axis, intervals, P/QRS morphology, ST-T, and clinical correlation, with immediate feedback.",
     "挑战 · Lv.5": "Challenge · Lv.5",
     "挑战 · 自由": "Challenge · Free",
     "掌握": "Mastered",
@@ -912,7 +912,7 @@ export default {
     "继续：正常窦性心律": "Continue: Normal sinus rhythm",
     "维拉帕米": "Verapamil",
     "综合判读": "Comprehensive interpretation",
-    "综合前面五步，选择最可能的诊断。提交后由服务端判分并记录到练习数据。": "Synthesize the previous five steps and choose the most likely diagnosis. After submission, the server grades it and records it in the practice data.",
+    "综合十步判读，选择最可能的诊断。提交后由服务端判分并记录到练习数据。": "Synthesize the ten-step reading and choose the most likely diagnosis. After submission, the server grades it and records it in the practice data.",
     "综合征与离子通道病": "Syndromes and Channelopathies",
     "编辑核对：": "Editorial verification:",
     "缩小": "Zoom out",
@@ -1125,5 +1125,8 @@ export default {
     "高镁最常见的心电图表现是？": "What is the most common ECG manifestation of hypermagnesemia?",
     "，不用于诊断或治疗。": "and are not for diagnosis or treatment.",
     "；P 环和 T 环分别代表心房除极、心室复极。": "; the P loop and T loop represent atrial depolarization and ventricular repolarization, respectively.",
-    "；电轴左偏 = 更朝上/左，电轴右偏 = 更朝下/右。把水平视角拖到 −180° 可从后方观察“向后”的分量。": "; left axis deviation = more upward/left, right axis deviation = more downward/right. Drag the horizontal view to −180° to observe the “posterior” component from behind."
+    "；电轴左偏 = 更朝上/左，电轴右偏 = 更朝下/右。把水平视角拖到 −180° 可从后方观察“向后”的分量。": "; left axis deviation = more upward/left, right axis deviation = more downward/right. Drag the horizontal view to −180° to observe the “posterior” component from behind.",
+    "用十步法重读": "Re-read with the ten-step method",
+    "开始十步判读": "Start ten-step reading",
+    "按十步法从定标、导联、心率、节律、电轴、间期、P/QRS 形态、ST-T 到临床对照逐项完成；每一步即时反馈，最后再下诊断。": "Complete the ten-step reading step by step: calibration, leads, rate, rhythm, axis, intervals, P/QRS morphology, ST-T, and clinical correlation, with immediate feedback; then make the diagnosis."
 };

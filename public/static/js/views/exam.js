@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261117a1';
+const __asset = __isNode ? '' : '?v=20261117a2';
 const { localizedName } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -92,7 +92,7 @@ function resultMarkup() {
       <div class="row-wrap" style="justify-content:center;margin-top:16px"><button class="btn btn-primary" type="button" data-back>${icon('arrowLeft', 15)} 返回学习考试</button><a class="btn btn-secondary" href="#/review">${icon('bookOpen', 15)} 查看错题本</a></div>
     </div>
     ${affectedChapters.length ? `<section class="card card-pad exam-rating-update"><h2 class="section-title" style="font-size:16px">章节评级更新</h2><div class="exam-rating-grid">${affectedChapters.map((chapter) => `<div><b>${escapeHtml(localizedName(chapter))}</b><span>${escapeHtml(chapter.statusLabel)} · ${escapeHtml(chapter.level)}</span><small>最近 ${chapter.sample} 题 · ${chapter.accuracy}%</small></div>`).join('')}</div></section>` : ''}
-    ${wrong.length ? `<section class="card card-pad exam-wrong-list"><h2 class="section-title" style="font-size:16px">本轮错题 ${wrong.length} 道</h2>${wrong.map((item) => `<div class="exam-wrong-item"><b>${escapeHtml(item.stem || '')}</b><p>你的选择：${escapeHtml(item.options[item.selected] || '未选')} · 正确：${escapeHtml(item.options[item.answer] || '')}</p><small>${escapeHtml(item.explanation || '')}</small></div>`).join('')}</section>` : ''}
+    ${wrong.length ? `<section class="card card-pad exam-wrong-list"><h2 class="section-title" style="font-size:16px">本轮错题 ${wrong.length} 道</h2>${wrong.map((item) => `<div class="exam-wrong-item"><b>${escapeHtml(item.stem || '')}</b><p>你的选择：${escapeHtml(item.options[item.selected] || '未选')} · 正确：${escapeHtml(item.options[item.answer] || '')}</p><small>${escapeHtml(item.explanation || '')}</small>${item.sourceId ? `<div class="row-wrap" style="margin-top:6px"><a class="btn btn-xs btn-secondary" href="#/read?focus=${encodeURIComponent(item.sourceId)}">十步重读</a></div>` : ''}</div>`).join('')}</section>` : ''}
     ${medicalDisclaimer()}`;
 }
 

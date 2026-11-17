@@ -76,7 +76,7 @@ php scripts/validate_content.php
 
 ## 5. 电脑判读测量卡
 
-五步基础全部作答后，前端从当前 `ECGSession` 自动计算并展示：心率、RR、PP、PR、QRS、QT/QTc、额面电轴、V1 R/V5 S。
+十步自检全部作答后（内部回退的五步模式则在五步完成后），前端从当前 `ECGSession` 自动计算并展示：心率、RR、PP、PR、QRS、QT/QTc、额面电轴、V1 R/V5 S。
 
 - RR/PP/PR/QRS 使用 `schedule.beats` 的 R 峰、P 起点、QRS 起点/终点，不使用固定阈值从图像上“猜”。
 - QT 使用校准后的标称 QT；QTc 采用 Bazett。

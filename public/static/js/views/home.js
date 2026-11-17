@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261117a1';
+const __asset = __isNode ? '' : '?v=20261117a2';
 const { localizedName, getLocale } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -126,7 +126,7 @@ export async function homeView() {
           <div class="feature-icon" style="background:var(--accent-soft);color:var(--accent)">${icon('flame', 20)}</div><h3>每日挑战</h3><p>每天 10 道全站同题的心电图判读，连续完成累计打卡；独立计分，不占用测试分。</p><span class="feature-link">开始今日挑战 ${icon('arrowRight', 13)}</span>
         </a>
         <a class="feature-card" href="#/read">
-          <div class="feature-icon" style="background:var(--brand-soft);color:var(--brand)">${icon('target', 20)}</div><h3>系统判读训练</h3><p>按频率 → 节律 → 电轴 → 间期 → ST-T → 结论六步读图，每一步即时反馈；最后提交诊断并进入错题本。</p><span class="feature-link">开始六步读图 ${icon('arrowRight', 13)}</span>
+          <div class="feature-icon" style="background:var(--brand-soft);color:var(--brand)">${icon('target', 20)}</div><h3>系统判读训练</h3><p>按十步法从定标、导联、心率、节律、电轴、间期、P/QRS 形态、ST-T 到临床对照逐项读图，每一步即时反馈；最后提交诊断并进入错题本。</p><span class="feature-link">开始十步判读 ${icon('arrowRight', 13)}</span>
         </a>
         <a class="feature-card" href="#/vectors">
           <div class="feature-icon">${icon('compass', 20)}</div><h3>心脏向量实验室</h3><p>P/QRS/T 环、肢体/胸导联投影、动作电位与四腔瓣膜解剖；拖动旋转，理解心电图为什么长这样。</p><span class="feature-link">进入向量实验室 ${icon('arrowRight', 13)}</span>
