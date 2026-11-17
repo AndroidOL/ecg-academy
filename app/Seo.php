@@ -522,6 +522,21 @@ final class Seo
     private static function glossary(): void
     {
         $terms = is_file(BASE_PATH . '/data/glossary.php') ? (array) require BASE_PATH . '/data/glossary.php' : [];
+        $abbrFile = BASE_PATH . '/data/abbreviations.php';
+        if (is_file($abbrFile)) {
+            $seen = [];
+            foreach ($terms as $term) {
+                if (is_array($term) && count($term) >= 3) $seen[strtolower((string) $term[1]) . '|' . (string) $term[2]] = true;
+            }
+            foreach ((array) require $abbrFile as $row) {
+                if (!is_array($row) || count($row) < 3) continue;
+                [$abbr, $en, $zh] = $row;
+                $key = strtolower((string) $en) . '|' . (string) $zh;
+                if (isset($seen[$key])) continue;
+                $terms[] = ['缩写', (string) $en, (string) $zh, (string) $abbr . '：' . $en . '（' . $zh . '）'];
+                $seen[$key] = true;
+            }
+        }
         $grouped = [];
         foreach ($terms as $term) {
             if (!is_array($term) || count($term) < 4) {
@@ -537,8 +552,9 @@ final class Seo
             $nav .= '<a href="#' . $anchor . '">' . self::e($category) . ' <small>' . count($items) . '</small></a>';
             $dl = '';
             foreach ($items as $term) {
+                $english = preg_replace('/\s*\([A-Z0-9-]{2,8}\)\s*$/', '', (string) $term[1]) ?: (string) $term[1];
                 $dl .= '<div class="seo-term">'
-                    . '<dt><dfn>' . self::e($term[2]) . '</dfn><span>' . self::e($term[1]) . '</span></dt>'
+                    . '<dt><dfn>' . self::e($english) . '（' . self::e($term[2]) . '）</dfn></dt>'
                     . '<dd>' . self::e($term[3]) . '</dd></div>';
             }
             $sections .= '<section class="seo-sec" id="' . $anchor . '"><h2>' . self::e($category) . '</h2><dl class="seo-terms">' . $dl . '</dl></section>';

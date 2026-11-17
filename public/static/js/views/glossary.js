@@ -1,7 +1,7 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261112a17';
-const { getLocale } = await import(`../i18n.js${__asset}`);
+const __asset = __isNode ? '' : '?v=20261112a18';
 const { icon, escapeHtml } = await import(`../ui.js${__asset}`);
+const { abbreviationTerms } = await import(`../abbreviations.js${__asset}`);
 
 const TERMS = [
   ['基础', 'Electrocardiogram (ECG)', '心电图', '在体表记录心脏电活动随时间变化的电位差。'],
@@ -68,7 +68,20 @@ const TERMS = [
   ['方法学', 'Peer review', '同行审阅', '由同领域专业人员核对内容、证据与表述。'],
 ];
 
+const __existingTerms = new Set(TERMS.map(([, en, zh]) => `${en}|${zh}`));
+for (const term of abbreviationTerms()) {
+  const key = `${term.en}|${term.zh}`;
+  if (!__existingTerms.has(key)) {
+    TERMS.push([term.category, term.en, term.zh, term.definition]);
+    __existingTerms.add(key);
+  }
+}
+
 const CATS = ['全部', ...new Set(TERMS.map((term) => term[0]))];
+
+function displayEnglish(value) {
+  return String(value || '').replace(/\s*\([A-Z0-9-]{2,8}\)\s*$/, '');
+}
 
 export async function glossaryView() {
   const el = document.createElement('div');
@@ -92,7 +105,7 @@ export async function glossaryView() {
   const renderList = () => {
     const q = query.trim().toLowerCase();
     const items = TERMS.filter(([category, en, zh, def]) => (cat === '全部' || category === cat) && (!q || `${en} ${zh} ${def}`.toLowerCase().includes(q)));
-    listEl.innerHTML = items.map(([category, en, zh, def]) => `<article class="glossary-item"><div class="glossary-term"><b>${escapeHtml(getLocale() === 'en' ? en : zh)}</b><span>${escapeHtml(getLocale() === 'en' ? zh : en)}</span></div><span class="badge">${escapeHtml(category)}</span><p>${escapeHtml(def)}</p></article>`).join('') || '<div class="learn-empty"><b>没有匹配术语</b><span>换个关键词或分类试试。</span></div>';
+    listEl.innerHTML = items.map(([category, en, zh, def]) => `<article class="glossary-item"><div class="glossary-term"><b>${escapeHtml(displayEnglish(en))}（${escapeHtml(zh)}）</b></div><span class="badge">${escapeHtml(category)}</span><p>${escapeHtml(def)}</p></article>`).join('') || '<div class="learn-empty"><b>没有匹配术语</b><span>换个关键词或分类试试。</span></div>';
   };
 
   el.querySelector('[data-glossary-search]').addEventListener('input', (event) => { query = event.target.value; renderList(); });

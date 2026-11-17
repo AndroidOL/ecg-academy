@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261112a17';
+const __asset = __isNode ? '' : '?v=20261112a18';
 const { localizedName, translate, getLocale, loadContentCatalog } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -8,6 +8,7 @@ const { createAiChat } = await import(`./ai-chat.js${__asset}`);
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, chapterColor, difficultyDots, escapeHtml, toast, medicalDisclaimer, setupMiniECG } = await import(`../ui.js${__asset}`);
 const { FIGURES } = await import(`../data/figures.js${__asset}`);
+const { expandAbbreviations } = await import(`../abbreviations.js${__asset}`);
 
 const SECTIONS = [
   ['definition', '定义'],
@@ -91,7 +92,7 @@ export async function articleView({ params }) {
           <h1 class="article-title">${escapeHtml(localizedName(detail))}</h1>
           <div class="article-en">${escapeHtml(detail.en || '')}</div>
           <p class="article-one">${escapeHtml(detail.oneLiner)}</p>
-          <div class="article-tags">${(detail.tags || []).map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}</div>
+          <div class="article-tags">${(detail.tags || []).map((tag) => `<span class="tag">${escapeHtml(expandAbbreviations(tag))}</span>`).join('')}</div>
           <div class="article-key-grid">
             ${keyNumbers.map((item) => `<div class="key-number"><div class="key-number-value">${escapeHtml(item.value)}<small>${escapeHtml(item.unit || '')}</small></div><div class="key-number-label">${escapeHtml(item.label)}</div></div>`).join('')}
           </div>

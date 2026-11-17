@@ -1,9 +1,10 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261112a17';
+const __asset = __isNode ? '' : '?v=20261112a18';
 const { localizedName, getLocale } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
+const { expandAbbreviations } = await import(`../abbreviations.js${__asset}`);
 const { icon, chapterColor, difficultyDots, escapeHtml, setupMiniECG, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 
 const FALLBACK_SPEC = {
@@ -97,7 +98,7 @@ export async function homeView() {
           return `<a class="chapter-card" href="${chapter.id === 'theory' ? '#/intro' : `#/learn?chapter=${chapter.id}`}" style="--chapter-color:${chapterColor(chapter.color)}">
             <span class="chapter-index">CH ${String(index + 1).padStart(2, '0')} · ${pct}%</span>
             <span class="chapter-name">${escapeHtml(localizedName(chapter))}</span>
-            <span class="chapter-desc">${escapeHtml(chapter.description || '')}</span>
+            <span class="chapter-desc">${escapeHtml(expandAbbreviations(chapter.description || ''))}</span>
             <span class="chapter-foot"><span class="progress grow"><span class="progress-bar" style="width:${pct}%"></span></span><span class="mono">${chapter.read}/${chapter.total}</span></span>
           </a>`;
         }).join('')}

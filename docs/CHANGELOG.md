@@ -1,5 +1,13 @@
 # 版本记录
 
+## 3.5.1 — 2026-11-17
+
+- 新增全站缩写规范：英文全名为主，中文写在括号内（如 Right Bundle Branch Block（完全性右束支传导阻滞））。
+- 新增 53 个 ECG 缩写映射，覆盖 RBBB/LBBB/LAFB/STEMI/NSTEMI/ACS/AVB/SVT/VT/VF/TdP/PVC/PAC/CRT/ICD/HCM/ARVC/CPVT/LQTS/SQTS/WPW/LVH/RVH/PE 等。
+- 术语表改为英文全名（中文）显示，并将缩写条目并入术语表与静态 SEO 术语页；专项卡片、章节描述和文章标签同步展开。
+- 新增 abbreviations 回归测试，CI 通过。
+- 资源版本 `20261112a18`。
+
 ## 3.5.0 — 2026-11-12
 
 - 多诊断判读：一张心电图可同时包含多个独立诊断。PR 延长可单独成立一度房室阻滞，QRS 形态、电轴、束支阻滞等只增加额外诊断，不再强迫只选一个。

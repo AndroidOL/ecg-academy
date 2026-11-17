@@ -1,11 +1,12 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261112a17';
+const __asset = __isNode ? '' : '?v=20261112a18';
 const { localizedName, getLocale, translate } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
 const { navigate } = await import(`../router.js${__asset}`);
 const { recordAttempt, reviewSummary, weakDiagnosisIds, deviceId, questionSignature } = await import(`../study-store.js${__asset}`);
 const { hasByok } = await import(`../byok.js${__asset}`);
+const { expandAbbreviations } = await import(`../abbreviations.js${__asset}`);
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, toast, setButtonLoading, fmtDuration, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 const { streamAi } = await import(`../ai-stream.js${__asset}`);
@@ -38,7 +39,7 @@ const SPECIAL_PRACTICES = [
   {
     id: 'bundle-block',
     label: '束支与分支阻滞',
-    note: 'RBBB / LBBB / 左前分支',
+    note: 'Right Bundle Branch Block（完全性右束支传导阻滞） / Left Bundle Branch Block（完全性左束支传导阻滞） / Left Anterior Fascicular Block（左前分支传导阻滞）',
     level: 2,
     focus: ['rbbb', 'lbbb', 'lafb'],
   },
@@ -196,7 +197,7 @@ export async function practiceView({ query } = {}) {
             const freePractice = userLevel < item.level;
             return `<button class="special-card" type="button" data-special="${item.id}">
               <b>${item.label}</b>
-              <span>${item.note}</span>
+              <span>${expandAbbreviations(item.note)}</span>
               <small>${freePractice ? `Lv.${item.level} 后计分 · ` : ''}${item.count ? `${item.count} 道专题题` : `${item.focus.length} 个相关诊断`}</small>
             </button>`;
           }).join('')}
