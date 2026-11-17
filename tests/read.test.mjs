@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { buildReading, isStepCorrect } from '../public/static/js/read-interpret.js';
+import { buildReading, buildAdvancedReading, isStepCorrect } from '../public/static/js/read-interpret.js';
 
 let passed = 0;
 function check(name, fn) {
@@ -76,6 +76,32 @@ check('hypokalemia flags U waves and QT-related options', () => {
   });
   assert.deepEqual(reading.intervals.answer, ['qt']);
   assert.deepEqual(reading.stt.answer.sort(), ['t', 'u']);
+});
+
+check('object-shaped ST lead maps are detected', () => {
+  const reading = buildReading({
+    rhythm: 'sinus', rate: 90, pr: 0.16, qrs: 0.09, qt: 0.4, axis: 'normal',
+    st: { elevation: { V2: 2, V3: 3 }, depression: { II: 1 } },
+    t: { shape: 'peaked' }, u: 0,
+  });
+  assert.ok(reading.stt.answer.includes('ste'));
+  assert.ok(reading.stt.answer.includes('std'));
+  assert.match(reading.stt.explanation, /V2、V3/);
+});
+
+check('advanced reading starts at P wave and includes morphology/ST steps', () => {
+  const reading = buildAdvancedReading({
+    rhythm: 'sinus', rate: 72, pr: 0.18, qrs: 0.14, qt: 0.44, axis: 'left', morphology: 'lbbb',
+    st: { elevation: [], depression: [] }, t: { shape: 'discordant' }, u: 0,
+  }, [{ id: 'lbbb', name: 'LBBB', chapter: 'block' }], { v1R: 0.1, v5S: -0.2 });
+  assert.equal(reading.steps[0].id, 'p');
+  assert.ok(reading.steps.some((step) => step.id === 'q-wave'));
+  assert.ok(reading.steps.some((step) => step.id === 'st'));
+  assert.ok(reading.steps.some((step) => step.id === 't'));
+  assert.ok(reading.steps.some((step) => step.title.includes('QRS')));
+  assert.match(reading.steps[0].value, /P 波/);
+  assert.ok(reading.candidateDiagnoses.length === 1);
+  assert.ok(reading.differentials.length >= 1);
 });
 
 console.log(`\nGuided reading tests passed: ${passed}`);

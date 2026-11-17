@@ -85,3 +85,5 @@ jobs:
         run: npm run test:playback
       - name: Local review and BYOK tests
         run: npm run test:study
+      - name: Guided reading tests
+        run: npm run test:read

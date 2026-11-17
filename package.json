@@ -5,7 +5,8 @@
   "scripts": {
     "test:engine": "node tests/engine.test.mjs",
     "test:playback": "node tests/playback.test.mjs",
-    "test:study": "node tests/study.test.mjs"
+    "test:study": "node tests/study.test.mjs",
+    "test:read": "node tests/read.test.mjs"
   },
   "devDependencies": {
     "jsdom": "^26.1.0"

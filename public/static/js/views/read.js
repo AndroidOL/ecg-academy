@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261112a13';
+const __asset = __isNode ? '' : '?v=20261112a14';
 const { localizedName, getLocale, translate } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -10,7 +10,7 @@ const { hasByok } = await import(`../byok.js${__asset}`);
 const { mountECG } = await import(`../ecg-renderer.js${__asset}`);
 const { icon, escapeHtml, toast, setButtonLoading, medicalDisclaimer } = await import(`../ui.js${__asset}`);
 const { levelFromXp, ADVANCED_UNLOCK, CHALLENGE_UNLOCK } = await import(`../levels.js${__asset}`);
-const { buildReading, isStepCorrect } = await import(`../read-interpret.js${__asset}`);
+const { buildReading, buildAdvancedReading, isStepCorrect } = await import(`../read-interpret.js${__asset}`);
 
 function aiUiAvailable() {
   if (!store.user || store.user.isGuest) return false;
@@ -67,6 +67,7 @@ export async function readView({ query } = {}) {
     quiz: null,
     reading: null,
     level: 1,
+    advanced: String(query?.get('advanced') || '') === '1',
     selections: {},
     results: {},
     submitted: false,
@@ -85,7 +86,7 @@ export async function readView({ query } = {}) {
       </div>
       <div class="row-wrap">
         <span class="badge badge-brand">${icon('activity', 11)} 结构化 5 步</span>
-        ${focus.length ? `<span class="badge badge-warn">专项 ${focus.length} 个诊断</span>` : ''}<span class="badge badge-brand" data-read-stats>${statsLabel()}</span><span class="badge">键盘 1–5 / Enter / N</span>
+        ${focus.length ? `<span class="badge badge-warn">专项 ${focus.length} 个诊断</span>` : ''}<button class="btn btn-xs ${state.advanced ? 'btn-primary' : 'btn-ghost'}" type="button" data-read-advanced>${icon('bookOpen', 12)} 进阶完整判读</button><span class="badge badge-brand" data-read-stats>${statsLabel()}</span><span class="badge">键盘 1–5 / Enter / N</span>
       </div>
     </header>
     <div class="read-layout">
@@ -95,7 +96,7 @@ export async function readView({ query } = {}) {
             const freePractice = Boolean(level.need && userLevel < level.need);
             return `<button class="btn btn-xs ${level.id === state.level ? 'btn-primary' : 'btn-ghost'}" type="button" data-read-level="${level.id}" title="${escapeHtml(level.note)}${freePractice ? ` · Lv.${level.need} 后计分` : ''}">${level.name}${freePractice ? ' · 自由' : ''}</button>`;
           }).join('')}<span class="muted" style="font-size:9.5px">未解锁难度自由练习，不计分/不扣分</span></div>
-          <div class="row-wrap"><span class="badge" data-quiz-meta>加载中…</span><button class="btn btn-xs btn-ghost" type="button" data-read-new>${icon('refresh', 12)} 换一例</button></div>
+          <div class="row-wrap"><span class="badge" data-quiz-meta>加载中…</span><button class="btn btn-xs btn-ghost" type="button" data-read-new>${icon('refresh', 12)} 随机一例</button></div>
         </div>
         <div class="ecg-card" id="read-ecg">
           <div class="ecg-toolbar">
@@ -112,6 +113,7 @@ export async function readView({ query } = {}) {
         <div class="read-loading" data-read-loading>${icon('activity', 14)} 正在生成病例…</div>
       </section>
       <div class="read-steps" data-steps></div>
+      <section class="read-advanced-host" data-advanced-host></section>
       <section class="quiz-card read-conclusion" data-conclusion></section>
       <div class="read-feedback" data-read-feedback></div>
     </div>
@@ -119,6 +121,8 @@ export async function readView({ query } = {}) {
   `;
 
   const stepsHost = el.querySelector('[data-steps]');
+  const advancedHost = el.querySelector('[data-advanced-host]');
+  const advancedButton = el.querySelector('[data-read-advanced]');
   const conclusionHost = el.querySelector('[data-conclusion]');
   const feedbackHost = el.querySelector('[data-read-feedback]');
   const loading = el.querySelector('[data-read-loading]');
@@ -135,6 +139,7 @@ export async function readView({ query } = {}) {
     state.result = null;
     loading.style.display = '';
     stepsHost.innerHTML = '';
+    advancedHost.innerHTML = '';
     conclusionHost.innerHTML = '';
     feedbackHost.innerHTML = '';
     metaBadge.textContent = '加载中…';
@@ -151,6 +156,7 @@ export async function readView({ query } = {}) {
       loading.style.display = 'none';
       mountViewer(quiz);
       renderSteps();
+      renderAdvanced();
       renderConclusion();
       startTimer();
     } catch (error) {
@@ -183,6 +189,57 @@ export async function readView({ query } = {}) {
       el.querySelector('[data-read-12lead]').classList.add('active');
       el.querySelector('[data-read-rhythm]').classList.remove('active');
     };
+  }
+
+  function measureLeadVoltages() {
+    const session = state.viewer?.rhythmSession;
+    if (!session || !state.quiz) return {};
+    const spec = state.quiz.spec || {};
+    const beat = Number(spec.start) || 0.58;
+    const window = 0.12;
+    const extremes = (lead) => {
+      const result = session.lead(lead);
+      const sr = result.sampleRate;
+      const lo = Math.max(0, Math.round((beat - 0.08) * sr));
+      const hi = Math.min(result.samples.length - 1, Math.round((beat + window) * sr));
+      let min = 0;
+      let max = 0;
+      for (let i = lo; i <= hi; i += 1) {
+        min = Math.min(min, result.samples[i]);
+        max = Math.max(max, result.samples[i]);
+      }
+      return { min, max };
+    };
+    const v1 = extremes('V1');
+    const v5 = extremes('V5');
+    return { v1R: v1.max, v5S: v5.min };
+  }
+
+  function renderAdvanced() {
+    if (!advancedHost) return;
+    if (!state.advanced || !state.quiz) {
+      advancedHost.innerHTML = '';
+      return;
+    }
+    const reading = buildAdvancedReading(state.quiz.spec || {}, state.quiz.options || [], measureLeadVoltages());
+    advancedHost.innerHTML = `<section class="quiz-card read-advanced">
+      <div class="read-advanced-head"><div><div class="page-eyebrow">ADVANCED INTERPRETATION</div><h3>进阶完整判读</h3><p class="muted">从 P 波开始逐项确认，最后再从 0 写出完整结论；不是替代基础五步，而是把容易漏掉的形态与间期展开。</p></div><span class="badge badge-brand">${reading.steps.length} 个检查点</span></div>
+      <div class="read-advanced-grid">${reading.steps.map((step, index) => `<div class="read-advanced-item">
+        <div class="read-advanced-item-head"><span>${String(index + 1).padStart(2, '0')}</span><h4>${escapeHtml(step.title)}</h4></div>
+        <p class="read-advanced-value">${escapeHtml(step.value)}</p>
+        <p class="read-advanced-detail">${escapeHtml(step.detail)}</p>
+        <p class="read-advanced-tip">${icon('target', 11)} ${escapeHtml(step.tip)}</p>
+      </div>`).join('')}</div>
+      <div class="read-advanced-summary">
+        <div class="read-advanced-block"><h4>本例改变清单</h4><ul>${reading.changes.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></div>
+        <div class="read-advanced-block"><h4>危险信号 / 优先处理</h4><ul>${reading.danger.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></div>
+        <div class="read-advanced-block"><h4>本题候选诊断</h4><ul>${reading.candidateDiagnoses.map((item) => `<li>${escapeHtml(item.name)}${item.chapter ? ` <span class="muted">· ${escapeHtml(item.chapter)}</span>` : ''}</li>`).join('')}</ul></div>
+        <div class="read-advanced-block read-advanced-wide"><h4>改变对应的鉴别诊断</h4>${reading.differentials.map((group) => `<div class="read-advanced-diff"><b>${escapeHtml(group.title)}</b><span>${group.items.map((item) => escapeHtml(item)).join(' · ')}</span></div>`).join('')}</div>
+        <div class="read-advanced-block"><h4>完整结论模板</h4><p>${escapeHtml(reading.conclusion)}</p></div>
+        <div class="read-advanced-block"><h4>下一步</h4><ul>${reading.next.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></div>
+      </div>
+      <p class="read-advanced-source">${escapeHtml(reading.sourceNote)} <a href="#/guidelines">查看指南规范与文献 →</a></p>
+    </section>`;
   }
 
   function startTimer() {
@@ -432,6 +489,12 @@ export async function readView({ query } = {}) {
     });
   });
   el.querySelector('[data-read-new]')?.addEventListener('click', () => loadQuiz(state.level));
+  advancedButton?.addEventListener('click', () => {
+    state.advanced = !state.advanced;
+    advancedButton.classList.toggle('btn-primary', state.advanced);
+    advancedButton.classList.toggle('btn-ghost', !state.advanced);
+    renderAdvanced();
+  });
 
   const onKey = (event) => {
     if (event.target?.closest?.('input, textarea, select, [contenteditable]')) return;
