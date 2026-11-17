@@ -215,7 +215,7 @@ function fmtLeadList(leads) {
   return leads.length ? leads.join('、') : '';
 }
 
-export function buildAdvancedReading(spec = {}, options = [], measures = {}) {
+export function buildAdvancedReading(spec = {}, options = [], measures = {}, references = []) {
   const rhythm = String(spec.rhythm || 'sinus');
   const pRaw = String(spec.p || 'normal');
   const pAbsent = ['af', 'flutter', 'vf', 'vflutter', 'torsades'].includes(rhythm) || ['absent', 'hidden', 'sawtooth'].includes(pRaw);
@@ -238,7 +238,7 @@ export function buildAdvancedReading(spec = {}, options = [], measures = {}) {
         : avDegree === '3'
           ? 'P 与 QRS 完全分离（三度）'
           : '每个 P 后均有 QRS，PR 固定';
-  const prText = pAbsent ? 'P 波消失/被 f/F 波取代，PR 无法测量' : `PR ${(Number(spec.pr) || 0).toFixed(2)} s`;
+  const prText = pAbsent ? 'P 波消失/被 f/F 波取代，PR 无法测量' : 'PR 已记录（点击“查看数值”核对）';
   const qrsWidth = Number(spec.qrs) || 0;
   const wideQrs = qrsWidth >= 0.12;
   const rrRegular = rhythm === 'af'
@@ -269,7 +269,7 @@ export function buildAdvancedReading(spec = {}, options = [], measures = {}) {
   if (rhythm !== 'sinus') changes.push(`节律异常（${RHYTHM_LABELS[rhythm] || rhythm}）`);
   if (axis !== AXIS_LABELS.normal) changes.push(axis);
   if (Number(spec.pr) > 0.20) changes.push('PR 间期延长');
-  if (qrsWidth >= 0.12) changes.push(`QRS 增宽（${(qrsWidth * 1000).toFixed(0)} ms）`);
+  if (qrsWidth >= 0.12) changes.push('QRS 增宽');
   if (spec.avBlock) changes.push(`房室阻滞：${avText}`);
   if (elevation.length) changes.push(`ST 抬高（${fmtLeadList(elevation)}）`);
   if (depression.length) changes.push(`ST 压低（${fmtLeadList(depression)}）`);
@@ -327,14 +327,14 @@ export function buildAdvancedReading(spec = {}, options = [], measures = {}) {
     {
       id: 'qrs',
       title: 'QRS 电轴、宽度与 RR 是否整齐？',
-      value: `电轴：${axis}；QRS ${(qrsWidth * 1000).toFixed(0)} ms（${wideQrs ? '宽' : '窄'}）；RR ${rrRegular}`,
+      value: `电轴：${axis}；QRS ${wideQrs ? '宽' : '窄'}；RR ${rrRegular}`,
       detail: '电轴看 I/aVF 主波；QRS ≥120 ms 要分束支阻滞、室性心律、起搏与高钾；RR 规则性帮助区分房颤、早搏与传导比例。',
       tip: '宽 QRS 先按室速处理，直到有证据排除；不要只凭“有 P 波”排除室速。',
     },
     {
       id: 'morphology',
       title: 'QRS 类型、V1 R 与 V5 S、畸形 QRS',
-      value: `类型/形态：${morphology}（逐导联标记 QS/qRs/Rs/rS）；V1 R ${v1r === null ? '需在 12 导联测量' : `${v1r.toFixed(2)} mV`}；V5 S ${v5s === null ? '需在 12 导联测量' : `${v5s.toFixed(2)} mV`}`,
+      value: `类型/形态：${morphology}（逐导联标记 QS/qRs/Rs/rS）；V1 R/V5 S 请点击“查看数值”核对`,
       detail: '逐导联描述 QS、qRs、Rs、rS；V1 高 R 见于 RVH、后壁 MI、WPW、RBBB；V5 深 S 需结合电轴与右心负荷。病理性 Q：宽度 ≥0.04 s 或深度 >1/4 R。',
       tip: '形态不是诊断本身；把 QRS 类型、电压、电轴与 ST-T 放回同一导联组合。',
     },
@@ -369,12 +369,12 @@ export function buildAdvancedReading(spec = {}, options = [], measures = {}) {
   ];
 
   const conclusion = [
-    `${rate ? `${rate} 次/分` : '心率未知'}，${RHYTHM_LABELS[rhythm] || rhythm}`,
-    `轴位：${axis}`,
-    pAbsent ? 'P 波不可测' : `PR ${(Number(spec.pr) || 0).toFixed(2)} s`,
-    `QRS ${(qrsWidth * 1000).toFixed(0)} ms${wideQrs ? '（宽）' : ''}`,
-    elevation.length ? `ST 抬高 ${fmtLeadList(elevation)}` : depression.length ? `ST 压低 ${fmtLeadList(depression)}` : 'ST 无明显偏移',
+    '频率与节律（先写心率与基础节律）',
+    '电轴与 PR/QRS/QT（数值需自行测量后填写）',
+    `QRS 形态：${morphology}`,
+    elevation.length ? `ST 抬高：${fmtLeadList(elevation)}` : depression.length ? `ST 压低：${fmtLeadList(depression)}` : 'ST 段未见明显偏移',
     tShape || 'T 波形态未见明显异常',
+    '最后写最可能诊断、需要排除的诊断与下一步',
   ].join('；') + '。';
 
   const next = [];
@@ -385,14 +385,90 @@ export function buildAdvancedReading(spec = {}, options = [], measures = {}) {
   if (rhythm === 'af') next.push('评估卒中风险、抗凝与心室率控制。');
   if (next.length === 0) next.push('结合病史、生命体征、旧图与动态复查；单次 ECG 不能排除阵发性事件。');
 
+  const values = {
+    rate,
+    pr: pAbsent ? null : Number(spec.pr) || null,
+    qrs: qrsWidth || null,
+    qt: Number(spec.qt) || null,
+    v1R: v1r,
+    v5S: v5s,
+  };
+
+  const stCheck = elevation.length && depression.length ? 'both' : elevation.length ? 'elevation' : depression.length ? 'depression' : 'normal';
+  const selfChecks = [
+    {
+      id: 'p', question: 'P 波是否存在？',
+      options: [{ id: 'present', label: '存在，形态正常' }, { id: 'abnormal', label: '存在，但形态异常' }, { id: 'absent', label: '消失/被 f/F 波取代' }],
+      answer: pAbsent ? 'absent' : pRaw === 'normal' ? 'present' : 'abnormal',
+      explanation: pAbsent ? 'P 波消失或被 f/F 波取代；先确认房颤、房扑或交界性/室性心律。' : pRaw === 'normal' ? '每个心动周期可见形态相对一致的 P 波。' : 'P 波存在但形态异常，注意房性异位心律或导联位置。',
+    },
+    {
+      id: 'sinus', question: 'P 波是否窦性？',
+      options: [{ id: 'yes', label: '是（I、II、aVF 直立，aVR 倒置）' }, { id: 'no', label: '否，P′ 形态异常' }, { id: 'absent', label: 'P 波不可见' }],
+      answer: pSinus ? 'yes' : pAbsent ? 'absent' : 'no',
+      explanation: pSinus ? 'P 波电轴符合窦房结起源。' : pAbsent ? '没有 P 波，不能判断为窦性。' : 'P 波存在但形态/电轴不符合典型窦性，考虑房性异位或导联问题。',
+    },
+    {
+      id: 'pp', question: 'PP 间期是否整齐？',
+      options: [{ id: 'regular', label: '基本整齐' }, { id: 'irregular', label: '不整齐' }],
+      answer: rhythm === 'af' || Number(spec.irregularity) > 0.06 || spec.ectopy ? 'irregular' : rhythm === 'flutter' ? 'regular' : 'regular',
+      explanation: rhythm === 'af' ? '房颤时 PP/FF 间期绝对不规则。' : spec.ectopy ? '提前搏动会打断 PP 间期。' : Number(spec.irregularity) > 0.06 ? '存在明显窦性心律不齐或传导变化。' : 'PP 间期基本规则。',
+    },
+    {
+      id: 'av', question: 'P 与 QRS 的关系？',
+      options: [{ id: 'normal', label: '每个 P 后均有 QRS' }, { id: 'dropped', label: '有 P 未下传' }, { id: 'dissociated', label: 'P 与 QRS 完全分离' }],
+      answer: avDegree === '3' ? 'dissociated' : ['2a', '2b'].includes(avDegree) ? 'dropped' : 'normal',
+      explanation: avText,
+    },
+    {
+      id: 'axis', question: '额面电轴大致方向？',
+      options: [{ id: 'normal', label: '正常' }, { id: 'left', label: '左偏' }, { id: 'right', label: '右偏' }],
+      answer: spec.axis === 'left' ? 'left' : spec.axis === 'right' ? 'right' : 'normal',
+      explanation: `本例轴位：${axis}。正常约 −30°～+90°；左偏常见 LAFB，右偏见 RVH/PE/左后分支。`,
+    },
+    {
+      id: 'width', question: 'QRS 是否宽大？',
+      options: [{ id: 'narrow', label: '窄 QRS（<0.12 s）' }, { id: 'wide', label: '宽 QRS（≥0.12 s）' }],
+      answer: wideQrs ? 'wide' : 'narrow',
+      explanation: wideQrs ? 'QRS ≥0.12 s，需分束支阻滞、室性心律、起搏与高钾。' : 'QRS <0.12 s，仍要结合形态、电压与电轴。',
+    },
+    {
+      id: 'rr', question: 'RR 间期是否整齐？',
+      options: [{ id: 'regular', label: '基本整齐' }, { id: 'irregular', label: '不整齐' }],
+      answer: rhythm === 'af' || Number(spec.irregularity) > 0.06 || spec.ectopy ? 'irregular' : 'regular',
+      explanation: `本例 RR：${rrRegular}。规则性帮助区分房颤、早搏、传导比例变化与窦性心律不齐。`,
+    },
+    {
+      id: 'morphology', question: 'QRS 形态类型？',
+      options: [{ id: 'normal', label: '正常 R 波为主' }, { id: 'rbbb', label: 'RBBB 型（V1 rsR′）' }, { id: 'lbbb', label: 'LBBB 型（V5/V6 宽 R）' }, { id: 'other', label: '其他形态（LAFB/WPW/高电压/宽大畸形等）' }],
+      answer: ['normal', 'rbbb', 'lbbb'].includes(spec.morphology) ? spec.morphology : 'other',
+      explanation: `本例形态：${morphology}。逐导联标记 QS、qRs、Rs、rS，不能只看一个导联。`,
+    },
+    {
+      id: 'st', question: 'ST 段改变？',
+      options: [{ id: 'normal', label: '无明显偏移' }, { id: 'elevation', label: '抬高' }, { id: 'depression', label: '压低' }, { id: 'both', label: '同时存在抬高与压低' }],
+      answer: stCheck,
+      explanation: stText,
+    },
+    {
+      id: 't', question: 'T 波是否异常？',
+      options: [{ id: 'normal', label: '形态基本正常' }, { id: 'abnormal', label: '异常（倒置/高尖/低平/双向）' }],
+      answer: tShape || uWave ? 'abnormal' : 'normal',
+      explanation: tText + (uWave ? '；可见显著 U 波。' : ''),
+    },
+  ];
+
   return {
     steps,
+    values,
+    selfChecks,
     changes,
     danger,
     conclusion,
     next,
     candidateDiagnoses,
     differentials,
+    references: Array.isArray(references) ? references : [],
     sourceNote: '判读顺序参照 AHA/ACCF/HRS 心电图标准化建议与相应 ESC/ACC/AHA 指南；最终诊断需结合 12 导联、病史与动态变化。',
   };
 }

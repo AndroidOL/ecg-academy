@@ -1,5 +1,5 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261112a14';
+const __asset = __isNode ? '' : '?v=20261112a15';
 const { localizedName, getLocale, translate } = await import(`../i18n.js${__asset}`);
 const { api } = await import(`../api.js${__asset}`);
 const { store } = await import(`../store.js${__asset}`);
@@ -68,6 +68,7 @@ export async function readView({ query } = {}) {
     reading: null,
     level: 1,
     advanced: String(query?.get('advanced') || '') === '1',
+    advancedChecks: {},
     selections: {},
     results: {},
     submitted: false,
@@ -135,6 +136,7 @@ export async function readView({ query } = {}) {
     state.reading = null;
     state.selections = {};
     state.results = {};
+    state.advancedChecks = {};
     state.submitted = false;
     state.result = null;
     loading.style.display = '';
@@ -221,9 +223,31 @@ export async function readView({ query } = {}) {
       advancedHost.innerHTML = '';
       return;
     }
-    const reading = buildAdvancedReading(state.quiz.spec || {}, state.quiz.options || [], measureLeadVoltages());
+    const reading = buildAdvancedReading(state.quiz.spec || {}, state.quiz.options || [], measureLeadVoltages(), Array.isArray(state.quiz.references) ? state.quiz.references : []);
     advancedHost.innerHTML = `<section class="quiz-card read-advanced">
       <div class="read-advanced-head"><div><div class="page-eyebrow">ADVANCED INTERPRETATION</div><h3>进阶完整判读</h3><p class="muted">从 P 波开始逐项确认，最后再从 0 写出完整结论；不是替代基础五步，而是把容易漏掉的形态与间期展开。</p></div><span class="badge badge-brand">${reading.steps.length} 个检查点</span></div>
+      <details class="read-values"><summary>查看本例数值（建议先自行判断，再核对）</summary><div class="read-values-grid">
+        <span>心率 <b>${reading.values.rate || '—'}</b> 次/分</span>
+        <span>PR <b>${reading.values.pr === null ? '不可测' : `${reading.values.pr.toFixed(2)} s`}</b></span>
+        <span>QRS <b>${reading.values.qrs === null ? '—' : `${Math.round(reading.values.qrs * 1000)} ms`}</b></span>
+        <span>QT <b>${reading.values.qt === null ? '—' : `${reading.values.qt.toFixed(2)} s`}</b></span>
+        <span>V1 R <b>${reading.values.v1R === null ? '未测' : `${reading.values.v1R.toFixed(2)} mV`}</b></span>
+        <span>V5 S <b>${reading.values.v5S === null ? '未测' : `${reading.values.v5S.toFixed(2)} mV`}</b></span>
+      </div><p class="read-values-note">参考范围：成人静息心率 60–100 次/分；PR 0.12–0.20 s；QRS &lt;0.12 s；QTc 需按心率/性别校正。数值为教学合成波形，不替代实测。</p></details>
+      <div class="read-selfcheck"><div class="read-selfcheck-head"><div><b>逐项自检</b><span>先自己判断，再点选项；每项都会给出正确/需复习和依据。</span></div><span class="badge" data-advanced-score>0 / ${reading.selfChecks.length}</span></div>
+        <div class="read-selfcheck-grid">${reading.selfChecks.map((check) => {
+          const result = state.advancedChecks[check.id];
+          return `<div class="read-selfcheck-item ${result ? (result.correct ? 'is-correct' : 'is-wrong') : ''}" data-adv-card="${check.id}">
+            <h4>${escapeHtml(check.question)}</h4>
+            <div class="read-selfcheck-options">${check.options.map((option) => {
+              const chosen = result?.value === option.id;
+              const expected = check.answer === option.id;
+              return `<button class="read-option ${chosen ? (result.correct ? 'is-correct' : 'is-wrong') : ''} ${result && expected ? 'is-correct' : ''}" type="button" data-adv-check="${check.id}" data-adv-value="${option.id}" ${result ? 'disabled' : ''}>${escapeHtml(option.label)}</button>`;
+            }).join('')}</div>
+            <div class="read-selfcheck-note ${result ? 'show' : ''}" data-adv-card-note>${result ? `<b>${result.correct ? '判断正确' : '需要复习'}</b><p>${escapeHtml(check.explanation)}</p>` : ''}</div>
+          </div>`;
+        }).join('')}</div>
+      </div>
       <div class="read-advanced-grid">${reading.steps.map((step, index) => `<div class="read-advanced-item">
         <div class="read-advanced-item-head"><span>${String(index + 1).padStart(2, '0')}</span><h4>${escapeHtml(step.title)}</h4></div>
         <p class="read-advanced-value">${escapeHtml(step.value)}</p>
@@ -238,8 +262,39 @@ export async function readView({ query } = {}) {
         <div class="read-advanced-block"><h4>完整结论模板</h4><p>${escapeHtml(reading.conclusion)}</p></div>
         <div class="read-advanced-block"><h4>下一步</h4><ul>${reading.next.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul></div>
       </div>
+      <details class="read-references"><summary>判读依据与权威文献</summary><p>${escapeHtml(reading.sourceNote)}</p>${reading.references.length ? `<ul>${reading.references.map((ref) => `<li><a href="${escapeHtml(ref.url || '#')}" target="_blank" rel="noopener noreferrer">${escapeHtml(ref.title || ref.url || '参考文献')}</a><span>${escapeHtml([ref.authors, ref.journal, ref.year].filter(Boolean).join(' · '))}</span></li>`).join('')}</ul>` : ''}<p><a href="#/guidelines">打开指南规范与文献页 →</a></p></details>
       <p class="read-advanced-source">${escapeHtml(reading.sourceNote)} <a href="#/guidelines">查看指南规范与文献 →</a></p>
     </section>`;
+    const updateAdvancedScore = () => {
+      const node = advancedHost.querySelector('[data-advanced-score]');
+      if (!node) return;
+      const correct = Object.values(state.advancedChecks).filter((item) => item.correct).length;
+      node.textContent = `${correct} / ${reading.selfChecks.length}`;
+    };
+    advancedHost.querySelectorAll('[data-adv-check]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const id = button.dataset.advCheck;
+        if (state.advancedChecks[id]) return;
+        const check = reading.selfChecks.find((item) => item.id === id);
+        if (!check) return;
+        const value = button.dataset.advValue;
+        const correct = value === check.answer;
+        state.advancedChecks[id] = { value, correct };
+        const card = button.closest('[data-adv-card]');
+        const note = card?.querySelector('[data-adv-card-note]');
+        card?.querySelectorAll('[data-adv-check]').forEach((option) => {
+          option.disabled = true;
+          if (option.dataset.advValue === check.answer) option.classList.add('is-correct');
+          if (option === button && !correct) option.classList.add('is-wrong');
+        });
+        if (note) {
+          note.classList.add('show');
+          note.innerHTML = `<b>${correct ? '判断正确' : '需要复习'}</b><p>${escapeHtml(check.explanation)}</p>`;
+        }
+        updateAdvancedScore();
+      });
+    });
+    updateAdvancedScore();
   }
 
   function startTimer() {

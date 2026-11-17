@@ -102,6 +102,9 @@ check('advanced reading starts at P wave and includes morphology/ST steps', () =
   assert.match(reading.steps[0].value, /P 波/);
   assert.ok(reading.candidateDiagnoses.length === 1);
   assert.ok(reading.differentials.length >= 1);
+  assert.equal(reading.selfChecks.length, 10);
+  assert.equal(reading.values.qrs, 0.14);
+  assert.equal(reading.selfChecks.find((item) => item.id === 'axis').answer, 'left');
 });
 
 console.log(`\nGuided reading tests passed: ${passed}`);

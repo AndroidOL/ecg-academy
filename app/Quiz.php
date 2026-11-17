@@ -169,6 +169,8 @@ final class Quiz
             'createdAt' => time(),
         ];
 
+        $chapterGuide = ChapterGuides::get((string) $primary['chapter']);
+        $references = is_array($chapterGuide['references'] ?? null) ? $chapterGuide['references'] : [];
         $pdo = Db::pdo();
         $guestStmt = $pdo->prepare('SELECT is_guest FROM users WHERE id = ? LIMIT 1');
         $guestStmt->execute([$userId]);
@@ -189,6 +191,7 @@ final class Quiz
                 'question' => $question,
                 'stem' => $stem,
                 'chapter' => $primary['chapter'],
+                'references' => $references,
                 'assignment' => $assignment ? ['code' => $assignment['code'], 'title' => $assignment['title'], 'className' => $assignment['class_name']] : null,
                 'expiresIn' => 7200,
             ];
@@ -219,6 +222,7 @@ final class Quiz
             'question' => $question,
             'stem' => $stem,
             'chapter' => $primary['chapter'],
+            'references' => $references,
             'assignment' => $assignment ? ['code' => $assignment['code'], 'title' => $assignment['title'], 'className' => $assignment['class_name']] : null,
             'expiresIn' => 7200,
         ];
