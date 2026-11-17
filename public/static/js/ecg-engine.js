@@ -6,6 +6,16 @@
 
 export const LEAD_NAMES = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6'];
 
+export const ECG_TIMING = Object.freeze({
+  sampleRate: 500,
+  paperSpeedMmPerSecond: 25,
+  gainMmPerMv: 10,
+  smallBoxSeconds: 0.04,
+  largeBoxSeconds: 0.2,
+  pSigma: 0.023,
+  pOnsetOffset: 0.0575,
+});
+
 const BASE_PROFILE = {
   I: { p: 0.08, q: -0.04, r: 0.85, s: -0.10, t: 0.22 },
   II: { p: 0.145, q: -0.06, r: 1.15, s: -0.16, t: 0.32 },
@@ -121,7 +131,7 @@ function buildSchedule(spec) {
   const duration = s.duration;
   const special = ['vf', 'vflutter', 'torsades', 'asystole', 'paced'].includes(rhythm) ? rhythm : null;
   if (special) {
-    return { spec: s, beats, pWaves, special, rng };
+    return finalizeSchedule(s, beats, pWaves, special, rng);
   }
 
   const start = s.start;
@@ -135,7 +145,7 @@ function buildSchedule(spec) {
       beats.push(makeBeat(t, null, 0, s.qrs, { type: 'af' }));
       t += rr * jitter;
     }
-    return { spec: s, beats, pWaves, special, rng };
+    return finalizeSchedule(s, beats, pWaves, special, rng);
   }
 
   if (rhythm === 'flutter') {
@@ -147,7 +157,7 @@ function buildSchedule(spec) {
       // Tiny physiological RR variation keeps 2:1 flutter from looking synthetic.
       t += qrsRR * (0.994 + rng() * 0.012);
     }
-    return { spec: s, beats, pWaves, special, rng };
+    return finalizeSchedule(s, beats, pWaves, special, rng);
   }
 
   if (rhythm === 'vt') {
@@ -162,7 +172,7 @@ function buildSchedule(spec) {
       pWaves.push({ t: p, ampScale: 0.35, morph: 'normal' });
       p += 60 / pRate;
     }
-    return { spec: s, beats, pWaves, special, rng };
+    return finalizeSchedule(s, beats, pWaves, special, rng);
   }
 
   if (rhythm === 'svt') {
@@ -171,7 +181,7 @@ function buildSchedule(spec) {
       beats.push(makeBeat(t, null, 0, s.qrs, { type: 'svt' }));
       t += rr;
     }
-    return { spec: s, beats, pWaves, special, rng };
+    return finalizeSchedule(s, beats, pWaves, special, rng);
   }
 
   if (rhythm === 'junctional') {
@@ -180,7 +190,7 @@ function buildSchedule(spec) {
       beats.push(makeBeat(t, null, 0, s.qrs, { type: 'junctional', retrogradeP: true }));
       t += rr;
     }
-    return { spec: s, beats, pWaves, special, rng };
+    return finalizeSchedule(s, beats, pWaves, special, rng);
   }
 
   if (rhythm === 'ventricular_escape') {
@@ -189,7 +199,7 @@ function buildSchedule(spec) {
       beats.push(makeBeat(t, null, 0, Math.max(0.14, s.qrs), { type: 'escape', tDiscordant: true }));
       t += rr;
     }
-    return { spec: s, beats, pWaves, special, rng };
+    return finalizeSchedule(s, beats, pWaves, special, rng);
   }
 
   if (rhythm === 'aivr') {
@@ -204,7 +214,7 @@ function buildSchedule(spec) {
       pWaves.push({ t: p, ampScale: 0.3, morph: 'normal' });
       p += 60 / pRate;
     }
-    return { spec: s, beats, pWaves, special, rng };
+    return finalizeSchedule(s, beats, pWaves, special, rng);
   }
 
   const block = s.avBlock;
@@ -220,7 +230,7 @@ function buildSchedule(spec) {
         beats.push(makeBeat(t, null, 0, Math.max(0.12, s.qrs), { type: 'block', tDiscordant: s.qrs >= 0.12 }));
         t += rr;
       }
-      return { spec: s, beats, pWaves, special, rng };
+      return finalizeSchedule(s, beats, pWaves, special, rng);
     }
     const ratio = clamp(Math.round(num(block.ratio, 3)), 2, 8);
     let p = start;
@@ -241,7 +251,7 @@ function buildSchedule(spec) {
       p += atrialRR;
       index += 1;
     }
-    return { spec: s, beats, pWaves, special, rng };
+    return finalizeSchedule(s, beats, pWaves, special, rng);
   }
 
   // 窦性/房速/带早搏等：先生成基础搏动。
@@ -287,7 +297,7 @@ function buildSchedule(spec) {
         }
         n += 2 * rr;
       }
-      return { spec: s, beats, pWaves, special, rng };
+      return finalizeSchedule(s, beats, pWaves, special, rng);
     }
     const targetIndex = beats.findIndex((b) => b.t > start + rr * 0.8);
     if (targetIndex >= 0) {
@@ -314,7 +324,27 @@ function buildSchedule(spec) {
     }
   }
 
-  return { spec: s, beats, pWaves, special, rng };
+  return finalizeSchedule(s, beats, pWaves, special, rng);
+}
+
+function finalizeSchedule(spec, beats, pWaves, special, rng) {
+  for (const beat of beats) {
+    const timing = qrsTimingMap(spec, beat);
+    beat.qrsOnsets = timing.onsets;
+    beat.qrsEnds = timing.ends;
+    beat.qrsOnset = Math.min(...Object.values(timing.onsets));
+    beat.qrsEnd = Math.max(...Object.values(timing.ends));
+    if (beat.pTime !== null && beat.pTime !== undefined) {
+      const pr = Number(beat.pr) || Number(spec.pr) || 0;
+      if (pr > 0) {
+        beat.pTime = beat.t + beat.qrsOnset - pr + ECG_TIMING.pOnsetOffset;
+        beat.pOnset = beat.pTime - ECG_TIMING.pOnsetOffset;
+      } else {
+        beat.pOnset = beat.pTime;
+      }
+    }
+  }
+  return { spec, beats, pWaves, special, rng };
 }
 
 function profileFor(spec, lead) {
@@ -323,13 +353,14 @@ function profileFor(spec, lead) {
   const prof = Object.assign({}, base, overrides);
   prof.tSigma = 0.052;
   prof.qrsScale = 1;
-  prof.qrsWiden = 2.2;
+  prof.qrsWiden = 1;
   prof.tSign = 1;
   prof.pScale = 1;
   prof.delta = false;
   prof.rPrime = 0;
   prof.rPrimeDelay = 0;
   prof.sWide = false;
+  prof.rBroad = false;
   prof.stOverride = null;
   prof.brugada = false;
 
@@ -364,6 +395,7 @@ function profileFor(spec, lead) {
       prof.q = 0;
       prof.r = Math.abs(prof.r) * 1.25;
       prof.s = -0.06;
+      prof.rBroad = true;
       prof.t = -Math.abs(prof.t || 0.3) * 0.75;
     }
   } else if (m === 'lafb') {
@@ -403,6 +435,7 @@ function profileFor(spec, lead) {
   } else if (m === 'hyperk') {
     prof.pScale = 0.28;
     prof.qrsScale = 1.45;
+    prof.qrsWiden = 1.3;
     prof.tSigma = 0.035;
     prof.tSign = 1;
     if (lead === 'V2' || lead === 'V3' || lead === 'V4') {
@@ -452,6 +485,40 @@ function profileFor(spec, lead) {
   }
 
   return prof;
+}
+
+function qrsComponentGeometry(beat, prof, spec) {
+  const broaden = prof.qrsWiden || 1;
+  const scale = (prof.qrsScale || 1) * broaden;
+  const widthScale = Math.max(0.75, (beat.qrsWidth || spec.qrs) / 0.08) * broaden;
+  const sig = 0.0095 * widthScale;
+  let onset = -2.5 * sig * 0.92;
+  if (Math.abs(prof.q || 0) > 1e-6) onset = Math.min(onset, -0.018 * scale - 2.5 * sig * 0.78);
+  if (prof.delta) onset = Math.min(onset, -0.04 * scale - 2.5 * 0.026);
+  let end = 0.022 * scale + 2.5 * sig * 0.95;
+  if (prof.rPrime) end = Math.max(end, (prof.rPrimeDelay || 0.04) + 2.5 * sig * 1.05);
+  if (prof.sWide) end = Math.max(end, 0.045 * scale + 2.5 * sig * 1.8);
+  return { onset, end };
+}
+
+function qrsTiming(beat, prof, spec) {
+  const target = clamp(Number(beat.qrsWidth || spec.qrs || 0.08), 0.04, 0.24);
+  if (prof.rBroad) return { k: 1, onset: -0.5 * target, end: 0.5 * target };
+  const geometry = qrsComponentGeometry(beat, prof, spec);
+  const baseWidth = Math.max(0.02, geometry.end - geometry.onset);
+  const k = target / baseWidth;
+  return { k, onset: geometry.onset * k, end: geometry.end * k };
+}
+
+function qrsTimingMap(spec, beat) {
+  const onsets = {};
+  const ends = {};
+  for (const lead of LEAD_NAMES) {
+    const timing = qrsTiming(beat, profileFor(spec, lead), spec);
+    onsets[lead] = timing.onset;
+    ends[lead] = timing.end;
+  }
+  return { onsets, ends };
 }
 
 function addSTSegment(samples, sampleRate, start, end, amp, shape, beatTime, lead) {
@@ -557,22 +624,32 @@ function addP(samples, sampleRate, p, prof, options = {}) {
 }
 
 function addQRS(samples, sampleRate, beat, prof, spec) {
-  const broaden = prof.qrsWiden || 1;
-  const scale = (prof.qrsScale || 1) * broaden;
-  const widthScale = Math.max(0.75, (beat.qrsWidth || spec.qrs) / 0.08) * broaden;
-  const sig = 0.0095 * widthScale;
+  const target = clamp(Number(beat.qrsWidth || spec.qrs || 0.08), 0.04, 0.24);
   const rAmp = prof.r * (beat.ampScale || 1);
   const qAmp = prof.q * (beat.ampScale || 1);
   const sAmp = prof.s * (beat.ampScale || 1);
+  if (prof.rBroad) {
+    // LBBB 的侧壁导联是宽钝/切迹 R，而不是单峰窄 R；两峰跨越整个 QRS 窗口。
+    addGaussian(samples, sampleRate, beat.t - 0.25 * target, rAmp * 0.72, 0.12 * target);
+    addGaussian(samples, sampleRate, beat.t + 0.25 * target, rAmp * 0.72, 0.12 * target);
+    addGaussian(samples, sampleRate, beat.t + 0.42 * target, sAmp, 0.08 * target);
+    return;
+  }
+  const timing = qrsTiming(beat, prof, spec);
+  const k = timing.k;
+  const broaden = prof.qrsWiden || 1;
+  const scale = (prof.qrsScale || 1) * broaden * k;
+  const widthScale = Math.max(0.75, (beat.qrsWidth || spec.qrs) / 0.08) * broaden * k;
+  const sig = 0.0095 * widthScale;
 
   if (prof.delta) {
-    addGaussian(samples, sampleRate, beat.t - 0.04 * scale, Math.abs(rAmp) * 0.28, 0.026);
+    addGaussian(samples, sampleRate, beat.t - 0.04 * scale, Math.abs(rAmp) * 0.28, 0.026 * k);
   }
   addGaussian(samples, sampleRate, beat.t - 0.018 * scale, qAmp, sig * 0.78);
   addAsymGaussian(samples, sampleRate, beat.t, rAmp, sig * 0.92, sig * 1.08);
   addGaussian(samples, sampleRate, beat.t + 0.022 * scale, sAmp, sig * 0.95);
   if (prof.rPrime) {
-    addGaussian(samples, sampleRate, beat.t + (prof.rPrimeDelay || 0.04), prof.rPrime, sig * 1.05);
+    addGaussian(samples, sampleRate, beat.t + (prof.rPrimeDelay || 0.04) * k, prof.rPrime, sig * 1.05);
   }
   if (prof.sWide) {
     addGaussian(samples, sampleRate, beat.t + 0.045 * scale, sAmp * 0.5, sig * 1.8);
@@ -581,10 +658,14 @@ function addQRS(samples, sampleRate, beat, prof, spec) {
 
 function addSTT(samples, sampleRate, beat, prof, spec, lead) {
   const widthScale = Math.max(0.8, (beat.qrsWidth || spec.qrs) / 0.08);
-  const j = beat.t + 0.024 * widthScale;
-  const tCenter = beat.t + spec.qt * 0.66 + 0.006 * Math.sin(beat.t * 5.1);
-  const tSigma = clamp(prof.tSigma + (spec.qt - 0.4) * 0.05, 0.032, 0.115) * (1 + 0.025 * Math.sin(beat.t * 4.3));
-  const tEnd = beat.t + spec.qt;
+  const qrsEnd = beat.qrsEnds?.[lead] ?? beat.qrsEnd ?? (0.024 * widthScale);
+  const j = beat.t + qrsEnd - 0.01;
+  const qrsDuration = Math.max(0.04, Number(beat.qrsWidth || spec.qrs || 0.08));
+  const tAvailable = Math.max(0.12, spec.qt - qrsDuration);
+  const tSigmaBase = 0.14 * tAvailable * (prof.tSigma / 0.052);
+  const tSigma = clamp(tSigmaBase, 0.026, 0.085) * (1 + 0.025 * Math.sin(beat.t * 4.3));
+  const tCenter = beat.t + (beat.qrsOnset || 0) + spec.qt - 2.5 * tSigma + 0.006 * Math.sin(beat.t * 5.1);
+  const tEnd = beat.t + (beat.qrsOnset || 0) + spec.qt;
   const stMm = prof.stOverride !== null
     ? Number(prof.stOverride)
     : Number(prof.st || 0)
@@ -595,9 +676,9 @@ function addSTT(samples, sampleRate, beat, prof, spec, lead) {
 
   if (prof.brugada) {
     // Type-1 Brugada: high J-point, convex descending ST, inverted T.
-    const j = beat.t + 0.026 * widthScale;
-    addGaussian(samples, sampleRate, j + 0.006, 0.30, 0.018);
-    addSTSegment(samples, sampleRate, j + 0.012, tCenter + 0.005, 0.24, 'coved', beat.t, lead);
+    const brugadaJ = beat.t + qrsEnd - 0.006;
+    addGaussian(samples, sampleRate, brugadaJ + 0.006, 0.30, 0.018);
+    addSTSegment(samples, sampleRate, brugadaJ + 0.012, tCenter + 0.005, 0.24, 'coved', beat.t, lead);
     addAsymGaussian(samples, sampleRate, tCenter + 0.028, -0.32, tSigma * 0.9, tSigma * 0.7);
     return;
   }

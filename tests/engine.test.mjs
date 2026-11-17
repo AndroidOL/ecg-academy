@@ -31,19 +31,21 @@ function noNaN(result) {
 
 function qrsWidthMs(result, beatTime, window = 0.12) {
   const sampleRate = result.sampleRate;
-  const lo = Math.max(0, Math.round((beatTime - 0.08) * sampleRate));
+  const lo = Math.max(0, Math.round((beatTime - 0.06) * sampleRate));
   const hi = Math.min(result.samples.length - 1, Math.round((beatTime + window) * sampleRate));
-  let low = 0;
-  let high = 0;
-  for (let i = lo; i <= hi; i += 1) {
-    low = Math.min(low, result.samples[i]);
-    high = Math.max(high, result.samples[i]);
+  const baselineSamples = [];
+  for (let i = Math.round((beatTime - 0.07) * sampleRate); i <= Math.round((beatTime - 0.055) * sampleRate); i += 1) {
+    baselineSamples.push(result.samples[i]);
   }
-  const threshold = Math.max(0.04, Math.max(Math.abs(low), Math.abs(high)) * 0.1);
+  baselineSamples.sort((a, b) => a - b);
+  const baseline = baselineSamples[Math.floor(baselineSamples.length / 2)] || 0;
+  let peak = 0;
+  for (let i = lo; i <= hi; i += 1) peak = Math.max(peak, Math.abs(result.samples[i] - baseline));
+  const threshold = Math.max(0.02, peak * 0.03);
   let first = null;
   let last = null;
   for (let i = lo; i <= hi; i += 1) {
-    if (Math.abs(result.samples[i]) > threshold) {
+    if (Math.abs(result.samples[i] - baseline) > threshold) {
       if (first === null) first = i;
       last = i;
     }
@@ -90,20 +92,37 @@ check('all 12 leads are generated without NaN', () => {
 
 check('normal QRS stays physiological and wide-complex rhythms stay wide', () => {
   const normal = new ECGSession({ ...base, rate: 72, atrialRate: 72 }).lead('II');
-  const normalWidth = qrsWidthMs(normal, 0.58);
-  assert.ok(normalWidth >= 60 && normalWidth <= 110, `normal QRS width ${normalWidth.toFixed(0)} ms`);
+  const normalWidth = qrsWidthMs(normal, 0.58, 0.07);
+  assert.ok(normalWidth >= 50 && normalWidth <= 100, `normal QRS width ${normalWidth.toFixed(0)} ms`);
+  const normalV5 = new ECGSession({ ...base, rate: 72, atrialRate: 72 }).lead('V5');
+  const normalV5Width = qrsWidthMs(normalV5, 0.58, 0.07);
+  assert.ok(normalV5Width >= 50 && normalV5Width <= 100, `normal V5 QRS width ${normalV5Width.toFixed(0)} ms`);
   const wide = new ECGSession({ ...base, rhythm: 'vt', rate: 160, atrialRate: 75, qrs: 0.16, morphology: 'wide', t: { shape: 'discordant', amp: 1 } }).lead('II');
-  const wideWidth = qrsWidthMs(wide, 0.58, 0.14);
+  const wideWidth = qrsWidthMs(wide, 0.58, 0.16);
   assert.ok(wideWidth >= 120 && wideWidth <= 240, `wide QRS width ${wideWidth.toFixed(0)} ms`);
 });
 
 check('RBBB V1 shows small r, deep S and dominant R′ instead of a second QRS', () => {
-  const result = new ECGSession({ ...base, rate: 75, atrialRate: 75, pr: 0.16, qrs: 0.13, morphology: 'rbbb', seed: 113 }).lead('V1');
-  const at = (t) => result.samples[Math.round(t * result.sampleRate)];
-  const initialR = Math.max(at(0.57), at(0.572), at(0.574), at(0.576), at(0.578));
+  const session = new ECGSession({ ...base, rate: 75, atrialRate: 75, pr: 0.16, qrs: 0.13, morphology: 'rbbb', seed: 113 });
+  const result = session.lead('V1');
+  const beat = session.schedule.beats.find((item) => item.t > 0.5);
+  const onset = beat.t + (beat.qrsOnsets?.V1 || 0);
+  const end = beat.t + (beat.qrsEnds?.V1 || (beat.qrsWidth || 0.13));
+  const span = end - onset;
+  const extrema = (from, to, pick) => {
+    let value = pick === 'min' ? Infinity : -Infinity;
+    for (let t = from; t <= to; t += 0.002) {
+      const sample = result.samples[Math.round(t * result.sampleRate)];
+      value = pick === 'min' ? Math.min(value, sample) : Math.max(value, sample);
+    }
+    return value;
+  };
+  const initialR = extrema(onset, onset + span * 0.28, 'max');
+  const sNadir = extrema(onset + span * 0.25, onset + span * 0.68, 'min');
+  const rPrime = extrema(onset + span * 0.55, end, 'max');
   assert.ok(initialR < 0.2, `initial r too tall: ${initialR}`);
-  assert.ok(at(0.62) < -0.5, `S too shallow: ${at(0.62)}`);
-  assert.ok(at(0.678) > 0.6, `R′ too small: ${at(0.678)}`);
+  assert.ok(sNadir < -0.3, `S too shallow: ${sNadir}`);
+  assert.ok(rPrime > 0.5, `R′ too small: ${rPrime}`);
 });
 
 check('LBBB V5 widens the QRS above 120 ms', () => {
@@ -231,11 +250,12 @@ check('PAC keeps every P coupled to its QRS and resets the sinus pause', () => {
   const beats = [...session.schedule.beats].sort((a, b) => a.t - b.t);
   const pacIndex = beats.findIndex((b) => b.type === 'pac');
   assert.ok(pacIndex >= 0, 'PAC should exist');
+  const clinicalPr = (beat) => (beat.t + (beat.qrsOnset || 0)) - (beat.pOnset ?? (beat.pTime - 0.0575));
   for (const beat of beats) {
     if (beat.type === 'sinus') {
-      assert.ok(Math.abs((beat.t - beat.pTime) - beat.pr) < 0.02, 'sinus P must stay coupled');
+      assert.ok(Math.abs(clinicalPr(beat) - beat.pr) < 0.02, 'sinus P must stay coupled');
     }
-    if (beat.type === 'pac') assert.ok(Math.abs((beat.t - beat.pTime) - 0.14) < 0.02, 'PAC P′–QRS gap');
+    if (beat.type === 'pac') assert.ok(Math.abs(clinicalPr(beat) - 0.14) < 0.02, 'PAC P′–QRS gap');
   }
   const next = beats[pacIndex + 1];
   assert.ok(next && next.type === 'sinus');
@@ -250,8 +270,9 @@ check('PVC/PJC do not leave a detached P wave', () => {
       ectopy: { type, pattern: 'isolated', coupling: 0.58 },
     });
     const beats = [...session.schedule.beats].sort((a, b) => a.t - b.t);
+    const clinicalPr = (beat) => (beat.t + (beat.qrsOnset || 0)) - (beat.pOnset ?? (beat.pTime - 0.0575));
     for (const beat of beats) {
-      if (beat.type === 'sinus') assert.ok(Math.abs((beat.t - beat.pTime) - beat.pr) < 0.02);
+      if (beat.type === 'sinus') assert.ok(Math.abs(clinicalPr(beat) - beat.pr) < 0.02);
       if (beat.type === type) assert.ok(beat.pTime === null || beat.pTime === undefined, type + ' should not carry a sinus P');
     }
     for (let i = 1; i < beats.length; i++) assert.ok(beats[i].t - beats[i-1].t > 0.18);

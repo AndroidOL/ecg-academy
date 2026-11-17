@@ -87,6 +87,8 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: ECG engine tests
         run: npm run test:engine
+      - name: ECG timing and width audit
+        run: npm run test:qrs
       - name: Playback and annotation tests
         run: npm run test:playback
       - name: Local review and BYOK tests

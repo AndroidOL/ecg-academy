@@ -1,6 +1,6 @@
 const __isNode = typeof process !== 'undefined' && Boolean(process.versions?.node);
-const __asset = __isNode ? '' : '?v=20261112a18';
-const { ECGSession, LEAD_NAMES } = await import(`./ecg-engine.js${__asset}`);
+const __asset = __isNode ? '' : '?v=20261117a1';
+const { ECGSession, LEAD_NAMES, ECG_TIMING } = await import(`./ecg-engine.js${__asset}`);
 const { getLocale, translate } = await import(`./i18n.js${__asset}`);
 
 const COLUMNS = [
@@ -868,17 +868,22 @@ export class ECGViewer {
     const baseline = padTop + plotH * 0.58;
     const pxPerMm = plotW / (duration * 25);
     const yFor = (mv) => baseline - mv * 10 * pxPerMm;
-    const qrsWidth = Math.max(0.06, spec.qrs || 0.08);
+    const qrsWidth = Math.max(0.06, Number(beat.qrsWidth || spec.qrs || 0.08));
     const qt = spec.qt || 0.4;
     const qrsT = beat.t;
+    const lead = this.options.lead;
+    const leadOnset = qrsT + (beat.qrsOnsets?.[lead] ?? beat.qrsOnset ?? 0);
+    const leadEnd = qrsT + (beat.qrsEnds?.[lead] ?? ((beat.qrsOnsets?.[lead] ?? beat.qrsOnset ?? 0) + qrsWidth));
+    const qrsOnset = qrsT + (beat.qrsOnset || 0);
     const pT = beat.pTime;
-    const tT = qrsT + qt * 0.66;
-    const tEnd = qrsT + qt;
+    const pOnset = beat.pOnset ?? (pT == null ? null : pT - ECG_TIMING.pOnsetOffset);
+    const tT = qrsOnset + qt * 0.66;
+    const tEnd = qrsOnset + qt;
     const ctx = this.ctx;
 
     const bands = [];
     if (pT != null) bands.push({ x0: pT - 0.06, x1: pT + 0.065, color: colors.brand, alpha: 0.14, label: 'P', row: 0, anchor: pT });
-    bands.push({ x0: qrsT - qrsWidth / 2 - 0.015, x1: qrsT + qrsWidth / 2 + 0.035, color: colors.accent, alpha: 0.16, label: 'QRS', row: 1, anchor: qrsT });
+    bands.push({ x0: leadOnset - 0.005, x1: leadEnd + 0.005, color: colors.accent, alpha: 0.16, label: 'QRS', row: 1, anchor: qrsT });
     bands.push({ x0: tT - 0.085, x1: tT + 0.085, color: colors.gold, alpha: 0.15, label: 'T', row: 2, anchor: tT });
 
     ctx.save();
@@ -941,9 +946,9 @@ export class ECGViewer {
       this.drawLabel(label, (x0 + x1) / 2, bracketY - 7, color, colors, 'center');
     };
     if (this.cssWidth >= 600) {
-      if (pT != null) drawInterval('PR', pT, qrsT, 'brand', 0);
-      drawInterval('QRS', qrsT - qrsWidth / 2, qrsT + qrsWidth / 2, 'accent', 1);
-      drawInterval('QT', qrsT, tEnd, 'gold', 2);
+      if (pT != null && pOnset != null) drawInterval('PR', pOnset, qrsOnset, 'brand', 0);
+      drawInterval('QRS', leadOnset, leadEnd, 'accent', 1);
+      drawInterval('QT', qrsOnset, tEnd, 'gold', 2);
     }
   }
 
@@ -1009,15 +1014,28 @@ export class ECGViewer {
       }
       if (/PR|P-R/.test(label)) {
         const beat = beats.reduce((best, b) => (b.pTime != null && Math.abs(b.t - mid) < Math.abs((best?.t ?? Infinity) - mid) ? b : best), null);
-        if (beat && beat.pTime != null) return { ...ann, t0: beat.pTime, t1: beat.t };
+        if (beat && beat.pTime != null) {
+          const pOnset = beat.pOnset ?? (beat.pTime - ECG_TIMING.pOnsetOffset);
+          return { ...ann, t0: pOnset, t1: beat.t + (beat.qrsOnset || 0) };
+        }
       }
       if (/QRS/.test(label) && !/脱漏/.test(label)) {
         const q = nearest(wideQrs, mid) ?? nearest(qrsTimes, mid);
-        if (q != null) return { ...ann, t0: q - qrs / 2, t1: q + qrs / 2 };
+        if (q != null) {
+          const qBeat = wideBeats.find((b) => b.t === q) || beats.find((b) => b.t === q);
+          const width = Math.max(0.06, Number(qBeat?.qrsWidth || qrs));
+          const onset = q + (qBeat?.qrsOnset || 0);
+          const end = qBeat?.qrsEnd != null ? q + qBeat.qrsEnd : onset + width;
+          return { ...ann, t0: onset, t1: end };
+        }
       }
       if (/QT/.test(label)) {
         const q = nearest(qrsTimes, Number(ann.t0) || mid);
-        if (q != null) return { ...ann, t0: q, t1: q + qt };
+        if (q != null) {
+          const qBeat = beats.find((b) => b.t === q);
+          const onset = q + (qBeat?.qrsOnset || 0);
+          return { ...ann, t0: onset, t1: onset + qt };
+        }
       }
       if (/RR|R-R/.test(label)) {
         for (let i = 1; i < qrsTimes.length; i += 1) {
@@ -1191,7 +1209,7 @@ export class ECGViewer {
       this.twelveSession = new ECGSession({ ...this.rhythmSession.spec, duration: 10, start: 0.08, annotations: [] });
     }
     const result = this.twelveSession.lead('II');
-    const pxPerMm = (plotW - 30) / (duration * 25);
+    const pxPerMm = (plotW - 28) / (duration * 25);
     const baseline = ry + rhythmH * 0.56;
     this.drawPaper(padLeft + 28, ry, plotW - 28, rhythmH - 22, colors, pxPerMm);
     ctx.fillStyle = colors.text;

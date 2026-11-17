@@ -7,7 +7,8 @@
     "test:playback": "node tests/playback.test.mjs",
     "test:study": "node tests/study.test.mjs",
     "test:read": "node tests/read.test.mjs",
-    "test:abbreviations": "node tests/abbreviations.test.mjs"
+    "test:abbreviations": "node tests/abbreviations.test.mjs",
+    "test:qrs": "node tests/qrs-width.test.mjs"
   },
   "devDependencies": {
     "jsdom": "^26.1.0"

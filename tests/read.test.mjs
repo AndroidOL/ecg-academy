@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { buildReading, buildAdvancedReading, isStepCorrect } from '../public/static/js/read-interpret.js';
+import { buildReading, buildAdvancedReading, isStepCorrect, optionReviewState } from '../public/static/js/read-interpret.js';
 
 let passed = 0;
 function check(name, fn) {
@@ -89,22 +89,45 @@ check('object-shaped ST lead maps are detected', () => {
   assert.match(reading.stt.explanation, /V2、V3/);
 });
 
-check('advanced reading starts at P wave and includes morphology/ST steps', () => {
+check('advanced reading follows the canonical ten-step order', () => {
   const reading = buildAdvancedReading({
     rhythm: 'sinus', rate: 72, pr: 0.18, qrs: 0.14, qt: 0.44, axis: 'left', morphology: 'lbbb',
     st: { elevation: [], depression: [] }, t: { shape: 'discordant' }, u: 0,
   }, [{ id: 'lbbb', name: 'LBBB', chapter: 'block' }], { v1R: 0.1, v5S: -0.2 });
-  assert.equal(reading.steps[0].id, 'p');
-  assert.ok(reading.steps.some((step) => step.id === 'q-wave'));
+  assert.deepEqual(reading.steps.map((step) => step.id), [
+    'calibration', 'rate', 'rhythm', 'axis', 'intervals',
+    'p-morphology', 'qrs-morphology', 'st', 'tu', 'clinical',
+  ]);
+  assert.ok(reading.steps.every((step) => step.title && step.value && step.detail && step.tip));
+  assert.ok(reading.steps.some((step) => step.id === 'qrs-morphology'));
   assert.ok(reading.steps.some((step) => step.id === 'st'));
-  assert.ok(reading.steps.some((step) => step.id === 't'));
-  assert.ok(reading.steps.some((step) => step.title.includes('QRS')));
-  assert.match(reading.steps[0].value, /P 波/);
+  assert.ok(reading.steps.some((step) => step.id === 'tu'));
   assert.ok(reading.candidateDiagnoses.length === 1);
   assert.ok(reading.differentials.length >= 1);
   assert.equal(reading.selfChecks.length, 10);
   assert.equal(reading.values.qrs, 0.14);
   assert.equal(reading.selfChecks.find((item) => item.id === 'axis').answer, 'left');
+  assert.equal(reading.selfChecks.find((item) => item.id === 'width').answer, 'wide');
+  assert.equal(reading.selfChecks.find((item) => item.id === 'rate').answer, 'normal');
+});
+
+check('correct choices only highlight the answer, not every other option', () => {
+  assert.equal(optionReviewState('normal', 'normal', 'normal'), 'ok');
+  assert.equal(optionReviewState('brady', 'normal', 'normal'), 'neutral');
+  assert.equal(optionReviewState('tachy', 'normal', 'normal'), 'neutral');
+});
+
+check('wrong choices mark only the chosen distractor red', () => {
+  assert.equal(optionReviewState('normal', 'normal', 'brady'), 'ok');
+  assert.equal(optionReviewState('brady', 'normal', 'brady'), 'bad');
+  assert.equal(optionReviewState('tachy', 'normal', 'brady'), 'neutral');
+});
+
+check('multi-answer review marks all correct options and only chosen mistakes', () => {
+  assert.equal(optionReviewState('ste', ['ste', 't', 'std'], ['ste', 't', 'std']), 'ok');
+  assert.equal(optionReviewState('std', ['ste', 't', 'std'], ['ste']), 'ok');
+  assert.equal(optionReviewState('u', ['ste', 't', 'std'], ['ste']), 'neutral');
+  assert.equal(optionReviewState('u', ['ste', 't', 'std'], ['ste', 'u']), 'bad');
 });
 
 console.log(`\nGuided reading tests passed: ${passed}`);
